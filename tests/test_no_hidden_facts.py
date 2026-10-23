@@ -23,6 +23,13 @@ maintain by hand.
    columns the schemas declare together (a tab's row columns, the trailing
    columns, the Status tab's columns). See test_no_row_shape_is_restated_in_code.
 
+4. Criteria detector: no literal may restate a class's criteria from
+   diagnostic_classes.yaml. See test_no_class_criteria_are_restated_in_code.
+
+5. Retired-terms detector: a word schemas/terms.yaml retires (with what
+   replaced it) appears nowhere in the repo but the dated history that entry
+   names. See test_no_retired_term_reappears.
+
 None of them can see behaviour facts (who keeps what current); the doorway
 work in Phase 10 handles those.
 """
@@ -225,3 +232,44 @@ def test_every_written_command_and_flag_exists():
     assert not problems, (
         "These written commands would fail if someone ran them — fix the text "
         "(or the command):\n  " + "\n  ".join(problems))
+
+
+def _tracked_text_files() -> Iterator[Tuple[str, str]]:
+    import subprocess
+    names = subprocess.run(["git", "-C", str(ROOT), "ls-files"], capture_output=True,
+                           text=True, check=True).stdout.splitlines()
+    for name in names:
+        path = ROOT / name
+        if not path.is_file():
+            continue
+        try:
+            yield name, path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue  # images, PDFs
+
+
+def test_no_retired_term_reappears():
+    """5. Retired-terms detector: a word schemas/terms.yaml `retired_terms`
+    lists may appear only in that entry's `kept_in` files (dated history).
+    Matches the pattern at the start of a word, ignoring case: it catches the
+    word inside a field name or after a hyphen, but not where the pattern sits
+    mid-word in an unrelated word (R's "un..." namespace term)."""
+    import yaml
+    terms_path = ROOT / "schemas" / "terms.yaml"
+    retired = yaml.safe_load(terms_path.read_text(encoding="utf-8")).get("retired_terms") or []
+    assert retired, "schemas/terms.yaml has no retired_terms section"
+    problems: List[str] = []
+    for where, text in _tracked_text_files():
+        if where == "schemas/terms.yaml":
+            text = text.split("\nretired_terms:", 1)[0]  # the entries name the words
+        for entry in retired:
+            if any(where == k or (k.endswith("/") and where.startswith(k))
+                   for k in entry.get("kept_in") or []):
+                continue
+            word = re.compile(r"(?<![A-Za-z])" + re.escape(entry["pattern"]), re.IGNORECASE)
+            for lineno, line in enumerate(text.splitlines(), start=1):
+                if word.search(line):
+                    problems.append(f"{where}:{lineno}: {line.strip()[:100]}")
+    assert not problems, (
+        "These lines use a word the project retired (schemas/terms.yaml "
+        "retired_terms says what replaced it):\n  " + "\n  ".join(problems))

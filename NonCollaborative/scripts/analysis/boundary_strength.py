@@ -101,7 +101,7 @@ def strength_from_families(
     capped, which drew a "capped" mark with no evidence behind it at
     positions 1 and n; Jeff's call to leave it out, as summed always has.)
 
-    Returns dicts keyed by position; a position with no qualifying span is
+    Returns dicts keyed by position; a position with no span is
     simply absent (callers fill in 0 for the positions they report over).
     """
     span_family_count: dict = defaultdict(int)

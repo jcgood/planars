@@ -352,22 +352,22 @@
       facts_touched:
         - {fact: diagnostics_scope, role: both}
 
-- id: sync_qualification_hashes
-  cli_command: sync-qualification-hashes
+- id: sync_span_rule_hashes
+  cli_command: sync-span-rule-hashes
   writes_to_drive: false
   writes_locally: false
   description: >-
-    Stamps qualification_rule_hash in diagnostic_classes_status.yaml after a
-    module's qualification-rule prose has been reviewed and its
+    Stamps span_rule_hash in diagnostic_classes_status.yaml after a
+    module's span-rule prose has been reviewed and its
     docstring/comments updated to match.
   side_effects:
-    - "writes a fresh qualification_rule_hash for the class(es) being stamped"
+    - "writes a fresh span_rule_hash for the class(es) being stamped"
   idempotent: true
   idempotency_note: "Re-running with nothing changed re-derives and writes the same hash value."
   apply_gate: "--apply"
   preconditions: []
   facts_touched:
-    - {fact: qualification_rule_semantics, role: writes}
+    - {fact: span_rule_semantics, role: writes}
   cascades_triggered: []
   modes: []
 
@@ -602,7 +602,7 @@
   apply_gate: null
   preconditions: []
   facts_touched:
-    - {fact: qualification_rule_semantics, role: reads}
+    - {fact: span_rule_semantics, role: reads}
     - {fact: diagnostics_scope, role: reads}
   cascades_triggered: []
   modes: []
@@ -613,7 +613,7 @@
   writes_locally: false
   description: >-
     Generates a coordinator-facing Claude prompt for each class with a
-    missing or stale qualification_rule_hash; used to enrich the
+    missing or stale span_rule_hash; used to enrich the
     codebook-error issue body.
   side_effects: ["none directly (writes stdout / issue-body text only)"]
   idempotent: true
@@ -621,7 +621,7 @@
   apply_gate: null
   preconditions: []
   facts_touched:
-    - {fact: qualification_rule_semantics, role: reads}
+    - {fact: span_rule_semantics, role: reads}
   cascades_triggered: []
   modes: []
 

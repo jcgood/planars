@@ -18,13 +18,12 @@ diagnostic_classes.yaml
     (``row_type``: element rows, ``pair_rows`` or ``keyed_rows``; feeder tabs
     say ``produces_spans: false``), required criteria, keystone settings
     (``keystone_active_default``, ``keystone_na_criteria``) and the
-    ``qualification_rule``. A rule change must also reach the module's
-    docstring and comments (coordinator guide, "Updating a qualification
-    rule").
+    ``span_rule``. A rule change must also reach the module's
+    docstring and comments (coordinator guide, "Updating a span rule").
 
 diagnostic_classes_status.yaml
     Process/tracking state for the same classes: status, criterion_set_status,
-    collection_required, qualification_rule_hash, sheet_instructions,
+    collection_required, span_rule_hash, sheet_instructions,
     module_pending and include_planar_reference_tab. Split out from diagnostic_classes.yaml in
     Phase 3 of the data layer redesign (issue #271) because the two move at
     different rates. coding/schemas.py's load_diagnostic_classes() merges
@@ -81,8 +80,9 @@ planar.yaml
 
 terms.yaml
     Source of truth for analytical terms (keystone, partial, complete,
-    strict, loose) and the chart label glossary. ``span_label_map`` is read
-    by planars/reports.py.
+    strict, loose), the chart label glossary and the retired terms (words
+    the project no longer uses; ``tests/test_no_hidden_facts.py`` fails if
+    one reappears). ``span_label_map`` is read by planars/reports.py.
 
 diagnostics_{lang_id}.yaml  (per-language, lives in coded_data/{lang_id}/lang_setup/)
     Per-language source of truth for which analysis classes, constructions, and

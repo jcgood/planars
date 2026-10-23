@@ -36,8 +36,8 @@ def derive_subspanrepetition_spans(
       maximum_narrowscope_left  — widescope_left == 'n'
       maximum_narrowscope_right — widescope_right == 'n'
 
-    Qualification rule (mirrors diagnostic_classes.yaml)
-    ----------------------------------------------------
+    Span rule (mirrors diagnostic_classes.yaml)
+    -------------------------------------------
     Five span categories are derived:
       maximum_fillable:          fillable_botheither_conjunct=y
       maximum_widescope_left:    widescope_left=y
@@ -63,7 +63,7 @@ def derive_subspanrepetition_spans(
             if blank_els:
                 missing_data[c] = blank_els
 
-    # Qualification flags derived from raw param values:
+    # Span flags derived from raw param values:
     # - fillable: element can fill either conjunct (fillable_botheither_conjunct=y)
     # - widescope_left/right: element takes wide scope in that direction (=y)
     # - narrowscope_left/right: negation of widescope — element takes narrow scope (=n)
@@ -111,7 +111,7 @@ def format_result(result: Dict[str, object]) -> str:
     lines = []
     missing = result.get("missing_data", {})
     if missing:
-        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.")
+        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as outside the span.")
         for col, elements in missing.items():
             preview = elements[:5]
             suffix = f" … ({len(elements)} total)" if len(elements) > 5 else ""

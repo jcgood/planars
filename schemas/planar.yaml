@@ -8,7 +8,7 @@
 # THIS FILE IS NOT THE SOURCE OF TRUTH FOR:
 #   - Diagnostic criterion names and values
 #     → see schemas/diagnostic_criteria.yaml
-#   - Which analysis classes exist or their qualification rules
+#   - Which analysis classes exist or their span rules
 #     → see schemas/diagnostic_classes.yaml
 #   - Analytical terms (strict/loose span, partial/complete position)
 #     → see schemas/terms.yaml

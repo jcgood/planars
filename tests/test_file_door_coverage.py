@@ -61,7 +61,7 @@ NOT_THROUGH_THE_DOOR: Dict[Site, str] = {
         "not in planars-data: schemas/languages.yaml (schema hand edits: unit 17)",
     ("glottolog.py", "_update_languages_yaml", "yaml.dump"):
         "not in planars-data: schemas/languages.yaml (schema hand edits: unit 17)",
-    ("sync_qualification_hashes.py", "_apply_hashes", "write_text"):
+    ("sync_span_rule_hashes.py", "_apply_hashes", "write_text"):
         "not in planars-data: schemas/diagnostic_classes_status.yaml",
     ("issues.py", "_run", "unlink"): "not in planars-data: a temporary issue-body file",
     ("issues.py", "main", "write_text"): "not in planars-data: CLAUDE.md's Labels table",

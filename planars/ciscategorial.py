@@ -16,10 +16,11 @@ def derive_v_ciscategorial_fractures(
 ) -> Dict[str, object]:
     """Derive v-ciscategorial fracture spans from a filled ciscategorial TSV.
 
-    A position qualifies if elements have V-combines=y and all other params=n.
+    A position counts toward the span if elements have V-combines=y and all other
+    params=n.
 
-    Qualification rule (mirrors diagnostic_classes.yaml)
-    ----------------------------------------------------
+    Span rule (mirrors diagnostic_classes.yaml)
+    -------------------------------------------
     An element is v-ciscategorial if V-combines=y AND N-combines=n AND A-combines=n
     (and any further combine parameters are also n). A position is complete if ALL
     its elements are v-ciscategorial. A position is partial if AT LEAST ONE element
@@ -108,7 +109,7 @@ def format_result(result: Dict[str, object]) -> str:
     lines = []
     missing = result.get("missing_data", {})
     if missing:
-        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.")
+        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as outside the span.")
         for col, elements in missing.items():
             preview = elements[:5]
             suffix = f" … ({len(elements)} total)" if len(elements) > 5 else ""

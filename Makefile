@@ -10,7 +10,7 @@
         update-sheets update-sheets-apply \
         sync-params sync-params-apply \
         sync-diagnostics-yaml sync-diagnostics-yaml-apply \
-        sync-qualification-hashes sync-qualification-hashes-apply \
+        sync-span-rule-hashes sync-span-rule-hashes-apply \
         restructure-sheets restructure-sheets-apply \
         generate-notebooks generate-notebooks-apply \
         generate-reports generate-reports-apply \
@@ -34,8 +34,8 @@ help:
 	@echo "  sync-params-apply           Sync criterion columns"
 	@echo "  sync-diagnostics-yaml       Dry run: show YAML → TSV changes"
 	@echo "  sync-diagnostics-yaml-apply Regenerate TSVs from YAML source of truth"
-	@echo "  sync-qualification-hashes   Dry run: show stale qualification_rule_hash fields"
-	@echo "  sync-qualification-hashes-apply  Stamp hashes in diagnostic_classes.yaml"
+	@echo "  sync-span-rule-hashes       Dry run: show stale span_rule_hash fields"
+	@echo "  sync-span-rule-hashes-apply Stamp hashes in diagnostic_classes_status.yaml"
 	@echo "  restructure-sheets          Dry run: show restructure plan"
 	@echo "  restructure-sheets-apply    DESTRUCTIVE: archive + regenerate sheets"
 	@echo "  generate-notebooks          Dry run: show what would be generated"
@@ -46,7 +46,7 @@ help:
 	@echo "Health checks:"
 	@echo "  integrity-check             Full project health report"
 	@echo "  check-codebook              Criterion/module/diagnostics consistency"
-	@echo "  generate-rule-update-prompt Generate Claude prompt for stale qualification rules"
+	@echo "  generate-rule-update-prompt Generate Claude prompt for stale span rules"
 	@echo "  lookup-lang LANG=...        Fetch Glottolog metadata (e.g. make lookup-lang LANG=arao1248)"
 	@echo ""
 	@echo "Testing:"
@@ -98,11 +98,11 @@ sync-diagnostics-yaml:
 sync-diagnostics-yaml-apply:
 	python -m coding sync-diagnostics-yaml --apply
 
-sync-qualification-hashes:
-	python -m coding sync-qualification-hashes
+sync-span-rule-hashes:
+	python -m coding sync-span-rule-hashes
 
-sync-qualification-hashes-apply:
-	python -m coding sync-qualification-hashes --apply
+sync-span-rule-hashes-apply:
+	python -m coding sync-span-rule-hashes --apply
 
 # DESTRUCTIVE: archives existing sheets before regenerating.
 # For rename/element-rename: python -m coding restructure-sheets --rename-map ...

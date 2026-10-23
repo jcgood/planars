@@ -1,17 +1,17 @@
-"""Stamp qualification_rule_hash in diagnostic_classes_status.yaml.
+"""Stamp span_rule_hash in diagnostic_classes_status.yaml.
 
-The hash is SHA-256[:8] of the whitespace-normalised qualification_rule text.
+The hash is SHA-256[:8] of the whitespace-normalised span_rule text.
 Running this after Claude has updated a module records that the code has been
-verified against the current rule text. qualification_rule itself lives in
-diagnostic_classes.yaml (research); qualification_rule_hash lives in
+verified against the current rule text. span_rule itself lives in
+diagnostic_classes.yaml (research); span_rule_hash lives in
 diagnostic_classes_status.yaml (process/tracking) — split in Phase 3 of the
 data layer redesign (issue #271). This script reads the rule from one file
 and stamps the hash into the other.
 
 Usage:
-    python -m coding sync-qualification-hashes                       # dry run: show what would change
-    python -m coding sync-qualification-hashes --apply               # stamp all stale/missing hashes
-    python -m coding sync-qualification-hashes --apply --class metrical   # one class only
+    python -m coding sync-span-rule-hashes                       # dry run: show what would change
+    python -m coding sync-span-rule-hashes --apply               # stamp all stale/missing hashes
+    python -m coding sync-span-rule-hashes --apply --class metrical   # one class only
 """
 from __future__ import annotations
 
@@ -31,19 +31,19 @@ def _normalize(text: str) -> str:
     return " ".join(text.split())
 
 
-def _compute_hash(qualification_rule: str) -> str:
-    return hashlib.sha256(_normalize(qualification_rule).encode()).hexdigest()[:8]
+def _compute_hash(span_rule: str) -> str:
+    return hashlib.sha256(_normalize(span_rule).encode()).hexdigest()[:8]
 
 
 def _collect_wanted(target_class: str | None) -> dict[str, str]:
-    """Return {class_name: expected_hash} for all classes with a qualification_rule."""
+    """Return {class_name: expected_hash} for all classes with a span_rule."""
     data = yaml.safe_load(CLASSES_YAML.read_text(encoding="utf-8"))
     wanted: dict[str, str] = {}
     for cls in data.get("classes", []):
         name = cls.get("name", "")
         if target_class and name != target_class:
             continue
-        qr = cls.get("qualification_rule", "")
+        qr = cls.get("span_rule", "")
         if qr:
             wanted[name] = _compute_hash(qr)
     return wanted
@@ -55,16 +55,16 @@ def _current_hashes(target_class: str | None, wanted: dict[str, str]) -> dict[st
     by_name = {cls.get("name", ""): cls for cls in data.get("classes", [])}
     result: dict[str, str | None] = {}
     for name in wanted:
-        result[name] = by_name.get(name, {}).get("qualification_rule_hash")
+        result[name] = by_name.get(name, {}).get("span_rule_hash")
     return result
 
 
 def _apply_hashes(wanted: dict[str, str]) -> None:
     """Write hash updates to STATUS_YAML using text-level manipulation to preserve comments.
 
-    Unlike diagnostic_classes.yaml's old qualification_rule field,
-    qualification_rule_hash here is always a plain single-line scalar (never a
-    multi-line block). An existing `qualification_rule_hash:` line is updated
+    Unlike diagnostic_classes.yaml's span_rule field,
+    span_rule_hash here is always a plain single-line scalar (never a
+    multi-line block). An existing `span_rule_hash:` line is updated
     in place wherever it already sits in the class's field order; only a
     class missing the field entirely gets a new line, appended at the end of
     its block (just before the next class starts).
@@ -77,7 +77,7 @@ def _apply_hashes(wanted: dict[str, str]) -> None:
 
     def _flush_missing_hash():
         if current_class in wanted and not hash_written:
-            out.append(f'    qualification_rule_hash: "{wanted[current_class]}"\n')
+            out.append(f'    span_rule_hash: "{wanted[current_class]}"\n')
 
     i = 0
     while i < len(lines):
@@ -95,8 +95,8 @@ def _apply_hashes(wanted: dict[str, str]) -> None:
 
         if current_class and current_class in wanted:
             key = stripped.lstrip()
-            if key.startswith("qualification_rule_hash:") and line_indent == 4:
-                out.append(f'    qualification_rule_hash: "{wanted[current_class]}"\n')
+            if key.startswith("span_rule_hash:") and line_indent == 4:
+                out.append(f'    span_rule_hash: "{wanted[current_class]}"\n')
                 hash_written = True
                 i += 1
                 continue
@@ -109,9 +109,9 @@ def _apply_hashes(wanted: dict[str, str]) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the argument parser for `python -m coding sync-qualification-hashes`."""
+    """Build the argument parser for `python -m coding sync-span-rule-hashes`."""
     parser = argparse.ArgumentParser(
-        description="Stamp qualification_rule_hash in diagnostic_classes_status.yaml."
+        description="Stamp span_rule_hash in diagnostic_classes_status.yaml."
     )
     parser.add_argument(
         "--apply", action="store_true",
@@ -134,7 +134,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     stale = [(name, wanted[name], current.get(name)) for name in wanted if current.get(name) != wanted[name]]
 
     if not stale:
-        print("All qualification_rule_hash fields are up to date.")
+        print("All span_rule_hash fields are up to date.")
         sys.exit(0)
 
     for name, expected, cur in stale:

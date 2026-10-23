@@ -2,7 +2,7 @@
 
 ## Regression testing
 
-Snapshot tests verify that analysis output does not change unexpectedly. Snapshots live in `tests/snapshots/` and cover the `ciscategorial`, `subspanrepetition`, and `noninterruption` analyses across all filled TSVs in `coded_data/`. Other analyses do not yet have snapshot coverage.
+Snapshot tests verify that analysis output does not change unexpectedly. Snapshots live in `tests/snapshots/` and cover every analysis with a filled TSV in `coded_data/`: `generate_snapshots.py` builds its list of analyses from `_CLASS_HANDLERS` in `planars/reports.py`, so a newly registered analysis is covered without editing this page.
 
 ```bash
 python generate_snapshots.py   # regenerate baselines from current output
@@ -11,12 +11,7 @@ python check_snapshots.py      # verify current output matches baselines
 
 Run `check_snapshots.py` after any change to analysis logic in `planars/` before committing. If the change is intentional, regenerate the baselines with `generate_snapshots.py` and commit the updated snapshots alongside the code change.
 
-The snapshot runner covers these modules (changes to any of them should be verified):
-- `planars/ciscategorial.py`
-- `planars/subspanrepetition.py`
-- `planars/noninterruption.py`
-- `planars/spans.py`
-- `planars/io.py`
+The snapshots exercise every analysis module registered in `_CLASS_HANDLERS` (`planars/reports.py`) and the shared code they call, `planars/spans.py` and `planars/io.py`. A change to any of these should be verified with `check_snapshots.py`.
 
 ---
 

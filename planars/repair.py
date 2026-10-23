@@ -19,7 +19,7 @@ def derive_repair_domains(
 ) -> Dict[str, object]:
     """Derive repair domains from a filled repair TSV.
 
-    [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design and qualification rules were
+    [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design and span rules were
     automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 2
     (Cup'ik) §Repair domain. Verify before use for annotation or analysis.
 
@@ -39,11 +39,11 @@ def derive_repair_domains(
               domain. y = an error at this position triggers restart from
               the left edge of the domain.
 
-    Qualification rule (mirrors diagnostic_classes.yaml)
-    ----------------------------------------------------
-    A position qualifies if it contains an element where restart=y. Complete
-    qualification: ALL elements in the position have restart=y. Partial
-    qualification: at least one element has restart=y.
+    Span rule (mirrors diagnostic_classes.yaml)
+    -------------------------------------------
+    A position counts toward the span if it contains an element where restart=y.
+    Complete position: ALL elements in the position have restart=y. Partial
+    position: at least one element has restart=y.
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
     missing_data, complete_positions, partial_positions, and four span keys.
@@ -86,7 +86,7 @@ def format_result(result: Dict[str, object]) -> str:
     lines = []
     missing = result.get("missing_data", {})
     if missing:
-        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.")
+        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as outside the span.")
         for col, elements in missing.items():
             preview = elements[:5]
             suffix = f" … ({len(elements)} total)" if len(elements) > 5 else ""

@@ -298,25 +298,25 @@ Some criteria appear in more than one sheet. Currently:
 
 If noninterruption is updated after the free_occurrence sheet is generated, the two sheets can drift. `python -m coding integrity-check` includes a **CROSS-SHEET CONSISTENCY** section that compares `free` values and reports mismatches as warnings. A mismatch usually means noninterruption was corrected after free_occurrence was generated — update the free_occurrence sheet to match, or regenerate it.
 
-### Updating a qualification rule
+### Updating a span rule
 
-A **qualification rule** is the formal description of how span computations work for an analysis class — which criterion values cause a position to qualify, whether strict or loose spans are computed, and what blocking conditions apply. The rule text lives in `schemas/diagnostic_classes.yaml` under `qualification_rule:`, and the Python module in `planars/` must implement exactly that rule.
+A **span rule** is the formal description of how span computations work for an analysis class — which criterion values put a position inside the span, whether strict or loose spans are computed, and what blocking conditions apply. The rule text lives in `schemas/diagnostic_classes.yaml` under `span_rule:`, and the Python module in `planars/` must implement exactly that rule.
 
-To guard against the rule and code drifting apart, `schemas/diagnostic_classes_status.yaml` stores a `qualification_rule_hash` for each class — a short fingerprint of the rule text, kept in a separate file from the rule itself because it's process bookkeeping (when was this last reviewed), not a linguistic fact (see that file's own header for why). `check-codebook` (and CI) verify that the hash matches the current rule. If you edit the rule text without updating the hash, CI files a `codebook-error` issue.
+To guard against the rule and code drifting apart, `schemas/diagnostic_classes_status.yaml` stores a `span_rule_hash` for each class — a short fingerprint of the rule text, kept in a separate file from the rule itself because it's process bookkeeping (when was this last reviewed), not a linguistic fact (see that file's own header for why). `check-codebook` (and CI) verify that the hash matches the current rule. If you edit the rule text without updating the hash, CI files a `codebook-error` issue.
 
 #### How to recognize the error
 
 The `codebook-error` GitHub issue body will contain a line like:
 
 ```
-✗ [metrical] qualification_rule_hash mismatch: diagnostic_classes_status.yaml has "56e9aeb2"
-  but qualification_rule hashes to "a1b2c3d4" — the rule was edited without a module review
+✗ [metrical] span_rule_hash mismatch: diagnostic_classes_status.yaml has "56e9aeb2"
+  but span_rule hashes to "a1b2c3d4" — the rule was edited without a module review
   cycle; run: python -m coding generate-rule-update-prompt metrical
 ```
 
 #### The 7-step workflow
 
-1. Edit `qualification_rule` in `schemas/diagnostic_classes.yaml`.
+1. Edit `span_rule` in `schemas/diagnostic_classes.yaml`.
 2. `check-codebook` (CI or local) detects the hash mismatch → `codebook-error` issue filed.
    The issue body includes a ready-to-paste Claude prompt.
 3. Copy the Claude prompt from the issue and paste it into a Claude Code session.
@@ -324,7 +324,7 @@ The `codebook-error` GitHub issue body will contain a line like:
 5. Review the diff.
 6. Stamp the new hash:
    ```bash
-   python -m coding sync-qualification-hashes --apply --class {name}
+   python -m coding sync-span-rule-hashes --apply --class {name}
    ```
 7. `check-codebook` passes → `codebook-error` issue auto-closes.
 
@@ -332,7 +332,7 @@ Claude enters only at step 3, with all context pre-assembled. Steps 1, 2, 5–7 
 
 #### What "the hash" means
 
-`qualification_rule_hash` is a record that the Python module was verified against this exact rule text. It does **not** guarantee correctness — that is Claude's job in step 4. It guarantees that a human reviewed the change. Run `sync-qualification-hashes --apply` only after you are satisfied with the module diff.
+`span_rule_hash` is a record that the Python module was verified against this exact rule text. It does **not** guarantee correctness — that is Claude's job in step 4. It guarantees that a human reviewed the change. Run `sync-span-rule-hashes --apply` only after you are satisfied with the module diff.
 
 #### Generating a prompt manually
 
@@ -349,24 +349,41 @@ The prompt includes the current rule text, the current module source, and the ex
 
 Paste the generated prompt into Claude and ask it to explain what changed before making any edits. The prompt contains enough context for Claude to reason about the linguistic implications of the rule change.
 
-### Reviewing a rule with the domain expert
+### Reviewing a span rule with the domain expert
 
-The hash records that the code matches the rule. Whether the rule is *right* is a separate question, and only the domain expert (Adam, or an equivalent coordinator) can answer it. Until they do, the class's `status` in `schemas/diagnostic_classes_status.yaml` stays `[AUTO-DERIVED]` or `[NEEDS REVIEW]`. Each review happens in a GitHub issue, one class per issue, using a language whose annotation is complete enough to give real spans (English for now).
+The hash records that the code matches the span rule. Whether the span rule is *right* is a separate question, and only the domain expert (Adam, or an equivalent coordinator) can answer it. Until they do, the class's `status` in `schemas/diagnostic_classes_status.yaml` stays `[AUTO-DERIVED]` or `[NEEDS REVIEW]`.
 
-1. **Regenerate the spans** (`python generate_snapshots.py`) so they reflect today's data. The spans for the issue come from `tests/snapshots/{lang_id}_{class}_*.txt`.
-2. **Ask Claude to draft the issue.** Ask it to read the class's `qualification_rule`, its module, the language's TSVs and the snapshots, then write a short body with four parts:
-   - **The rule in plain words:** a few lines, in the terms the annotator used on the sheet.
-   - **What it gives:** the spans the expert's own answers produce, named by position.
-   - **Where the answers and the rule seem to disagree:** for example, a value the rule reads differently from what the annotator meant, or a Comments-cell question about the criterion. Each is a yes/no question, and each says what changes under either answer.
-   - **What to confirm:** the one-line reply that would promote the class.
+The expert works through the classes with their own Claude, using a language whose annotation is complete enough to give real spans. A tracking issue (labels `linguistics` and `needs-input`, assigned to the expert) holds the order, one checkbox per class, and the known questions for each. The expert and Claude agree the rule. The expert's Claude writes it into the YAML. The other coordinator's Claude then makes the code match. The steps below are written for the expert's Claude.
 
-   Keep it short (CLAUDE.md, "Keep anything an annotator reads short"). Title it `Rule review — {display name} [{class}]` and give it the labels `linguistics` and `needs-input`, mentioning the expert. Filing is a live write: read the draft before it is posted.
-3. **Act on the reply.**
-   - *Confirmed:* set `status: stable` in `diagnostic_classes_status.yaml`, citing the issue in the comment, and commit with `Closes #N`. Only a coordinator promotes a class, so the commit records their decision rather than Claude's.
-   - *Rule change:* edit `qualification_rule` and follow the 7-step workflow above. Then comment the new spans on the same issue and ask again.
-   - *Data correction:* the expert fixes the sheet. After the next import, regenerate the snapshots and comment the new spans.
+**For each class, in the issue's order:**
 
-Start with classes whose rule is short. Answers on one class often settle a question that several classes share, such as what `na` means to a span.
+1. **Get current.** Pull this repo and `coded_data/`, then run `python generate_snapshots.py`. The spans the rule gives today are in `tests/snapshots/{lang_id}_{class}_*.txt`.
+2. **Read** the following:
+   - the class's entry in `schemas/diagnostic_classes.yaml`: `span_rule`, criteria and applicability;
+   - its criteria in `schemas/diagnostic_criteria.yaml`;
+   - `schemas/terms.yaml`;
+   - the module docstring in `planars/{class}.py`;
+   - the language's TSVs in `coded_data/{lang_id}/{class}/`, including their Example and Comments columns;
+   - the snapshots;
+   - the issues the tracking issue names for that class.
+3. **Walk the expert through it** in plain words, a few lines at a time. Cover what the rule does now, what spans their answers give, and each place where the answers and the rule seem to disagree. Put each disagreement as a question, and say what changes under either answer. Where it helps, work out the spans an alternative would give with a scratch script, without changing the module.
+4. **Agree the rule.** It must say what every value a criterion can take does to the span: `y`, `n`, `both`, `na`, `?` and blank. No value may be left to a default (CLAUDE.md, "Explicit, not implicit"). It must also say how complete and partial positions and strict and loose spans are formed, where the class uses them. Use the words in `terms.yaml`. There are three possible outcomes:
+   - **Confirmed as is.** Comment that on the tracking issue and tick the box. The expert sets `status: stable` in `diagnostic_classes_status.yaml`, citing the issue. Only a coordinator promotes a class.
+   - **The rule changes.** Go to step 5.
+   - **The data was wrong.** The expert fixes the sheet. After the next daily import, regenerate the snapshots and look again.
+5. **Write it on a branch**, `span-rule/{class}`.
+   - Edit `span_rule` in `diagnostic_classes.yaml`. If a criterion's meaning turned out to be unclear, also edit its description in `diagnostic_criteria.yaml`.
+   - Change nothing else: not the module, not the hash, not `status`.
+   - Run `python -m coding check-codebook`. The only error should be that class's hash mismatch, which is the sign that the code hasn't caught up yet.
+6. **Open a pull request** titled `Span rule: {class}`, and comment the link on the tracking issue. Its body gives:
+   - the agreed rule in plain words;
+   - each decision and its reason;
+   - the spans the new rule should give for the language.
+
+   The test suite will fail on the hash until the code is updated. That is expected.
+7. **The other coordinator** reviews the pull request. They then follow the 7-step workflow above (module, docstring, tests, snapshots) on the same branch. They check that the spans match what the pull request said, stamp the hash and merge. The expert ticks the box and promotes the class.
+
+Answers on one class often settle a question several classes share, such as what `na` means to a span (#133). Record those on the shared issue as well, so later classes start from them.
 
 ---
 
@@ -374,7 +391,7 @@ Start with classes whose rule is short. Answers on one class often settle a ques
 
 When the diagnostic model changes — a new analysis class, a class renamed or retired, or criteria added or modified — the general sequence is:
 
-1. Edit `schemas/diagnostic_classes.yaml` (add the class, set required criteria, qualification rule, etc.)
+1. Edit `schemas/diagnostic_classes.yaml` (add the class, set required criteria, span rule, etc.)
 2. Scaffold or rename the analysis module in `planars/` if needed.
 3. Run `check-codebook` to verify consistency and get a ready-to-paste schema stub:
    ```bash
@@ -733,7 +750,7 @@ pytest                          # run all tests (I/O, restructure, snapshots)
 python check_snapshots.py       # quick CLI alternative for snapshot-only checks
 ```
 
-Snapshot baselines live in `tests/snapshots/`. When analysis output changes intentionally (e.g., after a qualification rule fix), regenerate the baselines and review the diff before committing:
+Snapshot baselines live in `tests/snapshots/`. When analysis output changes intentionally (e.g., after a span rule fix), regenerate the baselines and review the diff before committing:
 
 ```bash
 python generate_snapshots.py    # regenerate snapshot baselines

@@ -47,7 +47,7 @@ with one proposal sheet per language (unit 11), and hand edits to sources
 GitHub issues, the daily refresh as one command, dead code removed.
 
 **After Phase 10.** Phase 11, deferred and not yet designed: the research
-logic (qualification rules, span computation) written as a spec the code
+logic (span rules, span computation) written as a spec the code
 runs from, so it outlives Python.
 
 ## Update rules

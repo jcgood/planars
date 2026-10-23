@@ -14,28 +14,28 @@ def _resolve_path(filename: str) -> Path:
     return base / filename
 
 
-def _strict_span(qual_positions: Set[int], keystone_pos: int) -> Tuple[int, int]:
+def _strict_span(span_positions: Set[int], keystone_pos: int) -> Tuple[int, int]:
     """
     Contiguous (no gaps) expansion from keystone:
-      extend left while (pos-1) is qualifying
-      extend right while (pos+1) is qualifying
+      extend left while (pos-1) is in the span
+      extend right while (pos+1) is in the span
     """
     left = right = keystone_pos
-    while (left - 1) in qual_positions:
+    while (left - 1) in span_positions:
         left -= 1
-    while (right + 1) in qual_positions:
+    while (right + 1) in span_positions:
         right += 1
     return left, right
 
 
-def _loose_span(qual_positions: Set[int], keystone_pos: int) -> Tuple[int, int]:
+def _loose_span(span_positions: Set[int], keystone_pos: int) -> Tuple[int, int]:
     """
     Non-contiguous (gaps allowed) expansion from keystone:
-      extend to the farthest qualifying position on each side (if any),
-      regardless of intervening non-qualifying positions.
+      extend to the farthest in-span position on each side (if any),
+      regardless of intervening positions outside the span.
     """
-    left_candidates = [p for p in qual_positions if p < keystone_pos]
-    right_candidates = [p for p in qual_positions if p > keystone_pos]
+    left_candidates = [p for p in span_positions if p < keystone_pos]
+    right_candidates = [p for p in span_positions if p > keystone_pos]
     left = min(left_candidates) if left_candidates else keystone_pos
     right = max(right_candidates) if right_candidates else keystone_pos
     return left, right

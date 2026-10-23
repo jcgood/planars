@@ -10,8 +10,8 @@
 #     → see schemas/diagnostic_classes.yaml
 #   - Which diagnostic criteria are required or optional for each class
 #     → see schemas/diagnostic_classes.yaml (required_criteria / optional_criteria)
-#   - Qualification rules (how spans are computed from criterion values)
-#     → see schemas/diagnostic_classes.yaml (qualification_rule field)
+#   - Span rules (how spans are computed from criterion values)
+#     → see schemas/diagnostic_classes.yaml (span_rule field)
 #   - Definitions of span types and analytical terms (strict, loose, partial, complete)
 #     → see schemas/terms.yaml
 #   - Planar structure ontology (positions, elements, structural columns)
@@ -122,7 +122,7 @@ analyses:
       Tests which positions fall within a metrical or prosodic domain of the verbal
       planar structure. Dispatch-based module: blocked-span constructions (e.g.,
       stress_domain) use accented/obligatory/independence to derive domain boundaries;
-      positive-qualification constructions (e.g., pitch-accent domain, iambic foot
+      positive-evidence constructions (e.g., pitch-accent domain, iambic foot
       domain) use applies. One construction per TSV.
 
       Blocked-span criteria derive two domain types based on different notions of
@@ -134,7 +134,7 @@ analyses:
         description: >
           Whether the metrical process applies to this element's position.
           y = this position is within the domain of the metrical rule.
-          Used by positive-qualification constructions (e.g., pitch-accent domain,
+          Used by positive-evidence constructions (e.g., pitch-accent domain,
           iambic foot domain).
 
       - name: accented
@@ -208,7 +208,7 @@ analyses:
 
   - name: nonpermutability
     description: >
-      [AUTO-DERIVED: NEEDS REVIEW] Qualification rule redesigned Apr 2026 (issue #116)
+      [AUTO-DERIVED: NEEDS REVIEW] Span rule redesigned Apr 2026 (issue #116)
       to use a pair-row annotation model. The old per-element permutable/scopal
       column model has been replaced. Verify before use.
 
@@ -217,7 +217,7 @@ analyses:
       variably ordered (Option C enumeration from the planar structure). Annotators
       assess scopal for each pair. Strict non-permutability is derived from the planar
       structure, not annotated. Three span types result (strict, minimal flexible,
-      maximal flexible). See schemas/diagnostic_classes.yaml for the full qualification
+      maximal flexible). See schemas/diagnostic_classes.yaml for the full span
       rule and schemas/terms.yaml for span label definitions.
     diagnostic_criteria:
 
@@ -389,7 +389,7 @@ analyses:
 
   - name: repair
     description: >
-      [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design and qualification rules were
+      [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design and span rules were
       automatically derived from reading Tallman et al. 2024 (langsci/291), ch. 2
       (Cup'ik) §Repair domain. Verify before use.
 
@@ -494,7 +494,7 @@ analyses:
       aspiration_prominence) use one criterion (aspirated); multi-criterion chain
       constructions (e.g. flapping) use a directional set (flapping_left,
       flapping_internal, flapping_right). See construction_criteria in
-      diagnostics_{lang_id}.yaml and qualification_rule in diagnostic_classes.yaml.
+      diagnostics_{lang_id}.yaml and span_rule in diagnostic_classes.yaml.
     diagnostic_criteria:
       - name: aspirated
         values: [y, n, both, na]

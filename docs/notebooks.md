@@ -26,9 +26,9 @@ One notebook per language. Shows a domain chart for that language and per-constr
 The chart shows horizontal segments — one per analysis type — laid out on a shared position axis anchored at the keystone (`v:verbstem`). Each segment represents a span: how far a particular domain extends to the left and right of the keystone.
 
 The four span variants appear as distinct rows or colors within each analysis:
-- **Strict complete** — the domain defined only by positions where every element qualifies, with no gaps
-- **Strict partial** — the same, but a position qualifies if any element qualifies
-- **Loose complete** / **Loose partial** — as above, but gaps are allowed (extends to the farthest qualifying position on each side)
+- **Strict complete** — the domain defined only by positions where every element is in the span, with no gaps
+- **Strict partial** — the same, but a position counts if any element is in the span
+- **Loose complete** / **Loose partial** — as above, but gaps are allowed (extends to the farthest in-span position on each side)
 
 Longer segments mean broader domains. A strict span will always be contained within or equal to the corresponding loose span. See the [Analyses guide](analyses.md) for precise definitions of all span types.
 
@@ -81,7 +81,7 @@ The notebook is safe to run repeatedly — it clears all existing pink highlight
 The summary lists issues by construction tab, criterion column, and element. Common issue types:
 
 - **Unexpected value** — the cell contains a value not in the allowed list for that criterion (check for typos; use the dropdown)
-- **Blank cell** — the cell is empty; blank is treated as non-qualifying when spans are computed, and will appear as a warning on import
+- **Blank cell** — the cell is empty; blank is treated as outside the span when spans are computed, and will appear as a warning on import
 - **Keystone modified** — the `NA` in a keystone row was changed; restore it to `NA`
 
 Fix the flagged cells in the Google Sheet, then re-run the notebook to confirm the pink highlights are gone.

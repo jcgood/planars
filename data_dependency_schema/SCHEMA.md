@@ -2,7 +2,7 @@
 
 A small, machine-validatable pair of schemas for documenting planars' data-
 dependency graph: the same fact — a language's positional structure, which
-elements are in diagnostic scope, a qualification rule's semantics — often
+elements are in diagnostic scope, a span rule's semantics — often
 ends up recorded in more than one place: a live Google Sheet, a local TSV, a
 YAML schema file, a code comment, a Drive-ID manifest, even a GitHub issue's
 comment history. Nothing in the codebase writes down, in one place, which
@@ -80,7 +80,7 @@ inventing new terminology:
 | `schema_yaml` | One of the five project-wide `schemas/*.yaml` files (`diagnostic_classes`, `diagnostic_criteria`, `planar`, `terms`, `languages`) — hand-edited, normative, rarely regenerated. |
 | `derived_artifact` | Any regenerated, don't-hand-edit output: notebooks, PDF reports, rendered codebook markdown, `tests/snapshots/` baselines. |
 | `manifest` | `sheets_manifest.json` / `drive_config.json` — the Drive-ID bookkeeping registry mapping languages/classes to spreadsheet/folder/doc IDs. |
-| `code_comment` | A fact encoded as a docstring or inline comment in a `planars/*.py` or `coding/*.py` module — e.g. a qualification rule's prose description, whose sync with the schema is checked via a hash sentinel. |
+| `code_comment` | A fact encoded as a docstring or inline comment in a `planars/*.py` or `coding/*.py` module — e.g. a span rule's prose description, whose sync with the schema is checked via a hash sentinel. |
 | `github_issue` | A GitHub issue used as a durable coordination/state channel — per-language notification issues, `pending-changes` tracking, drift issues. The fact's truth value literally lives in the issue's open/closed state or comment history. |
 | `filename_convention` | A fact encoded implicitly in a naming pattern — e.g. a language ID inferred from `planar_{lang_id}.tsv`; an archive file's datestamp suffix encoding when it was superseded. |
 | `test_fixture` | A recorded copy of live state committed under `coded_data/.test_fixtures/` (in planars-data, private) for offline testing — e.g. `coded_data/.test_fixtures/drive_state/`, the raw capture of every annotation spreadsheet and the Drive manifest. Never authoritative: it is a snapshot, and its whole job is to be a faithful *stale* copy. Listed as an entity because a test asserting against a fixture that no longer resembles production is a silent failure of exactly the kind this registry exists to name. |
@@ -104,7 +104,7 @@ rather than folding into `derived_artifact`, because none of them are
 actually "rebuild-from-source" outputs the way a notebook or snapshot is. The
 manifest is a standalone pointer table nothing else can regenerate from
 scratch if lost. Code comments are *manually* kept in sync by design (that's
-the whole reason the qualification-rule hash sentinel exists). And a GitHub
+the whole reason the span-rule hash sentinel exists). And a GitHub
 issue's open/closed state and comment history don't mirror a fact recorded
 elsewhere — they *are* the fact, for anything durably tracked via an issue.
 

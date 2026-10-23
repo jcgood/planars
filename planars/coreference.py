@@ -150,7 +150,7 @@ def derive_coreference_domains(
 ) -> Dict[str, object]:
     """Derive binding domain spans from a filled coreference pair TSV.
 
-    [AUTO-DERIVED: NEEDS REVIEW] Qualification rules proposed in issue #163 (Apr 2026).
+    [AUTO-DERIVED: NEEDS REVIEW] Span rules proposed in issue #163 (Apr 2026).
     Coordinator linguistic sign-off required before promoting to stable.
 
     Data model: pair rows (Element_A, Position_A, Position_B, Direction,
@@ -159,8 +159,8 @@ def derive_coreference_domains(
     reflexive_allowed=y contribute to span computation. Rows with referential=n in the
     upstream prescreening sheet are excluded before pair rows are generated.
 
-    Qualification rule (mirrors diagnostic_classes.yaml)
-    -----------------------------------------------------
+    Span rule (mirrors diagnostic_classes.yaml)
+    -------------------------------------------
     Prescreening: elements are annotated referential=y (can participate as binder
     or bindee in this construction) or =n (cannot). Only referential elements generate pair rows.
 

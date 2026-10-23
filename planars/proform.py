@@ -26,27 +26,28 @@ def derive_proform_domains(
     by a proform (pro-verb, pro-VP, e.g. "do so"). Classified as a
     morphosyntactic domain type (Tallman et al. 2024).
 
-    Two-tier qualification rule
-    ---------------------------
-    shareable_proform_replace=y    → element strictly qualifies
-    shareable_proform_replace=both → element loosely qualifies (adjunct-style:
-                                     optionally inside or outside the "do so" span)
-    shareable_proform_replace=n    → element does not qualify
+    Two-tier span rule
+    ------------------
+    shareable_proform_replace=y    → element strictly counts toward the span
+    shareable_proform_replace=both → element loosely counts toward the span
+                                     (adjunct-style: optionally inside or outside
+                                     the "do so" span)
+    shareable_proform_replace=n    → element does not count toward the span
 
-    A position strictly qualifies (complete) when ALL elements = y.
-    A position loosely qualifies (partial) when ANY element = y or both.
+    A position strictly counts toward the span (complete) when ALL elements = y.
+    A position loosely counts toward the span (partial) when ANY element = y or both.
 
     Strict span uses complete positions; loose span uses partial positions
     (which subsumes complete).
 
     Four span variants (strict/loose × complete/partial) = 4 spans total.
 
-    Qualification rule (mirrors diagnostic_classes.yaml)
-    ----------------------------------------------------
-    Two-tier qualification. Strict (complete) qualification: ALL elements in the
-    position have shareable_proform_replace=y. Loose (partial) qualification: at
+    Span rule (mirrors diagnostic_classes.yaml)
+    -------------------------------------------
+    Two-tier span rule. Strict (complete) positions: ALL elements in the
+    position have shareable_proform_replace=y. Loose (partial) positions: at
     least one element has shareable_proform_replace=y or shareable_proform_replace=both.
-    Positions where all elements are n do not qualify. Strict span uses complete
+    Positions where all elements are n are outside the span. Strict span uses complete
     positions; loose span uses partial positions (which subsumes complete).
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
@@ -63,10 +64,10 @@ def derive_proform_domains(
         if blank_els:
             missing_data["shareable_proform_replace"] = blank_els
 
-    # Strict (complete) qualification: element always replaceable
+    # Strict (complete) positions: element always replaceable
     is_strong = data_df["shareable_proform_replace"] == "y"
 
-    # Loose (partial) qualification: element always or optionally replaceable
+    # Loose (partial) positions: element always or optionally replaceable
     is_weak = data_df["shareable_proform_replace"].isin(["y", "both"])
 
     _, complete_positions = position_sets_from_element_mask(data_df, is_strong)
@@ -93,7 +94,7 @@ def format_result(result: Dict[str, object]) -> str:
     lines = []
     missing = result.get("missing_data", {})
     if missing:
-        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.")
+        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as outside the span.")
         for col, elements in missing.items():
             preview = elements[:5]
             suffix = f" … ({len(elements)} total)" if len(elements) > 5 else ""

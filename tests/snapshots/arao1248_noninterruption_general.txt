@@ -1,7 +1,7 @@
 Araona Noninterruption General
 ==============================
 
-NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
+NOTE: Some cells are unannotated — spans computed treating blanks as outside the span.
   free: ['ADVERBIALS', 'INTERROGATIVES', 'NP{NP,PP,S}', 'dipa', 'pa'] … (72 total)
   multiple: ['ADVERBIALS', 'INTERROGATIVES', 'NP{NP,PP,S}', 'dipa', 'pa'] … (72 total)
 

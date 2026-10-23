@@ -5,10 +5,10 @@
 #   schemas/diagnostic_criteria.yaml  — diagnostic criteria (annotation columns):
 #                                        names, allowed values, linguistic definitions
 #   schemas/diagnostic_classes.yaml   — analysis class definitions, applicability,
-#                                        required/optional criteria, qualification rules
+#                                        required/optional criteria, span rules
 #   schemas/diagnostic_classes_status.yaml — process/tracking state for the same
 #                                        classes: review status, collection_required,
-#                                        sheet_instructions, qualification_rule_hash
+#                                        sheet_instructions, span_rule_hash
 #                                        (split out from diagnostic_classes.yaml in
 #                                        Phase 3 of the data layer redesign, issue #271)
 #   schemas/planar.yaml               — planar structure ontology: structural columns,

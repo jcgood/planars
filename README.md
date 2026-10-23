@@ -35,7 +35,7 @@ python -m venv .venv
 | [Testing](docs/testing.md) | Developers | Regression snapshot tests, synthetic test language (`synth0001`) |
 | [References](docs/references.md) | All users | Full bibliography in ULSS and BibTeX; how to cite the toolkit and individual language analyses |
 
-For diagnostic criterion definitions and qualification rules, see `schemas/diagnostic_criteria.yaml` and `schemas/diagnostic_classes.yaml`. For analytical term definitions, see `schemas/terms.yaml`.
+For diagnostic criterion definitions and span rules, see `schemas/diagnostic_criteria.yaml` and `schemas/diagnostic_classes.yaml`. For analytical term definitions, see `schemas/terms.yaml`.
 
 ---
 

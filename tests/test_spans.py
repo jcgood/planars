@@ -23,11 +23,11 @@ K = 5  # default keystone position
 # ---------------------------------------------------------------------------
 
 class TestStrictSpan:
-    def test_keystone_only_no_qualifiers(self):
+    def test_keystone_only_none_in_span(self):
         assert strict_span(set(), K) == (K, K)
 
-    def test_keystone_only_non_adjacent_qualifiers(self):
-        # Qualifiers exist but have a gap next to the keystone
+    def test_keystone_only_non_adjacent_in_span(self):
+        # In-span positions exist but have a gap next to the keystone
         assert strict_span({3, 8}, K) == (K, K)
 
     def test_expand_left_only(self):
@@ -40,15 +40,15 @@ class TestStrictSpan:
         assert strict_span({3, 4, 6, 7}, K) == (3, 7)
 
     def test_gap_stops_expansion(self):
-        # 4 qualifies but 3 doesn't → left stops at 4; 6 qualifies but 7 doesn't → right stops at 6
+        # 4 is in the span but 3 isn't → left stops at 4; 6 is in but 7 isn't → right stops at 6
         assert strict_span({4, 6}, K) == (4, 6)
 
     def test_gap_mid_left(self):
-        # 4 qualifies, 3 does not, 2 qualifies — stops at 4
+        # 4 is in, 3 is not, 2 is in — stops at 4
         assert strict_span({2, 4}, K) == (4, K)
 
     def test_gap_mid_right(self):
-        # 6 qualifies, 7 does not, 8 qualifies — stops at 6
+        # 6 is in, 7 is not, 8 is in — stops at 6
         assert strict_span({6, 8}, K) == (K, 6)
 
     def test_full_contiguous_range(self):
@@ -74,7 +74,7 @@ class TestStrictSpan:
 # ---------------------------------------------------------------------------
 
 class TestLooseSpan:
-    def test_keystone_only_no_qualifiers(self):
+    def test_keystone_only_none_in_span(self):
         assert loose_span(set(), K) == (K, K)
 
     def test_expand_right_only(self):
@@ -85,16 +85,16 @@ class TestLooseSpan:
 
     def test_gap_does_not_stop_expansion(self):
         # Unlike strict_span, a gap should not halt loose_span.
-        # Position 3 is absent (gap), but 2 qualifies → left edge is 2.
+        # Position 3 is absent (gap), but 2 is in the span → left edge is 2.
         assert loose_span({2, 4}, K) == (2, K)
 
     def test_gap_both_sides(self):
         assert loose_span({1, 4, 6, 9}, K) == (1, 9)
 
-    def test_single_qualifier_far_left(self):
+    def test_single_in_span_far_left(self):
         assert loose_span({1}, K) == (1, K)
 
-    def test_single_qualifier_far_right(self):
+    def test_single_in_span_far_right(self):
         assert loose_span({9}, K) == (K, 9)
 
     def test_loose_ge_strict_left(self):
@@ -195,14 +195,14 @@ def _make_df(pos_elements: dict[int, list[str]]) -> pd.DataFrame:
 
 
 class TestPositionSetsFromElementMask:
-    def test_all_qualify(self):
+    def test_all_in_span(self):
         df = _make_df({3: ["a", "b"], 4: ["c"], 6: ["d", "e"]})
         mask = pd.Series([True] * len(df), index=df.index)
         partial, complete = position_sets_from_element_mask(df, mask)
         assert partial == {3, 4, 6}
         assert complete == {3, 4, 6}
 
-    def test_none_qualify(self):
+    def test_none_in_span(self):
         df = _make_df({3: ["a", "b"], 4: ["c"]})
         mask = pd.Series([False] * len(df), index=df.index)
         partial, complete = position_sets_from_element_mask(df, mask)
@@ -210,21 +210,21 @@ class TestPositionSetsFromElementMask:
         assert complete == set()
 
     def test_partial_but_not_complete(self):
-        # Position 3 has elements a (qualifies) and b (does not)
+        # Position 3 has elements a (counts toward the span) and b (does not)
         df = _make_df({3: ["a", "b"]})
         mask = pd.Series([True, False], index=df.index)
         partial, complete = position_sets_from_element_mask(df, mask)
         assert 3 in partial
         assert 3 not in complete
 
-    def test_single_element_position_qualifies_both(self):
+    def test_single_element_position_in_span_both(self):
         df = _make_df({6: ["a"]})
         mask = pd.Series([True], index=df.index)
         partial, complete = position_sets_from_element_mask(df, mask)
         assert 6 in partial
         assert 6 in complete
 
-    def test_single_element_position_does_not_qualify(self):
+    def test_single_element_position_not_in_span(self):
         df = _make_df({6: ["a"]})
         mask = pd.Series([False], index=df.index)
         partial, complete = position_sets_from_element_mask(df, mask)
@@ -234,17 +234,17 @@ class TestPositionSetsFromElementMask:
     def test_complete_subset_of_partial(self):
         # complete positions must always be a subset of partial positions
         df = _make_df({3: ["a", "b"], 4: ["c", "d"], 6: ["e"]})
-        # Position 3: a qualifies, b doesn't → partial only
-        # Position 4: both qualify → complete
-        # Position 6: qualifies → complete
+        # Position 3: a counts, b doesn't → partial only
+        # Position 4: both count → complete
+        # Position 6: counts → complete
         mask = pd.Series([True, False, True, True, True], index=df.index)
         partial, complete = position_sets_from_element_mask(df, mask)
         assert complete.issubset(partial)
 
     def test_mixed_multi_element_positions(self):
         df = _make_df({3: ["a", "b", "c"], 4: ["d", "e"]})
-        # Position 3: only a qualifies → partial
-        # Position 4: both qualify → complete
+        # Position 3: only a counts → partial
+        # Position 4: both count → complete
         mask = pd.Series([True, False, False, True, True], index=df.index)
         partial, complete = position_sets_from_element_mask(df, mask)
         assert partial == {3, 4}

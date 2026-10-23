@@ -34,6 +34,6 @@ The coordinator is a scientist doing work that a well-funded project would distr
 
 ## What Claude's role is in this workflow
 
-Claude is part of the operational workflow, not just a coding assistant. The qualification-rule update workflow, schema audit sessions, and complex restructuring steps are all designed to hand off to Claude with full context pre-assembled by scripts. When implementing a new workflow step, consider whether the judgment-requiring part belongs in a generated Claude prompt rather than in coordinator documentation. Documentation that says "then decide X based on Y" is a candidate for a Claude handoff.
+Claude is part of the operational workflow, not just a coding assistant. The span-rule update workflow, schema audit sessions, and complex restructuring steps are all designed to hand off to Claude with full context pre-assembled by scripts. When implementing a new workflow step, consider whether the judgment-requiring part belongs in a generated Claude prompt rather than in coordinator documentation. Documentation that says "then decide X based on Y" is a candidate for a Claude handoff.
 
 When Claude makes a mistake in this domain — proposing a fix that looks correct at the code level but fails at the coordinator-experience level — it is usually because the analysis started from "what does this function do?" rather than "what does the coordinator see, and where can they be misled?" The checklist above is the corrective. Apply it before proposing, not after being corrected.

@@ -27,7 +27,7 @@ def derive_free_occurrence_spans(
 ) -> Dict[str, object]:
     """Derive free occurrence spans from a filled free_occurrence TSV.
 
-    Qualification rules designed in issue #99 (Apr 2026).
+    Span rules designed in issue #99 (Apr 2026).
 
     Data model: element rows with five criterion columns.
     free: pre-filled from noninterruption/general.tsv at sheet generation time.
@@ -36,8 +36,8 @@ def derive_free_occurrence_spans(
     free elements (free=y) receive na in all annotation columns. The keystone
     always has na in all annotation columns (it is the anchor, not a dependent).
 
-    Qualification rule (mirrors diagnostic_classes.yaml)
-    -----------------------------------------------------
+    Span rule (mirrors diagnostic_classes.yaml)
+    -------------------------------------------
     A position is free-occurrence-internal if ANY of the following hold:
       1. It is to the left of the anchor (keystone) and left-edge-of-free-form=y for
          at least one element.
@@ -152,7 +152,7 @@ def format_result(result: Dict[str, object]) -> str:
 
     missing = result.get("missing_data", {})
     if missing:
-        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.")
+        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as outside the span.")
         for col, elements in missing.items():
             preview = elements[:5]
             suffix = f" … ({len(elements)} total)" if len(elements) > 5 else ""

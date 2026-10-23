@@ -21,8 +21,8 @@ deviation type is derived from the form rows, never annotated.
 [AUTO-DERIVED: NEEDS REVIEW] Span definition and type rules designed with the
 coordinator on 2026-10-11 (#254); Adam's review required before promotion.
 
-Qualification rule (mirrors diagnostic_classes.yaml)
-----------------------------------------------------
+Span rule (mirrors diagnostic_classes.yaml)
+-------------------------------------------
 Each form row of morphs.tsv with occurs_here=y gets a deviation type, derived
 in this order: if its morpheme's forms_relation is co-occur, the type is
 extended_exponence; otherwise a row whose conditioning_type is phonological

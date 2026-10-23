@@ -42,11 +42,11 @@ def derive_pausing_domains(
                    pause domain. y = elements here cannot be separated from
                    adjacent positions by a prosodic pause.
 
-    Qualification rule (mirrors diagnostic_classes.yaml)
-    ----------------------------------------------------
-    A position qualifies if it contains an element where pause_domain=y.
-    Complete qualification: ALL elements in the position have pause_domain=y.
-    Partial qualification: at least one element has pause_domain=y.
+    Span rule (mirrors diagnostic_classes.yaml)
+    -------------------------------------------
+    A position counts toward the span if it contains an element where pause_domain=y.
+    Complete position: ALL elements in the position have pause_domain=y.
+    Partial position: at least one element has pause_domain=y.
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
     missing_data, complete_positions, partial_positions, and four span keys.
@@ -89,7 +89,7 @@ def format_result(result: Dict[str, object]) -> str:
     lines = []
     missing = result.get("missing_data", {})
     if missing:
-        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.")
+        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as outside the span.")
         for col, elements in missing.items():
             preview = elements[:5]
             suffix = f" … ({len(elements)} total)" if len(elements) > 5 else ""

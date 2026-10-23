@@ -4,11 +4,13 @@
 #   - Definitions of analytical terms used in span derivation: strict span, loose span,
 #     partial position, complete position, keystone, ciscategorial, etc.
 #   - Chart label glossary: short labels used in domain_chart() output (planars/charts.py)
+#   - Retired terms: words the project no longer uses and what replaced them
+#     (retired_terms, at the end of the file)
 #
 # THIS FILE IS NOT THE SOURCE OF TRUTH FOR:
 #   - Diagnostic criterion names, values, or linguistic definitions
 #     → see schemas/diagnostic_criteria.yaml
-#   - Which analysis classes exist or their qualification rules
+#   - Which analysis classes exist or their span rules
 #     → see schemas/diagnostic_classes.yaml
 #   - Planar structure column definitions or element conventions
 #     → see schemas/planar.yaml
@@ -44,28 +46,28 @@ terms:
       The semantic head of the planar structure — in a verbal planar structure, the
       verb root. Identified by Position_Name == "v:verbstem". Every planar structure
       has exactly one keystone position. It anchors all span computations but is
-      excluded from qualification tests.
+      never itself one of the positions tested against a span rule.
 
   - term: partial position
     definition: >
-      A position in which AT LEAST ONE element satisfies the qualification rule
+      A position in which AT LEAST ONE element satisfies the span rule
       for a given analysis. Partial positions define the widest possible span
       under that analysis.
 
   - term: complete position
     definition: >
-      A position in which ALL elements satisfy the qualification rule for a given
+      A position in which ALL elements satisfy the span rule for a given
       analysis. Complete positions define a more conservative span.
 
   - term: strict span
     definition: >
-      The contiguous range of qualifying positions anchored at the keystone.
-      Expansion stops at the first gap (non-qualifying position) on either side.
+      The contiguous range of in-span positions anchored at the keystone.
+      Expansion stops at the first gap (a position outside the span) on either side.
       Analogous to a minimal domain derived by positive evidence only.
 
   - term: loose span
     definition: >
-      The range from the farthest qualifying position on the left to the farthest
+      The range from the farthest in-span position on the left to the farthest
       on the right of the keystone, regardless of intervening gaps. Always >= the
       strict span. Analogous to a maximal domain.
 
@@ -379,3 +381,23 @@ span_label_map:
     binder_loose_span:  "reflex binder loose"
     bindee_strict_span: "reflex bindee strict"
     bindee_loose_span:  "reflex bindee loose"
+
+# ---------------------------------------------------------------------------
+# RETIRED TERMS
+# ---------------------------------------------------------------------------
+
+retired_terms:
+  # Words the project no longer uses, with what replaced them. tests/test_no_hidden_facts.py
+  # fails if one reappears outside the files listed in `kept_in` (dated history).
+  - pattern: "qualif"
+    replaced_by: "span rule (the rule); counts toward the span / outside the span (the verb)"
+    retired: 2026-10-22
+    why: >
+      "Qualify" misdescribed several classes (metrical's rule finds positions that block a
+      span; free_occurrence's follows dependencies on the stem), and nobody remembered why
+      it was chosen.
+    kept_in:
+      - docs/data-layer-progress.md
+      - docs/data-layer-implementation-plan.md
+      - NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md
+      - notebooks/archive/

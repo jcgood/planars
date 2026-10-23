@@ -53,7 +53,8 @@
        diagnostics_arao1248.yaml [proform]: notes
        → Edit the relevant schema file to resolve each entry.
          Promoting a module status out of [AUTO-DERIVED] requires coordinator
-         sign-off. See docs/coordinator-guide.md § 'Updating a qualification rule'.
+         sign-off. See docs/coordinator-guide.md § 'Reviewing a span rule
+         with the domain expert'.
 
 ════════════════════════════════════════════════════════════════════════
   ✓  All checks passed  ·  0 warning(s)

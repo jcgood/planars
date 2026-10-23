@@ -322,7 +322,7 @@ def build_schema_map_dot() -> str:
         "· class taxonomy (name, domain_type)",
         "· applicability (universal / conditional)",
         "· required + optional criteria per class",
-        "· qualification rules",
+        "· span rules",
         "· collection_required flag",
     ]))
     lines.append(_schema_node("dc_criteria", "diagnostic_criteria.yaml", [

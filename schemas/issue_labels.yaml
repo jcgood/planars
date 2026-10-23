@@ -26,7 +26,7 @@ labels:
 
   - name: diagnostics
     color: "0075ca"
-    description: "Module design, parameters, or qualification rules needing linguistic validation"
+    description: "Module design, parameters, or span rules needing linguistic validation"
     meaning: >-
       Requires linguistic validation from Adam before implementation. Also
       filed by `generate-sheets` when an element's prescreening value differs

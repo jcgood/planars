@@ -1,11 +1,11 @@
 """Generate a coordinator-facing Claude prompt for modules with stale or missing hashes.
 
-For each module whose qualification_rule_hash is absent or wrong, this script
+For each module whose span_rule_hash is absent or wrong, this script
 emits a ready-to-paste prompt that includes:
-  - the current qualification_rule text from diagnostic_classes.yaml
+  - the current span_rule text from diagnostic_classes.yaml
   - the current module source (or a note that the module does not exist yet)
   - explicit instructions (update logic, update docstring, run tests)
-  - the exact sync-qualification-hashes command to run after Claude is done
+  - the exact sync-span-rule-hashes command to run after Claude is done
 
 Usage:
     python -m coding generate-rule-update-prompt metrical   # one class
@@ -28,14 +28,14 @@ def _normalize(text: str) -> str:
     return " ".join(text.split())
 
 
-def _compute_hash(qualification_rule: str) -> str:
-    return hashlib.sha256(_normalize(qualification_rule).encode()).hexdigest()[:8]
+def _compute_hash(span_rule: str) -> str:
+    return hashlib.sha256(_normalize(span_rule).encode()).hexdigest()[:8]
 
 
 def _load_classes() -> list[dict]:
     """Return classes merged from diagnostic_classes.yaml and
     diagnostic_classes_status.yaml (via the shared cached loader), so
-    qualification_rule (research) and qualification_rule_hash (status) are
+    span_rule (research) and span_rule_hash (status) are
     both present on each entry."""
     return load_diagnostic_classes().get("classes", [])
 
@@ -49,17 +49,17 @@ def _module_source(name: str) -> str | None:
 
 
 def _stale_classes(target: str | None) -> list[dict]:
-    """Return class dicts whose qualification_rule_hash is missing or wrong."""
+    """Return class dicts whose span_rule_hash is missing or wrong."""
     stale = []
     for cls in _load_classes():
         name = cls.get("name", "")
         if target and name != target:
             continue
-        qr = cls.get("qualification_rule", "")
+        qr = cls.get("span_rule", "")
         if not qr:
             continue
         expected = _compute_hash(qr)
-        current = cls.get("qualification_rule_hash")
+        current = cls.get("span_rule_hash")
         if current != expected:
             stale.append(cls)
     return stale
@@ -68,12 +68,12 @@ def _stale_classes(target: str | None) -> list[dict]:
 def _generate_prompt(cls: dict) -> str:
     name = cls["name"]
     display = cls.get("display_name", name)
-    qr = cls["qualification_rule"].strip()
+    qr = cls["span_rule"].strip()
     source = _module_source(name)
-    sync_cmd = f"python -m coding sync-qualification-hashes --apply --class {name}"
+    sync_cmd = f"python -m coding sync-span-rule-hashes --apply --class {name}"
 
     lines = []
-    lines.append(f"# Qualification rule update: `{name}` ({display})")
+    lines.append(f"# Span rule update: `{name}` ({display})")
     lines.append("")
     lines.append("## Task")
     lines.append("")
@@ -81,11 +81,11 @@ def _generate_prompt(cls: dict) -> str:
     if source is None:
         lines.append(
             f"The analysis module `planars/{name}.py` does not exist yet. "
-            f"Write it from scratch to implement the qualification rule below."
+            f"Write it from scratch to implement the span rule below."
         )
     else:
         lines.append(
-            f"The qualification rule for `{name}` in `schemas/diagnostic_classes.yaml` "
+            f"The span rule for `{name}` in `schemas/diagnostic_classes.yaml` "
             f"has changed. Review and update `planars/{name}.py` to implement the new rule."
         )
 
@@ -101,14 +101,14 @@ def _generate_prompt(cls: dict) -> str:
             "(see `planars/ciscategorial.py` for the pattern)."
         )
         lines.append(
-            "3. Add a `Qualification rule (mirrors diagnostic_classes.yaml)` docstring "
+            "3. Add a `Span rule (mirrors diagnostic_classes.yaml)` docstring "
             "section containing the rule text verbatim."
         )
         lines.append("4. Run `pytest` to verify tests pass.")
     else:
-        lines.append("1. Update the module logic to match the new qualification rule.")
+        lines.append("1. Update the module logic to match the new span rule.")
         lines.append(
-            "2. Update the `Qualification rule (mirrors diagnostic_classes.yaml)` "
+            "2. Update the `Span rule (mirrors diagnostic_classes.yaml)` "
             "docstring section to contain the new rule text verbatim."
         )
         lines.append("3. Run `pytest` to verify tests pass.")
@@ -126,7 +126,7 @@ def _generate_prompt(cls: dict) -> str:
     lines.append("")
     lines.append("---")
     lines.append("")
-    lines.append("## Current qualification rule (from `schemas/diagnostic_classes.yaml`)")
+    lines.append("## Current span rule (from `schemas/diagnostic_classes.yaml`)")
     lines.append("")
     lines.append("```")
     lines.append(qr)
@@ -146,7 +146,7 @@ def _generate_prompt(cls: dict) -> str:
 def build_parser() -> argparse.ArgumentParser:
     """Build the argument parser for `python -m coding generate-rule-update-prompt`."""
     parser = argparse.ArgumentParser(
-        description="Generate coordinator-facing Claude prompts for stale qualification rules."
+        description="Generate coordinator-facing Claude prompts for stale span rules."
     )
     parser.add_argument(
         "class_name", nargs="?", metavar="CLASS",
@@ -163,9 +163,9 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     if not stale:
         if args.class_name:
-            print(f"[{args.class_name}] qualification_rule_hash is current — no prompt needed.")
+            print(f"[{args.class_name}] span_rule_hash is current — no prompt needed.")
         else:
-            print("All qualification_rule_hash fields are current — no prompts needed.")
+            print("All span_rule_hash fields are current — no prompts needed.")
         sys.exit(0)
 
     for cls in stale:

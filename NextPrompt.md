@@ -19,19 +19,17 @@ this project is trying to remove.
 
 Five live threads. Read whichever matches what you're picking up.
 
-### Thread: reviewing the qualification rules with Adam (Jeff told Adam, 2026-10-22)
+### Thread: reviewing the span rules with Adam (Jeff told Adam, 2026-10-22)
 
-The procedure is coordinator guide § "Reviewing a rule with the domain
-expert" (one issue per class). Classes awaiting review: the `status` values
-in `schemas/diagnostic_classes_status.yaml`. **Next action:** decide with Jeff
-how Adam works through the reviews (a to-do list and guidance; proposal in
-the 2026-10-22 session: assign each issue to him, a milestone, and a
-collaborator-guide section). Segmental goes first: its draft is
-`NonCollaborative/drafts/rule_review_segmental.md` (its `na` question is
-#133). Delete the draft once it is filed. free_occurrence comes after #318 (b), because its English answers
-use comma lists ("3,4") that the code reads as no dependency at all. When
-drafting it, also ask about *it* at npsubj1 (free=y but answered) and about
-the prefixes at 28/29 (right-edge=y although they sit left of the stem).
+Adam and his Claude agree each class's span rule. His Claude writes it into
+the YAML on a branch and opens a pull request. Our side then makes the code
+match, stamps the hash and merges. The procedure is coordinator guide
+§ "Reviewing a span rule with the domain expert". The order, the checkboxes
+and the known questions for each class are in the tracking issue "Span rules
+to review with Adam (English)". **Next action:** review each `Span rule: {class}`
+pull request as it arrives, following the 7-step workflow on its branch.
+Unblocking the later classes is #318 (b) for free_occurrence, and (c) and (d)
+for coreference.
 
 ### Thread: Adam's English coding requests (#318)
 
@@ -41,7 +39,7 @@ decisions, 2026-10-22). Approved, in order:
 proposal issue, Last review; the CLAUDE.md rule);
 (b) dependent-on-left/right take a `|`-separated list meaning "any one of
 these" (his § 3 gives the semantics and every place in the code; a
-qualification-rule change, so schema-work care, the module docstring and
+span-rule change, so schema-work care, the module docstring and
 snapshots);
 (c) pre-fill referential=y for `NP{…}` rows in coreference prescreening
 (not pronouns);

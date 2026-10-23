@@ -24,7 +24,7 @@ Terms (keystone, partial/complete positions, strict/loose spans) are defined
 in `schemas/terms.yaml`; each class's rule is in `schemas/diagnostic_classes.yaml`,
 summarised in `docs/analyses.md`.
 
-**It is a research project.** The schemas, qualification rules and models are
+**It is a research project.** The schemas, span rules and models are
 outputs of the research, not fixed inputs: annotation informs theory, which
 changes `schemas/`, which changes what gets annotated. Expect everything to be
 revised as more languages come in.
@@ -216,8 +216,8 @@ should make sense to someone who has never written a test.
   the fix, not as follow-up.
 - **Schema work is the most consequential work** (mistakes cascade across
   languages): go slow, run `integrity-check` and `check-codebook` after. A
-  qualification rule change also updates the module's docstring and comments —
-  coordinator guide § "Updating a qualification rule". A snapshot diff in a
+  span rule change also updates the module's docstring and comments —
+  coordinator guide § "Updating a span rule". A snapshot diff in a
   commit is the expected record of how a change altered spans; a snapshot
   failure on a PR means output changed without going through the hook.
 - **Retiring a class is `prune-manifest`; renaming is

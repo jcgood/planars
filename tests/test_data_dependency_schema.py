@@ -47,7 +47,7 @@ def test_facts_have_expected_ids():
         "planar_sheet_structure",
         "diagnostics_scope",
         "languages_metadata",
-        "qualification_rule_semantics",
+        "span_rule_semantics",
         "dependent_construction_element_scope",
         "sheet_change_notification_state",
         "collaborator_notes_surfaced_state",

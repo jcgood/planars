@@ -3,7 +3,7 @@
 # diagnostics_{lang_id}.tsv: what each class is, when it applies, and how it
 # derives spans. Process/tracking state for the same classes (review status,
 # whether collection is required, the sheet-facing instructions, the
-# qualification_rule integrity hash) lives in schemas/diagnostic_classes_status.yaml
+# span_rule integrity hash) lives in schemas/diagnostic_classes_status.yaml
 # instead — split out in Phase 3 of the data layer redesign (issue #271,
 # docs/data-layer-implementation-plan.md) because the two move at different
 # rates and a coordinator editing linguistic content had no way to touch it
@@ -17,7 +17,7 @@
 #   - When each class is applicable (universal vs. conditional)
 #   - Whether a class uses one general construction or is construction-specific
 #   - Which diagnostic criteria each class requires or allows
-#   - Qualification rules: how spans are computed from criterion values for each class
+#   - Span rules: how spans are computed from criterion values for each class
 #   - Known construction types (non-exhaustive examples for variable classes)
 #
 # THIS FILE IS NOT THE SOURCE OF TRUTH FOR:
@@ -30,12 +30,12 @@
 #   - Per-language instances of these classes
 #     → see coded_data/{lang_id}/lang_setup/diagnostics_{lang_id}.tsv
 #   - Review status, collection requirement, sheet instructions, or the
-#     qualification_rule_hash integrity check for these classes
+#     span_rule_hash integrity check for these classes
 #     → see schemas/diagnostic_classes_status.yaml
 #
 # Relationship to other files:
 #   schemas/diagnostic_criteria.yaml       — diagnostic criterion semantics and allowed values
-#   schemas/diagnostic_classes.yaml (this) — class structure, applicability, qualification rules
+#   schemas/diagnostic_classes.yaml (this) — class structure, applicability, span rules
 #   schemas/diagnostic_classes_status.yaml — process/tracking state for the same classes
 #   schemas/planar.yaml                    — planar structure ontology (positions, elements, columns)
 #   schemas/terms.yaml                     — analytical vocabulary (strict/loose span, partial/complete)
@@ -127,7 +127,7 @@
 #                            has one tab, named "general".
 #
 # Process/tracking fields that used to live on these same records — status,
-# criterion_set_status, collection_required, qualification_rule_hash,
+# criterion_set_status, collection_required, span_rule_hash,
 # sheet_instructions, include_planar_reference_tab — moved to
 # schemas/diagnostic_classes_status.yaml; see that file's own header for field
 # docs. A class's two-stage sheet workflow is documented in two places as a
@@ -159,7 +159,7 @@ classes:
     required_criteria: [V-combines, N-combines, A-combines]
     optional_criteria: [PRED-combines]  # predicate-flexible languages (e.g., Araona,
       # Chorote ch. 15) where non-verbal predicates take verbal TAME markers — issue #39.
-    qualification_rule: >
+    span_rule: >
       An element is v-ciscategorial if V-combines=y AND N-combines=n AND A-combines=n
       (and any further combine parameters are also n).
       A position is complete if ALL its elements are v-ciscategorial.
@@ -217,7 +217,7 @@ classes:
       - serial verb construction       # verb serialization; e.g., Hup
     required_criteria: [widescope_left, widescope_right, fillable_botheither_conjunct]
     optional_criteria: []
-    qualification_rule: >
+    span_rule: >
       Five span categories are derived:
         maximum_fillable:          fillable_botheither_conjunct=y
         maximum_widescope_left:    widescope_left=y
@@ -239,10 +239,10 @@ classes:
     specificity: general
     required_criteria: [free, multiple]
     optional_criteria: []
-    qualification_rule: >
+    span_rule: >
       Two domain types, each with complete and partial position sets:
-        no-free domain:     element qualifies if free=n (bound).
-        single-free domain: element qualifies if free=n OR (free=y AND multiple=n).
+        no-free domain:     element counts toward the span if free=n (bound).
+        single-free domain: element counts toward the span if free=n OR (free=y AND multiple=n).
       Only strict spans are computed for non-interruption (no loose span).
     keystone_active_default: false
 
@@ -277,18 +277,20 @@ classes:
     keystone_active_default: true
     required_criteria: [scopal]
     optional_criteria: []
-    qualification_rule: >
+    span_rule: >
       Three span types (all strict — non-permutability domains are inherently
-      contiguous). Qualification is evaluated per-position w.r.t. the keystone anchor.
+      contiguous). Whether a position counts toward the span is decided per-position
+      w.r.t. the keystone anchor.
 
       STRICT NON-PERMUTABLE SPAN (structurally derived; no annotation required):
-        A position qualifies iff:
+        A position counts toward the span iff:
           (1) It is a Slot (Zones are always excluded).
           (2) All elements at that position appear in only one position in the planar
               (multi-slot elements have structurally variable order, so they cannot
               anchor a strictly fixed chain).
-        The span is the largest contiguous chain of qualifying positions from the
-        keystone outward; the first gap or non-qualifying position halts expansion.
+        The span is the largest contiguous chain of positions that count toward the
+        span, from the keystone outward; the first gap or position outside the span
+        halts expansion.
 
       FREE-PERMUTABLE POSITION (blocking condition; derived from annotation):
         A position is free-permutable if ANY element at that position appears in a
@@ -358,7 +360,7 @@ classes:
         criterion: np_allowed
     required_criteria: [reflexive_allowed]
     optional_criteria: [pronoun_allowed, np_allowed]
-    qualification_rule: >
+    span_rule: >
       Prescreening: elements are annotated referential=y (can participate as binder
       or bindee in this construction) or =n (cannot). Only referential elements generate pair rows.
 
@@ -404,7 +406,7 @@ classes:
     # All annotation columns (left-edge-of-free-form, right-edge-of-free-form,
     # dependent-on-left, dependent-on-right) apply to bound elements (free=n) only;
     # free elements (free=y) receive na in all annotation columns. See issue #99.
-    qualification_rule: >
+    span_rule: >
       A position is free-occurrence-internal if ANY of the following hold:
         1. It is to the left of the anchor (keystone) and left-edge-of-free-form=y for
            at least one element.
@@ -442,11 +444,11 @@ classes:
     required_criteria: [shareable_proform_replace]
     optional_criteria: []
     known_constructions: [do_so_substitution, vp_ellipsis]
-    qualification_rule: >
-      Two-tier qualification. Strict (complete) qualification: ALL elements in the
-      position have shareable_proform_replace=y. Loose (partial) qualification: at
+    span_rule: >
+      Two-tier span rule. Strict (complete) positions: ALL elements in the
+      position have shareable_proform_replace=y. Loose (partial) positions: at
       least one element has shareable_proform_replace=y or shareable_proform_replace=both.
-      Positions where all elements are n do not qualify. Strict span uses complete
+      Positions where all elements are n are outside the span. Strict span uses complete
       positions; loose span uses partial positions (which subsumes complete).
     keystone_active_default: false
 
@@ -465,9 +467,9 @@ classes:
       - verb-affix collocation
     required_criteria: [idiomatic]
     optional_criteria: []
-    qualification_rule: >
-      A position qualifies if it contains an element where idiomatic=y. Complete
-      qualification: ALL elements have idiomatic=y. Partial qualification: at
+    span_rule: >
+      A position counts toward the span if it contains an element where idiomatic=y.
+      Complete position: ALL elements have idiomatic=y. Partial position: at
       least one element has idiomatic=y.
     keystone_active_default: false
 
@@ -560,7 +562,7 @@ classes:
     optional_criteria: [has_allomorphs, members, co_exponents, morpheme_class,
                         forms_relation, occurs_here, conditioning_type,
                         conditioning_features, conditioned_by, trigger_filled]
-    qualification_rule: >
+    span_rule: >
       Each form row of morphs.tsv with occurs_here=y gets a deviation type, derived
       in this order: if its morpheme's forms_relation is co-occur, the type is
       extended_exponence; otherwise a row whose conditioning_type is phonological
@@ -593,10 +595,10 @@ classes:
     specificity: general
     required_criteria: [restart]
     optional_criteria: []
-    qualification_rule: >
-      A position qualifies if it contains an element where restart=y. Complete
-      qualification: ALL elements in the position have restart=y. Partial
-      qualification: at least one element has restart=y.
+    span_rule: >
+      A position counts toward the span if it contains an element where restart=y.
+      Complete position: ALL elements in the position have restart=y. Partial
+      position: at least one element has restart=y.
     keystone_active_default: "[NEEDS REVIEW]"  # Unclear whether the verbstem participates
       # in repair/restart behavior. Treat as false until Adam resolves.
 
@@ -615,7 +617,7 @@ classes:
       - stress_domain          # boundary-defined stress domain; e.g., English, stan1293
     required_criteria: [accented, obligatory, independence]
     optional_criteria: [left-interaction, right-interaction]
-    qualification_rule: >
+    span_rule: >
       Blocked-span path (accented/obligatory/independence criteria):
         Expand from keystone in each direction, stopping just before the first
         position where the blocking condition holds.
@@ -693,7 +695,7 @@ classes:
     reads_from:
       obligatory_core: {class: free_occurrence, construction: general,
                         criteria: [free, dependent-on-left, dependent-on-right]}
-    qualification_rule: >
+    span_rule: >
       [DEFERRED — issue #237] Domain/span derivation from joint_accent pairwise data
       has not been decided yet; the coordinator wants the coding scheme validated
       against real data first. No spans are computed by this class until a derivation
@@ -702,7 +704,7 @@ classes:
       would just be thrown away or risk becoming a silently-wrong default.
     keystone_active_default: true  # Mirrors metrical: the verbstem has real
       # accentuation properties that plausibly participate in phrasal grouping.
-      # Tentative pending the deferred qualification rule.
+      # Tentative pending the deferred span rule.
 
   - name: segmental
     display_name: "Segmental"
@@ -751,27 +753,27 @@ classes:
     # are listed in optional_criteria so check-codebook can validate them when present.
     required_criteria: []
     optional_criteria: [aspirated, flapping_left, flapping_internal, flapping_right]
-    qualification_rule: >
-      Construction-specific positive-qualification path:
+    span_rule: >
+      Construction-specific positive-evidence path:
 
         Each construction declares its own criteria via construction_criteria in
-        diagnostics_{lang_id}.yaml. An element qualifies when ALL of its
+        diagnostics_{lang_id}.yaml. An element counts toward the span when ALL of its
         construction's criteria are in {y, both}:
 
         Single-criterion constructions (e.g. aspiration_prominence):
-          aspirated ∈ {y, both} → element qualifies.
+          aspirated ∈ {y, both} → element counts toward the span.
 
         Multi-criterion chain constructions (e.g. flapping):
           ALL of flapping_left, flapping_internal, flapping_right ∈ {y, both}
-          → element qualifies (the flapping chain is unbroken at this element).
-          n or na at any criterion breaks the chain.
+          → element counts toward the span (the flapping chain is unbroken at this
+          element). n or na at any criterion breaks the chain.
 
-        both counts as qualifying in all cases: it indicates variable application
+        both counts toward the span in all cases: it indicates variable application
         of the process. The strong/weak distinction (y-only vs y/both) is latent
         in the annotation data and can be derived analytically.
 
-        Complete: ALL elements in the position qualify.
-        Partial: at least one element qualifies.
+        Complete: ALL elements in the position count toward the span.
+        Partial: at least one element counts toward the span.
         Returns four spans (strict/loose × complete/partial).
     keystone_active_default: true  # Adam confirmed 2026-04-17: the verbstem's
                                    # segmental properties are real data, and no
@@ -798,10 +800,10 @@ classes:
       - H3-assignment domain      # e.g., Cherokee: pos. 5/7-21
     required_criteria: [applies]
     optional_criteria: []
-    qualification_rule: >
-      A position qualifies if it contains an element where applies=y. Complete
-      qualification: ALL elements in the position have applies=y. Partial
-      qualification: at least one element has applies=y. Returns four spans
+    span_rule: >
+      A position counts toward the span if it contains an element where applies=y.
+      Complete position: ALL elements in the position have applies=y. Partial
+      position: at least one element has applies=y. Returns four spans
       (strict/loose × complete/partial).
     keystone_active_default: "[NEEDS REVIEW]"
 
@@ -824,10 +826,10 @@ classes:
       - superhigh-assignment domain  # e.g., Cherokee: pos. 5/7-22
     required_criteria: [applies]
     optional_criteria: []
-    qualification_rule: >
-      A position qualifies if it contains an element where applies=y. Complete
-      qualification: ALL elements in the position have applies=y. Partial
-      qualification: at least one element has applies=y. Returns four spans
+    span_rule: >
+      A position counts toward the span if it contains an element where applies=y.
+      Complete position: ALL elements in the position have applies=y. Partial
+      position: at least one element has applies=y. Returns four spans
       (strict/loose × complete/partial).
     keystone_active_default: "[NEEDS REVIEW]"
 
@@ -846,10 +848,10 @@ classes:
     known_constructions: []
     required_criteria: [applies]
     optional_criteria: []
-    qualification_rule: >
-      A position qualifies if it contains an element where applies=y. Complete
-      qualification: ALL elements in the position have applies=y. Partial
-      qualification: at least one element has applies=y. Returns four spans
+    span_rule: >
+      A position counts toward the span if it contains an element where applies=y.
+      Complete position: ALL elements in the position have applies=y. Partial
+      position: at least one element has applies=y. Returns four spans
       (strict/loose × complete/partial).
     keystone_active_default: "[NEEDS REVIEW]"
 
@@ -866,10 +868,10 @@ classes:
     specificity: general
     required_criteria: [pause_domain]
     optional_criteria: []
-    qualification_rule: >
-      A position qualifies if it contains an element where pause_domain=y.
-      Complete qualification: ALL elements in the position have pause_domain=y.
-      Partial qualification: at least one element has pause_domain=y.
+    span_rule: >
+      A position counts toward the span if it contains an element where pause_domain=y.
+      Complete position: ALL elements in the position have pause_domain=y.
+      Partial position: at least one element has pause_domain=y.
     keystone_active_default: "[NEEDS REVIEW]"
 
   - name: play_language
@@ -892,8 +894,8 @@ classes:
                                         # compound verb stems each transpose independently
     required_criteria: [applies]
     optional_criteria: []
-    qualification_rule: >
-      A position qualifies if it contains an element where applies=y. Complete
-      qualification: ALL elements have applies=y. Partial qualification: at
+    span_rule: >
+      A position counts toward the span if it contains an element where applies=y.
+      Complete position: ALL elements have applies=y. Partial position: at
       least one element has applies=y.
     keystone_active_default: "[NEEDS REVIEW]"

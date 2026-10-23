@@ -1,7 +1,7 @@
 Synth0001 Ciscategorial General
 ===============================
 
-NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
+NOTE: Some cells are unannotated — spans computed treating blanks as outside the span.
   V-combines: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (141 total)
   N-combines: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (141 total)
   A-combines: ['also', 'and', 'CONJUNCT', 'then', 'NP{S,A,P}'] … (141 total)

@@ -2,8 +2,8 @@
 
 This document describes the span types computed by planars, the available analysis modules, and their status. Five YAML files in `schemas/` govern the analysis framework:
 
-- **`schemas/diagnostic_classes.yaml`** — the normative schema for analysis classes: which classes exist, when each applies (universal vs. conditional), construction-specific variants, required diagnostic criteria, qualification rules, and known construction types. See [The diagnostic classes schema](#the-diagnostic-classes-schema) below.
-- **`schemas/diagnostic_classes_status.yaml`** — process/tracking state for the same classes (review status, whether collection is required, sheet instructions, the qualification-rule integrity hash), split out from `diagnostic_classes.yaml` in Phase 3 of the data layer redesign (issue #271) because the two move at different rates. `coding/schemas.py`'s `load_diagnostic_classes()` merges the two back into one dict per class at read time.
+- **`schemas/diagnostic_classes.yaml`** — the normative schema for analysis classes: which classes exist, when each applies (universal vs. conditional), construction-specific variants, required diagnostic criteria, span rules, and known construction types. See [The diagnostic classes schema](#the-diagnostic-classes-schema) below.
+- **`schemas/diagnostic_classes_status.yaml`** — process/tracking state for the same classes (review status, whether collection is required, sheet instructions, the span-rule integrity hash), split out from `diagnostic_classes.yaml` in Phase 3 of the data layer redesign (issue #271) because the two move at different rates. `coding/schemas.py`'s `load_diagnostic_classes()` merges the two back into one dict per class at read time.
 - **`schemas/diagnostic_criteria.yaml`** — the authoritative reference for diagnostic criterion semantics, allowed values, and linguistic definitions. See [The diagnostic criteria schema](#the-diagnostic-criteria-schema) below.
 - **`schemas/terms.yaml`** — definitions of analytical terms (strict/loose span, partial/complete position, keystone, etc.) and chart label glossary.
 - **`schemas/planar.yaml`** — planar structure ontology: structural columns, element conventions, and label standards.
@@ -26,9 +26,9 @@ Each entry contains:
 | `specificity` | `general` (one TSV per language) or `construction_specific` (one TSV per construction) |
 | `known_constructions` | Non-exhaustive examples for construction-specific classes |
 | `required_criteria` | Diagnostic criterion columns that must appear in `diagnostics_{lang_id}.tsv` |
-| `qualification_rule` | How the code decides whether a position qualifies — complete vs. partial, blocking conditions, etc. |
+| `span_rule` | How the code decides which positions are inside the span — complete vs. partial, blocking conditions, etc. |
 
-`schemas/diagnostic_classes_status.yaml` carries each class's `status` (`stable`, `[NEEDS REVIEW]`, `[PLACEHOLDER]`, or `[AUTO-DERIVED]`), `criterion_set_status`, `collection_required`, `qualification_rule_hash`, `sheet_instructions`, and `include_planar_reference_tab` — see that file's own header for field docs.
+`schemas/diagnostic_classes_status.yaml` carries each class's `status` (`stable`, `[NEEDS REVIEW]`, `[PLACEHOLDER]`, or `[AUTO-DERIVED]`), `criterion_set_status`, `collection_required`, `span_rule_hash`, `sheet_instructions`, and `include_planar_reference_tab` — see that file's own header for field docs.
 
 ### Human-editable workflow
 
@@ -70,7 +70,7 @@ python render_codebook.py codebook.md  # write to a file
 
 Entries in the `analyses` section may carry one of these markers in their `description`:
 
-- **`[NEEDS REVIEW]`** — the rule was designed by a human but is provisional; specific criteria are flagged as uncertain (currently: aspiration qualification rules; `left-interaction` and `right-interaction` in stress).
+- **`[NEEDS REVIEW]`** — the rule was designed by a human but is provisional; specific criteria are flagged as uncertain (currently: aspiration span rules; `left-interaction` and `right-interaction` in stress).
 - **`[AUTO-DERIVED: NEEDS REVIEW]`** — the diagnostic criterion design was derived by reading Tallman et al. 2024 without reviewing concrete language data for that analysis. Treat as a draft. See the [analyses table](#analysis-modules) below for which modules carry this flag and their data sources.
 - **`[PLACEHOLDER]`** — the entry exists but has not been written yet. Do not use for annotation.
 
@@ -78,15 +78,15 @@ Entries in the `analyses` section may carry one of these markers in their `descr
 
 ## Span types
 
-All analyses produce results using a common framework. A **position** qualifies if its elements meet the analysis-specific condition. Two thresholds are defined:
+All analyses produce results using a common framework. A **position** counts toward the span if its elements meet the analysis-specific condition. Two thresholds are defined:
 
-- **Complete**: ALL elements in the position qualify
-- **Partial**: AT LEAST ONE element qualifies
+- **Complete**: ALL elements in the position meet the condition
+- **Partial**: AT LEAST ONE element meets the condition
 
 Two span geometries are defined, anchored at the **keystone position** (`v:verbstem`):
 
 - **Strict**: Contiguous expansion from the keystone — stops at the first gap
-- **Loose**: Extends to the farthest qualifying position on each side, regardless of gaps
+- **Loose**: Extends to the farthest in-span position on each side, regardless of gaps
 
 This gives four span variants per analysis:
 
@@ -106,7 +106,7 @@ Some analyses (stress, aspiration) use a **blocked span** instead: expand from t
 | `ciscategorial` | `V-combines`, `N-combines`, `A-combines` | 4 (strict/loose × complete/partial) | stable |
 | `subspanrepetition` | `widescope_left`, `widescope_right`, `fillable_botheither_conjunct` | 20 (5 categories × 4) | stable |
 | `noninterruption` | `free`, `multiple` | 4 strict spans (2 domain types × complete/partial) | stable |
-| `metrical` | `accented`, `obligatory`, `independence`, `left-interaction`, `right-interaction` (blocked-span); `applies` (positive-qual) | 4 (2 domain types × complete/partial) | stable † |
+| `metrical` | `accented`, `obligatory`, `independence`, `left-interaction`, `right-interaction` (blocked-span); `applies` (positive-evidence) | 4 (2 domain types × complete/partial) | stable † |
 | `nonpermutability` | `scopal` (pair-level) | 3 spans (strict, minimal flexible, maximal flexible) | [AUTO-DERIVED] ‡ |
 | `coreference` | `referential` (prescreening); `reflexive_allowed`, `pronoun_allowed`, `np_allowed` (pair-level, per construction) | 4 spans per construction (binder strict/loose + bindee strict/loose) | [AUTO-DERIVED: NEEDS REVIEW] § |
 | `free_occurrence` | `free`, `left-edge-of-free-form`, `right-edge-of-free-form`, `dependent-on-left`, `dependent-on-right` | 2 spans (minimal, maximal) | [AUTO-DERIVED] |
@@ -129,7 +129,7 @@ Some analyses (stress, aspiration) use a **blocked span** instead: expand from t
 
 ¶ Not included in the langsci/291 published database (ch. 17, line 543). Prospective class.
 
-§ Qualification rules proposed Apr 2026 (issue #163). Coordinator linguistic sign-off required before promoting to stable.
+§ Span rules proposed Apr 2026 (issue #163). Coordinator linguistic sign-off required before promoting to stable.
 
 ---
 
@@ -207,13 +207,13 @@ Annotate `prescreening` before generating pair sheets; `--regen-construction cor
 
 Tests which spans can be replaced by a proform (pro-verb/pro-VP, e.g. "do so"). Two constructions: `do_so_substitution` and `vp_ellipsis` (same logic, same criterion `shareable_proform_replace`).
 
-**Two-tier qualification rule** — `shareable_proform_replace` takes three values:
+**Two-tier span rule** — `shareable_proform_replace` takes three values:
 
-- `y` — element is always inside the proform span (strictly qualifies)
-- `both` — element is optionally inside the span (adjunct-style; loosely qualifies)
+- `y` — element is always inside the proform span (counts toward the strict span)
+- `both` — element is optionally inside the span (adjunct-style; counts toward the loose span)
 - `n` — element is never inside the span
 
-A position **strictly qualifies** (complete) when ALL elements = `y`. A position **loosely qualifies** (partial) when ANY element = `y` or `both`. Standard strict/loose × complete/partial span computation then applies on top:
+A position is **strictly in span** (complete) when ALL elements = `y`. A position is **loosely in span** (partial) when ANY element = `y` or `both`. Standard strict/loose × complete/partial span computation then applies on top:
 
 - **Strict complete span** — contiguous from keystone through positions where all elements = `y` (Adam's "strict replaceable" span)
 - **Loose partial span** — farthest position on each side where any element = `y` or `both` (Adam's "loose replaceable" span)

@@ -34,8 +34,8 @@ def _make_data(criteria: list[str], all_y: bool = True) -> tuple:
     """Build a minimal synthetic _data 5-tuple for the given criterion columns.
 
     Two non-keystone positions (4 and 6) with one element each.  All criteria
-    are set to "y" (or "n" depending on all_y) so qualification logic runs
-    through at least one qualifying path.  strict=False is always used so blank
+    are set to "y" (or "n" depending on all_y) so span logic runs
+    through at least one path where positions count toward the span.  strict=False is always used so blank
     values don't trigger validation errors.
     """
     value = "y" if all_y else "n"
@@ -179,7 +179,7 @@ class TestSmokeModule:
         assert out.strip()
 
     def test_all_n_does_not_raise(self, mod_name, fn_name, criteria, span_keys):
-        # All criteria set to "n" → qualification logic runs the zero-qualifying path.
+        # All criteria set to "n" → span logic runs the nothing-in-span path.
         result, _ = self._derive(mod_name, fn_name, criteria, all_y=False)
         assert isinstance(result, dict)
 

@@ -256,16 +256,16 @@ detect pair-row staleness). The second function's own docstring states the
 relationship explicitly: *"An element is expected if it would be included
 in at least one pair by `_build_nonperm_pairs`"* — i.e. the duplication is
 self-aware, not accidental, exactly like D1's `restructure_sheets.py`
-comment. A future change to the qualification logic (e.g. how Zone/Slot
+comment. A future change to the span logic (e.g. how Zone/Slot
 adjacency is defined) requires editing both, in both packages, or the
 staleness checker and the sheet generator silently disagree about which
 pairs should exist.
 **Where:** `coding/generate_sheets.py:409-473` (`_build_nonperm_pairs`);
 `planars/nonpermutability.py:96-124` (`structurally_expected_pair_elements`)
 **Authoritative source:** `schemas/diagnostic_classes.yaml`'s
-`nonpermutability` `qualification_rule` describes the Slot/Zone logic in
+`nonpermutability` `span_rule` describes the Slot/Zone logic in
 prose (lines 253-283) but the pair-*candidacy* rule specifically (as
-opposed to the qualifying-span rule) is not separately codified there —
+opposed to the span rule) is not separately codified there —
 both code copies derive it independently from the same prose.
 **Classification:** must-declare in the sense that the algorithm itself
 needs a single home (a shared function in `planars/nonpermutability.py`
@@ -803,9 +803,9 @@ detector fails on a typed "Zone"/"Slot".*
 **What:** Every filled planar TSV carries a `Position_Type` column whose only
 valid values are `Zone`/`Slot` (`_VALID_POSITION_TYPES = {"Zone", "Slot"}` in
 `validate_planar.py`). This column is not a minor detail — it is directly
-load-bearing for the nonpermutability qualification rule's structural (no-
-annotation-required) span ("A position qualifies iff: (1) It is a Slot
-(Zones are always excluded)...", `diagnostic_classes.yaml:257-264`) and for
+load-bearing for the nonpermutability span rule's structural (no-
+annotation-required) span (a position is in the span only if it is a Slot;
+Zones are always excluded, `diagnostic_classes.yaml:257-264`) and for
 `generate_sheets.py`'s pair-candidate generation (`_build_nonperm_pairs`,
 `_build_phrasal_accent_pairs` both branch on `pos_type.get(p) == "Zone"`).
 Yet `schemas/planar.yaml`'s `structural_columns` section — which documents
@@ -819,7 +819,7 @@ to point, because `planar.yaml` doesn't yet claim this fact.
 definition, and it's in code); consumed throughout
 `coding/generate_sheets.py` (`_read_position_types`, `_build_nonperm_pairs`,
 `_build_phrasal_accent_pairs`) and implicitly by
-`planars/nonpermutability.py`'s qualification logic.
+`planars/nonpermutability.py`'s span logic.
 **Authoritative source:** none — this is the gap, not a duplication.
 **Classification:** must-declare — `schemas/planar.yaml`'s
 `structural_columns` list should gain a `Position_Type` entry alongside
@@ -859,7 +859,7 @@ are hardcoded in one file. This is by design, per the module's own
 docstring: it is "Deliberately NOT routed through the standard
 `diagnostics_{lang_id}.yaml` / `generate_sheets.py` class/construction
 pipeline" because its rows are Element-keyed lexicon facts, not
-Position-keyed criteria with a `qualification_rule`. So there genuinely is
+Position-keyed criteria with a `span_rule`. So there genuinely is
 no natural home in `diagnostic_classes.yaml` for this shape today — flagged
 as must-declare rather than derivable specifically because forcing it into
 the existing per-class schema would misrepresent what kind of fact it is

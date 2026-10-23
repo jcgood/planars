@@ -1,7 +1,7 @@
-"""Tests for coding/sync_qualification_hashes.py.
+"""Tests for coding/sync_span_rule_hashes.py.
 
-qualification_rule lives in diagnostic_classes.yaml (research content);
-qualification_rule_hash lives in diagnostic_classes_status.yaml (process
+span_rule lives in diagnostic_classes.yaml (research content);
+span_rule_hash lives in diagnostic_classes_status.yaml (process
 tracking) — split in Phase 3 of the data layer redesign (issue #271). This
 script reads the rule from one file and stamps the hash into the other.
 """
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import yaml
 
-from coding.sync_qualification_hashes import (
+from coding.sync_span_rule_hashes import (
     _normalize,
     _compute_hash,
     _collect_wanted,
@@ -25,15 +25,15 @@ def test_normalize_collapses_whitespace():
 
 
 def test_compute_hash_deterministic():
-    h1 = _compute_hash("A position qualifies if free=y.")
-    h2 = _compute_hash("A position qualifies if free=y.")
+    h1 = _compute_hash("A position counts toward the span if free=y.")
+    h2 = _compute_hash("A position counts toward the span if free=y.")
     assert h1 == h2
     assert len(h1) == 8
 
 
 def test_compute_hash_whitespace_insensitive():
-    h1 = _compute_hash("A position qualifies if free=y.")
-    h2 = _compute_hash("A  position\n  qualifies   if free=y.")
+    h1 = _compute_hash("A position counts toward the span if free=y.")
+    h2 = _compute_hash("A  position\n  counts   toward the span  if free=y.")
     assert h1 == h2
 
 
@@ -79,7 +79,7 @@ _MINIMAL_STATUS_YAML = """\
 classes:
 
   - name: testclass
-    qualification_rule_hash: "oldvalue"
+    span_rule_hash: "oldvalue"
     status: stable
 """
 
@@ -91,7 +91,7 @@ classes:
 """
 
 # Regression fixture: a two-stage class whose sheet_instructions (a multi-line
-# `>` block scalar) comes BEFORE qualification_rule_hash in the status file —
+# `>` block scalar) comes BEFORE span_rule_hash in the status file —
 # the shape nonpermutability, coreference, and phrasal_accent actually have.
 # The block-scalar continuation lines must not be mistaken for a new field or
 # a new class boundary.
@@ -112,15 +112,15 @@ def test_apply_hashes_updates_existing(tmp_path, monkeypatch):
     status_path = tmp_path / "diagnostic_classes_status.yaml"
     status_path.write_text(_MINIMAL_STATUS_YAML)
 
-    import coding.sync_qualification_hashes as sqh
+    import coding.sync_span_rule_hashes as sqh
     monkeypatch.setattr(sqh, "STATUS_YAML", status_path)
 
-    rule = "A position qualifies if free=y."
+    rule = "A position counts toward the span if free=y."
     expected = _compute_hash(rule)
     sqh._apply_hashes({"testclass": expected})
 
     updated = status_path.read_text()
-    assert f'qualification_rule_hash: "{expected}"' in updated
+    assert f'span_rule_hash: "{expected}"' in updated
     assert "oldvalue" not in updated
 
 
@@ -128,15 +128,15 @@ def test_apply_hashes_inserts_missing(tmp_path, monkeypatch):
     status_path = tmp_path / "diagnostic_classes_status.yaml"
     status_path.write_text(_MINIMAL_STATUS_YAML_NO_HASH)
 
-    import coding.sync_qualification_hashes as sqh
+    import coding.sync_span_rule_hashes as sqh
     monkeypatch.setattr(sqh, "STATUS_YAML", status_path)
 
-    rule = "A position qualifies if free=y."
+    rule = "A position counts toward the span if free=y."
     expected = _compute_hash(rule)
     sqh._apply_hashes({"testclass": expected})
 
     updated = status_path.read_text()
-    assert f'qualification_rule_hash: "{expected}"' in updated
+    assert f'span_rule_hash: "{expected}"' in updated
     assert yaml.safe_load(updated)["classes"][0]["status"] == "stable"
 
 
@@ -148,7 +148,7 @@ def test_apply_hashes_two_stage_class_sheet_instructions_block_not_mistaken_for_
     status_path = tmp_path / "diagnostic_classes_status.yaml"
     status_path.write_text(_TWO_STAGE_STATUS_YAML_NO_HASH)
 
-    import coding.sync_qualification_hashes as sqh
+    import coding.sync_span_rule_hashes as sqh
     monkeypatch.setattr(sqh, "STATUS_YAML", status_path)
 
     rule = "[DEFERRED] Derivation not yet decided."
@@ -156,7 +156,7 @@ def test_apply_hashes_two_stage_class_sheet_instructions_block_not_mistaken_for_
     sqh._apply_hashes({"twostageclass": expected})
 
     updated = status_path.read_text()
-    assert f'qualification_rule_hash: "{expected}"' in updated
+    assert f'span_rule_hash: "{expected}"' in updated
     parsed = yaml.safe_load(updated)["classes"][0]
     # The sheet_instructions block must survive untouched.
     assert "STEP 1" in parsed["sheet_instructions"]
@@ -168,10 +168,10 @@ def test_apply_hashes_preserves_surrounding_content(tmp_path, monkeypatch):
     status_path = tmp_path / "diagnostic_classes_status.yaml"
     status_path.write_text(_MINIMAL_STATUS_YAML)
 
-    import coding.sync_qualification_hashes as sqh
+    import coding.sync_span_rule_hashes as sqh
     monkeypatch.setattr(sqh, "STATUS_YAML", status_path)
 
-    rule = "A position qualifies if free=y."
+    rule = "A position counts toward the span if free=y."
     expected = _compute_hash(rule)
     sqh._apply_hashes({"testclass": expected})
 
@@ -190,10 +190,10 @@ def test_a_second_apply_with_nothing_changed_writes_the_same_file(tmp_path, monk
     status_path = tmp_path / "diagnostic_classes_status.yaml"
     status_path.write_text(_MINIMAL_STATUS_YAML)
 
-    import coding.sync_qualification_hashes as sqh
+    import coding.sync_span_rule_hashes as sqh
     monkeypatch.setattr(sqh, "STATUS_YAML", status_path)
 
-    rule = "A position qualifies if free=y."
+    rule = "A position counts toward the span if free=y."
     expected = _compute_hash(rule)
     sqh._apply_hashes({"testclass": expected})
     first_write = status_path.read_text()

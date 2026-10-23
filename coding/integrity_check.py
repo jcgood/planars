@@ -983,7 +983,8 @@ def _section_needs_review(codebook: dict, diag_classes: dict) -> None:
             print(_sub(entry))
         print(_sub("→ Edit the relevant schema file to resolve each entry."))
         print(_sub("  Promoting a module status out of [AUTO-DERIVED] requires coordinator"))
-        print(_sub("  sign-off. See docs/coordinator-guide.md § 'Updating a qualification rule'."))
+        print(_sub("  sign-off. See docs/coordinator-guide.md § 'Reviewing a span rule"))
+        print(_sub("  with the domain expert'."))
     else:
         print(_ok("No [NEEDS REVIEW] or [PLACEHOLDER] entries"))
 

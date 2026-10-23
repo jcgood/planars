@@ -169,7 +169,7 @@ def derive_nonpermutability_domains(
 ) -> Dict[str, object]:
     """Derive non-permutability spans from a filled nonpermutability pair TSV.
 
-    [AUTO-DERIVED: NEEDS REVIEW] Qualification rules designed in issue #116 (Apr 2026).
+    [AUTO-DERIVED: NEEDS REVIEW] Span rules designed in issue #116 (Apr 2026).
     Verify before use for annotation or analysis.
 
     Data model: pair rows (Element_A, Element_B, scopal) from Stage 2 of the
@@ -180,19 +180,21 @@ def derive_nonpermutability_domains(
     scopal=y means variable order carries an obligatory scope difference;
     scopal=n means freely variable (no meaning difference).
 
-    Qualification rule (mirrors diagnostic_classes.yaml)
-    -----------------------------------------------------
+    Span rule (mirrors diagnostic_classes.yaml)
+    -------------------------------------------
     Three span types (all strict — non-permutability domains are inherently
-    contiguous). Qualification is evaluated per-position w.r.t. the keystone anchor.
+    contiguous). Whether a position counts toward the span is decided per-position
+    w.r.t. the keystone anchor.
 
     STRICT NON-PERMUTABLE SPAN (structurally derived; no annotation required):
-      A position qualifies iff:
+      A position counts toward the span iff:
         (1) It is a Slot (Zones are always excluded).
         (2) All elements at that position appear in only one position in the planar
             (multi-slot elements have structurally variable order, so they cannot
             anchor a strictly fixed chain).
-      The span is the largest contiguous chain of qualifying positions from the
-      keystone outward; the first gap or non-qualifying position halts expansion.
+      The span is the largest contiguous chain of positions that count toward the
+      span, from the keystone outward; the first gap or position outside the span
+      halts expansion.
 
     FREE-PERMUTABLE POSITION (blocking condition; derived from annotation):
       A position is free-permutable if ANY element at that position appears in a

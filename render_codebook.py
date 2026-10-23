@@ -2,7 +2,7 @@
 """Render the planars schema files as human-readable Markdown.
 
 Reads from schemas/diagnostic_criteria.yaml (criteria and analyses),
-schemas/diagnostic_classes.yaml (qualification rules), schemas/terms.yaml
+schemas/diagnostic_classes.yaml (span rules), schemas/terms.yaml
 (glossary and chart labels), and schemas/planar.yaml (structural columns).
 
 Run from the repo root:
@@ -28,7 +28,7 @@ def _wrap(text: str, indent: int = 0) -> str:
 
 def render(
     dc: dict,    # diagnostic_criteria.yaml
-    classes: dict,  # diagnostic_classes.yaml (for qualification_rule lookup)
+    classes: dict,  # diagnostic_classes.yaml (for span_rule lookup)
     terms: dict,    # terms.yaml
     planar: dict,   # planar.yaml
 ) -> str:
@@ -52,13 +52,13 @@ def render(
         lines.append(_wrap(col["description"]) + "\n")
 
     # -----------------------------------------------------------------------
-    # Analyses (from diagnostic_criteria.yaml, with qualification_rule from
+    # Analyses (from diagnostic_criteria.yaml, with span_rule from
     # diagnostic_classes.yaml)
     # -----------------------------------------------------------------------
     lines.append("---\n")
     lines.append("## Analyses\n")
 
-    # Build a quick lookup for qualification_rule by class name
+    # Build a quick lookup for span_rule by class name
     classes_by_name = {
         cls["name"]: cls
         for cls in classes.get("classes", [])
@@ -86,9 +86,9 @@ def render(
                 pdesc = pdesc.replace("[NEEDS REVIEW]", "").replace("[PLACEHOLDER]", "").strip()
                 lines.append(f"- **`{pname}`** ({vals}){tag}  \n  {_wrap(pdesc, indent=2).lstrip()}\n")
 
-        rule = classes_by_name.get(name, {}).get("qualification_rule", "").strip()
+        rule = classes_by_name.get(name, {}).get("span_rule", "").strip()
         if rule:
-            lines.append("**Qualification rule:**\n")
+            lines.append("**Span rule:**\n")
             lines.append("```\n" + rule + "\n```\n")
 
     # -----------------------------------------------------------------------

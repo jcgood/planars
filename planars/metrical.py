@@ -50,8 +50,8 @@ def derive_metrical_domains(
     participate in blocking checks so the ROOT position can itself trigger a
     boundary, while always being included in the span.
 
-    Qualification rule (mirrors diagnostic_classes.yaml)
-    ----------------------------------------------------
+    Span rule (mirrors diagnostic_classes.yaml)
+    -------------------------------------------
     Blocked-span path (accented/obligatory/independence criteria):
       Expand from keystone in each direction, stopping just before the first
       position where the blocking condition holds.
@@ -128,7 +128,7 @@ def format_result(result: Dict[str, object]) -> str:
     lines = []
     missing = result.get("missing_data", {})
     if missing:
-        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.")
+        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as outside the span.")
         for col, elements in missing.items():
             preview = elements[:5]
             suffix = f" … ({len(elements)} total)" if len(elements) > 5 else ""

@@ -49,7 +49,7 @@ https://pmc.ncbi.nlm.nih.gov/articles/PMC10564800/
 
 The "splits" formalism in phylogenetics is the direct biological analog of the laminarity question here. A *split* of a taxon set X is a bipartition {A, B}; two splits are *compatible* if at least one of the four intersections A₁∩A₂, A₁∩B₂, B₁∩A₂, B₁∩B₂ is empty. The **Splits Equivalence Theorem** (proved in Semple & Steel Ch. 3) states that a set of splits is simultaneously representable by a single tree iff every pair of splits is compatible — i.e., iff the family is laminar on the bipartition structure.
 
-Mapping to planars: diagnostic classes ≈ characters, positions ≈ taxa, qualifying positions ≈ one half of the bipartition. The key disanalogy is that planars positions have a linear order (the planar template) that breaks the symmetry of the splits formulation — splits don't care about order, our spans do. But the compatibility question is structurally the same. When splits are not all compatible, the data is better represented by a *splits graph* (phylogenetic network) that shows where conflicts cluster — exactly what `laminar_conflict_groups` is computing.
+Mapping to planars: diagnostic classes ≈ characters, positions ≈ taxa, in-span positions ≈ one half of the bipartition. The key disanalogy is that planars positions have a linear order (the planar template) that breaks the symmetry of the splits formulation — splits don't care about order, our spans do. But the compatibility question is structurally the same. When splits are not all compatible, the data is better represented by a *splits graph* (phylogenetic network) that shows where conflicts cluster — exactly what `laminar_conflict_groups` is computing.
 
 **Bandelt, H.-J. & Dress, A.W.M. (1992).** Split decomposition: a new and useful approach to phylogenetic analysis of distance data. *Molecular Phylogenetics and Evolution*, 1(3), 242–252.
 > Introduced split decomposition as a method for finding the largest compatible sub-family of a set of splits and visualizing the conflict structure of the rest. When the data is not perfectly laminar, split decomposition finds a tree-like "core" and a network periphery — analogous to finding the maximum laminar subfamily and the remaining conflicting spans. *[Fairly confident; verify page numbers.]*
@@ -174,7 +174,7 @@ This section records theoretical observations about how the planars span structu
 Positions in the planar template are linearly ordered vertices. Spans are hyperedges. The full span set system is not arbitrary — it sits in a well-defined containment hierarchy:
 
 1. **Power set** — fully arbitrary subsets of positions (no constraint)
-2. **Interval-dominated** — each hyperedge is a subset of some interval; its convex hull (extent) is always a contiguous interval. Loose spans live here: qualifying positions can have internal gaps, but the extent [leftmost_qualifying, rightmost_qualifying] is always an interval.
+2. **Interval-dominated** — each hyperedge is a subset of some interval; its convex hull (extent) is always a contiguous interval. Loose spans live here: in-span positions can have internal gaps, but the extent [leftmost_in_span, rightmost_in_span] is always an interval.
 3. **Interval hypergraph** — every hyperedge IS an interval (no internal gaps). Strict spans live here.
 4. **Laminar family** — intervals that are pairwise nested or disjoint. The Tree hypothesis proposes that diagnostic spans should live here.
 
@@ -184,8 +184,8 @@ Positions in the planar template are linearly ordered vertices. Spans are hypere
 
 Loose spans decompose naturally into two analytical layers:
 
-- **Extent layer.** The interval [leftmost_qualifying, rightmost_qualifying]. This is always a contiguous interval. *Laminarity lives here*: two loose spans conflict (partially overlap) iff their extents cross, regardless of the gap structure within each extent.
-- **Interior layer.** Which positions within the extent actually qualify (the qualifying position set, possibly with gaps). *The Word hypothesis lives here*: whether spans can partition the template into consistently small sub-spans depends on where qualifying positions actually fall, not just on the outer boundaries.
+- **Extent layer.** The interval [leftmost_in_span, rightmost_in_span]. This is always a contiguous interval. *Laminarity lives here*: two loose spans conflict (partially overlap) iff their extents cross, regardless of the gap structure within each extent.
+- **Interior layer.** Which positions within the extent are actually in the span (the in-span position set, possibly with gaps). *The Word hypothesis lives here*: whether spans can partition the template into consistently small sub-spans depends on where in-span positions actually fall, not just on the outer boundaries.
 
 **Practical consequence:** laminarity checking for loose spans reduces to laminarity checking on their extents, which are intervals. The gap structure does not affect conflict detection. This is the same mathematics as for strict spans, just applied to coarser intervals.
 
@@ -208,7 +208,7 @@ A perfectly laminar family (a tree) has VC dimension at most 1: no pair of point
 > The canonical hypergraph theory textbook. Defines interval hypergraphs and establishes the Helly property: if every two hyperedges in a family have a common element, then all share a common element. Strict spans (being intervals on a linearly ordered set) have this property; loose spans in general do not. Chapter 7 covers interval hypergraphs.
 
 **Booth, K.S. & Lueker, G.S. (1976).** Testing for the consecutive ones property, interval graphs, and graph planarity using PQ-tree algorithms. *Journal of Computer and System Sciences*, 13(3), 335–379.
-> Gives the linear-time algorithm for testing whether a set system is an interval hypergraph (the "consecutive ones property"). Relevant if the project ever wants to algorithmically verify that a span set qualifies as strict-span-representable. PQ-trees are the data structure for compactly representing all valid orderings. *[Fairly confident about this citation; verify DOI before citing formally.]*
+> Gives the linear-time algorithm for testing whether a set system is an interval hypergraph (the "consecutive ones property"). Relevant if the project ever wants to algorithmically verify that a span set is strict-span-representable. PQ-trees are the data structure for compactly representing all valid orderings. *[Fairly confident about this citation; verify DOI before citing formally.]*
 
 **Edelman, P.H. & Jamison, R.E. (1985).** The theory of convex geometries. *Geometriae Dedicata*, 19(3), 247–270.
 > Convex geometries generalize the notion of "convex sets" on a linearly ordered ground set. The interval sets (strict spans) form a convex geometry; loose spans (subsets of intervals) are related to the feasible sets of *antimatroids*, the dual structure. The "loosening but not chaos" observation above has a formal home in this framework. *[Fairly confident; verify before citing formally.]*

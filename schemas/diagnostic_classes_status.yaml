@@ -12,8 +12,8 @@
 #   - Review status of each class (status, criterion_set_status)
 #   - Whether a class must be collected for every language (collection_required)
 #   - The integrity hash proving a module's code was checked against its
-#     qualification_rule text (qualification_rule_hash — see
-#     coding/sync_qualification_hashes.py, the only writer)
+#     span_rule text (span_rule_hash — see
+#     coding/sync_span_rule_hashes.py, the only writer)
 #   - Annotator-facing guidance shown on the generated Instructions tab
 #     (sheet_instructions)
 #   - Whether generate-sheets adds a planar reference tab for a class
@@ -42,9 +42,9 @@
 #                               "y" = must appear in diagnostics_{lang_id}.tsv for every
 #                               language; "n" = optional (conditional on language-specific
 #                               phenomena)
-#   qualification_rule_hash     SHA-256[:8] of the whitespace-normalised
-#                               qualification_rule text in diagnostic_classes.yaml.
-#                               Stamped by `python -m coding sync-qualification-hashes
+#   span_rule_hash              SHA-256[:8] of the whitespace-normalised
+#                               span_rule text in diagnostic_classes.yaml.
+#                               Stamped by `python -m coding sync-span-rule-hashes
 #                               --apply` after a module has been checked against the
 #                               current rule text; drift means the code has not been
 #                               re-verified since the rule last changed.
@@ -69,14 +69,14 @@ classes:
   # ---------------------------------------------------------------------------
 
   - name: ciscategorial
-    qualification_rule_hash: "eefbef19"
+    span_rule_hash: "eefbef19"
     status: stable
     collection_required: "y"
     criterion_set_status: "[PROVISIONAL]"  # Criterion set may grow further as more
       # predicate-flexible languages are onboarded; other *-combines types not yet attested.
 
   - name: subspanrepetition
-    qualification_rule_hash: "82a6a7c2"
+    span_rule_hash: "82a6a7c2"
     status: stable
     collection_required: "y"
     criterion_set_status: "[PROVISIONAL]"  # Construction types are open-ended and expected
@@ -84,7 +84,7 @@ classes:
       # additional construction types are attested.
 
   - name: noninterruption
-    qualification_rule_hash: "92149718"
+    span_rule_hash: "c82f3b70"
     status: stable
     collection_required: "y"
     criterion_set_status: stable
@@ -105,9 +105,9 @@ classes:
                     carries an obligatory scope difference)
         scopal = n  means these two elements can appear in either order freely (no
                     scope difference)
-    qualification_rule_hash: "6edfcae4"
+    span_rule_hash: "ebe680ca"
     criterion_set_status: stable
-    status: "[AUTO-DERIVED: NEEDS REVIEW — qualification rule redesigned Apr 2026 (issue
+    status: "[AUTO-DERIVED: NEEDS REVIEW — span rule redesigned Apr 2026 (issue
       #116) to use pair-row annotation. Previous 4-span model (permutable/scopal per
       element) replaced by 3-span model (scopal per pair; strict span now structurally
       derived). Coordinator sign-off needed before promoting to stable.]"
@@ -133,7 +133,7 @@ classes:
                              bound by Element_A at Position_A; n if it cannot. (Principle B)
       For np_reference:      mark np_allowed=y if an NP at Position_B can corefer with
                              Element_A at Position_A; n if it cannot. (Principle C)
-    qualification_rule_hash: "96a13eba"
+    span_rule_hash: "96a13eba"
     status: "[AUTO-DERIVED: NEEDS REVIEW — proposed in issue #163 (Apr 2026). Pair-row
       operationalization of binder/bindee domains with reflexive_allowed=y/n criterion and
       upstream prescreening (referential=y/n) stage. Coordinator sign-off required before
@@ -143,13 +143,13 @@ classes:
     include_planar_reference_tab: true
 
   - name: free_occurrence
-    qualification_rule_hash: "c9a14b77"
+    span_rule_hash: "c9a14b77"
     status: "[AUTO-DERIVED]"
     collection_required: "y"
     criterion_set_status: stable
 
   - name: proform
-    qualification_rule_hash: "4f6689ff"
+    span_rule_hash: "905b8468"
     criterion_set_status: "[NEEDS REVIEW]"  # Criterion design confirmed by Adam Tallman
       # (May 2026); not yet validated against annotation data.
     status: "[NEEDS REVIEW]"  # Ch. 17 line 543 explicitly states proform was NOT included in
@@ -159,7 +159,7 @@ classes:
     collection_required: "y"
 
   - name: idiom
-    qualification_rule_hash: "2794fd02"
+    span_rule_hash: "9ac4e824"
     criterion_set_status: stable  # Single binary criterion is appropriate; idiom identity
       # is encoded in the construction name, not additional parameters.
     status: "[NEEDS REVIEW]"  # Mebengokre (ch. 12) provides the clearest evidence: diagnostic
@@ -168,7 +168,7 @@ classes:
     collection_required: "n"
 
   - name: biuniqueness_deviations
-    qualification_rule_hash: "cf30f7b6"
+    span_rule_hash: "cf30f7b6"
     criterion_set_status: "[PROVISIONAL]"  # Designed 2026-10-11 (#254) and not yet
       # run on real annotation; columns may change once Adam fills the morphs tab.
     status: "[AUTO-DERIVED]"  # Span definition and deviation-type rules designed with
@@ -212,7 +212,7 @@ classes:
       went leaves the -ed slot empty).
 
   - name: repair
-    qualification_rule_hash: "29dbc84b"
+    span_rule_hash: "7c734731"
     criterion_set_status: stable  # Single binary criterion is appropriate; restart
       # behavior is categorical (yes/no per position).
     status: "[NEEDS REVIEW]"  # Strongly confirmed by Cup'ik ch. 2 (4 naturalistic examples,
@@ -225,9 +225,9 @@ classes:
   # ---------------------------------------------------------------------------
 
   - name: metrical
-    qualification_rule_hash: "56e9aeb2"
+    span_rule_hash: "56e9aeb2"
     criterion_set_status: "[PROVISIONAL]"  # left-interaction and right-interaction are
-      # [NEEDS REVIEW] — their role in the blocked-span qualification rule is unresolved
+      # [NEEDS REVIEW] — their role in the blocked-span rule is unresolved
       # (issue #17). May be removed, renamed, or replaced depending on resolution of
       # meso/interaction domain design (issues #16, #17).
     status: stable  # Note: left-interaction and right-interaction are [NEEDS REVIEW] (issue #17)
@@ -254,37 +254,37 @@ classes:
       Corrective accent (e.g. "HE did it, not SHE") is out of scope — do not code
       pairs elicited or observed under a correction context (see issue #237 for the
       literature distinguishing corrective from contrastive/ordinary accent).
-    qualification_rule_hash: "79bb5fda"
+    span_rule_hash: "79bb5fda"
     criterion_set_status: "[NEEDS REVIEW]"  # accented is reused as-is from metrical
       # (stable there); joint_accent is new and unvalidated against real data.
     status: "[NEEDS REVIEW]"  # Derivation undecided; coding scheme itself pending real
       # annotation. Requires Adam's sign-off before any promotion (coordinator guide
-      # § "Reviewing a rule with the domain expert"). See issue #237.
+      # § "Reviewing a span rule with the domain expert"). See issue #237.
     collection_required: "n"
     module_pending: "#237"  # annotation collected; span derivation not built yet
 
 
   - name: segmental
-    qualification_rule_hash: "b180dfa7"
+    span_rule_hash: "528bad17"
     # Formal abstract type in ch. 17 database schema.
     status: "[AUTO-DERIVED: likely stable — confirmed across 10+ language chapters; formal
       abstract type in ch. 17; coordinator sign-off needed to remove AUTO-DERIVED]"
     collection_required: "n"
 
   - name: tonal
-    qualification_rule_hash: "3dd8fb51"
+    span_rule_hash: "af37c18c"
     criterion_set_status: "[AUTO-DERIVED]"
     status: "[AUTO-DERIVED]"
     collection_required: "n"
 
   - name: tonosegmental
-    qualification_rule_hash: "3dd8fb51"
+    span_rule_hash: "af37c18c"
     criterion_set_status: "[AUTO-DERIVED]"
     status: "[AUTO-DERIVED]"
     collection_required: "n"
 
   - name: intonational
-    qualification_rule_hash: "3dd8fb51"
+    span_rule_hash: "af37c18c"
     criterion_set_status: "[AUTO-DERIVED]"
     status: "[AUTO-DERIVED]"
     collection_required: "n"
@@ -297,7 +297,7 @@ classes:
   #   tonal:         H1-spreading domain, H3-assignment domain
 
   - name: pausing
-    qualification_rule_hash: "4fe4d821"
+    span_rule_hash: "1d405b34"
     criterion_set_status: stable  # Single binary criterion is appropriate; pause
       # behavior is categorical (yes/no per position).
     status: "[NEEDS REVIEW]"  # Mebengokre (ch. 12) applies and validates: diagnostic [\ref{pause}]
@@ -306,7 +306,7 @@ classes:
     collection_required: "n"
 
   - name: play_language
-    qualification_rule_hash: "fa856d1c"
+    span_rule_hash: "b7133f53"
     criterion_set_status: stable  # Single binary criterion is appropriate; ludling
       # operation identity is encoded in the construction name.
     status: "[NEEDS REVIEW]"  # Chatino ch. 8 provides corpus-attested data (Campbell 2020);

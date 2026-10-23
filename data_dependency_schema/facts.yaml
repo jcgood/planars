@@ -140,20 +140,20 @@
       neither runs again soon, the two simply disagree in the meantime.
     caught_by: "nothing yet -- no automated check compares the two copies."
 
-- id: qualification_rule_semantics
-  description: the prose description of how a class's span/qualification logic works
+- id: span_rule_semantics
+  description: the prose description of how a class's span logic works
   locations:
-    - {entity: schema_yaml, detail: "diagnostic_classes.yaml's qualification_rule field for the class"}
+    - {entity: schema_yaml, detail: "diagnostic_classes.yaml's span_rule field for the class"}
     - {entity: code_comment, detail: "the corresponding planars/{module}.py docstring and inline comments describing the same rule"}
   authoritative: schema_yaml
   cascade:
     direction: manual
     mechanism: >-
       A coordinator (with Claude) edits diagnostic_classes.yaml, changing its
-      qualification_rule_hash; check-codebook detects the mismatch and
+      span_rule_hash; check-codebook detects the mismatch and
       generate-rule-update-prompt produces a ready-to-paste Claude prompt to
       update the module's docstring/comments to match, ending with
-      sync-qualification-hashes --apply to re-stamp the hash once reviewed.
+      sync-span-rule-hashes --apply to re-stamp the hash once reviewed.
   drift_risk:
     possible: true
     note: >-
@@ -161,7 +161,7 @@
       are out of sync by design -- that's the point of the hash sentinel, it's
       meant to be caught, not prevented.
     caught_by: >-
-      check-codebook's qualification_rule_hash check, run in CI on every push
+      check-codebook's span_rule_hash check, run in CI on every push
       and daily via data-refresh.yml, filed as codebook-error if stale.
 
 - id: dependent_construction_element_scope

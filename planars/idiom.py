@@ -41,10 +41,10 @@ def derive_idiom_domains(
                 (non-compositional) combination. y = this element is part
                 of an idiomatic unit.
 
-    Qualification rule (mirrors diagnostic_classes.yaml)
-    ----------------------------------------------------
-    A position qualifies if it contains an element where idiomatic=y. Complete
-    qualification: ALL elements have idiomatic=y. Partial qualification: at
+    Span rule (mirrors diagnostic_classes.yaml)
+    -------------------------------------------
+    A position counts toward the span if it contains an element where idiomatic=y.
+    Complete position: ALL elements have idiomatic=y. Partial position: at
     least one element has idiomatic=y.
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
@@ -88,7 +88,7 @@ def format_result(result: Dict[str, object]) -> str:
     lines = []
     missing = result.get("missing_data", {})
     if missing:
-        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.")
+        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as outside the span.")
         for col, elements in missing.items():
             preview = elements[:5]
             suffix = f" … ({len(elements)} total)" if len(elements) > 5 else ""

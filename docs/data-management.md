@@ -40,7 +40,7 @@ notebooks/
 tests/snapshots/                Regression test baselines
 schemas/
   diagnostic_criteria.yaml      Diagnostic criterion definitions and allowed values
-  diagnostic_classes.yaml       Analysis class schema (applicability, required criteria, qualification rules)
+  diagnostic_classes.yaml       Analysis class schema (applicability, required criteria, span rules)
   diagnostic_classes_status.yaml  Process/tracking state for the same classes (status, collection_required, etc.)
   planar.yaml                   Planar structure ontology (structural columns, element conventions)
   terms.yaml                    Analytical vocabulary (strict/loose span, etc.) and chart labels

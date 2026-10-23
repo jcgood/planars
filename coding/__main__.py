@@ -21,7 +21,7 @@ _COMMANDS = {
     "generate-reports":            "coding.generate_reports",
     "sync-params":                 "coding.sync_params",
     "sync-diagnostics-yaml":       "coding.sync_diagnostics_yaml",
-    "sync-qualification-hashes":   "coding.sync_qualification_hashes",
+    "sync-span-rule-hashes":       "coding.sync_span_rule_hashes",
     "update-sheets":               "coding.update_sheets",
     "import-sheets":               "coding.import_sheets",
     "validate-coding":             "coding.validate_coding",

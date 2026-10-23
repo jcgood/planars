@@ -407,7 +407,7 @@ def codebook_error_body(report: str, prompts: str) -> str:
                else "_(Inconsistency details could not be extracted — see full log.)_\n")
     out.append("\n## What to do\n\n")
     out.append("What to do depends on the specific error:\n")
-    out.append("- **Qualification rule hash mismatch** — paste the Claude prompt below into a new conversation, review the proposed changes, then run `python -m coding sync-qualification-hashes --apply`\n")
+    out.append("- **Span rule hash mismatch** — paste the Claude prompt below into a new conversation, review the proposed changes, then run `python -m coding sync-span-rule-hashes --apply`\n")
     out.append("- **Criterion missing from `diagnostic_criteria.yaml`** — add an entry to `schemas/diagnostic_criteria.yaml`\n")
     out.append("- **TSV class/criteria mismatch** — update `diagnostics_{lang_id}.yaml` and run `python -m coding sync-diagnostics-yaml --apply`\n")
     out.append("\nThe issue closes automatically when `check-codebook` passes.\n")

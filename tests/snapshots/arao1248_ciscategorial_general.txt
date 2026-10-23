@@ -1,7 +1,7 @@
 Araona Ciscategorial General
 ============================
 
-NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.
+NOTE: Some cells are unannotated — spans computed treating blanks as outside the span.
   V-combines: ['ADVERBIALS', 'INTERROGATIVES', 'NP{NP,PP,S}', 'dipa', 'pa'] … (72 total)
   N-combines: ['ADVERBIALS', 'INTERROGATIVES', 'NP{NP,PP,S}', 'dipa', 'pa'] … (72 total)
   A-combines: ['ADVERBIALS', 'INTERROGATIVES', 'NP{NP,PP,S}', 'dipa', 'pa'] … (72 total)

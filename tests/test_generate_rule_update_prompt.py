@@ -32,9 +32,9 @@ def test_stale_classes_unknown_class_filter_returns_empty():
 # ---------------------------------------------------------------------------
 
 def _fake_cls(name: str, rule: str, hash_val: str | None = None) -> dict:
-    cls: dict = {"name": name, "display_name": name.title(), "qualification_rule": rule}
+    cls: dict = {"name": name, "display_name": name.title(), "span_rule": rule}
     if hash_val is not None:
-        cls["qualification_rule_hash"] = hash_val
+        cls["span_rule_hash"] = hash_val
     return cls
 
 
@@ -45,7 +45,7 @@ def test_generate_prompt_contains_class_name():
 
 
 def test_generate_prompt_contains_rule_text():
-    rule = "A position qualifies if free=y."
+    rule = "A position counts toward the span if free=y."
     cls = _fake_cls("testcls", rule, hash_val="deadbeef")
     prompt = _generate_prompt(cls)
     assert rule in prompt
@@ -54,7 +54,7 @@ def test_generate_prompt_contains_rule_text():
 def test_generate_prompt_contains_sync_command():
     cls = _fake_cls("metrical", "Some rule.", hash_val="deadbeef")
     prompt = _generate_prompt(cls)
-    assert "sync-qualification-hashes" in prompt
+    assert "sync-span-rule-hashes" in prompt
     assert "--class metrical" in prompt
 
 
@@ -85,7 +85,7 @@ def test_generate_prompt_is_a_pure_function_of_its_input(tmp_path, monkeypatch):
     no-source branch already exercised above.
     """
     import coding.generate_rule_update_prompt as grp
-    cls = _fake_cls("metrical", "A position qualifies if free=y.", hash_val="deadbeef")
+    cls = _fake_cls("metrical", "A position counts toward the span if free=y.", hash_val="deadbeef")
     first = grp._generate_prompt(cls)
     second = grp._generate_prompt(cls)
     assert second == first

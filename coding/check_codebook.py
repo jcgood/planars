@@ -6,7 +6,7 @@ Checks:
   2. Criterion names in diagnostics_{lang_id}.tsv are defined in diagnostic_criteria.yaml
   3. Chart span label keys match the keys returned by each derive function
   4. diagnostics_{lang_id}.tsv class names and required criteria match diagnostic_classes.yaml
-  5. Qualification rule drift: bidirectional module/YAML correspondence, hash sentinel, docstring mirror
+  5. Span rule drift: bidirectional module/YAML correspondence, hash sentinel, docstring mirror
   6. Per-language criterion value sets vs global schema (hard error: lang declares unknown value;
      warning: schema allows a value the language YAML doesn't declare — may mean the YAML was not
      updated after a new value was added to the schema)
@@ -172,7 +172,7 @@ def _make_minimal_tsv(params: list[str], extra_params: list[str] = None) -> io.S
 
     Used to run derive functions in isolation during consistency checks, without
     needing real annotation data. All data-row params are set to 'y' so every
-    qualification condition evaluates to True and all span keys appear in the result.
+    span condition evaluates to True and all span keys appear in the result.
 
     Args:
         params: required criterion column names (e.g. ["free", "multiple"]).
@@ -447,30 +447,30 @@ def _discover_analysis_modules() -> set[str]:
     return names
 
 
-def _check_qualification_rule_drift(diag_classes: dict) -> List[str]:
-    """Check qualification rule bidirectional correspondence, hash sentinel, and docstring.
+def _check_span_rule_drift(diag_classes: dict) -> List[str]:
+    """Check span rule bidirectional correspondence, hash sentinel, and docstring.
 
     Bidirectional correspondence (dynamic — no hardcoded module list):
-      - YAML class with qualification_rule but no corresponding module: WARNING,
+      - YAML class with span_rule but no corresponding module: WARNING,
         unless the class declares module_pending (diagnostic_classes_status.yaml);
         module_pending on a class whose module exists: HARD ERROR
       - Python module with no YAML class: HARD ERROR (always a mistake; exits 1)
 
-    Hash sentinel (hash lives in YAML as qualification_rule_hash):
-      - qualification_rule_hash missing from YAML: WARNING (new class, not yet stamped)
+    Hash sentinel (hash lives in YAML as span_rule_hash):
+      - span_rule_hash missing from YAML: WARNING (new class, not yet stamped)
       - Hash present but wrong: HARD ERROR (rule edited without review; exits 1)
 
     Docstring mirror:
-      - Normalised qualification_rule text not found in normalised module source: WARNING
+      - Normalised span_rule text not found in normalised module source: WARNING
 
-    Hash is SHA-256[:8] of the whitespace-normalised qualification_rule text.
-    Run `python -m coding sync-qualification-hashes --apply` to stamp hashes after
+    Hash is SHA-256[:8] of the whitespace-normalised span_rule text.
+    Run `python -m coding sync-span-rule-hashes --apply` to stamp hashes after
     a module has been reviewed and updated.
     """
     errors = []
     analysis_modules = _discover_analysis_modules()
     yaml_classes_with_rule = {name for name, cls in diag_classes.items()
-                               if cls.get("qualification_rule", "")}
+                               if cls.get("span_rule", "")}
 
     # Module with no YAML class → hard error
     for name in sorted(analysis_modules):
@@ -490,26 +490,26 @@ def _check_qualification_rule_drift(diag_classes: dict) -> List[str]:
                 f"diagnostic_classes_status.yaml still says module_pending — remove that line")
     for name in sorted(yaml_classes_with_rule):
         if name not in analysis_modules and not diag_classes[name].get("module_pending"):
-            print(f"  \u26a0  [{name}] diagnostic_classes.yaml has a qualification_rule "
+            print(f"  \u26a0  [{name}] diagnostic_classes.yaml has a span_rule "
                   f"but planars/{name}.py has no `derive` attribute; if that is expected, "
                   f"declare module_pending in diagnostic_classes_status.yaml")
 
     # Hash sentinel and docstring mirror for classes that have both YAML and module
     for name in sorted(yaml_classes_with_rule & analysis_modules):
         cls = diag_classes[name]
-        qr = cls["qualification_rule"]
+        qr = cls["span_rule"]
         normalized_qr = " ".join(qr.split())
         expected_hash = hashlib.sha256(normalized_qr.encode()).hexdigest()[:8]
 
-        yaml_hash = cls.get("qualification_rule_hash")
+        yaml_hash = cls.get("span_rule_hash")
         if yaml_hash is None:
-            print(f"  \u26a0  [{name}] qualification_rule_hash not set in "
+            print(f"  \u26a0  [{name}] span_rule_hash not set in "
                   f"diagnostic_classes_status.yaml (expected: {expected_hash!r}) — "
-                  f"run: python -m coding sync-qualification-hashes --apply --class {name}")
+                  f"run: python -m coding sync-span-rule-hashes --apply --class {name}")
         elif yaml_hash != expected_hash:
             errors.append(
-                f"[{name}] qualification_rule_hash mismatch: diagnostic_classes_status.yaml has {yaml_hash!r} but "
-                f"qualification_rule hashes to {expected_hash!r} — "
+                f"[{name}] span_rule_hash mismatch: diagnostic_classes_status.yaml has {yaml_hash!r} but "
+                f"span_rule hashes to {expected_hash!r} — "
                 f"the rule was edited without a module review cycle; "
                 f"run: python -m coding generate-rule-update-prompt {name}"
             )
@@ -521,8 +521,8 @@ def _check_qualification_rule_drift(diag_classes: dict) -> List[str]:
                     Path(spec.origin).read_text(encoding="utf-8").split()
                 )
                 if normalized_qr not in source_normalized:
-                    print(f"  \u26a0  [{name}] qualification_rule text not found in module "
-                          f"source — update the 'Qualification rule' docstring section")
+                    print(f"  \u26a0  [{name}] span_rule text not found in module "
+                          f"source — update the 'Span rule' docstring section")
             except Exception:
                 pass
 
@@ -672,7 +672,7 @@ def needs_review_entries(codebook: dict, diag_classes: dict) -> list[str]:
     flagged = []
     for analysis in codebook.get("analyses", []):
         name = analysis["name"]
-        for field in ("description", "qualification_rule"):
+        for field in ("description", "span_rule"):
             text = analysis.get(field, "")
             if "[NEEDS REVIEW]" in text or "[PLACEHOLDER]" in text:
                 flagged.append(f"diagnostic_criteria.yaml [{name}]: {field}")
@@ -847,7 +847,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     2. Every criterion name in diagnostics_{lang_id}.tsv files is in diagnostic_criteria.yaml.
     3. Every span key referenced in charts.py exists in the corresponding derive result.
     4. diagnostics_{lang_id}.tsv class names and required criteria match diagnostic_classes.yaml.
-    5. Qualification rule drift: bidirectional module/YAML correspondence, hash sentinel,
+    5. Span rule drift: bidirectional module/YAML correspondence, hash sentinel,
        docstring mirror.
     6. Per-language criterion value sets vs global schema (hard error: unknown value declared;
        warning: schema has values not declared in language YAML).
@@ -877,8 +877,8 @@ def main(args: argparse.Namespace | None = None) -> None:
     print("4. Checking diagnostics_{lang_id}.tsv criteria vs diagnostic_classes.yaml ...")
     all_errors.extend(_check_diagnostics_vs_classes(diag_classes))
 
-    print("5. Checking qualification rule drift (hash sentinel + docstring) ...")
-    all_errors.extend(_check_qualification_rule_drift(diag_classes))
+    print("5. Checking span rule drift (hash sentinel + docstring) ...")
+    all_errors.extend(_check_span_rule_drift(diag_classes))
 
     print("6. Checking per-language criterion value sets vs global schema ...")
     all_errors.extend(_check_lang_yaml_criterion_values(codebook))

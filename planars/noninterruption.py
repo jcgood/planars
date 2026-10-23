@@ -19,7 +19,7 @@ def derive_noninterruption_domains(
 ) -> Dict[str, object]:
     """Derive non-interruption spans from a filled noninterruption TSV.
 
-    Two domain types, each with complete/partial qualification = 4 strict spans:
+    Two domain types, each with complete/partial positions = 4 strict spans:
 
     No-free domain — positions where elements are bound (free=n):
       complete: ALL elements have free=n
@@ -29,11 +29,11 @@ def derive_noninterruption_domains(
       complete: ALL elements have free=n OR (free=y, multiple=n)
       partial:  >=1 element has free=n OR (free=y, multiple=n)
 
-    Qualification rule (mirrors diagnostic_classes.yaml)
-    ----------------------------------------------------
+    Span rule (mirrors diagnostic_classes.yaml)
+    -------------------------------------------
     Two domain types, each with complete and partial position sets:
-      no-free domain:     element qualifies if free=n (bound).
-      single-free domain: element qualifies if free=n OR (free=y AND multiple=n).
+      no-free domain:     element counts toward the span if free=n (bound).
+      single-free domain: element counts toward the span if free=n OR (free=y AND multiple=n).
     Only strict spans are computed for non-interruption (no loose span).
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
@@ -51,10 +51,10 @@ def derive_noninterruption_domains(
             if blank_els:
                 missing_data[c] = blank_els
 
-    # No-free domain: a position qualifies if its elements are bound (free=n).
+    # No-free domain: a position counts toward the span if its elements are bound (free=n).
     data_df["is_bound"] = data_df["free"] == "n"
 
-    # Single-free domain: a position qualifies if elements are either bound (free=n)
+    # Single-free domain: a position counts toward the span if elements are either bound (free=n)
     # or are free but do not occur multiple times (free=y, multiple=n).
     # This excludes positions with multiply-occurring free forms.
     data_df["is_single_free_ok"] = (
@@ -95,7 +95,7 @@ def format_result(result: Dict[str, object]) -> str:
     lines = []
     missing = result.get("missing_data", {})
     if missing:
-        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as non-qualifying.")
+        lines.append("NOTE: Some cells are unannotated — spans computed treating blanks as outside the span.")
         for col, elements in missing.items():
             preview = elements[:5]
             suffix = f" … ({len(elements)} total)" if len(elements) > 5 else ""

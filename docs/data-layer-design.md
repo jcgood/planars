@@ -62,7 +62,7 @@ The three kinds move at very different rates:
 - **Slow** (occasional): typographic conventions, bracket-wrapping, standard
   labels.
 - **Fast** (constant — this is the research frontier): which diagnostic classes
-  exist, what criteria they require, qualification rules, element granularity.
+  exist, what criteria they require, span rules, element granularity.
 
 Conflating things that move at the *same* rate is merely inelegant. Conflating
 things that move at *different* rates is a bug generator, because the fast
