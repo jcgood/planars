@@ -72,7 +72,8 @@ compares each sheet's real dropdowns with the codebook and runs daily.
 Applied live the same day (every language's sheets now match). **Next:**
 (2) (b) above covers his dependent-on
 comment (he typed commas, the plan says `|`: settle which when building
-it); (3) one short reply to Adam for Jeff to approve; (4) definitions to
+it); (3) reply posted on #322, 2026-10-23 (asks which elements QWORDS
+splits into); (4) definitions to
 tighten: vp_ellipsis's test (#319), flapping and `multiple` (#321);
 (5) QWORDS split, his OK on the new elements.
 Also open, linguistic: displacement, the one standard constituency test
