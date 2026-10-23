@@ -169,14 +169,14 @@ Two-stage annotation workflow:
 
 Five criteria: `free`, `left-edge-of-free-form`, `right-edge-of-free-form`, `dependent-on-left`, `dependent-on-right`. The keystone row carries a real `free` value (`keystone_active_default: true`), but all annotation columns are always `na` on the keystone (it is the anchor, not a dependent). Two spans:
 
-- **Minimal**: if keystone `free=y`, the keystone position alone; if `free=n`, the span from the keystone's `dependent-on-left` to `dependent-on-right` positions.
-- **Maximal**: from the leftmost to rightmost free-occurrence-internal position. A position is internal if any element has `left-edge-of-free-form=y` (left of keystone), `right-edge-of-free-form=y` (right of keystone), or a `dependent-on-left`/`dependent-on-right` value equal to the keystone position number.
+- **Minimal**: if keystone `free=y`, the keystone position alone; if `free=n`, the span from the nearest position in the keystone's `dependent-on-left` to the nearest in its `dependent-on-right`.
+- **Maximal**: from the leftmost to rightmost free-occurrence-internal position. A position is internal if any element has `left-edge-of-free-form=y` (left of keystone), `right-edge-of-free-form=y` (right of keystone), or the keystone position number among its `dependent-on-left`/`dependent-on-right` positions.
 
 All four annotation columns (`left-edge-of-free-form`, `right-edge-of-free-form`, `dependent-on-left`, `dependent-on-right`) apply to **bound elements only** (`free=n`). Free elements (`free=y`) receive `na` in all annotation columns — they are filtered out of additional annotation at sheet generation time.
 
 `free` is **pre-filled from the noninterruption sheet** at generation time — annotate noninterruption before generating the free_occurrence sheet. `integrity-check` warns when `free` values differ across sheets (e.g. after a noninterruption edit).
 
-`dependent-on-left` and `dependent-on-right` hold a position number as a string, or `na`. These are position references, not fixed criterion values — `validate-coding` does not currently validate them against the planar structure.
+`dependent-on-left` and `dependent-on-right` hold one or more position numbers separated by `|`, meaning any one of them is enough for the element to surface (`8|12|30`; #318), or `na`. A comma is refused, so it stays free to mean "all of these" if that is ever needed. `validate-coding` checks every number against the planar. *(Toolkit extension: the list form goes beyond Tallman et al. 2024.)*
 
 ### Coreference
 

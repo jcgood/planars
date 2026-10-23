@@ -133,6 +133,38 @@ def test_non_integer_position_value_warns():
     assert any("unexpected value" in i.message and "dependent-on-left" in i.message for i in issues)
 
 
+def _free_issues(left: str, right: str, lang_id=None):
+    rows = [
+        _FREE_HEADER,
+        ["KEYSTONE", "v:verbstem", "30", "na", "na", "na"],
+        ["elem-a",   "v:mid",      "5",  "n",  left, right],
+    ]
+    _, issues = validate_annotation_rows(rows, ["free", "dependent-on-left", "dependent-on-right"],
+                                         "general", _FREE_PV, lang_id=lang_id)
+    return [i for i in issues if "dependent-on" in i.message]
+
+
+def test_a_list_of_positions_is_valid():
+    """#318: several positions separated by | (any one is enough)."""
+    assert _free_issues("3|4", "8| 12 |30") == []
+
+
+def test_a_comma_list_is_refused_and_says_to_use_a_bar():
+    """A comma is kept free for "all of these" (#318 § 5), so it is refused,
+    and the annotator is told what to type instead."""
+    [issue] = _free_issues("3,4", "na")
+    assert "3|4" in issue.message and "not commas" in issue.message
+
+
+def test_every_listed_number_is_checked_against_the_planar(monkeypatch):
+    from coding import validate_coding
+    monkeypatch.setitem(validate_coding._POSITION_NAME_CACHE, "synth9999",
+                        {"3": "v:a", "4": "v:b", "5": "v:mid", "30": "v:verbstem"})
+    assert _free_issues("3|4", "30", lang_id="synth9999") == []
+    [issue] = _free_issues("3|99", "na", lang_id="synth9999")
+    assert "not a position in the planar: 99" in issue.message
+
+
 # ---------------------------------------------------------------------------
 # Criterion values come from the schema, never restated in code
 # ---------------------------------------------------------------------------

@@ -119,7 +119,7 @@ from planars.schema_values import (
     header_shape, is_keystone as _is_keystone,
     row_columns, row_key, row_type, source_construction,
 )
-from planars.free_occurrence import _parse_pos_ref
+from planars.free_occurrence import bound_keystone_span
 from planars.nonpermutability import is_pair_candidate
 
 
@@ -752,15 +752,20 @@ def _filter_reflex_pairs_by_prescreening(
 def _phrasal_accent_obligatory_core(lang_id: str, keystone_pos: int) -> Tuple[int, int]:
     """Return the (left, right) Position_Number range of the obligatory core.
 
-    Tier 1 of issue #237's adjacency algorithm: reuses free_occurrence's minimal
-    free-occurrence span logic (the "Minimal span" block of planars/free_occurrence.py's
-    derive_free_occurrence_spans) rather
-    than reimplementing it. For a bound keystone (free=n), the positions it
+    Tier 1 of issue #237's adjacency algorithm: free_occurrence's minimal span
+    for a bound keystone (planars.free_occurrence.bound_keystone_span, the one
+    copy of that rule). For a bound keystone (free=n), the positions it
     structurally depends on (dependent-on-left/dependent-on-right) are exactly the
     positions that must be present whenever the keystone is realized — i.e. they
     can never be dropped, so they always block adjacency between elements on
     either side of them. That set is already annotated (no new annotation burden)
-    once free_occurrence/general.tsv exists.
+    once free_occurrence/general.tsv exists. Where a side lists several
+    positions (any one is enough, #318), the nearest is used, so the core is
+    the smallest frame the keystone can surface in; none of the listed
+    positions is then individually required, so this treats more as
+    obligatory than strictly is (as the contiguous range already does for
+    optional positions inside it). A dependent-on cell that is not positions
+    raises (validate-coding reports it to the annotator).
 
     Falls back to the keystone position alone (a trivial single-position "core")
     when free_occurrence/general.tsv doesn't exist yet, the keystone row is
@@ -792,11 +797,8 @@ def _phrasal_accent_obligatory_core(lang_id: str, keystone_pos: int) -> Tuple[in
         # the core with — tier 2 handles everything outside the keystone itself.
         return (keystone_pos, keystone_pos)
 
-    dep_l = _parse_pos_ref(ks_row.get("dependent-on-left", ""))
-    dep_r = _parse_pos_ref(ks_row.get("dependent-on-right", ""))
-    left  = dep_l if dep_l is not None else keystone_pos
-    right = dep_r if dep_r is not None else keystone_pos
-    return (min(left, keystone_pos), max(right, keystone_pos))
+    return bound_keystone_span(ks_row.get("dependent-on-left", ""),
+                               ks_row.get("dependent-on-right", ""), keystone_pos)
 
 
 def _phrasal_accent_obligatory_positions(

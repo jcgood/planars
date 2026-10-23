@@ -1,6 +1,10 @@
 English Free Occurrence General
 ===============================
 
+NOTE: Some cells are unannotated — spans computed treating blanks as outside the span.
+  dependent-on-left: ['he', 'I', 'she', 'they', 'we']
+  dependent-on-right: ['he', 'I', 'she', 'they', 'we']
+
 Keystone position: 30 (v:verbstem)
 
 Free-occurrence-internal positions: [3, 5, 8, 18, 22, 28, 29, 30, 31, 34]

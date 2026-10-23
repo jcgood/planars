@@ -201,15 +201,15 @@ chart_labels:
     - label: "free-occ minimal"
       meaning: >
         Minimal free occurrence span: if the keystone is free (free=y), just the keystone
-        position alone; if the keystone is bound (free=n), the span from the keystone's
-        left-dependent position to its right-dependent position (the positions the keystone
-        requires in order to be realized as a single-free-form utterance).
+        position alone; if the keystone is bound (free=n), the span from the nearest
+        position it depends on to its left to the nearest one to its right (the smallest
+        frame in which it can be realized as a single-free-form utterance).
     - label: "free-occ maximal"
       meaning: >
         Maximal free occurrence span: from the leftmost to rightmost free-occurrence-internal
         position, where a position is internal if any element has left-edge-of-free-form=y
         (left of keystone), right-edge-of-free-form=y (right of keystone), or a
-        dependent-on-left/right reference pointing to the keystone.
+        dependent-on-left/right list that includes the keystone.
 
   biuniqueness_deviations:
     # Not a fixed label set: one pair of rows per domain found, labelled

@@ -412,8 +412,12 @@ classes:
            at least one element.
         2. It is to the right of the anchor and right-edge-of-free-form=y for at least
            one element.
-        3. At least one of its elements has dependent-on-left or dependent-on-right
-           referencing the anchor's position number.
+        3. At least one of its elements lists the anchor's position number among
+           its dependent-on-left or dependent-on-right positions.
+
+      dependent-on-left/right list one or more position numbers separated by |
+      (e.g. 8|12|30), meaning any one of them is enough for the element to
+      surface (#318).
 
       Maximal free occurrence span = leftmost to rightmost free-occurrence-internal
       position.
@@ -421,9 +425,10 @@ classes:
       Minimal free occurrence span:
         - If the keystone element is free (free=y): the span is the keystone position
           alone (the single-free-form utterance is just the anchor).
-        - If the keystone is bound (free=n): the span is determined by the positions the
-          keystone depends on (dependent-on-left, dependent-on-right), since the keystone
-          requires those positions in order to be realized.
+        - If the keystone is bound (free=n): the span runs from the nearest position
+          listed in its dependent-on-left to the nearest listed in its
+          dependent-on-right (the smallest frame in which it can surface), or from
+          the keystone itself on a side with none listed.
 
       Note: Adam Tallman (2026-04-24, issue #99) confirmed that all annotation columns
       (left-edge-of-free-form, right-edge-of-free-form, dependent-on-left,

@@ -28,8 +28,8 @@ match, stamps the hash and merges. The procedure is coordinator guide
 and the known questions for each class are in the tracking issue #321. Jeff sent Adam the
 prompt for his Claude (2026-10-22). **Next action:** review each `Span rule: {class}`
 pull request as it arrives, following the 7-step workflow on its branch.
-Unblocking the later classes is #318 (b) for free_occurrence, and (c) and (d)
-for coreference.
+Unblocking the later classes: #318 (b), free_occurrence, is done
+(2026-10-23); (c) and (d) for coreference remain.
 
 ### Thread: Adam's English coding requests (#318)
 
@@ -40,9 +40,10 @@ decisions, 2026-10-22). Approved, in order:
 review, sheet-updates issue and comment; the live proposal_stan1293's
 Last review tab keeps the old text until its next review or a rewrite);
 (b) dependent-on-left/right take a `|`-separated list meaning "any one of
-these" (his § 3 gives the semantics and every place in the code; a
-span-rule change, so schema-work care, the module docstring and
-snapshots);
+these" — done 2026-10-23 (a comma is refused with "write 3|4", per his
+§ 5; `planars/position_cells.position_numbers`). Adam not yet told; his
+five subject-pronoun rows still hold commas, and list 31
+(verbinflection) where his § 1 says the stem, 30;
 (c) pre-fill referential=y for `NP{…}` rows in coreference prescreening
 (not pronouns);
 (d) rename the coreference constructions to `reflexive_coreference`,
@@ -70,9 +71,8 @@ list removed 2026-10-12 (no both/na/unclear; a typed position number
 shown as invalid). Fixed in code the same day: `refresh-dropdowns` now
 compares each sheet's real dropdowns with the codebook and runs daily.
 Applied live the same day (every language's sheets now match). **Next:**
-(2) (b) above covers his dependent-on
-comment (he typed commas, the plan says `|`: settle which when building
-it); (3) reply posted on #322, 2026-10-23 (asks which elements QWORDS
+(2) tell Adam on #318 that (b) is in (retype as `3|4`; check 31 vs 30);
+(3) reply posted on #322, 2026-10-23 (asks which elements QWORDS
 splits into); (4) definitions to
 tighten: vp_ellipsis's test (#319), flapping and `multiple` (#321);
 (5) QWORDS split, his OK on the new elements.

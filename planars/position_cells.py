@@ -1,11 +1,16 @@
 """Cells that refer to planar positions: reading them and renumbering them.
 
-Some criteria take positions as their answer: co_exponents and conditioned_by
-(biuniqueness_deviations, ``<position_names>``) and dependent-on-left/right
-(free_occurrence, ``<position_number>``). Annotators write a position by its
-number (``31``) or its name (``v:verbinflection``), several separated by
-commas; numbers are what they see in the planar and are quicker to type
-(Jeff, 2026-10-22).
+Some criteria take positions as their answer:
+
+- co_exponents and conditioned_by (biuniqueness_deviations,
+  ``<position_names>``): each position written by its number (``31``) or its
+  name (``v:verbinflection``), several separated by commas; numbers are what
+  annotators see in the planar and are quicker to type (Jeff, 2026-10-22).
+- dependent-on-left/right (free_occurrence, ``<position_number>``): position
+  numbers only, several separated by ``|`` meaning "any one of these is
+  enough" (``8|12|30``; #318, Jeff 2026-10-22). A comma is refused rather
+  than read, so it stays free to mean "all of these" if that is ever needed
+  (Adam, #318 § 5). ``position_numbers`` reads such a cell.
 
 A number only means something against the planar it was typed with, so two
 things live here, used by everything that reads or rewrites such a cell:
@@ -32,6 +37,39 @@ _NUMBER = re.compile(r"(?<![\w:])(\d+)(?![\w:])")
 def split_positions(cell) -> List[str]:
     """The comma-separated items of a cell, stripped; blank for an empty cell."""
     return [p.strip() for p in str(cell or "").split(",") if p.strip()]
+
+
+# Separates the positions of a <position_number> cell: any one is enough.
+ANY_OF = "|"
+
+# What a <position_number> cell may hold instead of positions
+# (diagnostic_criteria.yaml always_allowed_values, plus blank).
+_NO_POSITIONS = {"", "na", "?"}
+
+
+def position_numbers(cell) -> Tuple[List[int], List[str]]:
+    """(position numbers, what is wrong) for a ``<position_number>`` cell.
+
+    ``8|12|30`` gives ``[8, 12, 30]``; blank, ``na`` and ``?`` give no
+    numbers. Anything else that is not a number is reported, never guessed
+    at: a comma (``3,4``) is reported with what to type instead."""
+    text = str(cell or "").strip()
+    if text.lower() in _NO_POSITIONS:
+        return [], []
+    if "," in text:
+        return [], [f"write {text.replace(',', ANY_OF).replace(' ', '')}, not commas: "
+                    f"{ANY_OF} between positions means any one of them is enough"]
+    numbers: List[int] = []
+    bad: List[str] = []
+    for item in text.split(ANY_OF):
+        item = item.strip()
+        if item.isdigit():
+            numbers.append(int(item))
+        else:
+            bad.append(item or "(empty)")
+    if bad:
+        return [], [f"not a position number: {', '.join(bad)}"]
+    return numbers, []
 
 
 def as_names(cell, number_to_name: Mapping[int, str]) -> Tuple[List[str], List[str]]:

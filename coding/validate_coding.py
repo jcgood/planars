@@ -83,7 +83,7 @@ from .schemas import (
 # Constants
 # ---------------------------------------------------------------------------
 
-from planars.position_cells import as_names  # noqa: E402
+from planars.position_cells import as_names, position_numbers  # noqa: E402
 from planars.schema_values import (  # noqa: E402
     ELEMENT_ROW_COLUMNS, PAIR_ROW_SHAPES, TRAILING_COLUMNS,
 )
@@ -164,6 +164,21 @@ def _check_free_entry(kind: str, value: str, lang_id: Optional[str]) -> Optional
     if not unknown:
         return None
     return f"not a position in the planar: {', '.join(unknown)}"
+
+
+def _check_position_numbers(value: str, lang_id: Optional[str]) -> Optional[str]:
+    """None if a <position_number> cell's value is positions (``8|12|30``),
+    each in the planar when the planar is known; else what is wrong with it."""
+    numbers, problems = position_numbers(value)
+    if problems:
+        return problems[0]
+    by_number = _planar_position_names(lang_id)
+    if by_number is None:
+        return None
+    missing = [str(n) for n in numbers if str(n) not in by_number]
+    if missing:
+        return f"not a position in the planar: {', '.join(missing)}"
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -263,8 +278,20 @@ def write_problems(ws, rows: List[List[str]], problems: Dict[str, str]) -> Optio
 def _one_of(allowed) -> str:
     values = sorted(v for v in allowed if v != _POSITION_NUMBER_PLACEHOLDER)
     if _POSITION_NUMBER_PLACEHOLDER in allowed:
-        values.append("a position number")
+        values.append("position numbers (e.g. 8|12)")
     return "should be one of: " + ", ".join(values)
+
+
+def _value_problem(val: str, allowed, accepts_pos_num: bool,
+                   lang_id: Optional[str]) -> Optional[str]:
+    """What is wrong with a value not in ``allowed``, or None if it is
+    acceptable positions. A value with a digit in a <position_number>
+    column is read as positions, so the annotator is told what is wrong
+    with them (a comma, a number not in the planar); anything else is told
+    the allowed values."""
+    if accepts_pos_num and any(c.isdigit() for c in val):
+        return _check_position_numbers(val, lang_id)
+    return _one_of(allowed)
 
 _PINK  = {"red": 1.0, "green": 0.8, "blue": 0.8}
 _WHITE = {"red": 1.0, "green": 1.0, "blue": 1.0}
@@ -460,10 +487,12 @@ def validate_annotation_rows(
                             "should be a real answer, not 'na' (the keystone takes part "
                             "in this construction)", cell,
                             f"'na' in '{param}' but keystone is active — expected a real annotation value"))
-                    elif val not in allowed and not (accepts_pos_num and val.isdigit()):
-                        issues.append(_invalid(
-                            where, row_num, label, param, val, _one_of(allowed), cell,
-                            f"unexpected value '{val}' in '{param}' (allowed: {sorted(allowed)})"))
+                    elif val not in allowed:
+                        problem = _value_problem(val, allowed, accepts_pos_num, lang_id)
+                        if problem:
+                            issues.append(_invalid(
+                                where, row_num, label, param, val, problem, cell,
+                                f"unexpected value '{val}' in '{param}' ({problem})"))
                 else:
                     # Keystone does not participate (or criterion is self-referential
                     # on the keystone) — should always be 'na'.
@@ -476,10 +505,12 @@ def validate_annotation_rows(
             else:
                 if val == "":
                     issues.append(_blank(where, param, cell))
-                elif val not in allowed and not (accepts_pos_num and val.isdigit()):
-                    issues.append(_invalid(
-                        where, row_num, label, param, val, _one_of(allowed), cell,
-                        f"unexpected value '{val}' in '{param}' (allowed: {sorted(allowed)})"))
+                elif val not in allowed:
+                    problem = _value_problem(val, allowed, accepts_pos_num, lang_id)
+                    if problem:
+                        issues.append(_invalid(
+                            where, row_num, label, param, val, problem, cell,
+                            f"unexpected value '{val}' in '{param}' ({problem})"))
 
         records.append(record)
 

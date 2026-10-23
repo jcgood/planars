@@ -143,7 +143,7 @@ classes:
     include_planar_reference_tab: true
 
   - name: free_occurrence
-    span_rule_hash: "c9a14b77"
+    span_rule_hash: "29aba0bb"
     status: "[AUTO-DERIVED]"
     collection_required: "y"
     criterion_set_status: stable

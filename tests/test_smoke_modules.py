@@ -70,7 +70,8 @@ _STANDARD_KEYS = {
 _MODULES = [
     # nonpermutability uses a pair-row data model: see TestNonpermutabilitySmoke below.
     # free_occurrence: 5 criteria, 2 spans (minimal/maximal). dependent-on-* values of
-    # "y"/"n" (from _make_data) are non-numeric and treated as na — no exception raised.
+    # "y"/"n" (from _make_data) are not positions: with strict=False they are listed
+    # in missing_data, not raised.
     ("planars.free_occurrence",  "derive_free_occurrence_spans",
      ["free", "left-edge-of-free-form", "right-edge-of-free-form",
       "dependent-on-left", "dependent-on-right"],

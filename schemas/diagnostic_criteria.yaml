@@ -283,29 +283,27 @@ analyses:
           (free=n) that cannot serve as the right edge of any free-form utterance
           receive n; free elements that can end a standalone utterance receive y.
 
+      # dependent-on-left/right: wording and the "any one of" list from Adam
+      # Tallman, #318 (2026-10-22); a toolkit extension beyond Tallman et al. 2024.
       - name: dependent-on-left
         values: [na, "<position_number>"]
         description: >
-          For bound elements (free=n) only: the position number to the LEFT of this
-          element that this element must attach to in order to be realized. na for
-          free elements or bound elements with no left dependency. Can reference up
-          to one position (for elements that depend on two positions, use both
-          dependent-on-left and dependent-on-right). Position numbers must match
+          For bound elements (free=n) only: the position(s) to the LEFT of this
+          element, at least one of which must be filled for this element to
+          surface in an utterance. List several positions separated by | when any
+          one of them is enough (e.g. 3|4). na for free elements or for bound
+          elements with no left dependency. Position numbers must match
           Position_Number values in the planar structure.
-          [NEEDS REVIEW: position_ref type — not a fixed value set; validated by
-          cross-referencing the planar structure.]
 
       - name: dependent-on-right
         values: [na, "<position_number>"]
         description: >
-          For bound elements (free=n) only: the position number to the RIGHT of this
-          element that this element must attach to in order to be realized. na for
-          free elements or bound elements with no right dependency. Can reference up
-          to one position (for elements that depend on two positions, use both
-          dependent-on-left and dependent-on-right). Position numbers must match
+          For bound elements (free=n) only: the position(s) to the RIGHT of this
+          element, at least one of which must be filled for this element to
+          surface in an utterance. List several positions separated by | when any
+          one of them is enough (e.g. 8|12|30). na for free elements or for bound
+          elements with no right dependency. Position numbers must match
           Position_Number values in the planar structure.
-          [NEEDS REVIEW: position_ref type — not a fixed value set; validated by
-          cross-referencing the planar structure.]
 
   # aspiration is retired as of issue #100 — now handled by segmental
   # (construction aspiration_prominence). Criteria moved to segmental section below.
@@ -638,7 +636,10 @@ value_placeholders:
   position_number:
     value: "<position_number>"
     free_entry: false
-    meaning: a position number from the planar (any non-negative integer)
+    # Spelled singular for history: it takes a list since #318 (2026-10-23).
+    meaning: >-
+      one or more position numbers from the planar, separated by | (any one
+      of them is enough); a comma is refused (planars/position_cells.py)
   free_text:
     value: "<free_text>"
     free_entry: true
