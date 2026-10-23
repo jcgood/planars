@@ -69,8 +69,8 @@ several comments came from the sheets' dropdowns still offering the y/n
 list removed 2026-10-12 (no both/na/unclear; a typed position number
 shown as invalid). Fixed in code the same day: `refresh-dropdowns` now
 compares each sheet's real dropdowns with the codebook and runs daily.
-**Next:** (1) the live fix (the next refresh, or `refresh-dropdowns
---apply` at once, Jeff's call); (2) (b) above covers his dependent-on
+Applied live the same day (every language's sheets now match). **Next:**
+(2) (b) above covers his dependent-on
 comment (he typed commas, the plan says `|`: settle which when building
 it); (3) one short reply to Adam for Jeff to approve; (4) definitions to
 tighten: vp_ellipsis's test (#319), flapping and `multiple` (#321);
