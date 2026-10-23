@@ -23,10 +23,12 @@ Five live threads. Read whichever matches what you're picking up.
 
 The procedure is coordinator guide § "Reviewing a rule with the domain
 expert" (one issue per class). Classes awaiting review: the `status` values
-in `schemas/diagnostic_classes_status.yaml`. **Next action:** segmental goes
-first. Its draft (does `na` block a span? whose consonant does
-`flapping_right` mean?) was shown to Jeff on 2026-10-22; file it once he
-approves. free_occurrence comes after #318 (b), because its English answers
+in `schemas/diagnostic_classes_status.yaml`. **Next action:** decide with Jeff
+how Adam works through the reviews (a to-do list and guidance; proposal in
+the 2026-10-22 session: assign each issue to him, a milestone, and a
+collaborator-guide section). Segmental goes first: its draft is
+`NonCollaborative/drafts/rule_review_segmental.md` (its `na` question is
+#133). Delete the draft once it is filed. free_occurrence comes after #318 (b), because its English answers
 use comma lists ("3,4") that the code reads as no dependency at all. When
 drafting it, also ask about *it* at npsubj1 (free=y but answered) and about
 the prefixes at 28/29 (right-edge=y although they sit left of the stem).
