@@ -34,10 +34,10 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Check out planars-data
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: jcgood/planars-data
           token: ${{ secrets.PLANARS_DATA_TOKEN }}
@@ -47,7 +47,7 @@ jobs:
         run: rsync -r --exclude='.git' _planars_data/ coded_data/
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.13"
 

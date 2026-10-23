@@ -27,19 +27,19 @@ jobs:
       issues: write         # file and close the daily issues
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check out planars-data
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: jcgood/planars-data
           token: ${{ secrets.PLANARS_DATA_TOKEN }}
           path: coded_data
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.13"
 
