@@ -41,9 +41,11 @@ review, sheet-updates issue and comment; the live proposal_stan1293's
 Last review tab keeps the old text until its next review or a rewrite);
 (b) dependent-on-left/right take a `|`-separated list meaning "any one of
 these" — done 2026-10-23 (a comma is refused with "write 3|4", per his
-§ 5; `planars/position_cells.position_numbers`). Adam not yet told; his
-five subject-pronoun rows still hold commas, and list 31
-(verbinflection) where his § 1 says the stem, 30;
+§ 5; `planars/position_cells.position_numbers`). Adam told on #318
+(2026-10-23), with three questions: 31 vs 30 in his pronoun rows, the
+object pronouns' free value (noninterruption n, free_occurrence y), and
+whether "any one" is per side or across both columns (left for the
+free_occurrence span-rule review, #321);
 (c) pre-fill referential=y for `NP{…}` rows in coreference prescreening
 (not pronouns);
 (d) rename the coreference constructions to `reflexive_coreference`,
@@ -71,7 +73,7 @@ list removed 2026-10-12 (no both/na/unclear; a typed position number
 shown as invalid). Fixed in code the same day: `refresh-dropdowns` now
 compares each sheet's real dropdowns with the codebook and runs daily.
 Applied live the same day (every language's sheets now match). **Next:**
-(2) tell Adam on #318 that (b) is in (retype as `3|4`; check 31 vs 30);
+(2) Adam's answers on #318 to the (b) questions, and his retyped rows;
 (3) reply posted on #322, 2026-10-23 (asks which elements QWORDS
 splits into); (4) definitions to
 tighten: vp_ellipsis's test (#319), flapping and `multiple` (#321);
