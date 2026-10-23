@@ -14,7 +14,18 @@ And per sheet: add tabs for constructions new in the diagnostics YAML;
 rebuild and protect the locked tabs (coding/locked_tabs.py) wherever they
 differ from their sources; and give the Status tab any column
 `planar.yaml`'s `status_tab.columns` lists that it lacks, and a row for
-every construction. The daily refresh runs this with --apply.
+every construction. The daily refresh runs this with --apply, and
+``--apply`` updates the manifest on Drive. The planar file is read as the
+source of truth, so ``--apply`` stops if ``coded_data/`` has uncommitted
+changes (``coded_data_clean_tree``, enforced centrally by preconditions.py).
+
+Which columns of a tab hold criteria, how wide an added row should be, and
+what each dropdown allows come from the tab's own header plus the diagnostics
+YAML, via ``refresh_dropdowns._resolve_criterion_columns`` and
+``_fresh_param_values``, never from the manifest, which is bookkeeping and
+goes stale. When the two cannot be reconciled the tab is skipped with a
+reason rather than written to (otherwise a new row could narrow the whole
+tab's dropdowns, or write ``NA`` into ``Source``/``Comments``).
 
 Does NOT renumber positions or restructure existing content — use
 python -m coding restructure-sheets for that (archives old sheet, regenerates with carry-over).

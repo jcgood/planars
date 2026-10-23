@@ -25,6 +25,11 @@ What lives here:
   rewrites the Labels table in CLAUDE.md from it (run by the pre-commit hook
   whenever the registry is committed). So the registry is the one place a
   label is defined; GitHub's copy and CLAUDE.md's copy are rebuilt from it.
+  `tests/test_issues.py` fails if the table is stale, and if any other file
+  under `coding/` or `.github/` calls `gh issue` or `gh label` directly.
+  `--sync-labels --apply` creates and updates labels, deletes unused
+  unregistered ones, and files or closes a `label-drift` issue for
+  unregistered ones still on issues.
 
 - **The GitHub door.** Every call to GitHub goes through one object
   (`get_github()`): `GhCli` runs the `gh` program; `tests/fake_github.py` is an

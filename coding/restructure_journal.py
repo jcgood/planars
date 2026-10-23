@@ -53,6 +53,13 @@ blindly restarting the whole class. This reasoning is identical for a
 rename unit: `_rollback_unit` restores the archived sheet to its OLD name
 and folder regardless, since nothing named `new_class` has been created yet
 at that checkpoint.
+
+A plain run and `--rename-class` both refuse to start while any unit, rename
+or not, is stuck. `format_incomplete_report()` is the summary
+`restructure_sheets.py` prints when it refuses: it names each stuck class
+(`old -> new` for a rename) and whether `--rollback` or `--resume` applies.
+The journal is cleared for a unit only after the manifest has been uploaded
+to Drive, which is why the local write and the upload are not two checkpoints.
 """
 from __future__ import annotations
 

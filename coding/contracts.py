@@ -6,7 +6,7 @@ first (the filled-TSV/sheet loader) and its module docstring for the full
 rationale, which applies here unchanged. This one lives in `coding/`
 rather than `planars/` because `build_element_index` is coordinator
 tooling only (`generate_sheets.py`, `update_sheets.py`,
-`restructure_sheets.py`) — nothing in the `planars` package Colab installs
+`restructure_sheets.py`, `sheet_spec.py`) — nothing in the `planars` package Colab installs
 imports it, so unlike the first boundary this doesn't add a Colab runtime
 dependency (pandera was already added there for the first boundary).
 
@@ -37,7 +37,7 @@ here — it depends on per-row multi-element splitting
 Both schemas raise `pandera.errors.SchemaError` on violation;
 `build_element_index` catches that and re-raises `ValueError` with the
 same message format the original inline `raise` statements used, so its
-three callers keep seeing the exception type — and message shape — they
+callers keep seeing the exception type — and message shape — they
 always have.
 """
 from __future__ import annotations

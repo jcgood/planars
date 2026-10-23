@@ -19,9 +19,14 @@ there is no YAML), --apply will:
      coded_data/{lang}/archive/{class}/, logs it in the language's changes.tsv,
      removes the emptied class folder, and commits and pushes the change in
      planars-data when the command ends
-  4. Move the Drive spreadsheet into an _archived/ subfolder in the language's Drive folder,
+  3. Move the Drive spreadsheet into an _archived/ subfolder in the language's Drive folder,
      and make it read-only for everyone but its owner (drive.make_read_only)
-  5. Remove the class entry from the Drive manifest and re-upload it
+  4. Remove the class entry from the Drive manifest and re-upload it
+
+Without --all it asks about each class. The Drive manifest is uploaded right
+after each class is archived, not once at the end, so a crash partway through
+never leaves it listing an already-archived class. A stale class here means a
+retired one; to rename a class instead, use `restructure-sheets --rename-class`.
 
 The Drive sheet is moved to _archived/, not deleted — annotation data is irreplaceable.
 A recency warning is shown if the sheet was modified within the last 14 days, in case

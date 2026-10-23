@@ -20,6 +20,11 @@ Moving a folder in Drive does not break existing shares — contributor links re
 valid after the move. After running this, new language folders created by generate-sheets
 will also be placed inside the root folder automatically.
 
+If the root folder holds files the tooling didn't create, Google refuses
+the sharing change (the tooling's OAuth scope reaches only files it made);
+the command then prints an [ACTION NEEDED] line telling a person how to set
+the folder to Restricted by hand.
+
 Re-running is safe: each step checks the current Drive state and skips anything
 already in order, so a repeat run reports what it found and changes nothing.
 

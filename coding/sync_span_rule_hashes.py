@@ -6,7 +6,8 @@ verified against the current rule text. span_rule itself lives in
 diagnostic_classes.yaml (research); span_rule_hash lives in
 diagnostic_classes_status.yaml (process/tracking) — split in Phase 3 of the
 data layer redesign (issue #271). This script reads the rule from one file
-and stamps the hash into the other.
+and stamps the hash into the other. It is the final step of the span rule
+update workflow (coordinator guide, "Updating a span rule").
 
 Usage:
     python -m coding sync-span-rule-hashes                       # dry run: show what would change

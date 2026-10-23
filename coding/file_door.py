@@ -21,10 +21,17 @@ table can't be named.
   version went;
 - when the command ends, however it ends, commits and pushes exactly the
   files it wrote (with their archive copies and change-log lines), with a
-  message made from the change-log lines. Nothing else in planars-data is
-  staged. Skipped when ``coded_data/`` is not a git repository (tests). This
-  is the only place the tooling commits to planars-data (the daily
-  refresh's own commit steps went in unit 6b).
+  message made from the change-log lines (``finish``, called by
+  ``drive_door.running``). Nothing else in planars-data is staged. Skipped
+  when ``coded_data/`` is not a git repository (tests). This is the only
+  place the tooling commits to planars-data (the daily refresh's own commit
+  steps went in unit 6b).
+
+Besides ``write``, a command can ``remove`` a file (its last version is
+archived and the removal logged) or ``move_class`` a class's annotation TSVs
+to a new class name (a class rename: written under the new name, removed from
+the old, both logged). In tests, ``tests/conftest.py`` points the door at the
+test's own temporary folder.
 
 **Checks, before anything is written** (a write that breaks one is refused:
 ``DoorViolation``, and nothing is written):
@@ -88,7 +95,7 @@ import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, FrozenSet, List, Optional, Sequence, Tuple, Union
+from typing import Dict, FrozenSet, Iterator, List, Optional, Sequence, Tuple, Union
 
 from . import state_files
 
@@ -865,6 +872,23 @@ def _command_of(by: str) -> str:
     return by[:-len(IN_REFRESH)] if by.endswith(IN_REFRESH) else by
 
 
+def _change_logs() -> Iterator[Tuple[str, List[Dict[str, str]]]]:
+    """Each language's change-log lines, oldest first."""
+    for log in sorted(CODED_DATA.glob(f"*/{CHANGE_LOG_NAME}")):
+        lang_id = log.parent.name
+        if lang_id.startswith("."):
+            continue
+        with open(log, encoding="utf-8", newline="") as f:
+            yield lang_id, list(csv.DictReader(f, delimiter="\t"))
+
+
+def refresh_writes(since: str) -> int:
+    """How many change-log lines a daily refresh wrote at or after ``since``:
+    what ``overwrites`` looked at, so a clean result can say it read them."""
+    return sum(1 for _, lines in _change_logs() for line in lines
+               if line["when (UTC)"] >= since and line["by"].endswith(IN_REFRESH))
+
+
 def overwrites(since: str) -> List[Overwrite]:
     """Every write made inside a daily refresh at or after ``since`` (the
     log's UTC format) that replaced a file whose previous change-log line was
@@ -872,13 +896,8 @@ def overwrites(since: str) -> List[Overwrite]:
     import someone ran by hand, then the refresh's) is the same source, not
     an overwrite; nor is rebuilding a file built from another (``BUILT``)."""
     found: List[Overwrite] = []
-    for log in sorted(CODED_DATA.glob(f"*/{CHANGE_LOG_NAME}")):
-        lang_id = log.parent.name
-        if lang_id.startswith("."):
-            continue
+    for lang_id, lines in _change_logs():
         built = {LocalFile(kind, lang_id).relpath for kind in BUILT}
-        with open(log, encoding="utf-8", newline="") as f:
-            lines = list(csv.DictReader(f, delimiter="\t"))
         last: Dict[str, Dict[str, str]] = {}
         for line in lines:
             before = last.get(line["file"])

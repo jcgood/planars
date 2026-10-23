@@ -7,10 +7,9 @@ the same two columns (docs/data-layer-progress.md § Finding 10). Both had taken
 a tab's column layout from the manifest, which is bookkeeping and goes stale,
 rather than from the tab's own header.
 
-Each command tested its own version of the check afterwards, in its own words.
-Six other files in `coding/` still read `construction_params` from the manifest
-and will need the same guard as they are migrated (#271), so it is written once
-here instead of six more times.
+Each command tested its own version of the check afterwards, in its own words;
+it is written once here instead, for every command that writes dropdowns or
+criterion notes.
 
 The trailing columns come from `planar.yaml` via `generate_sheets`, not from a
 hardcoded pair, so adding a trailing column there extends this check with it.
@@ -61,7 +60,8 @@ def _criterion_writes(mutations: List[Dict[str, Any]]):
 
 
 def assert_no_criterion_writes_onto_trailing_columns(doorway) -> None:
-    """No dropdown and no criterion note may land on `Source` or `Comments`.
+    """No dropdown and no criterion note may land on a trailing column
+    (`Example`, `Source`, `Comments`: `schemas/planar.yaml` `trailing_columns`).
 
     These are the free-text columns an annotator writes prose in. A dropdown on
     one of them offers a value list where a sentence belongs; a criterion note

@@ -32,9 +32,16 @@ For each language with a folder in the ID file:
   proposal (a change the coordinator has made in the source as well counts
   as agreed and drops off).
 
-Dry run by default; ``--apply`` writes. A sheet with no base, or a language
-whose sources can't be read, is reported and the run exits non-zero after
-the other languages.
+Dry run by default; ``--apply`` writes. It is a step of the daily refresh
+(``proposal-sheets --apply``, after the diagnostics sync; it files its own
+``proposal`` issues). A sheet with no base, or a language whose sources
+can't be read, is reported and the run exits non-zero after the other
+languages; nothing is written to a sheet that has no base. It also refuses to
+make a second sheet when the language's folder already holds one that the ID
+file doesn't record (an earlier run stopped before recording it, so its
+content can't be trusted; a person deletes it on Drive first). A new sheet's
+ID is saved at once, so a crash on a later language never leads to a second
+sheet.
 
 The review itself is ``accept-proposal`` (``coding/accept_proposal.py``),
 which the issue names.

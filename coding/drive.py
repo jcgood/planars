@@ -12,6 +12,27 @@ every Drive lookup — the root folder (_root_folder_id), the manifest file
 manifest itself (manifest.json) lives on Drive; per-language entries carry
 notes_doc_id once a notes Doc exists.
 
+Sharing: project data is shared with named people only. Helpers (all take the
+doorway): ``ensure_user_permission`` (at least ``role``), ``set_user_role``
+(exactly ``role``, up or down), ``remove_anyone_permission`` (a link share),
+``make_read_only`` (link share removed, every named editor lowered to reader;
+prune-manifest's). Generated notebooks and PDF reports are the one exception
+and keep "anyone with the link": ``ensure_anyone_permission`` and
+``create_or_update_shared_file`` (used by generate_notebooks.py and
+generate_reports.py). Other shared helpers: ``get_or_create_spreadsheet``
+(generate_status_sheet.py), ``create_notes_doc`` and ``acknowledgment_line``
+(the only text the tooling appends to a notes Doc, the Drive door's rule 8).
+
+``upload_manifest`` updates the manifest by its recorded ID, else the one
+Drive holds (found by its label), and creates one only when Drive holds none.
+What it sends is checked by the Drive door against ``manifest_contract.check()``.
+
+``_check_coded_data_clean`` (abort if ``coded_data/`` has uncommitted changes
+to files with given extensions, so a command never acts on a half-written or
+reverted state) is called only by preconditions.py, which runs it for every
+command whose operations.yaml record declares ``coded_data_clean_tree``.
+Committing what a command wrote is the local-file door's (file_door.py).
+
 Authentication (OAuth2):
     Credentials JSON at PLANARS_OAUTH_CREDENTIALS env var, or
     ~/.config/planars/oauth_credentials.json by default.
@@ -301,7 +322,7 @@ def ensure_anyone_permission(doorway, file_id: str, role: str = "reader") -> Non
     left alone rather than re-created). Doing this unconditionally without the
     existence check first is exactly the bug setup_root_folder.py had before
     this fix, and generate_notebooks.py's repeat regeneration turned out to
-    have silently too (see that command's CLAUDE.md note).
+    have silently too.
     """
     existing = doorway.list_permissions(file_id, fields="permissions(type)")
     if any(p.get("type") == "anyone" for p in existing):

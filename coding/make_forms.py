@@ -2,7 +2,9 @@
 
 ``build_element_index`` reads ``planar_{lang_id}.tsv`` (Position and
 Class_Type checks are the pandera schemas in ``coding/contracts.py``; a
-``SchemaError`` is re-raised as ``ValueError``). The language ID comes from
+``SchemaError`` is re-raised as ``ValueError``, the type its callers
+generate-sheets, update-sheets, restructure-sheets and the sheet spec
+expect). The language ID comes from
 the filename, with or without a hyphenated datestamp (``planar_stan1293.tsv``,
 ``planar_stan1293-20260209.tsv``).
 

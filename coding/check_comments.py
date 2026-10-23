@@ -7,8 +7,8 @@ into the TSVs and they stopped there. Examples go in the Example column,
 page references in Source; Comments is only for the coordinator, and the
 tooling never writes there (``schemas/planar.yaml`` ``trailing_columns``).
 
-Reads the imported TSVs only (it runs after import-sheets in the daily
-refresh), so it touches no Drive file. Compares every Comments cell with
+Reads the imported TSVs only (it runs after import-sheets, and after
+check-notes, in the daily refresh), so it touches no Drive file. Compares every Comments cell with
 what the last run saw (``state_files.COMMENTS_STATE_PATH``: language →
 "class/construction | row key" → text), and for each language with new or
 changed comments files or comments on one ``collaborator-comments`` issue,

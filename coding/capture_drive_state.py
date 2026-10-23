@@ -21,8 +21,12 @@ folders as they stood locally (copied here into
 ``coded_data/.test_fixtures/coded_data/``). They must come from the same
 moment, or a command under test sees "changes" between them that no one made.
 So ``--apply`` replaces both for every language it captures, and nothing else
-refreshes either. Until 2026-10-10 only the Sheets half was saved and the
-tests read the live folders, so Adam's ordinary annotation work turned CI red.
+refreshes either. With ``--lang`` the other languages' entries are kept; for
+a captured language, the recording of a sheet no longer in the manifest is
+deleted (one whose capture just failed is kept as the last good copy). Never
+normalise or hand-edit a saved file: re-run the capture. Until 2026-10-10
+only the Sheets half was saved and the tests read the live folders, so Adam's
+ordinary annotation work turned CI red.
 
 Both halves live in planars-data, which is private, because they are real
 annotation content and planars is public. After ``--apply``, regenerate the

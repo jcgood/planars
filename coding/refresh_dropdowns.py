@@ -12,7 +12,14 @@ y/n default list removed 2026-10-12, so annotators couldn't pick both, na or
 unclear, and a typed position number showed as invalid). Until 2026-10-23
 this command compared the manifest's record of the values with the YAML and
 never looked at the sheet; it still brings that record up to date
-(integrity-check reads it).
+(integrity-check reads it), uploading the manifest through
+``drive.upload_manifest``, the writer every command shares (it creates a
+fresh manifest if the recorded file is lost).
+
+``_resolve_criterion_columns`` and ``_fresh_param_values`` (#272) are also
+used by update-sheets and integrity-check: which columns hold criteria comes
+from the sheet's own header, what each allows from the diagnostics YAML, never
+from the manifest.
 
 Run from the repo root:
     python -m coding refresh-dropdowns           # dry run: list what differs

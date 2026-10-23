@@ -16,6 +16,15 @@ generated. Before this (2026-10-12) the Planar Structure tab had been called
 "read-only" since 2026-05-01 without ever being locked, and only some
 commands refreshed it.
 
+`locked_tab_contents` is the build itself (Instructions from the class's
+schema entry, Planar Structure from the planar TSV), which `sheet_spec.py`
+also reads. A rebuild removes a tab the class no longer carries.
+`reorder_tabs` puts first-placed locked tabs first, then the constructions,
+then last-placed locked tabs, then Status; `system_tab_titles()` is the one
+list of non-construction tabs. Called by generate-sheets (creating a sheet and
+adding constructions), restructure-sheets (both rebuild paths) and, daily, by
+`update-sheets --apply`.
+
 Adding a locked tab is one registry entry, plus a builder below if its
 content is new. An unknown builder name, place or include rule hard-fails.
 """

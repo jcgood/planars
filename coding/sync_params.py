@@ -40,6 +40,14 @@ Every added column goes where the diagnostics file lists it among the tab's crit
 integrity-check --sheets warns on any _split_ or _merged_ prefixed column headers
 (sheet_spec.PARKED_COLUMN_PREFIXES).
 
+The tab's own header, never the manifest, decides which columns are current,
+new or surplus. The manifest's ``param_values`` for a construction only gets
+the keys a run actually pushed to the sheet (columns just inserted; removed
+columns' keys are dropped), so a criterion whose dropdown was not touched
+keeps its old record and ``--refresh-dropdowns`` still sees it as stale.
+``coded_data_clean_tree`` is enforced centrally (preconditions.py) before
+``--apply`` reads the diagnostics and planar files.
+
 Reads: one open, one tab list and one batch of header rows per spreadsheet
 (_read_headers), however many tabs it has; a tab is re-read only after this run
 writes to it. Reading tab by tab took two reads per tab and brought the

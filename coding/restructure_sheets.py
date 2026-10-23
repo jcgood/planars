@@ -94,6 +94,21 @@ the class's local TSVs move from coded_data/{lang}/{old}/ to
 coded_data/{lang}/{new}/ (file_door.move_class: each written under the new
 name and removed from the old, whose last versions stay in archive/{old}/).
 
+After `--apply`, for each language whose sheets actually changed:
+  - the planar Sheet is brought up to date with `planar_{lang_id}.tsv`
+    (`import_planar.push_planars_to_sheets`). This command only reads that file,
+    never writes it: the coordinator or Claude edits it first for a structural
+    change, and the flags above only supply the old -> new mapping used to carry
+    annotations forward. Without the push, the next import-planar run would
+    revert the local edit (#248).
+  - a comment goes to the language's `sheet-updates` issue (`notify.py`),
+    because terminal output reaches no annotator.
+
+Archived sheets: `_lock_archived_sheet` sets the annotator's grant to reader
+(`drive.set_user_role`) and removes any link share; `_rollback_unit` undoes only
+that one grant. To retire a class rather than rename it, use `prune-manifest`.
+The Drive door retries every call and checks the writes.
+
 Authentication: same OAuth2 setup as generate_sheets.py.
 """
 from __future__ import annotations

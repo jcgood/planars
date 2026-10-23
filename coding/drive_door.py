@@ -41,8 +41,12 @@ tests). Reads pass straight through. Every write is checked first:
      and the row keys (pair and keyed rows from the generators' own builders,
      ``sheet_spec.expected_row_keys``). Only mismatches the sheet did not have
      before the command first wrote to it are reported: older drift has its
-     own issues. Formatting, dropdowns and highlights change no shape and
-     cost no extra read.
+     own issues (``sheet-drift``, ``planar-changed``, ``dependent-stale``). A
+     sheet made to replace another (``create_spreadsheet(..., replaces=old_id)``,
+     restructure-sheets) takes the old sheet's tab list as its "before", and
+     its carried-over pair and keyed rows are left to the ``dependent-stale``
+     check. Formatting, dropdowns and highlights change no shape and cost no
+     extra read.
   7. a comment goes only on a class sheet, and may mention (``+address``,
      which makes Google email that person) only the sheet's annotator
      (issue #309: how an annotator without GitHub hears about problems).
@@ -88,8 +92,9 @@ carries its identity as Drive properties (``planars_kind``, ``planars_lang``,
 archived): public properties, which any coordinator's client can read. The
 kinds are ``KINDS``, and an ``Identity`` that doesn't fit one can't be made.
 Every create on the door takes ``identity=`` and writes the label;
-``mark_archived`` is called where a class sheet is archived (and undone on
-rollback). The door places a file from what this command made, else its
+``mark_archived`` is called where a class sheet is archived
+(``restructure_sheets._lock_archived_sheet``, ``prune_manifest._archive_drive_sheet``)
+and undone on rollback (``restructure_sheets._rollback_unit``). The door places a file from what this command made, else its
 label (read once per command); the files made before labels existed were
 labelled by ``migrations/label_drive_files.py``. Every kind has a spec
 (``SHEET_KINDS``, ``FILE_KINDS``). A write to a file the door cannot place
@@ -111,6 +116,11 @@ terminal reaches no one). Tests use enforce for everything. Live runs use
 ``LIVE_ENFORCED_KINDS`` (class sheets since 2026-10-19; status sheets and
 the diagnostics Sheet since 2026-10-21) raises: each check
 is told which file it is for, and its kind decides.
+
+**Tests.** A test's provenance log and snapshots go to its own temporary
+folder (``tests/conftest.py``). Tests run a command through
+``tests/command_runner.run_command``, which says which command is running;
+``tests/test_drive_door.py`` tests each rule.
 """
 from __future__ import annotations
 

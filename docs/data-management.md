@@ -28,7 +28,8 @@ planars/                        Core library
                                 (every file: planars/CLAUDE.md)
 coding/                         Google Sheets workflow tools (python -m coding <command>)
                                 (every command: python -m coding registry;
-                                every file: coding/CLAUDE.md)
+                                every file: its module docstring;
+                                rules: coding/CLAUDE.md)
 coded_data/{lang_id}/           Annotation data per language (in planars-data repo)
   lang_setup/                 Planar structure TSV + diagnostics_{lang_id}.tsv
   {class_name}/                 Filled TSVs per analysis class

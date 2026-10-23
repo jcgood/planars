@@ -1026,7 +1026,7 @@ class TestPlanLanguageCreation:
     Fixes the gap where generate-sheets had no --apply/dry-run distinction at all
     (unlike every other mutating command) -- an accidental live sheet creation during
     a session surfaced this. See docs/tooling-design.md's "dry-run by default"
-    principle and coding/CLAUDE.md's generate_sheets.py entry.
+    principle and coding/generate_sheets.py's module docstring.
     """
 
     _ALL_CLASSES = {

@@ -21,6 +21,23 @@ Run from the repo root:
 With --notify (daily, sheet-validation.yml), each language's annotator is
 told about values to fix: coding/annotator_notices.py.
 
+Three row shapes are checked, each by its own validator: element rows,
+pair rows (``row_type: pair_rows``) and keyed rows (``row_type: keyed_rows``);
+which constructions have the last two comes from ``diagnostic_classes.yaml``
+(``restructure_sheets._get_pair_row_constructions`` / ``_get_keyed_row_constructions``).
+``read_status_tab`` / ``tab_statuses`` are the one reader of a sheet's Status tab.
+
+If a tab's header isn't the row shape its construction declares, it is
+reported once (``_wrong_shape``) and nothing else on that tab is checked,
+since every value would be read from the wrong column. The message names
+both ways out: the ``generate-sheets --regen-construction`` command that
+rebuilds the sheet, and the ``row_type`` field to correct if the sheet is
+the one that's right. The rows still come back unchanged
+(``_plain_records``), because ``import-sheets`` writes whatever it is
+handed straight to the TSV.
+
+Reaches Drive only through the doorway (``get_doorway()``).
+
 Reads cell values from local TSVs (written by import-sheets) rather than
 re-fetching them from Google Sheets, then writes pink highlights back to
 Sheets only where invalid cells are found. Local TSVs must exist — if any

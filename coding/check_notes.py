@@ -8,6 +8,18 @@ annotator containing the new notes plus a ready-to-paste Claude triage prompt.
 After filing/updating an issue, an acknowledgment line is appended to the doc
 so the collaborator knows their notes were received.
 
+New content is detected by a hash of the Doc's text with the acknowledgment
+lines stripped, kept per language in ``notes_state.json``
+(``state_files.NOTES_STATE_PATH``, written through the local-file door). A
+language with no notes Doc yet gets one made on ``--apply``. One issue per
+annotator covers every language that annotator has: the issue number is
+stored in the state (``_annotator_issues``) and preferred over a title
+search, so renaming the issue doesn't start a second thread. A closed issue
+is never reused (closing is how the coordinator marks a batch triaged), so
+new notes after that start a fresh issue. The state is saved right after
+each issue and each acknowledgment, so a crash cannot make a retry treat
+already-reported content as new (#280).
+
 Usage:
     python -m coding check-notes          # dry run (no writes)
     python -m coding check-notes --apply  # file issues, write back to docs, save state

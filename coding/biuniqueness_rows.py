@@ -24,8 +24,31 @@ Keyed rows carry an Origin column saying where each row came from
 no Origin was added by hand; it is marked hand-added and survives every
 regeneration. A generated row whose source has disappeared is left out of
 carry_over()'s rows; if it holds answers, the Drive door refuses the rewrite
-(drive_door.replacing's ``kept``, the same guard --regen-construction applies
-to pair tabs, issue #241).
+unless ``--confirm-drop`` is passed (drive_door.replacing's ``kept``, the same
+guard --regen-construction applies to pair tabs, issue #241). Answers follow
+their row by key and always beat a generated pre-fill.
+
+Keyed tabs are a row shape of their own (``row_type: keyed_rows``). Which
+constructions are keyed is read everywhere through
+``restructure_sheets._get_keyed_row_constructions``, which also hard-fails on
+an unknown ``row_type`` or a keyed construction missing its columns. Each
+command that branches on row shape handles them explicitly: generate-sheets
+(create, add, ``--regen-construction``, ``--regen-dependents``, the last via
+``staleness_check: keyed_source``), validate-coding (``validate_keyed_rows``,
+``keyed_annotation_status``, ``blank_ok_when``), import-sheets, update-sheets
+(keyed tabs are left to regeneration; the elements tab adds only in-scope
+rows), restructure-sheets (keyed tabs copied with position and element
+renames; split elements flagged for review; ``--rename-class`` refuses classes
+with pair or keyed tabs), generate-status-sheet, integrity-check
+(``_keyed_staleness``), sync-params, and ``tests/make_synthetic_lang.py``.
+
+Criteria whose allowed values are only placeholders (``<free_text>``,
+``<position_names>``) are free entry: no dropdown
+(``coding.schemas.dropdown_values``), kept exactly as typed (never
+lowercased), may be blank; ``<position_names>`` values are checked against
+the planar. Positions there may be typed as numbers or names; ``co_positions``
+turns them into names, so a co-exponent label (a morphemes row's key) never
+depends on numbering.
 """
 from __future__ import annotations
 

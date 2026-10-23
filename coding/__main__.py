@@ -11,6 +11,25 @@ would inevitably drift (Phase 5 unit C, issue #271). Add `--command NAME`
 to that for one command's full detail: flags, side effects, idempotency,
 preconditions and modes. Use --help on any
 individual command for just its flags, or see CLAUDE.md.
+
+How a command is run. Every command module exposes
+``build_parser() -> argparse.ArgumentParser`` and
+``main(args: argparse.Namespace | None = None)``; ``main()`` parses
+``sys.argv`` itself only when called with no ``args``, so a test can still set
+``sys.argv`` and call ``mod.main()``. ``dispatch(cmd, argv)`` (also called by
+daily_refresh.py once per step) builds the parser, parses once, calls
+``preconditions.enforce(op_id, args)``, then runs ``mod.main(args)`` inside
+``drive_door.running(cmd, args)``. That is the one place both doors learn which
+command is running (so each can say whether this invocation may write); when
+the command ends, however it ends, the Drive door logs what it wrote
+(provenance.py) and the local-file door commits and pushes every file it wrote
+in planars-data, state files included (file_door.py).
+
+Two commands keep hand-written colon/comma flag readers that still look at
+``sys.argv`` for their values: restructure_sheets.py and sync_params.py (their
+``build_parser()`` exists for ``--help`` and for catching unknown flags).
+check_codebook.py and setup_root_folder.py take no flags, so their parsers are
+empty.
 """
 import sys
 

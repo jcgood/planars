@@ -13,6 +13,12 @@ Usage — programmatic:
     meta = get_metadata("arao1248")   # returns cached entry; fetches if needed
     print(meta["name"])               # "Araona"
 
+A fetch also writes (or refreshes) that language's Glottolog entry in
+schemas/languages.yaml, the committed copy; the cache file is gitignored and
+absent in CI. Other modules use ``is_valid_format()`` (Glottocode pattern;
+synthetic ``synth...`` test IDs, ``is_synthetic()``, count as valid) and
+``cached_entry()`` (the cached entry or None, never a fetch).
+
 Cached fields per Glottocode:
     id             Glottocode (e.g., "arao1248")
     name           Human-readable name (e.g., "Araona")

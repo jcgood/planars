@@ -22,7 +22,12 @@ What this does:
   6. Generates all_languages.ipynb from the coordinator template, with per-class cells
      inserted from the union of all languages' diagnostics; uploads to Drive
   7. Sets Viewer ("anyone with link") permissions on all uploaded notebooks
-  8. Updates drive_config.json with notebook file IDs for future updates
+     (every run, through drive.create_or_update_shared_file, which the PDF
+     upload in generate_reports.py also uses; it adds the grant only if
+     none exists, so repeat runs don't pile up duplicates)
+  8. Updates drive_config.json with notebook file IDs for future updates,
+     saved after each individual upload so a crash cannot lose the IDs of
+     earlier uploads and make a retry create duplicate files
 
 Templates live in notebooks/templates/:
   domains_boilerplate.ipynb      — contributor template (substitution only)

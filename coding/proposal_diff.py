@@ -21,6 +21,13 @@ coordinator's edit and never loses a proposal); changed only in the sheet
 and the review shows all three). ``describe`` puts a change in plain words,
 each with its reason; a deleted row's reason is the one written on the row
 beside it, since the row itself is gone.
+
+Changes that overlap or touch form one stretch, as in diff3 and git: two
+edits to neighbouring rows are read together, not merged blind. ``compare``
+sets the annotator's reasons (the What changed? column) aside while it
+compares, so a change the coordinator has also made in the source counts as
+agreed rather than a conflict, and puts the reasons back on their rows
+afterwards; a row that differs only by its reason is not a change.
 """
 from __future__ import annotations
 

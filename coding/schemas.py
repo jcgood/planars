@@ -5,7 +5,11 @@ diagnostic_classes_status.yaml), diagnostic_criteria.yaml and planar.yaml so
 multiple callers in the same process share a single file read rather than each
 opening the file independently. Also holds the readers built on them
 (``criterion_values``, ``reads_from``, the value-placeholder helpers,
-``criteria_for``).
+``criteria_for``). ``criteria_for`` is the one reader of a tab's criteria;
+``placeholder``, ``placeholder_kind``, ``free_entry_kind`` and
+``dropdown_values`` are the one reader of ``value_placeholders`` (a criterion
+with any placeholder value gets no dropdown; an undeclared ``<...>`` value
+raises).
 
 languages.yaml is intentionally excluded: it is written to by ``lookup-lang``
 mid-session and read at specific workflow points where freshness matters.

@@ -359,6 +359,14 @@ def test_only_writes_since_the_given_time_count(coded):
     assert file_door.overwrites("2999-01-01T00:00:00Z") == []
 
 
+def test_refresh_writes_counts_only_the_refreshs_own_lines_since_then(coded):
+    _change("y", "a-migration")
+    _change("n", "daily-refresh", "import-sheets")
+    _change("y", "daily-refresh", "import-sheets")
+    assert file_door.refresh_writes("2000-01-01T00:00:00Z") == 2
+    assert file_door.refresh_writes("2999-01-01T00:00:00Z") == 0
+
+
 # ---------------------------------------------------------------------------
 # Committing when the command ends
 # ---------------------------------------------------------------------------

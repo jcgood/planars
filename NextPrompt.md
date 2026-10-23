@@ -100,16 +100,12 @@ write the door now refuses shows as a failed step and its issue, not a
 `door-violation`. A `door-violation` from it on a watched kind (the new
 rule 8 especially) is a command bug or a spec gap to fix.
 
-**Next action:**
-
-0. **Check the 2026-10-23 refresh**: its new `proposal sheets` step
-   (every tab "up to date" unless Adam edited one, no `door-violation`),
-   and the first run with the local-file door enforcing (6c, done
-   2026-10-22): green, and the `overwrite` step reading the change logs.
-   A refused local write shows as its step's failure and issue: a command
-   bug to fix.
-1. **Unit 9's second half** (cut `coding/CLAUDE.md` to rules and
-   pointers), now that unit 6 is done.
+**Next action:** check each day's refresh (green, no `door-violation`,
+the `overwrite` step now says how many changes it checked) and enforce
+each kind in watch once it has had a clean real write (below). The
+2026-10-23 refresh was the first with the proposal step and the local-file
+door enforcing: both clean. Unit 9 is done (2026-10-23). After that the
+order is the proposal sheets' remaining steps, 11b–d, then 16–18.
 
 **Waits on watching:** enforce for each kind still in watch (planar
 Sheet, notes Docs, notebooks, reports, manifest, folders: its own first

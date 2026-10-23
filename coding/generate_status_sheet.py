@@ -31,13 +31,24 @@ language's annotator (addresses from private planars-data, via
 but Drive occasionally adds one by default on creation). The coordinator's
 OAuth identity owns every file as creator and needs no explicit permission.
 
+The percentage for each construction is re-read from the live class sheet on
+every run (so it tracks pair-row regeneration), using
+``validate_coding.annotation_status`` for element-row tabs,
+``pair_annotation_status`` for pair-row tabs and ``keyed_annotation_status``
+for keyed-row tabs; ``restructure_sheets._get_pair_row_constructions`` /
+``_get_keyed_row_constructions`` only decide which of them applies. A
+spreadsheet created for a status sheet is found or made with
+``drive.get_or_create_spreadsheet``. The daily refresh rebuilds every status
+sheet after ``update-sheets``, so the percentages never lag the sheets.
+
 Re-running with --apply overwrites the existing status_{lang_id} spreadsheet
 in place (found by name within the folder) rather than minting a new URL —
 unlike restructure-sheets, there is no annotation history to preserve here,
 so a stable bookmarkable link is preferable. What the finished sheet must
 hold (one `Status` tab, every construction of the diagnostics file in order,
 nothing protected) is `sheet_spec.status_sheet_spec`, which the Drive door
-checks at the end of the run.
+checks at the end of the run. Each run cuts the tab to its new rows before
+writing, so no row of a construction the language has lost survives.
 
 A class spreadsheet that cannot be opened, or a diagnostics file that cannot
 be read, leaves that language's status sheet wrong. The run finishes the

@@ -34,6 +34,20 @@ What happens depends on each tab's Status:
                     collaborator-check issue instead. --ignore-status treats
                     every tab as ready-for-review.
 
+pending_changes.json is written for each language right after that
+language's changes are detected, not once at the end, so a crash while a later
+language is processed keeps the earlier record.
+
+Which constructions have pair rows comes from diagnostic_classes.yaml
+(`_get_pair_row_constructions`, the same source validate-coding uses), never
+from a list in this file (data_dependency_schema/facts.yaml,
+`pair_row_construction_set`).
+
+The planar and diagnostics Sheet downloads print their validation notes
+(style nudges, a Glottolog reminder) to the run's output only, on purpose:
+nothing is wrong, and an issue for each would breed warning fatigue (#283).
+A diagnostics Sheet is downloaded only when it has no blocking error.
+
 A changed diagnostics TSV is diffed against the language's YAML
 (sync_diagnostics_yaml's --from-tsv logic); ambiguous differences go to
 diagnostics_drift.json, which the daily refresh turns into a

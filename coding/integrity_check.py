@@ -16,8 +16,15 @@ Runs ten sections of checks and prints a structured report:
                                     structural change elsewhere in the planar (see
                                     _find_stale_position_cells/_suggest_position_remap) --
                                     invisible to element-set comparison alone. When recoverable,
-                                    prints ready-to-use --pos-remap flags.
-  ANNOTATION SHEETS              — checks live sheet structure and dropdown drift (requires --sheets)
+                                    prints ready-to-use --pos-remap flags. For
+                                    nonpermutability and coreference the "in scope"
+                                    element set is worked out element-level (an
+                                    element marked `n` at any position is out
+                                    everywhere), matching generate_sheets.py's real
+                                    filters exactly (#285). Keyed tabs
+                                    (biuniqueness_deviations' morphemes/morphs) are
+                                    compared by row key (_keyed_staleness).
+  ANNOTATION SHEETS             — checks live sheet structure and dropdown drift (requires --sheets)
   MANIFEST SHAPE                 — checks the live manifest against manifest_contract.py's
                                     pydantic model (Phase 6 boundary 4, issue #271). The model is
                                     deliberately permissive (see that module's docstring), so a
@@ -31,6 +38,10 @@ Runs ten sections of checks and prints a structured report:
                                     INPUT] markers (check_codebook.needs_review_entries)
 
 Exit code 0 if no errors; 1 if any errors (warnings do not fail).
+
+Writes nothing. Drive is reached through the doorway, by two independent
+read-only entry points: --sheets (open each spreadsheet, list its tabs, read
+its header) and --check-manifest (the manifest alone).
 
 Usage:
     python -m coding integrity-check

@@ -23,7 +23,13 @@ Checks (both forms unless noted):
                       (required_criteria ∪ optional_criteria in
                       diagnostic_classes.yaml)
   - Required classes — every class with collection_required: "y" in
-                      diagnostic_classes_status.yaml must be present
+                      diagnostic_classes_status.yaml must be present. Reported
+                      as an error but with blocking=False in both forms: a
+                      class simply not drafted yet is no reason to withhold
+                      the rest of a valid file. Callers that gate a write on
+                      errors (import-sheets' diagnostics download,
+                      sync-diagnostics-yaml's two directions) gate on
+                      ``.blocking``, not on ``level`` alone.
 """
 from __future__ import annotations
 

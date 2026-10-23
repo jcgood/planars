@@ -37,6 +37,31 @@ intentional (e.g. a prescreening scope change, not a rename/split), add --confir
     python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexivization \
         --confirm-drop
 
+--regen-construction rewrites the tab inside drive_door.replacing (_rebuild_tab), carrying
+every answer over by the key the schema declares for the tab (planars.schema_values.row_key).
+A tab whose columns are not the shape the schema gives it is refused too (its answers could
+not be matched) unless --confirm-drop. --regen-construction and --regen-dependents are
+separate paths from sheet creation and always act live; --apply does not gate them (their own
+guards do).
+
+Each sheet gets a Status tab (in-progress / ready-for-review dropdowns). A class that already has
+a sheet but gained a construction in its diagnostics YAML gets that tab added on any --apply
+run, whether or not the language also gets a brand-new class sheet.
+
+Two-stage (pair-sheet) classes: nonpermutability (element_prescreening first, then
+--regen-construction nonpermutability:general) and coreference (prescreening first, then
+--regen-construction coreference:<pair construction> for each). Both prescreening filters
+(scopal, referential) exclude an element by name across every position, not only the one
+marked n. If an element is n at one position and y/both at another, that is an open
+linguistics question (is the criterion a property of the element or of the element at a
+position?), so _abort_if_criterion_diverges_by_position aborts and files or updates one
+`diagnostics` GitHub issue rather than choosing a side.
+
+--regen-dependents (run in the daily refresh) fills a dependent tab only when it has no rows to
+lose: it does not exist yet, or it exists empty and its source tab is marked ready-for-review in
+the Status tab. A dependent with rows is never touched (integrity-check flags it as stale
+instead). It exits non-zero if any dependent failed to regenerate; the others are still tried.
+
 Before --regen-construction overwrites a tab, the Drive door saves its current content to
 coded_data/.state/regen_snapshots/ (state_files.SNAPSHOT_DIR) -- a safety net in case anything not yet downloaded via
 import-sheets was lost to an interrupted run (issue #271); not something you need to act on

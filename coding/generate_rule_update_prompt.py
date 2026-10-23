@@ -7,6 +7,10 @@ emits a ready-to-paste prompt that includes:
   - explicit instructions (update logic, update docstring, run tests)
   - the exact sync-span-rule-hashes command to run after Claude is done
 
+The daily refresh's codebook step runs it (with no class) when check-codebook
+fails, and puts the prompts in the `codebook-error` issue body; check-codebook's
+own messages point to the one-class form.
+
 Usage:
     python -m coding generate-rule-update-prompt metrical   # one class
     python -m coding generate-rule-update-prompt            # all stale classes

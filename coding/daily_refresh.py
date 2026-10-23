@@ -594,6 +594,10 @@ def overwrite_check(r: Refresh) -> None:
     found = file_door.overwrites(r.started) if r.started else []
     for o in found:
         print(f"Overwrote {o.lang_id}/{o.file} ({o.replaced_by}, {o.replaced_when})")
+    if not found:
+        checked = file_door.refresh_writes(r.started) if r.started else 0
+        print(f"Checked {checked} change(s) this refresh made; "
+              "none replaced another command's change.")
     r.report("data-overwrite", bool(found),
              "Someone's change may have been overwritten by data-refresh",
              lambda: overwrite_body(found), "No one's change overwritten")

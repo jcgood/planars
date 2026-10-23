@@ -8,7 +8,14 @@ Run from the repo root:
 Each language gets a report_{lang_id}.pdf in its Drive folder. The file is
 created on the first run and updated in place on subsequent runs, so the URL
 stays stable. PDFs render natively in the Drive viewer, making the URL
-directly shareable with non-technical collaborators (#89, #94).
+directly shareable with non-technical collaborators (#89, #94). The upload
+is `drive.create_or_update_shared_file` (shared with generate_notebooks.py):
+"anyone with the link, reader" is reasserted on every run, so a report whose
+share was removed by hand is restored without piling up duplicate grants.
+
+`drive_config.json` is saved after every language, and a failure on one
+language (collecting data, rendering the PDF, uploading) is printed and
+skipped, so the languages after it still get their reports.
 
 Requires weasyprint and kaleido (both in requirements.txt). WeasyPrint also
 needs system libraries: libpango-1.0-0, libpangocairo-1.0-0, libcairo2

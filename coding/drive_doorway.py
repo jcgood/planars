@@ -58,6 +58,28 @@ either method, turning the hazard into a loud failure instead of a silent one.
 implementation is installed. Nothing here retries: the door retries every
 call, once, for both implementations.
 
+**Every command that touches Drive goes through the doorway**;
+``tests/test_doorway_coverage.py`` derives the list of files that still reach
+Drive another way and checks it is empty.
+
+**Testing against the fake.** ``tests/fake_drive.py`` is seeded from
+``coded_data/.test_fixtures/drive_state/`` (recorded by ``capture-drive-state``;
+in planars-data because it is real annotation content). Command tests read
+local files from the matching frozen copy, ``coded_data/.test_fixtures/coded_data/``
+(``fake_drive.FROZEN_CODED_DATA``, or ``use_frozen_coded_data()`` to redirect
+every module's ``CODED_DATA`` to a private copy of it; a harness that builds its
+own copy uses ``point_coded_data_at()``, never one module's ``CODED_DATA`` alone,
+since the Drive door reads its own), never from the live language folders,
+which change whenever an annotator works. ``tests/render_mutations.py`` renders
+the fake's mutation log as a digest with tab titles and column headers instead
+of raw IDs; use it for human review. It cannot resolve headers for a
+spreadsheet created within the same test run, so a digest of a creation-heavy
+command (generate-sheets, restructure-sheets) shows ``BEYOND HEADER``
+throughout: a rendering gap, not a bug. ``tests/mutation_checks.py`` holds
+assertions shared across commands, e.g.
+``assert_no_criterion_writes_onto_trailing_columns``: no dropdown and no
+criterion note may land on ``Source`` or ``Comments``.
+
 **Indexing has no single rule.** gspread's convenience methods are 1-based
 (``row_values``, ``update_cell``, ``insert_cols``); raw Sheets API request
 objects inside ``batch_update`` are 0-based (``startRowIndex``,

@@ -47,6 +47,17 @@ TSV → YAML (--from-tsv):
 Each language must have a diagnostics_{lang_id}.yaml in its lang_setup/
 folder to participate. Languages without YAML are skipped.
 
+Exit status: the YAML → TSV and YAML → Sheet directions exit non-zero when
+any language has a blocking validation error (the daily refresh files a
+`diagnostics-yaml-error` issue on that). Only blocking errors stop a
+language, in either direction; a non-blocking one (e.g. a required class not
+yet drafted) does not withhold the sync. `--from-tsv` is different: its
+ambiguous differences have their own path (diagnostics_drift.json, the
+`diagnostics-drift` issue).
+
+`coded_data_clean_tree` (for `.yaml` and `.tsv`) is enforced centrally by
+preconditions.py before any `--apply` direction reads or writes coded_data/.
+
 Both local directions write through the local-file door (coding/file_door.py),
 which keeps the previous version in archive/lang_setup/, logs the change in
 the language's changes.tsv, and commits it in planars-data when the command

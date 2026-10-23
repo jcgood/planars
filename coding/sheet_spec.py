@@ -15,7 +15,31 @@ What changed? column, every cell the annotator's), and the files that are not sp
 manifest, notebooks, PDF reports and folders (`file_spec`: name, folder,
 type, what may be written into it, `content_problems`,
 `appended_text_problems`). Sharing is specified for every kind
-(`sharing_spec`: who gets which role, and whether a link share is allowed).
+(`sharing_spec`: who gets which role, and whether a link share is allowed; one
+table per kind, and a kind with no entry raises; the coordinators in
+people.yaml are writers on the root folder, which everything under it
+inherits). `sharing_differences(spec, grants)` compares a file's own grants
+with its spec (integrity-check's SHARING section).
+
+`file_spec` is the one place each non-spreadsheet file is named, together with
+`ROOT_FOLDER_NAME`, `ARCHIVE_FOLDER_NAME` and `STATUS_FOLDER_NAME`; commands
+read the names from here. `STATUS_SHEET_COLUMNS` is the status sheet's header,
+which generate-status-sheet reads. Row shapes come from `planars.schema_values`
+(`row_columns`, `row_key`) and the rows of an element-row tab from the
+generators' own builders (`make_forms.element_rows`,
+`biuniqueness_rows.element_rows`); locked-tab content from
+`locked_tabs.locked_tab_contents`. `tests/test_sheet_spec.py` holds every
+recorded class sheet to its spec.
+
+`expected_row_keys` gives the row keys any construction or Status tab should
+hold: pair tabs from `generate_sheets.pair_rows` (the one pair builder that
+creating, extending and regenerating a sheet all call), keyed tabs from
+`biuniqueness_rows.keyed_rows`, None when a source isn't imported yet;
+`counts_as_generated` leaves a keyed tab's hand-added rows out. The door's
+rule 6 uses both. `PARKED_COLUMN_PREFIXES`/`parked_operation` are the one
+statement of the `_split_`/`_merged_` holding columns `sync-params` leaves
+for the coordinator to delete by hand (read by sync-params, integrity-check
+and the door).
 
 A notes Doc is the annotator's: its text is never replaced, and the only
 thing the tooling adds is one acknowledgment line at a time (check-notes),

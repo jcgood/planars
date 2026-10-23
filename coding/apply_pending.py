@@ -14,7 +14,19 @@ rather than applied immediately. This command lets coordinators review each
 change, see the diff summary, and confirm before the downstream command runs.
 
 Once a change is confirmed and applied, its entry is removed from the file.
-Skipped entries remain in the file for the next run.
+Skipped entries remain in the file for the next run. The file is rewritten
+after every entry's decision, so a crash after one entry's command ran for
+real never leaves it listed as pending. When none remain, the `pending-changes`
+issue is closed. The command itself never writes to Drive: each applied change
+runs another `python -m coding ... --apply`, whose own door does the writing.
+
+For a new-construction entry, the Google Sheet is checked to see whether the
+tab has really been added, rather than taking the coordinator's word for it.
+When it can't look, it says which of four things went wrong (no spreadsheet ID
+on the entry, no such spreadsheet, not shared with the signed-in account, Drive
+unreachable), since each needs a different next step and only the last means
+"try again later". In all four the coordinator can still mark the entry done,
+so one naming a dead spreadsheet can't stay open forever.
 """
 from __future__ import annotations
 

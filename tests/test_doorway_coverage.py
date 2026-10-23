@@ -102,21 +102,6 @@ def test_nothing_reaches_past_the_door():
         "the method the command needs to coding/drive_door.py, with its check.")
 
 
-def test_progress_is_recorded_where_it_is_claimed():
-    """coding/CLAUDE.md names the migrated files; keep it true, not approximate."""
-    claimed = (CODING / "CLAUDE.md").read_text(encoding="utf-8")
-    match = re.search(r"\*\*Migrated so far: (.+?)\.\*\*", claimed)
-    assert match, "coding/CLAUDE.md no longer states which files are migrated"
-    named = set(re.findall(r"`([a-z_]+\.py)`", match.group(1)))
-    actual = {
-        path.name for path in sorted(CODING.glob("*.py"))
-        if path.name not in _EXEMPT and _uses_doorway(path.name)
-    }
-    assert named == actual, (
-        f"coding/CLAUDE.md says {sorted(named)}; the code says {sorted(actual)}"
-    )
-
-
 def test_stated_counts_match_the_code():
     """The progress doc says how many files are done; keep it arithmetic, not memory.
 
