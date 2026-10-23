@@ -105,16 +105,10 @@ def test_build_first_issue_body_mentions_lang_id():
     assert "stan1293" in body
 
 
-def test_build_first_issue_body_says_subscribe_not_watch():
+def test_build_first_issue_body_says_subscribe_rather_than_watch_the_repository():
     body = build_first_issue_body("stan1293")
-    assert "Subscribe" in body
-    assert "Watch" in body  # mentioned, but to explain why NOT to use it
-    assert "not \"Watch\" the" in body or "not Watch the" in body.replace('"', "")
-
-
-def test_build_first_issue_body_explains_repo_watch_would_flood():
-    body = build_first_issue_body("stan1293")
-    assert "flood" in body.lower()
+    assert "**Subscribe** to this issue" in body
+    assert "rather than watching the repository" in body
 
 
 def test_build_first_issue_body_mentions_manifest_field():
@@ -145,8 +139,7 @@ def test_build_change_comment_includes_folder_url_when_given():
         [("ciscategorial", "https://sheets/1")],
         "https://drive/folder",
     )
-    assert "https://drive/folder" in comment
-    assert "Bookmark this instead" in comment
+    assert "Bookmark the folder instead; its link never changes: https://drive/folder" in comment
 
 
 def test_build_change_comment_omits_folder_section_when_absent():
@@ -155,18 +148,17 @@ def test_build_change_comment_omits_folder_section_when_absent():
         [("ciscategorial", "https://sheets/1")],
         None,
     )
-    assert "Bookmark this instead" not in comment
+    assert "Bookmark the folder" not in comment
 
 
-def test_build_change_comment_mentions_lang_id_in_heading():
+def test_build_change_comment_names_the_language():
     comment = build_change_comment("stan1293", [], None)
-    assert "stan1293" in comment
+    assert "English [stan1293]" in comment
 
 
-def test_build_change_comment_no_sheets_no_folder_still_returns_heading():
+def test_build_change_comment_no_sheets_no_folder_still_says_what_changed():
     comment = build_change_comment("stan1293", [], None)
-    assert comment.strip() != ""
-    assert "Affected sheets" not in comment
+    assert comment.strip() == "The English [stan1293] sheets changed."
 
 
 def test_build_change_comment_includes_status_sheet_url_when_given():
@@ -176,8 +168,7 @@ def test_build_change_comment_includes_status_sheet_url_when_given():
         None,
         status_sheet_url="https://sheets/status_stan1293",
     )
-    assert "https://sheets/status_stan1293" in comment
-    assert "Status/links page" in comment
+    assert "Progress and links: https://sheets/status_stan1293" in comment
 
 
 def test_build_change_comment_omits_status_sheet_section_when_absent():
@@ -186,4 +177,4 @@ def test_build_change_comment_omits_status_sheet_section_when_absent():
         [("ciscategorial", "https://sheets/1")],
         None,
     )
-    assert "Status/links page" not in comment
+    assert "Progress and links" not in comment

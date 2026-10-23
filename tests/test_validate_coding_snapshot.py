@@ -376,10 +376,10 @@ def test_notify_comments_on_the_sheet_for_an_annotator_without_github(env, githu
     run_main(["validate-coding", "--lang", "arao1248", "--notify"])
     sid = sheet_id(doorway, "arao1248", "ciscategorial")
     [comment] = doorway.list_comments(sid)
-    assert comment["content"].startswith("+annotator@example.org 1 cell on tabs marked "
-                                         "ready-for-review needs fixing.")
+    assert comment["content"] == ("+annotator@example.org 1 cell needs fixing: see the "
+                                  "Status tab, column 'Needs fixing'.")
     [issue] = [i for i in github.issues if "needs-fixing" in i["labels"]]
-    assert "has no GitHub username on file" in issue["body"]
+    assert "no GitHub username in people.yaml" in issue["body"]
 
     run_main(["validate-coding", "--lang", "arao1248", "--notify"])
     assert len(doorway.list_comments(sid)) == 1

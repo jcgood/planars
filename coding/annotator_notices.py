@@ -74,29 +74,24 @@ def summary(sheets: Sequence[SheetProblems]) -> str:
     """One line per sheet: how many cells, and where to look."""
     return "\n".join(
         f"- **{s.class_name}**: {_count(len(s.lines))} — [open the sheet]({s.url}); "
-        f"each one is listed in its {STATUS_TAB} tab, column '{STATUS_PROBLEMS_COLUMN}'"
+        f"listed on its {STATUS_TAB} tab"
         for s in sheets)
 
 
 def body_for(lang_id: str, sheets: Sequence[SheetProblems], told: str) -> str:
+    # Short: an annotator reads it, and reading comes out of annotation time
+    # (Adam, #318).
     return (
-        f"## What needs fixing\n\n"
-        f"Some tabs of the {get_display_name(lang_id)} sheets are marked "
-        f"ready-for-review but have values that aren't allowed:\n\n"
+        f"Some values on your ready-for-review tabs aren't allowed:\n\n"
         f"{summary(sheets)}\n\n"
-        f"## What to do\n\n"
-        f"Open each sheet, go to its {STATUS_TAB} tab and correct the cells listed "
-        f"in the '{STATUS_PROBLEMS_COLUMN}' column (they are pink on their tab). "
-        f"The list updates within a day of each fix, and this issue closes by itself "
-        f"when nothing is left.\n\n"
-        f"{told}\n\n"
+        f"Fix the pink cells. This issue closes by itself when none are left. {told}\n\n"
         f"<!-- needs-fixing: {','.join(sorted(codes(sheets)))} -->\n")
 
 
 def drive_comment(email: str, sheet: SheetProblems) -> str:
-    return (f"+{email} {_count(len(sheet.lines))} on tabs marked ready-for-review "
-            f"{'needs' if len(sheet.lines) == 1 else 'need'} fixing. Each one is listed "
-            f"in the {STATUS_TAB} tab, column '{STATUS_PROBLEMS_COLUMN}'.")
+    return (f"+{email} {_count(len(sheet.lines))} "
+            f"{'needs' if len(sheet.lines) == 1 else 'need'} fixing: see the {STATUS_TAB} "
+            f"tab, column '{STATUS_PROBLEMS_COLUMN}'.")
 
 
 def notify(lang_id: str, sheets: Sequence[SheetProblems], doorway=None) -> str:
@@ -120,13 +115,12 @@ def notify(lang_id: str, sheets: Sequence[SheetProblems], doorway=None) -> str:
     github = github_for(name) if name else None
 
     if github:
-        told = f"@{github} — you are mentioned so GitHub emails you."
+        told = f"@{github}"
     elif name:
-        told = (f"{name} has no GitHub username on file (coded_data/people.yaml), so "
-                f"they are told by a comment on each sheet, which Google emails them.")
+        told = f"({name} is told by a comment on each sheet: no GitHub username in people.yaml.)"
     else:
-        told = (f"Nobody was told: languages.yaml names no annotator for "
-                f"{get_display_name(lang_id)}.")
+        told = (f"(Nobody was told: languages.yaml names no annotator for "
+                f"{get_display_name(lang_id)}.)")
     body = body_for(lang_id, sheets, told)
 
     if number is None:

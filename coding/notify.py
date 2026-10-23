@@ -23,8 +23,8 @@ Design (settled by discussion, not re-litigated here):
     language (folder_url, spreadsheet_ids, etc.).
   - Triggered after `restructure-sheets --apply`, once per language that had
     actual changes: post a comment to that language's tracking issue
-    summarizing what changed (same content as the "Affected sheets" /
-    "Bookmark this instead" terminal output, as markdown).
+    giving the sheets' new links, the folder link and the status page, in a
+    few lines (annotators asked for short text, #318).
 
 Not wired into any GitHub Actions workflow yet -- only into the manually
 triggered, already-reviewed `restructure-sheets --apply` path.
@@ -38,6 +38,8 @@ _write_tab_with_carryover in restructure_sheets.py).
 from __future__ import annotations
 
 from typing import List, Optional, Tuple
+
+from planars.languages import get_display_name
 
 from . import issues
 
@@ -77,23 +79,16 @@ def build_first_issue_body(lang_id: str) -> str:
     that traffic. Subscribing to this issue alone gets exactly this
     language's sheet-change notifications.
     """
+    # Short: an annotator reads it (Adam, #318). The comment is for the
+    # coordinator: restructure-sheets keeps this issue's number in
+    # sheets_manifest.json (notification_issue).
     return (
-        f"This issue tracks annotation sheet changes for **{lang_id}** — "
-        "new sheets created, sheets restructured (positions renamed, "
-        "elements added/removed/split), etc. It's created once and reused "
-        "for every future change to this language's sheets; each change is "
-        "posted here as a new comment.\n"
+        f"When the {get_display_name(lang_id)} sheets change, the new links are "
+        "posted here. **Subscribe** to this issue (top right) rather than watching "
+        "the repository, which has unrelated discussion.\n"
         "\n"
-        "**Click \"Subscribe\" (top-right on this issue), not \"Watch\" the "
-        "whole repo.** This repo also has active theoretical-linguistics "
-        "discussion threads unrelated to sheet mechanics -- watching the "
-        "repo would flood you with that traffic. Subscribing to this issue "
-        f"alone gets you exactly the {lang_id} sheet-change notifications "
-        "and nothing else. If you annotate more than one language, "
-        "subscribe to each language's issue individually.\n"
-        "\n"
-        "This issue is managed by `restructure-sheets`; the issue number is "
-        "stored in `sheets_manifest.json` (`notification_issue`)."
+        "<!-- Managed by restructure-sheets; number in sheets_manifest.json "
+        "(notification_issue). -->"
     )
 
 
@@ -116,29 +111,16 @@ def build_change_comment(
     so it isn't a one-off mention that gets buried, the same reasoning that
     applies to the folder link below.
     """
-    lines = [f"## Sheet updates — {lang_id}", ""]
-    if status_sheet_url:
-        lines += [
-            f"**Status/links page (locked, read-only):** {status_sheet_url}",
-            "",
-        ]
-    if folder_url:
-        lines += [
-            "Every sheet below just got a **new URL** (restructure-sheets "
-            "always creates a fresh spreadsheet and archives the old one) "
-            "-- any previously bookmarked sheet links are now stale. The "
-            "Drive folder link below does NOT change across restructures, "
-            "so it's the one worth bookmarking long-term:",
-            "",
-            f"**Bookmark this instead:** {folder_url}",
-            "",
-        ]
+    # Short: an annotator reads it (Adam, #318).
+    lines = [f"The {get_display_name(lang_id)} sheets changed."
+             + (" New links (the old sheets are archived):" if lang_sheet_links else ""), ""]
     if lang_sheet_links:
-        lines.append("**Affected sheets (new URLs -- old bookmarks to these classes are stale):**")
+        lines += [f"- {class_name}: {url}" for class_name, url in lang_sheet_links]
         lines.append("")
-        for class_name, url in lang_sheet_links:
-            lines.append(f"- {class_name}: {url}")
-        lines.append("")
+    if folder_url:
+        lines += [f"Bookmark the folder instead; its link never changes: {folder_url}", ""]
+    if status_sheet_url:
+        lines += [f"Progress and links: {status_sheet_url}", ""]
     return "\n".join(lines)
 
 

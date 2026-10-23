@@ -35,8 +35,10 @@ for coreference.
 
 **State lives in #318** (his 13 points, and the comment with Jeff's
 decisions, 2026-10-22). Approved, in order:
-(a) shorten the text the tooling writes for annotators (needs-fixing,
-proposal issue, Last review; the CLAUDE.md rule);
+(a) shorten the text the tooling writes for annotators — done
+2026-10-22 (needs-fixing issue and sheet comment, proposal issue, Last
+review, sheet-updates issue and comment; the live proposal_stan1293's
+Last review tab keeps the old text until its next review or a rewrite);
 (b) dependent-on-left/right take a `|`-separated list meaning "any one of
 these" (his § 3 gives the semantics and every place in the code; a
 span-rule change, so schema-work care, the module docstring and

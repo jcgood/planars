@@ -135,7 +135,7 @@ def test_apply_makes_the_sheet_filled_from_the_sources(env):
     assert planar[0] == source[0] + [WHAT_CHANGED_COLUMN]
     assert trimmed([r[:len(source[0])] for r in planar]) == trimmed(source)
     assert ss.worksheet(PROPOSAL_DIAGNOSTICS_TAB).get_all_values()[0][-1] == WHAT_CHANGED_COLUMN
-    assert "No proposal has been reviewed yet." in str(
+    assert "No proposal reviewed yet." in str(
         ss.worksheet(REVIEW_TAB_TITLE).get_all_values())
     # In the language's folder, labelled, shared with its annotator as writer.
     config = json.loads(state_files.ID_FILE.read_text(encoding="utf-8"))

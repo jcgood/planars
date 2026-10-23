@@ -59,14 +59,13 @@ LABEL = "proposal"      # schemas/issue_labels.yaml
 
 # What Last review says before any proposal has been reviewed. Moves into
 # the schema with the other sentences annotators read (unit 11d).
+# Short: an annotator reads it (Adam, #318).
 FIRST_REVIEW_TEXT = (
-    "No proposal has been reviewed yet.",
+    "No proposal reviewed yet.",
     "",
-    "To propose a change to this language's planar structure or diagnostics, "
-    "edit the Planar or Diagnostics tab: change a cell, add a row or delete one, "
-    "and say why in that row's What changed? column.",
-    "Nothing else changes until the coordinator has reviewed your proposal. "
-    "What was accepted, and why anything was not, is written here.",
+    "To propose a change, edit the Planar or Diagnostics tab and give a reason "
+    "in What changed?.",
+    "The coordinator's answer appears here.",
 )
 
 
@@ -222,9 +221,9 @@ def issue_title(lang_id: str) -> str:
 def _issue_body(lang_id: str, url: str, found: Dict[str, Dict[str, List[str]]]) -> str:
     from .people import annotator_name
     who = annotator_name(lang_id) or "The annotator"
-    lines = [f"{who} has proposed changes in [{sheet_name(lang_id)}]({url}). Each change "
-             "is the sheet's difference from what it was last filled with; the reason, "
-             "where given, is in italics.", ""]
+    # Short: the annotator reads it too (Adam, #318).
+    lines = [f"{who} proposed changes in [{sheet_name(lang_id)}]({url}) "
+             "(reasons in italics):", ""]
     for title, _ in PROPOSAL_TABS:
         if not (found[title]["changes"] or found[title]["conflicts"]):
             continue
@@ -235,13 +234,8 @@ def _issue_body(lang_id: str, url: str, found: Dict[str, Dict[str, List[str]]]) 
                           "since the sheet was filled):"]
             lines += [f"- {c}" for c in found[title]["conflicts"]]
         lines.append("")
-    lines += ["## What to do",
-              "The coordinator decides on each change, with their Claude: "
-              f"`python -m coding accept-proposal --lang {lang_id} --apply` asks about each "
-              "one, applies the accepted ones to the sources, tells the annotator the outcome "
-              "on the sheet's Last review tab, and closes this issue. (Without `--apply` it "
-              "only lists them.) A change the coordinator makes in the source by hand drops "
-              "off this list by itself."]
+    lines += [f"**To decide:** `python -m coding accept-proposal --lang {lang_id} --apply`. "
+              "The outcome goes on the sheet's Last review tab, and this issue closes."]
     return "\n".join(lines)
 
 
