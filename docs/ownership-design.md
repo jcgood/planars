@@ -322,6 +322,16 @@ the same commit.
    commit steps are gone. The rest of § 4.3 (commands read every ID from
    the ID file; the manifest copies deleted) is 11c's.
 4. **6c — enforce,** by the § 4 rule; `data-overwrite` moves to the log (§ 5.3).
+   *Built 2026-10-22,* after the day's refresh made the door's first real
+   data-file writes cleanly. As built: every kind enforced at once, and the
+   watch-mode code deleted (nothing would use it); a change-log line written
+   inside the daily refresh says so in `by` (`import-sheets (daily
+   refresh)`), and the alarm is `file_door.overwrites`: a refresh write
+   that replaced a line by a different command run outside a refresh (the
+   same command, an import someone ran by hand, is the same source). The
+   issue names the archive copy holding the replaced version. A hand edit
+   leaves no line, so it goes unseen until unit 17, as § 4.4 says; the
+   refresh's checkout no longer fetches planars-data's history.
 5. **11a — proposal sheets:** the coordinators list (Q2), the
    `proposal_sheet` kind in both doors, creation (**a live write, named for
    Jeff's approval**), the daily comparison and issue, `accept-proposal`. The

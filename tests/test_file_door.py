@@ -1,13 +1,13 @@
 """Tests for coding/file_door.py, the local-file door (Phase 10 unit 6a).
 
-Each rule in the module docstring, the archive and change log it keeps, the
-commit when a command ends, and watch mode. The files are a private copy of
-the frozen data (fake_drive.use_frozen_coded_data), so the spec checks run
-against real diagnostics files. The door enforces in every test
-(tests/conftest.py); a test of watch mode sets it.
+Each rule in the module docstring, the archive and change log it keeps,
+what the log says about overwrites, and the commit when a command ends. The
+files are a private copy of the frozen data (fake_drive.use_frozen_coded_data),
+so the spec checks run against real diagnostics files.
 """
 from __future__ import annotations
 
+import contextlib
 import csv
 import io
 import subprocess
@@ -309,19 +309,54 @@ def test_move_class_writes_under_the_new_name_and_removes_the_old(coded, monkeyp
 
 
 # ---------------------------------------------------------------------------
-# Watch mode
+# The daily refresh in the log, and overwrites
 # ---------------------------------------------------------------------------
 
-def test_watch_mode_lets_the_write_through_and_files_one_issue(coded, monkeypatch, github):
-    monkeypatch.setattr(file_door, "MODE", file_door.WATCH)
-    rows = _rows(_answered(coded))
-    del rows[1]
-    with drive_door.running("t", may_write=True):
-        assert file_door.write(_target(), _text(rows), why="test")
-    assert file_door.read(_target()) == _text(rows)
-    [issue] = github.list_issues(drive_door.VIOLATION_LABEL)
-    assert issue["title"] == "Local-file door: writes that broke a rule"
-    assert "answered row(s) would be lost" in issue["body"]
+def _change(value: str, *commands: str) -> None:
+    """Answer the first row with ``value`` inside the nested runs named."""
+    rows = _rows(file_door.read(_target()))
+    rows[1][3] = value
+    with contextlib.ExitStack() as stack:
+        for command in commands:
+            stack.enter_context(drive_door.running(command, may_write=True))
+        file_door.write(_target(), _text(rows), why="test")
+
+
+def test_a_write_inside_the_daily_refresh_says_so_in_the_log(coded):
+    _change("y", "daily-refresh", "import-sheets")
+    _change("n", "import-sheets")
+    assert [l["by"] for l in _log(coded)] == ["import-sheets (daily refresh)", "import-sheets"]
+
+
+def test_the_refresh_replacing_another_commands_change_is_an_overwrite(coded):
+    _change("y", "a-migration")
+    _change("n", "daily-refresh", "import-sheets")
+    [o] = file_door.overwrites("2000-01-01T00:00:00Z")
+    assert (o.lang_id, o.file, o.replaced_by) == (LANG, f"{CLASS}/general.tsv", "a-migration")
+    assert o.replaced_version == _log(coded)[1]["previous version"]
+
+
+def test_the_same_command_or_an_earlier_refresh_is_not_an_overwrite(coded):
+    _change("y", "import-sheets")
+    _change("n", "daily-refresh", "import-sheets")
+    _change("y", "daily-refresh", "import-sheets")
+    assert file_door.overwrites("2000-01-01T00:00:00Z") == []
+
+
+def test_rebuilding_a_file_built_from_another_is_not_an_overwrite(coded):
+    target = file_door.diagnostics_tsv(LANG)
+    with drive_door.running("sync-params", may_write=True):
+        file_door.write(target, file_door.read(target) + "\n", why="test")
+    with drive_door.running("daily-refresh", may_write=True):
+        with drive_door.running("sync-diagnostics-yaml", may_write=True):
+            file_door.write(target, file_door.read(target) + "\n", why="test")
+    assert file_door.overwrites("2000-01-01T00:00:00Z") == []
+
+
+def test_only_writes_since_the_given_time_count(coded):
+    _change("y", "a-migration")
+    _change("n", "daily-refresh", "import-sheets")
+    assert file_door.overwrites("2999-01-01T00:00:00Z") == []
 
 
 # ---------------------------------------------------------------------------

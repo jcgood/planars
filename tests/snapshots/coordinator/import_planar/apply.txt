@@ -17,4 +17,4 @@ synth0001
   (content-only changes)
   → (content-only changes — no sheet structural updates needed)
   wrote planar_synth0001.tsv
-Local-file door (enforce): changed 3 file(s), previous versions archived and logged; 0 broke a rule.
+Local-file door: changed 3 file(s), previous versions archived and logged.

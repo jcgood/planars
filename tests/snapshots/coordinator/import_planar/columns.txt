@@ -10,4 +10,4 @@ stan1293
 
 synth0001
   up to date
-Local-file door (enforce): changed 1 file(s), previous versions archived and logged; 0 broke a rule.
+Local-file door: changed 1 file(s), previous versions archived and logged.

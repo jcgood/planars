@@ -369,8 +369,8 @@ def running(command: str, args: Optional[argparse.Namespace] = None, *,
     outside the dispatcher and has no record (a migration). At the end, if
     the command succeeded, the door labels the tabs it wrote; then, however
     it ended, it logs what it wrote and, in watch mode, reports any
-    violations in one GitHub issue. The local-file door then reports its own
-    and commits the files the command wrote.
+    violations in one GitHub issue. The local-file door then commits the
+    files the command wrote.
     """
     from . import file_door
     file_door.begin(command, args, may_write=may_write)

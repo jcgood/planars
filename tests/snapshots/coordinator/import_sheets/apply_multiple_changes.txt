@@ -245,4 +245,4 @@ synth0001
 Validated 50 sheet(s).  Errors: 1
 Cell highlighting and each sheet's Status tab updated in Google Sheets.
 Drive door (enforce): checked 109 write(s) to 51 tab(s) or file(s); 0 broke a rule.
-Local-file door (enforce): changed 3 file(s), previous versions archived and logged; 0 broke a rule.
+Local-file door: changed 3 file(s), previous versions archived and logged.

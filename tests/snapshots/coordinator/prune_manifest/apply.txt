@@ -22,4 +22,4 @@ Manifest snapshot written to manifest_archives/manifest_TIMESTAMP.json
 
 Drive manifest updated.
 Drive door (enforce): checked 4 write(s) to 3 tab(s) or file(s); 0 broke a rule.
-Local-file door (enforce): changed 2 file(s), previous versions archived and logged; 0 broke a rule.
+Local-file door: changed 2 file(s), previous versions archived and logged.

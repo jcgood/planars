@@ -30,7 +30,9 @@ Moved here from the workflow file on 2026-10-17 (Phase 10 unit 8, issue
 apart from three fixes noted where they apply (stale drift and
 planar-change files from an earlier run are deleted first; a door
 violation is no longer reported twice; the overwrite check's issue is
-filed even when an earlier step broke).
+filed even when an earlier step broke). Since Phase 10 unit 6c
+(2026-10-22) the overwrite check and its issue read each language's change
+log (``file_door.overwrites``), not planars-data's git history.
 """
 from __future__ import annotations
 
@@ -47,29 +49,19 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, List, Optional, Sequence
 
-from . import file_door, issues, state_files
+from . import file_door, issues
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
-# Files in planars-data that the refresh itself rewrites, so a refresh
-# changing them is not an overwrite of a coordinator's work: diagnostics TSVs
-# (generated from the YAML), planar TSVs (imported from the planar Sheet,
-# their source of truth), the tooling's own files (coding/state_files.py: the
-# state files, the notes state among them, and the ID file), which every
-# command writes wherever it runs, and what the local-file door adds to on
-# every write wherever it runs: each language's change log and archive
-# copies, which only ever grow; and the proposal sheets' saved bases, which
-# only proposal-sheets and accept-proposal write.
-_REFRESH_OWNED_PARTS = ("lang_setup/diagnostics_", "lang_setup/planar_",
-                        f"lang_setup/{file_door.PROPOSAL_BASE}_",
-                        f"{state_files.STATE_DIR.name}/", state_files.ID_FILE.name,
-                        f"/{file_door.CHANGE_LOG_NAME}", f"/{file_door.ARCHIVE_FOLDER}/")
-_BOT = "github-actions[bot]"
-
 
 def today() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+def now() -> str:
+    """Now, in the change log's format (UTC)."""
+    return datetime.now(timezone.utc).strftime(file_door.CHANGE_LOG_TIME_FORMAT)
 
 
 # ---------------------------------------------------------------------------
@@ -172,22 +164,6 @@ class Git:
                            f"{done.stderr.strip()}")
         return done.stdout
 
-    def head(self) -> str:
-        return self._git("rev-parse", "HEAD").strip()
-
-    def last_commit_by(self, author: str) -> Optional[str]:
-        for line in self._git("log", "--format=%H %ae").splitlines():
-            sha, _, email = line.partition(" ")
-            if author in email:
-                return sha
-        return None
-
-    def changed_between(self, old: str, new: str) -> List[str]:
-        return [l for l in self._git("diff", "--name-only", old, new).splitlines() if l]
-
-    def tracked_files(self) -> List[str]:
-        return [l for l in self._git("ls-files").splitlines() if l]
-
     def commit(self, message: str, paths: Sequence[str] = ("-A",)) -> bool:
         """Stage `paths`, and if anything is staged, commit and push.
         True if a commit was made."""
@@ -202,20 +178,8 @@ class Git:
         return True
 
 
-def data_git() -> Git:
-    return Git(CODED_DATA)
-
-
 def code_git() -> Git:
     return Git(ROOT)
-
-
-def at_risk_files(git: Git) -> List[str]:
-    """Files a person (not the refresh) committed to planars-data since the
-    refresh last committed, excluding the files the refresh owns."""
-    last = git.last_commit_by(_BOT)
-    files = git.changed_between(last, "HEAD") if last else git.tracked_files()
-    return [f for f in files if not any(part in f for part in _REFRESH_OWNED_PARTS)]
 
 
 # ---------------------------------------------------------------------------
@@ -431,16 +395,23 @@ def integrity_error_body(text: str) -> str:
     return "".join(out)
 
 
-def overwrite_body(files: List[str]) -> str:
+def overwrite_body(found: List[file_door.Overwrite]) -> str:
+    lines = [f"- `{o.lang_id}/{o.file}`: today's `{o.by}` replaced the change "
+             f"`{o.replaced_by}` made on {o.replaced_when[:10]} (\"{o.replaced_why}\"); "
+             f"that version is kept as `{o.lang_id}/{o.replaced_version}`."
+             for o in found]
     return (
-        f"## Coordinator data may have been overwritten — {today()}\n\n"
-        "The daily data refresh detected human commits to planars-data that were\n"
-        "overwritten by today's import from Google Sheets.\n\n"
-        "This may be a false alarm if the coordinator's local edit matched the Sheet.\n"
-        "But if the Sheet was stale (e.g. after a column rename), annotation data may be lost.\n\n"
-        "**Check git history in planars-data to verify. Use `git log` and `git show`** "
-        "on the commit(s) listed below, then compare against the current TSV.\n\n"
-        "### Files affected\n```\n" + "\n".join(files) + "\n```\n")
+        f"## Someone's change may have been overwritten — {today()}\n\n"
+        "Today's refresh replaced files whose last change was made by a command someone "
+        "ran (a migration, restructure-sheets), not by an import from the same sheet. "
+        "If that change never reached the Google Sheet, the import has undone it.\n\n"
+        + "\n".join(lines) + "\n\n"
+        "## What to do\n\n"
+        "For each file, compare the kept version with the current file. If the change "
+        "is gone, make it again in the Sheet (or re-run the command that made it). "
+        "Each language's `changes.tsv` in planars-data has the full history. Then "
+        "close this issue; it also closes by itself after a refresh with no such "
+        "overwrite.\n")
 
 
 def status_sheet_error_body(output: str) -> str:
@@ -465,8 +436,7 @@ class Refresh:
     halted: Optional[str] = None             # why the refresh itself failed
     outcomes: List[tuple] = field(default_factory=list)   # (step, outcome)
     uncovered_failures: List[str] = field(default_factory=list)
-    before_sha: Optional[str] = None
-    at_risk: List[str] = field(default_factory=list)
+    started: Optional[str] = None            # change-log time the run began
     diag_tsv: Optional[Result] = None
 
     def summary(self, title: str, text: str) -> None:
@@ -498,11 +468,8 @@ class Refresh:
 # broke (a commit, a push, filing an issue).
 
 def record_before(r: Refresh) -> None:
-    git = data_git()
-    r.before_sha = git.head()
-    r.at_risk = at_risk_files(git)
-    print("Human-committed files at risk of overwrite:")
-    print("\n".join(r.at_risk) or "(none)")
+    r.started = now()
+    print(f"Refresh started {r.started}; the overwrite check reads change-log lines from then on.")
 
 
 def sync_labels(r: Refresh) -> None:
@@ -621,19 +588,15 @@ def snapshots(r: Refresh) -> None:
 
 
 def overwrite_check(r: Refresh) -> None:
-    """Did today's refresh change a file a person committed since the last
-    refresh? (#121 gap 2.)"""
-    git = data_git()
-    after = git.head()
-    if not r.before_sha or r.before_sha == after:
-        print("No planars-data changes — skipping overwrite check.")
-        overwritten: List[str] = []
-    else:
-        changed = set(git.changed_between(r.before_sha, after))
-        overwritten = sorted(set(r.at_risk) & changed)
-    r.report("data-overwrite", bool(overwritten),
-             "Coordinator data may have been overwritten by data-refresh",
-             lambda: overwrite_body(overwritten), "No coordinator data overwritten")
+    """Did today's refresh replace someone's change to a file? (#121 gap 2.)
+    Read from the change log since Phase 10 unit 6c (ownership-design § 5.3);
+    until then, from git history."""
+    found = file_door.overwrites(r.started) if r.started else []
+    for o in found:
+        print(f"Overwrote {o.lang_id}/{o.file} ({o.replaced_by}, {o.replaced_when})")
+    r.report("data-overwrite", bool(found),
+             "Someone's change may have been overwritten by data-refresh",
+             lambda: overwrite_body(found), "No one's change overwritten")
 
 
 def commit_snapshots(r: Refresh) -> None:
@@ -717,7 +680,8 @@ class Step:
 
 
 STEPS: List[Step] = [
-    Step("before", "note planars-data's state and the files people committed", record_before),
+    Step("before", "note when the run began (the overwrite check reads the log from then)",
+         record_before),
     Step("labels", "issue --sync-labels --apply (labels exist before anything files)", sync_labels),
     Step("planar", "import-planar --apply → planar-changed", import_planar),
     Step("import", "import-sheets --apply --ignore-status → import-error", import_sheets),
@@ -739,7 +703,7 @@ STEPS: List[Step] = [
     Step("manifest", "integrity-check --check-manifest → stale-manifest", stale_manifest),
     Step("integrity", "integrity-check → integrity-error", integrity),
     Step("snapshots", "generate_snapshots.py", snapshots, always=True),
-    Step("overwrite", "compare with the files people committed → data-overwrite",
+    Step("overwrite", "change log: did the refresh replace someone's change? → data-overwrite",
          overwrite_check, always=True),
     Step("commit snapshots", "commit tests/snapshots/ to planars", commit_snapshots, always=True),
     Step("sheet updates", "update-sheets --apply → sheet-drift", update_sheets),

@@ -194,4 +194,4 @@ Done.
 --- Notifying language tracking issues ---
   [stan1293] commented on issue #999
 Drive door (enforce): checked 289 write(s) to 83 tab(s) or file(s); 0 broke a rule.
-Local-file door (enforce): changed 16 file(s), previous versions archived and logged; 0 broke a rule.
+Local-file door: changed 16 file(s), previous versions archived and logged.

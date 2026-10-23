@@ -201,10 +201,6 @@ _KNOWN_SITES: Dict[Site, str] = {
         "deliberately non-raising by design -- see file_door._commit's "
         "docstring: the commit already succeeded locally, only the remote lags "
         "until the next push (the next command's commit pushes it too)",
-    ("file_door.py", 'print(f"WARNING: could not file the {VIOLATION_LABEL} issue: {exc}")', 1):
-        "the watch-mode report itself failed (GitHub unreachable); the body is "
-        "printed right after, and a finished run is never failed over the "
-        "report -- the same rule as the Drive door's own report",
     ("import_sheets.py", 'print(f"\\nDone. {total_files} file(s) written{backup_part}, {total_warnings} warning(s).")', 1):
         "summary count ('N warning(s)'), not an independent site -- reflects "
         "warnings already tracked above",

@@ -26,8 +26,8 @@ table can't be named.
   is the only place the tooling commits to planars-data (the daily
   refresh's own commit steps went in unit 6b).
 
-**Checks, before anything is written** (problems are acted on by ``MODE``:
-raise ``DoorViolation`` in enforce, report in watch):
+**Checks, before anything is written** (a write that breaks one is refused:
+``DoorViolation``, and nothing is written):
 
 1. a command is running (``drive_door.running`` tells both doors), and its
    ``operations.yaml`` record says this invocation writes local files
@@ -58,12 +58,21 @@ let through), write only what differs and commit with the rest. They are
 not research data, so they get no archive copy or change-log line: git
 keeps their history.
 
-**Watch, then enforce** (design § 4.1, the Drive door's § 4 rule): live runs
-use ``LIVE_MODE`` (watch: the write goes ahead and the command files or
-updates one ``door-violation`` issue at the end); tests use enforce from the
-start (``tests/conftest.py``). ``tests/test_file_door_coverage.py`` fails if
-code under ``coding/`` writes a file any other way, apart from the listed
-writes outside planars-data.
+**Enforced** (unit 6c, 2026-10-22): the door watched live writes first
+(design § 4.1, the Drive door's § 4 rule), letting a broken rule through and
+filing a ``door-violation`` issue, until its first real data-file write went
+through cleanly (the 2026-10-22 refresh); every kind is now refused in live
+runs as in tests. ``tests/test_file_door_coverage.py`` fails if code under
+``coding/`` writes a file any other way, apart from the listed writes outside
+planars-data.
+
+**Overwrites** (design § 5.3): a change-log line written inside the daily
+refresh says so in its ``by`` column (``import-sheets (daily refresh)``), so
+``overwrites(since)`` can answer from the log alone whether the refresh
+replaced a file whose last change was made by someone running a different
+command (a migration, restructure-sheets): the daily refresh's
+``data-overwrite`` issue. A hand edit leaves no line, so it is not seen
+until unit 17 requires one.
 
 Not here: test data under ``.test_fixtures/`` (``capture-drive-state`` is
 its one writer) and hand edits (unit 17).
@@ -86,13 +95,10 @@ from . import state_files
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
-ENFORCE = "enforce"
-WATCH = "watch"
-# The one place the live mode is set; tests set MODE to ENFORCE. Every kind
-# moves to enforce together in unit 6c, once real writes have gone through
-# cleanly in watch.
-LIVE_MODE = WATCH
-MODE = LIVE_MODE
+# The command whose runs hold the others in the daily refresh, and how a
+# change-log line written inside one says so.
+REFRESH_COMMAND = "daily-refresh"
+IN_REFRESH = " (daily refresh)"
 
 # The datestamp in an archived file's name (planar_stan1293_20260209_101500.tsv),
 # always UTC. One statement for every archive (hidden-facts M-misc).
@@ -130,10 +136,15 @@ KINDS: Dict[str, Dict[str, object]] = {
 }
 # The files a person edits; every other kind is built from something else.
 SOURCES: FrozenSet[str] = frozenset({PLANAR, DIAGNOSTICS_YAML})
+# Built from another file in planars-data, so rebuilding one loses nothing:
+# not an overwrite (``overwrites``).
+BUILT: FrozenSet[str] = frozenset({DIAGNOSTICS_TSV, PROPOSAL_BASE})
 SETUP_FOLDER = "lang_setup"
 ARCHIVE_FOLDER = "archive"
 CHANGE_LOG_NAME = "changes.tsv"
 CHANGE_LOG_COLUMNS = ("when (UTC)", "file", "what changed", "by", "why", "previous version")
+# Sorts as text in time order, which overwrites() relies on.
+CHANGE_LOG_TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
 
 @dataclass(frozen=True)
@@ -376,7 +387,6 @@ class _Run:
     written: List[Path] = field(default_factory=list)   # to commit, in order
     lines: List[str] = field(default_factory=list)      # for the commit message
     state: Dict[str, str] = field(default_factory=dict)  # state file -> what was done
-    violations: List[str] = field(default_factory=list)
     specs: Dict[Tuple[str, str, str], object] = field(default_factory=dict)
 
 
@@ -424,24 +434,20 @@ def begin(command: str, args: Optional[argparse.Namespace] = None, *,
 
 
 def finish(succeeded: bool) -> None:
-    """End the current run: report what broke a rule (watch mode), then
-    commit and push what it wrote. After a failed command a commit failure
-    is printed rather than raised, so it can't hide the command's own error."""
+    """End the current run: commit and push what it wrote. After a failed
+    command a commit failure is printed rather than raised, so it can't hide
+    the command's own error."""
     run = _runs.pop()
-    try:
-        if MODE == WATCH and run.violations:
-            _report_violations(run.command, run.violations)
-    finally:
-        if run.lines:
-            print(f"Local-file door ({MODE}): changed {len(run.lines)} file(s), previous "
-                  f"versions archived and logged; {len(run.violations)} broke a rule.")
-        if run.written:
-            try:
-                _commit(run)
-            except RuntimeError as exc:
-                if succeeded:
-                    raise
-                print(f"ERROR: {exc}")
+    if run.lines:
+        print(f"Local-file door: changed {len(run.lines)} file(s), previous versions "
+              f"archived and logged.")
+    if run.written:
+        try:
+            _commit(run)
+        except RuntimeError as exc:
+            if succeeded:
+                raise
+            print(f"ERROR: {exc}")
 
 
 # ---------------------------------------------------------------------------
@@ -572,15 +578,13 @@ def _note_state(run: Optional[_Run], target: StateFile, path: Path, action: str)
 # ---------------------------------------------------------------------------
 
 def _act(run: Optional[_Run], target: Union[LocalFile, StateFile], problems: List[str]) -> None:
-    """Raise (enforce) or remember for the issue (watch)."""
+    """Refuse the write if anything is wrong with it."""
     if not problems:
         return
     command = run.command if run else "(no command)"
     where = target.relpath if isinstance(target, StateFile) else f"{target.lang_id}/{target.relpath}"
     messages = [f"{command}: {where}: {p}" for p in problems]
-    if MODE == ENFORCE or run is None:
-        raise DoorViolation("The local-file door refused a write.\n  " + "\n  ".join(messages))
-    run.violations.extend(messages)
+    raise DoorViolation("The local-file door refused a write.\n  " + "\n  ".join(messages))
 
 
 def _permission_problems(run: Optional[_Run], target: LocalFile, action: str) -> List[str]:
@@ -768,7 +772,9 @@ def _log(run: Optional[_Run], target: LocalFile, what: str, why: str,
     lang_dir = CODED_DATA / target.lang_id
     log = change_log(target.lang_id)
     by = run.command if run else "(no command)"
-    when = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    if run is not None and _runs and _runs[0] is not run and _runs[0].command == REFRESH_COMMAND:
+        by += IN_REFRESH
+    when = datetime.now(timezone.utc).strftime(CHANGE_LOG_TIME_FORMAT)
     prev = str(previous.relative_to(lang_dir)) if previous else ""
     new_log = not log.exists()
     log.parent.mkdir(parents=True, exist_ok=True)
@@ -838,28 +844,51 @@ def _commit(run: _Run) -> None:
               f"push: {pushed.stderr.strip()}. Run: git -C coded_data push")
 
 
-def _report_violations(command: str, violations: List[str]) -> None:
-    """One GitHub issue for every rule a watched run broke."""
-    from . import issues
-    from .drive_door import VIOLATION_LABEL
-    counts: Dict[str, int] = {}
-    for v in violations:
-        counts[v] = counts.get(v, 0) + 1
-    lines = [f"- {v}" + (f" (×{n})" if n > 1 else "") for v, n in counts.items()]
-    body = (
-        f"The local-file door is watching writes to planars-data before it starts "
-        f"refusing them (docs/ownership-design.md § 4.1). `{command}` wrote files in a "
-        "way that breaks its rules; the writes went ahead, and each file's previous "
-        "version is in its language's `archive/` folder.\n\n" + "\n".join(lines) + "\n\n"
-        "Each one is either a real bug in the command (fix the command) or a gap in the "
-        "door's rules (fix `coding/file_door.py` or the command's record in "
-        "`data_dependency_schema/operations.yaml`). Close this issue when every line is "
-        "resolved.\n"
-    )
-    try:
-        # By title: the Drive door files under the same label, as its own issue.
-        issues.file_issue(VIOLATION_LABEL, "Local-file door: writes that broke a rule", body,
-                          match_title=True)
-    except Exception as exc:  # noqa: BLE001 - never fail a finished run over the report
-        print(f"WARNING: could not file the {VIOLATION_LABEL} issue: {exc}")
-        print(body)
+# ---------------------------------------------------------------------------
+# Reading the log: overwrites
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class Overwrite:
+    """A daily-refresh write that replaced someone's change to a file."""
+    lang_id: str
+    file: str            # within the language's folder
+    when: str            # the refresh's write
+    by: str
+    replaced_when: str   # the change it replaced
+    replaced_by: str
+    replaced_why: str
+    replaced_version: str  # the archive copy holding it, within the language's folder
+
+
+def _command_of(by: str) -> str:
+    return by[:-len(IN_REFRESH)] if by.endswith(IN_REFRESH) else by
+
+
+def overwrites(since: str) -> List[Overwrite]:
+    """Every write made inside a daily refresh at or after ``since`` (the
+    log's UTC format) that replaced a file whose previous change-log line was
+    written outside a refresh by a different command. The same command (an
+    import someone ran by hand, then the refresh's) is the same source, not
+    an overwrite; nor is rebuilding a file built from another (``BUILT``)."""
+    found: List[Overwrite] = []
+    for log in sorted(CODED_DATA.glob(f"*/{CHANGE_LOG_NAME}")):
+        lang_id = log.parent.name
+        if lang_id.startswith("."):
+            continue
+        built = {LocalFile(kind, lang_id).relpath for kind in BUILT}
+        with open(log, encoding="utf-8", newline="") as f:
+            lines = list(csv.DictReader(f, delimiter="\t"))
+        last: Dict[str, Dict[str, str]] = {}
+        for line in lines:
+            before = last.get(line["file"])
+            last[line["file"]] = line
+            if (before is None or line["when (UTC)"] < since or line["file"] in built
+                    or not line["by"].endswith(IN_REFRESH)
+                    or before["by"].endswith(IN_REFRESH)
+                    or _command_of(before["by"]) == _command_of(line["by"])):
+                continue
+            found.append(Overwrite(lang_id, line["file"], line["when (UTC)"],
+                                   line["by"], before["when (UTC)"], before["by"],
+                                   before["why"], line["previous version"]))
+    return found

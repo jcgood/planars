@@ -95,4 +95,4 @@ Renames:  ['free:free_form']
 Manifest updated on Drive.
 
 Drive door (enforce): checked 7 write(s) to 7 tab(s) or file(s); 0 broke a rule.
-Local-file door (enforce): changed 6 file(s), previous versions archived and logged; 0 broke a rule.
+Local-file door: changed 6 file(s), previous versions archived and logged.

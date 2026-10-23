@@ -90,13 +90,14 @@ rule 8 especially) is a command bug or a spec gap to fix.
 
 **Next action:**
 
-0. **Check the 2026-10-23 refresh's new `proposal sheets` step** (the
-   first in the refresh): green, every tab "up to date" unless Adam edited
-   one, no `door-violation`.
-1. **Unit 6c — enforce** the local-file door (`ownership-design.md` § 6
-   step 4); unblocked, since its first real data-file write went through
-   cleanly on 2026-10-22 (end of the Phase 10 row); `data-overwrite`
-   moves to the change log (§ 5.3).
+0. **Check the 2026-10-23 refresh**: its new `proposal sheets` step
+   (every tab "up to date" unless Adam edited one, no `door-violation`),
+   and the first run with the local-file door enforcing (6c, done
+   2026-10-22): green, and the `overwrite` step reading the change logs.
+   A refused local write shows as its step's failure and issue: a command
+   bug to fix.
+1. **Unit 9's second half** (cut `coding/CLAUDE.md` to rules and
+   pointers), now that unit 6 is done.
 
 **Waits on watching:** enforce for each kind still in watch (planar
 Sheet, notes Docs, notebooks, reports, manifest, folders: its own first
@@ -105,8 +106,7 @@ status sheets and the diagnostics Sheet are enforced), and refusing
 unlabelled targets (last). **11a is live** (2026-10-22: the three
 proposal sheets, the refresh step, the collaborator guide section, the
 issue to Adam); 11b (locking the planar/diagnostics Sheets) waits until
-Adam has used his proposal sheet once. 9's second half needs 6; then
-11b–d, 16–18.
+Adam has used his proposal sheet once. Then 11b–d, 16–18.
 
 **Live steps — name each to Jeff for approval first:** 5f's one-notebook
 sharing test and Q7's Colab label-search test (both need an annotator's

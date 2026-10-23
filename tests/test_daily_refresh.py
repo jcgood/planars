@@ -31,24 +31,9 @@ class FakeGit:
     commit finds anything staged; `fail_on` makes a commit whose message
     contains it fail, as a failed push would."""
 
-    def __init__(self, at_risk: Tuple[str, ...] = (), changed: Tuple[str, ...] = (),
-                 dirty: bool = True, fail_on: Optional[str] = None):
+    def __init__(self, dirty: bool = True, fail_on: Optional[str] = None):
         self.commits: List[Tuple[str, Tuple[str, ...]]] = []
-        self.sha = 1
-        self._at_risk, self._changed = list(at_risk), list(changed)
         self.dirty, self.fail_on = dirty, fail_on
-
-    def head(self) -> str:
-        return f"sha{self.sha}"
-
-    def last_commit_by(self, author: str) -> Optional[str]:
-        return "sha0"
-
-    def changed_between(self, old: str, new: str) -> List[str]:
-        return self._at_risk if old == "sha0" else self._changed
-
-    def tracked_files(self) -> List[str]:
-        return self._at_risk
 
     def commit(self, message: str, paths=("-A",)) -> bool:
         if self.fail_on and self.fail_on in message:
@@ -56,7 +41,6 @@ class FakeGit:
         if not self.dirty:
             return False
         self.commits.append((message, tuple(paths)))
-        self.sha += 1
         return True
 
 
@@ -72,11 +56,10 @@ def refresh_env(monkeypatch, tmp_path):
         calls.append(key)
         return results.get(key, dr.Result(0, f"{key}: ok\n"))
 
-    data, code = FakeGit(), FakeGit()
+    code = FakeGit()
     monkeypatch.setattr(dr, "run", fake_run)
     monkeypatch.setattr(dr, "regenerate_snapshots", lambda: results.get(
         "snapshots", dr.Result(0, "snapshots: ok\n")))
-    monkeypatch.setattr(dr, "data_git", lambda: data)
     monkeypatch.setattr(dr, "code_git", lambda: code)
     coded = tmp_path / "coded_data"
     (coded / "stan1293" / "lang_setup").mkdir(parents=True)
@@ -86,7 +69,7 @@ def refresh_env(monkeypatch, tmp_path):
     monkeypatch.setattr(ip, "PLANAR_CHANGES_PATH", tmp_path / "planar_changes.json")
     monkeypatch.setattr(is_, "DRIFT_PATH", tmp_path / "diagnostics_drift.json")
     monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(tmp_path / "summary.md"))
-    return results, calls, data, code, tmp_path
+    return results, calls, code, tmp_path
 
 
 def _open(github, label: str) -> List[dict]:
@@ -98,7 +81,7 @@ def _open(github, label: str) -> List[dict]:
 # ---------------------------------------------------------------------------
 
 def test_a_clean_run_runs_every_command_in_order_and_closes_every_issue(refresh_env, github):
-    results, calls, data, code, _ = refresh_env
+    results, calls, code, _ = refresh_env
     for label in ("import-error", "integrity-error", "sheet-drift", "data-overwrite"):
         github.seed_issue(f"old {label}", label)
     r = dr.refresh()
@@ -123,9 +106,6 @@ def test_a_clean_run_runs_every_command_in_order_and_closes_every_issue(refresh_
     ]
     for label in ("import-error", "integrity-error", "sheet-drift", "data-overwrite"):
         assert _open(github, label) == []
-    # planars-data is committed by each command's local-file door, never by
-    # the refresh itself (unit 6b).
-    assert data.commits == []
     assert code.commits[0][1] == ("tests/snapshots/",)
 
 
@@ -159,7 +139,7 @@ def test_a_second_failing_day_replaces_the_open_issue_rather_than_filing_another
 
 def test_a_step_that_breaks_stops_the_run_but_the_always_steps_still_run(
         refresh_env, github, monkeypatch):
-    results, calls, data, code, _ = refresh_env
+    results, calls, code, _ = refresh_env
 
     def cannot_file(*a, **k):
         raise RuntimeError("GitHub refused")
@@ -228,34 +208,31 @@ def test_drift_written_by_todays_import_files_a_table(refresh_env, github, monke
     assert "| stan1293 | ciscategorial | unknown_criterion | V-combines |" in issue["body"]
 
 
-def test_a_file_a_person_committed_and_the_refresh_changed_files_data_overwrite(
+def test_the_refresh_replacing_another_commands_change_files_data_overwrite(
         refresh_env, github, monkeypatch):
-    data = FakeGit(at_risk=("stan1293/ciscategorial/general.tsv", "stan1293/notes.md"),
-                   changed=("stan1293/ciscategorial/general.tsv",))
-    monkeypatch.setattr(dr, "data_git", lambda: data)
-    results, *_ = refresh_env
+    """Read from the change log (file_door.overwrites, tested in
+    test_file_door.py): a migration's change, then today's import."""
+    from coding import file_door
+    log = file_door.change_log("stan1293")
+    log.parent.mkdir(parents=True)
+    header = "\t".join(file_door.CHANGE_LOG_COLUMNS)
+    log.write_text(f"{header}\n2026-10-01T00:00:00Z\tmetrical/stress_domain.tsv\t1 cell(s) "
+                   f"changed\tsort-examples\tmoved examples\tarchive/metrical/a.tsv\n",
+                   encoding="utf-8")
     real_run = dr.run
 
-    def import_commits(cmd, *argv):
+    def import_logs(cmd, *argv):
         if cmd == "import-sheets":
-            data.sha += 1          # the command's door committed what it wrote
+            with open(log, "a", encoding="utf-8") as f:
+                f.write(f"{dr.now()}\tmetrical/stress_domain.tsv\t1 cell(s) changed\t"
+                        f"import-sheets (daily refresh)\timported\tarchive/metrical/b.tsv\n")
         return real_run(cmd, *argv)
-    monkeypatch.setattr(dr, "run", import_commits)
+    monkeypatch.setattr(dr, "run", import_logs)
     dr.refresh()
     [issue] = _open(github, "data-overwrite")
-    assert "stan1293/ciscategorial/general.tsv" in issue["body"]
-    assert "notes.md" not in issue["body"]
-
-
-def test_files_the_refresh_owns_are_never_at_risk():
-    git = FakeGit(at_risk=(".state/notes_state.json", "drive_config.json",
-                           "stan1293/lang_setup/planar_stan1293.tsv",
-                           "stan1293/lang_setup/diagnostics_stan1293.tsv",
-                           "stan1293/lang_setup/diagnostics_stan1293.yaml",
-                           "stan1293/changes.tsv",
-                           "stan1293/archive/metrical/stress_domain_20261020_120000.tsv",
-                           "stan1293/metrical/stress_domain.tsv"))
-    assert dr.at_risk_files(git) == ["stan1293/metrical/stress_domain.tsv"]
+    assert "`stan1293/metrical/stress_domain.tsv`" in issue["body"]
+    assert "`sort-examples` made on 2026-10-01" in issue["body"]
+    assert "`stan1293/archive/metrical/b.tsv`" in issue["body"]
 
 
 def test_codebook_failure_attaches_the_rule_update_prompts(refresh_env, github):
