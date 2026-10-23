@@ -147,11 +147,11 @@ from .drive_doorway import SpreadsheetHandle, WorksheetHandle, WorksheetNotFound
 from .generate_sheets import (
     _annotator_email,
     _build_criterion_notes,
-    _build_rows,
     _create_status_tab,
     _format_and_validate,
     _populate_tab_keyed,
     _refresh_locked_tabs,
+    starting_rows,
 )
 from .locked_tabs import reorder_tabs
 from . import biuniqueness_rows as _br
@@ -446,7 +446,6 @@ def _write_tab_with_carryover(
         element = str(row[0])
         pos_name = str(row[1])
         pos_num = str(row[2])
-        is_keystone = _is_keystone(pos_name)
 
         old_values = _lookup_existing(element, pos_name, existing, old_for_new, old_el_for_new)
         if old_values is not None:
@@ -455,7 +454,10 @@ def _write_tab_with_carryover(
             reachable_old_keys.add(_old_key(element, pos_name, existing, old_for_new, old_el_for_new))
             carried += 1
         else:
-            param_vals = ["NA"] * len(param_names) if is_keystone else [""] * len(param_names)
+            # Nothing to carry over: the values the row starts with
+            # (generate_sheets.starting_rows: keystone na, pre-fills).
+            param_vals = [str(v) for v in row[len(ELEMENT_ROW_COLUMNS):][:len(param_names)]]
+            param_vals += [""] * (len(param_names) - len(param_vals))
             trailing_vals = [""] * len(_TRAILING_COLS)
             split_source = new_to_old_split.get(element)
             old_split = existing.get((split_source, pos_name)) if split_source else None
@@ -530,7 +532,7 @@ def _compute_stats(
     """Compute carry-over stats for a dry run without touching any sheet.
 
     Args:
-        rows: new rows from _build_rows (the regenerated planar structure).
+        rows: new rows from _element_rows_for (the regenerated planar structure).
         existing: current annotations keyed by (element, pos_name).
         rename_map: {old_pos_name: new_pos_name} for renamed positions.
         element_rename_map: {old_element: new_element} for renamed element labels.
@@ -1014,14 +1016,16 @@ def _position_param_cols(param_values: Dict[str, List[str]]) -> Set[str]:
 
 def _element_rows_for(class_name: str, construction: str, element_index, lang_id: str,
                       param_names: List[str], planar_file: Path) -> List[List[object]]:
-    """The element rows a rebuilt tab should have. Every class takes every
+    """The element rows a rebuilt tab should have, with the values the tooling
+    fills in itself (generate_sheets.starting_rows). Every class takes every
     planar element, except biuniqueness_deviations' elements tab, which takes
     only those in biuniqueness scope (biuniqueness_rows.scoped_elements, #254)."""
     if class_name == _br.CLASS_NAME and construction == _br.ELEMENTS:
         planar_df = pd.read_csv(planar_file.parent / f"planar_{lang_id}.tsv", sep="\t",
                                 dtype=str, keep_default_na=False)
         return _br.element_rows(planar_df, lang_id, param_names)
-    return _build_rows(element_index, lang_id, param_names)
+    return starting_rows(element_index, lang_id, class_name, construction, param_names,
+                         data_dir=planar_file.parent)
 
 
 def _rename_positions_in_annotations(
@@ -1214,7 +1218,7 @@ def _rename_class_for_language(
 
     # Compute carry-over stats (dry-run or apply)
     for construction, (param_names, _) in new_specs.items():
-        rows = _build_rows(element_index, lang_id, param_names)
+        rows = starting_rows(element_index, lang_id, new_class, construction, param_names)
         existing = all_annotations.get(construction, {})
         carried, renamed_count, new_count, dropped = _compute_stats(rows, existing, {}, {})
         parts = [f"carry over {carried}"]
@@ -1280,7 +1284,7 @@ def _rename_class_for_language(
             print(f"    [{construction}] not in new diagnostics — skipped")
             continue
         param_names, param_values = new_specs[construction]
-        rows = _build_rows(element_index, lang_id, param_names)
+        rows = starting_rows(element_index, lang_id, new_class, construction, param_names)
         existing = all_annotations.get(construction, {})
         carried, new_count, dropped_count = _write_tab_with_carryover(
             new_ss, construction, param_names, param_values, rows, existing, {}, {}

@@ -10,11 +10,18 @@ Checks:
   6. Per-language criterion value sets vs global schema (hard error: lang declares unknown value;
      warning: schema allows a value the language YAML doesn't declare — may mean the YAML was not
      updated after a new value was added to the schema)
+  7. Every diagnostics_{lang_id}.tsv has a matching .yaml
+  7b. Feeder constructions are marked produces_spans: false
+  7c. Every construction declares its row shape
+  7d. Every <placeholder> value is declared
+  7e. Every reads_from names a real class, tab and criteria
+  7f. Every prefill_by_label names the tab's criterion, a value it allows, and
+      labels planar.yaml registers
 
-Informational reports (not errors):
-  7. keystone_active_default "[NEEDS REVIEW]" for active (lang, class) pairs with no override
-  8. Schema stubs: classes in diagnostic_classes.yaml with no language coverage
-  9. Coverage matrix: language × class grid (✓ = active, - = not collected)
+Informational reports (not errors): entries marked [NEEDS REVIEW] and the like;
+  8. keystone_active_default "[NEEDS REVIEW]" for active (lang, class) pairs with no override
+  9. Schema stubs: classes in diagnostic_classes.yaml with no language coverage
+  10. Coverage matrix: language × class grid (✓ = active, - = not collected)
 
 Run:
     python -m coding check-codebook
@@ -88,6 +95,39 @@ def _check_reads_from(diag_classes: dict) -> List[str]:
             unknown = [c for c in src["criteria"] if c not in known]
             if unknown:
                 errors.append(f"{where}: {src['class']} has no criteria {unknown}")
+    return errors
+
+
+def _check_prefill_by_label(diag_classes: dict, codebook: dict) -> List[str]:
+    """Every construction's prefill_by_label is well formed, names the tab's
+    own criterion, a value that criterion allows, and labels planar.yaml
+    registers (#318 c) -- so a typo fails here, not when a sheet is built."""
+    from planars.schema_values import prefill_by_label_of
+    from .make_forms import registered_labels
+    labels_known = registered_labels()
+    values = {(a["name"], c["name"]): [str(v) for v in c.get("values") or []]
+              for a in codebook.get("analyses", []) for c in a.get("diagnostic_criteria") or []}
+    errors = []
+    for name, cls in diag_classes.items():
+        for con in cls.get("constructions") or []:
+            if not isinstance(con, dict) or "prefill_by_label" not in con:
+                continue
+            where = f"[{name}/{con['name']}] prefill_by_label"
+            try:
+                rules = prefill_by_label_of(con, f"{name}/{con['name']}")
+            except ValueError as e:
+                errors.append(str(e))
+                continue
+            for crit, (value, labels) in rules.items():
+                if crit != con.get("criterion"):
+                    errors.append(f"{where}: {crit!r} is not this tab's criterion "
+                                  f"({con.get('criterion')!r})")
+                elif value not in values.get((name, crit), []):
+                    errors.append(f"{where}: {value!r} is not a value of {crit} "
+                                  f"({values.get((name, crit), [])})")
+                unknown = sorted(labels - labels_known)
+                if unknown:
+                    errors.append(f"{where}: {unknown} are not labels in planar.yaml")
     return errors
 
 
@@ -897,6 +937,9 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     print("7e. Checking every reads_from names a real class, tab and criteria ...")
     all_errors.extend(_check_reads_from(diag_classes))
+
+    print("7f. Checking every prefill_by_label names a real criterion, value and label ...")
+    all_errors.extend(_check_prefill_by_label(diag_classes, codebook))
 
     coverage = _collect_coverage()
     lang_ids = sorted({l for langs in coverage.values() for l in langs})

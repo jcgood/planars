@@ -445,6 +445,29 @@ def test_a_reads_from_naming_a_missing_tab_or_criterion_is_an_error():
     assert any("bad_class" in e and "'nowhere'" in e for e in errors)
 
 
+def test_prefill_by_label_check_passes_on_the_real_schema():
+    assert check_codebook._check_prefill_by_label(
+        check_codebook._load_diagnostic_classes(), check_codebook._load_codebook()) == []
+
+
+def test_a_prefill_by_label_with_a_wrong_criterion_value_or_label_is_an_error():
+    def con(name, rule):
+        return {"name": name, "criterion": "referential", "prefill_by_label": rule}
+    classes = {"coreference": {"constructions": [
+        con("ok", {"referential": {"value": "y", "labels": ["NP"]}}),
+        con("bad_crit", {"reflexive_allowed": {"value": "y", "labels": ["NP"]}}),
+        con("bad_value", {"referential": {"value": "maybe", "labels": ["NP"]}}),
+        con("bad_label", {"referential": {"value": "y", "labels": ["NPX"]}}),
+        con("bad_shape", {"referential": {"value": "y"}}),
+    ]}}
+    codebook = {"analyses": [{"name": "coreference", "diagnostic_criteria": [
+        {"name": "referential", "values": ["y", "n"]}]}]}
+    errors = check_codebook._check_prefill_by_label(classes, codebook)
+    assert len(errors) == 4
+    for bad in ("bad_crit", "bad_value", "bad_label", "bad_shape"):
+        assert any(bad in e for e in errors), bad
+
+
 def test_span_constructions_reads_the_schema():
     from planars.reports import span_constructions
     assert span_constructions("nonpermutability") == frozenset({"general"})

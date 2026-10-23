@@ -39,6 +39,9 @@ DRY RUN — Language: stan1293
 
   free_occurrence (current v2)
     [general] downloaded 142 rows
+    [WARNING] noninterruption/general.tsv not found.
+              Annotate noninterruption first, then regenerate this sheet.
+              free column will be left blank for manual entry.
     [general] carry over 134; rename 8; new blank 0
 
   coreference (current v4)

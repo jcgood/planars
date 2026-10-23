@@ -65,6 +65,7 @@ from .generate_sheets import (
     _add_constructions_to_existing_sheet,
     _build_criterion_notes,
     _create_status_tab,
+    starting_rows,
 )
 from .locked_tabs import rebuild_locked_tabs, reorder_tabs
 from . import biuniqueness_rows as _br
@@ -270,6 +271,9 @@ def _compute_missing_rows(
     lang_id: str,
     col_start: int,
     num_criteria: int,
+    *,
+    class_name: str,
+    construction: str,
 ) -> List[List[str]]:
     """Compute rows present in the planar structure but missing from the sheet tab.
 
@@ -278,23 +282,32 @@ def _compute_missing_rows(
     manifest's criterion list; where the manifest had gone stale that made the
     new row the wrong width, and on a keystone row it wrote ``NA`` into
     ``Source`` and ``Comments``.
+
+    A missing row starts with the values a newly generated tab would give it
+    (generate_sheets.starting_rows: keystone na, pre-fills); until
+    2026-10-23 it got only the keystone's na, so an element added later
+    missed every pre-fill.
     """
     rows = ws.get_all_values()
     header = rows[0] if rows else []
 
     existing_keys = _sheet_element_keys(rows, header)
+    missing_keys = [(element, str(pos)) for element, _, pos in element_rows(element_index, lang_id)
+                    if (element, str(pos)) not in existing_keys]
+    if not missing_keys:
+        return []
 
     # Everything after the criterion block: Source, Comments, and any others.
     num_trailing = max(0, len(header) - col_start - num_criteria)
+    param_names = header[col_start:col_start + num_criteria]
+    wanted = set(missing_keys)
 
     missing_rows = []
-    for element, pos_name, pos in element_rows(element_index, lang_id):
-        key = (element, str(pos))
-        if key not in existing_keys:
-            is_keystone = _is_keystone(pos_name)
-            param_vals = ["NA" if is_keystone else ""] * num_criteria
-            row = [element, pos_name, str(pos)] + param_vals + [""] * num_trailing
-            missing_rows.append(row)
+    for row in starting_rows(element_index, lang_id, class_name, construction, param_names):
+        element, pos_name, pos = str(row[0]), str(row[1]), str(row[2])
+        if (element, pos) in wanted:
+            values = [str(v) for v in row[len(ELEMENT_ROW_COLUMNS):]]
+            missing_rows.append([element, pos_name, pos] + values + [""] * num_trailing)
 
     return missing_rows
 
@@ -552,7 +565,8 @@ def main(args: argparse.Namespace | None = None) -> None:
                         rows, header, manifest_lang, col_start, len(per_col))
                 else:
                     missing_rows = _compute_missing_rows(
-                        ws, element_index, manifest_lang, col_start, len(per_col)
+                        ws, element_index, manifest_lang, col_start, len(per_col),
+                        class_name=class_name, construction=construction,
                     )
 
                 if not missing_rows and not missing_trailing:

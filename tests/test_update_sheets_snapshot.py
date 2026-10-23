@@ -601,6 +601,10 @@ def test_a_keystone_row_writes_na_only_into_criterion_columns(env):
 
     Where the manifest listed more criteria than the tab has, a keystone row
     carried NA past the last criterion and into Source and Comments.
+
+    The criterion cell itself is blank: coreference's keystone takes part
+    (keystone_active_default: true), so an added keystone row starts as a new
+    tab's would (generate_sheets.starting_rows); it got NA until 2026-10-23.
     """
     def edit(df):
         keystone = df.index[df["Position_Name"] == "v:verbstem"][0]
@@ -613,4 +617,9 @@ def test_a_keystone_row_writes_na_only_into_criterion_columns(env):
     rows = ws.get_all_values()
     added = [r for r in rows if r[0] == NEW_ELEMENT]
     assert len(added) == 1
-    assert added[0] == [NEW_ELEMENT, "v:verbstem", "30", "NA"] + [""] * len(TRAILING_COLUMNS)
+    assert added[0] == [NEW_ELEMENT, "v:verbstem", "30", ""] + [""] * len(TRAILING_COLUMNS)
+    # A class whose keystone takes no part still gets NA, in its criteria only.
+    cis = [r for r in env.tab("synth0001", "ciscategorial", "general").get_all_values()
+           if r[0] == NEW_ELEMENT]
+    assert cis and set(cis[0][3:-len(TRAILING_COLUMNS)]) == {"NA"}
+    assert cis[0][-len(TRAILING_COLUMNS):] == [""] * len(TRAILING_COLUMNS)

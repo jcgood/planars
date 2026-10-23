@@ -116,7 +116,7 @@ from planars.schema_values import (
     STATUS_IN_PROGRESS, STATUS_READY, STATUS_TAB, STATUS_VALUES, ZONE, status_map,
     ELEMENT_ROWS, PAIR_ROWS,
     TRAILING_COLUMNS as _TRAILING_COLS,
-    header_shape, is_keystone as _is_keystone,
+    header_shape, is_keystone as _is_keystone, prefill_by_label,
     row_columns, row_key, row_type, source_construction,
 )
 from planars.free_occurrence import bound_keystone_span
@@ -141,7 +141,9 @@ from .schemas import (
 from .locked_tabs import rebuild_locked_tabs, reorder_tabs, system_tab_titles
 from .make_forms import (
     build_element_index,
+    category_label,
     element_rows,
+    registered_labels,
     wrap_element as _wrap,
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
@@ -428,6 +430,48 @@ def _prefill_free_occurrence_rows(
         print("              free column left blank for those elements.")
 
     return updated
+
+
+def _prefill_by_label(rows: List[List[object]], param_names: List[str],
+                      class_name: str, construction: str) -> List[List[object]]:
+    """Give each blank non-keystone cell the value the construction's
+    ``prefill_by_label`` names for its element's label (e.g. referential=y
+    for NP{S,A} in coreference prescreening, #318 c). A label planar.yaml
+    does not register raises: it is a typo, and would match nothing."""
+    rules = prefill_by_label(class_name, construction)
+    unknown = sorted({lab for _, labels in rules.values() for lab in labels}
+                     - registered_labels())
+    if unknown:
+        raise ValueError(f"diagnostic_classes.yaml {class_name}/{construction} "
+                         f"prefill_by_label names {unknown}, not labels in planar.yaml")
+    base = len(ELEMENT_ROW_COLUMNS)
+    for crit, (value, labels) in rules.items():
+        if crit not in param_names:
+            continue
+        col = base + param_names.index(crit)
+        for row in rows:
+            if (not _is_keystone(str(row[1])) and row[col] == ""
+                    and category_label(row[0]) in labels):
+                row[col] = value
+    return rows
+
+
+def starting_rows(element_index, lang_id: str, class_name: str, construction: str,
+                  param_names: List[str], data_dir: Path | str = "") -> List[List[object]]:
+    """The rows an element-row tab starts with, before anyone annotates: one
+    per planar element, with every value the tooling fills in itself — the
+    keystone's na when it takes no part (keystone_active), free_occurrence's
+    free copied from noninterruption, and the construction's
+    prefill_by_label. The one copy of those rules: generate-sheets builds a
+    tab from these rows, update-sheets adds the missing ones, and
+    restructure-sheets uses them for rows with nothing to carry over.
+    ``data_dir`` holds the diagnostics YAML (default: the language's
+    lang_setup)."""
+    ka = resolve_keystone_active(lang_id, class_name, construction, data_dir=data_dir) or False
+    rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
+    if class_name == "free_occurrence":
+        rows = _prefill_free_occurrence_rows(rows, param_names, lang_id)
+    return _prefill_by_label(rows, param_names, class_name, construction)
 
 
 # ---------------------------------------------------------------------------
@@ -991,11 +1035,8 @@ def _fill_new_tab(ss, lang_id: str, class_name: str, construction: str,
         return f"{len(pairs)} candidate pairs"
     if kind != ELEMENT_ROWS:
         raise ValueError(f"{class_name}/{construction}: no writer for row_type {kind!r}")
-    ka = resolve_keystone_active(lang_id, class_name, construction,
-                                 data_dir=planar_path.parent) or False
-    rows = _build_rows(element_index, lang_id, param_names, keystone_active=ka)
-    if class_name == "free_occurrence":
-        rows = _prefill_free_occurrence_rows(rows, param_names, lang_id)
+    rows = starting_rows(element_index, lang_id, class_name, construction, param_names,
+                         data_dir=planar_path.parent)
     _populate_tab(ss, construction, param_names, param_values, rows)
     return f"{len(rows)} rows, {len(param_names)} params"
 
@@ -1558,7 +1599,7 @@ def _populate_tab(
         tab_name: worksheet title to create or clear.
         param_names: ordered list of criterion column names.
         param_values: dict mapping criterion name to list of allowed values.
-        rows: data rows from _build_rows (no header).
+        rows: data rows from starting_rows (no header).
 
     Returns:
         The populated worksheet handle.

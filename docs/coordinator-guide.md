@@ -447,7 +447,7 @@ python -m coding generate-sheets --lang LANG_ID --regen-construction nonpermutab
 
 **Coreference** (4 stages — one prescreening + three pair constructions):
 
-1. Annotate the `prescreening` sheet (`referential={y,n}` per element) and mark it `ready-for-review`. This identifies which elements can participate as binder or bindee.
+1. Annotate the `prescreening` sheet (`referential={y,n}` per element) and mark it `ready-for-review`. This identifies which elements can participate as binder or bindee. `NP{…}` rows arrive filled in as `y`.
 2. Run `python -m coding import-sheets` to download it locally.
 3. Regenerate each pair construction filtered to referential elements:
 

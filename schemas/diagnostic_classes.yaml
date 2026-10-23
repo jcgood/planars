@@ -340,6 +340,12 @@ classes:
         row_type: element
         produces_spans: false
         criterion: referential
+        # Rows whose element is one of these planar labels (role suffix
+        # ignored: NP{S,A} is NP) start with this value; the annotator can
+        # change it. NPs are referential by definition; pronouns are left to
+        # the annotator (Adam #318 § 6, Jeff 2026-10-22).
+        prefill_by_label:
+          referential: {value: y, labels: [NP]}
       - name: reflexivization
         row_type: pair_rows
         pair_shape: position_pairs

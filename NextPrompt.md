@@ -28,8 +28,8 @@ match, stamps the hash and merges. The procedure is coordinator guide
 and the known questions for each class are in the tracking issue #321. Jeff sent Adam the
 prompt for his Claude (2026-10-22). **Next action:** review each `Span rule: {class}`
 pull request as it arrives, following the 7-step workflow on its branch.
-Unblocking the later classes: #318 (b), free_occurrence, is done
-(2026-10-23); (c) and (d) for coreference remain.
+Unblocking the later classes: #318 (b) and (c) are done (2026-10-23);
+(d), the coreference renaming, remains.
 
 ### Thread: Adam's English coding requests (#318)
 
@@ -47,7 +47,9 @@ object pronouns' free value (noninterruption n, free_occurrence y), and
 whether "any one" is per side or across both columns (left for the
 free_occurrence span-rule review, #321);
 (c) pre-fill referential=y for `NP{…}` rows in coreference prescreening
-(not pronouns);
+(not pronouns) — done 2026-10-23 (`prefill_by_label` in
+diagnostic_classes.yaml; English's five NP rows were already y, so
+nothing changed live);
 (d) rename the coreference constructions to `reflexive_coreference`,
 `pronoun_coreference`, `np_coreference`, in one pass (sheet links change:
 a live step for Jeff to approve);

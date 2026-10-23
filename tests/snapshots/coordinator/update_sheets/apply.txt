@@ -21,6 +21,9 @@ Languages: ['arao1248', 'stan1293', 'synth0001']
     [locked tab] Planar Structure: refresh (its source has changed)
 
   free_occurrence
+    [WARNING] noninterruption/general.tsv not found.
+              Annotate noninterruption first, then regenerate this sheet.
+              free column will be left blank for manual entry.
     [general] add 1 row(s): ['zzz-new-element']
     [general] done
 

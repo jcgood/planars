@@ -90,9 +90,13 @@ Language: stan1293
 
   free_occurrence (current v2)
     [general] downloaded 142 rows
+    [WARNING] Elements not found in noninterruption TSV: ['heracc', 'herdat', 'NP{P, T}']
+              free column left blank for those elements.
     [general] carry over 140; new blank 3; drop 2 (her@v:obj-part, NP{P,T}@v:obj-part)
     [general] split: her -> heracc, herdat (2 new, old answers in a note on each)
     Archived to _archived/free_occurrence_stan1293_v2
+    [WARNING] Elements not found in noninterruption TSV: ['heracc', 'herdat', 'NP{P, T}']
+              free column left blank for those elements.
     [general] wrote: carried 140, new blank 3, dropped 2
     Locked tab Instructions: create
     Locked tab Instructions: protect

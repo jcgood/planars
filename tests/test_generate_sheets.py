@@ -459,6 +459,31 @@ class TestPrefillFreeOccurrenceRows:
 
 
 # ---------------------------------------------------------------------------
+# prefill_by_label (#318 c)
+# ---------------------------------------------------------------------------
+
+class TestPrefillByLabel:
+    def _rows(self):
+        return [["NP{S,A}", "v:npsubj1", 5, ""], ["NP", "v:obj", 7, ""],
+                ["he", "v:npsubj1", 5, ""], ["NP{P}", "v:obj", 7, "n"],
+                ["KEYSTONE", "v:verbstem", 10, ""]]
+
+    def test_np_rows_start_referential_y_and_nothing_else_changes(self):
+        out = _gs._prefill_by_label(self._rows(), ["referential"], "coreference", "prescreening")
+        assert [r[3] for r in out] == ["y", "y", "", "n", ""]
+
+    def test_a_construction_without_a_rule_is_untouched(self):
+        out = _gs._prefill_by_label(self._rows(), ["referential"], "coreference", "reflexivization")
+        assert [r[3] for r in out] == ["", "", "", "n", ""]
+
+    def test_an_unregistered_label_raises(self, monkeypatch):
+        monkeypatch.setattr(_gs, "prefill_by_label",
+                            lambda c, k: {"referential": ("y", frozenset({"NPX"}))})
+        with pytest.raises(ValueError, match="NPX"):
+            _gs._prefill_by_label(self._rows(), ["referential"], "coreference", "prescreening")
+
+
+# ---------------------------------------------------------------------------
 # _regen_dependents_simple
 # ---------------------------------------------------------------------------
 

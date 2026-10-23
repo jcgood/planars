@@ -592,6 +592,7 @@ analyses:
           coreference relation (either as antecedent or anaphor).
           y = element is referential; n = element is not referential.
           Elements with n are excluded from all pair-row sheets.
+          NP rows come filled in as y; change any that are wrong.
       - name: reflexive_allowed
         values: [y, n, untestable]
         description: >

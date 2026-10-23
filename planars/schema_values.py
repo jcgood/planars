@@ -165,6 +165,28 @@ def _construction_entry(class_name: str, construction: str) -> dict:
     return {}
 
 
+def prefill_by_label(class_name: str, construction: str) -> dict:
+    """A construction's ``prefill_by_label`` in diagnostic_classes.yaml:
+    ``{criterion: (value, frozenset of planar labels)}``, the value a new row
+    starts with when its element is one of those labels (#318 c). Empty when
+    the construction declares none; raises on a malformed entry."""
+    return prefill_by_label_of(_construction_entry(class_name, construction),
+                               f"{class_name}/{construction}")
+
+
+def prefill_by_label_of(con: dict, where: str) -> dict:
+    """prefill_by_label, applied to one construction's entry (``where`` names it)."""
+    where = f"{where} prefill_by_label"
+    out = {}
+    for crit, spec in (con.get("prefill_by_label") or {}).items():
+        if (not isinstance(spec, dict) or set(spec) != {"value", "labels"}
+                or not isinstance(spec["labels"], list) or not spec["labels"]):
+            raise ValueError(f"diagnostic_classes.yaml {where}: {crit!r} needs exactly "
+                             f"'value' and a non-empty 'labels' list, got {spec!r}")
+        out[crit] = (str(spec["value"]), frozenset(spec["labels"]))
+    return out
+
+
 def source_construction(class_name: str) -> str:
     """The one tab a class's other tabs are generated from: the target of its
     constructions' ``depends_on`` (e.g. nonpermutability's

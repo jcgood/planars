@@ -85,6 +85,16 @@ def _formative_exceptions(planar_schema: Dict) -> set:
     return {item["form"] for item in (exceptions.get("items") or []) if item.get("form")}
 
 
+def category_label(token: str) -> str:
+    """The token without its brace-enclosed role suffix: NP{S,A} -> NP."""
+    return _BRACE_SUFFIX_RE.sub("", str(token).strip())
+
+
+def registered_labels(planar_schema: Dict | None = None) -> set:
+    """Every category label planar.yaml's standard_labels registers."""
+    return set(_registry_element_types(planar_schema or load_planar_schema()))
+
+
 def classify_element(token: str, planar_schema: Dict | None = None) -> str:
     """Classify a single Elements-cell token per schemas/planar.yaml's element_type rules.
 
@@ -112,7 +122,7 @@ def classify_element(token: str, planar_schema: Dict | None = None) -> str:
     if planar_schema is None:
         planar_schema = load_planar_schema()
 
-    stripped = _BRACE_SUFFIX_RE.sub("", token.strip())
+    stripped = category_label(token)
 
     if stripped in _formative_exceptions(planar_schema):
         return "formative"

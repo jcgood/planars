@@ -199,14 +199,32 @@ class TestCheckStructuralDrift:
 # _compute_missing_rows
 # ---------------------------------------------------------------------------
 
+# A class English doesn't use and whose keystone takes no part by default, so
+# a new row gets no pre-fill: these tests are about which rows, not values.
+_PLAIN = dict(class_name="repair", construction="general")
+
+
 class TestComputeMissingRows:
+    def test_an_added_np_row_gets_the_prescreening_prefill(self):
+        """#318 c: an NP element added to the planar later starts referential=y,
+        as it would on a newly generated tab; a pronoun starts blank."""
+        ws = _FakeWorksheet([
+            ["Element", "Position_Name", "Position_Number", "referential", "Source", "Comments"],
+        ])
+        element_index = {"NP{S,A}@5": (5, "v:npsubj1", "stan1293", "NP{S,A}"),
+                         "he@5": (5, "v:npsubj1", "stan1293", "he")}
+        missing = _compute_missing_rows(ws, element_index, "stan1293", 3, 1,
+                                        class_name="coreference", construction="prescreening")
+        assert sorted(missing) == [["NP{S,A}", "v:npsubj1", "5", "y", "", ""],
+                                   ["he", "v:npsubj1", "5", "", "", ""]]
+
     def test_no_missing_rows_when_sheet_already_current(self):
         ws = _FakeWorksheet([
             ["Element", "Position_Name", "Position_Number", "free", "Source", "Comments"],
             ["he", "v:npsubj1", "5", "y", "", ""],
         ])
         element_index = {"he@5": (5, "v:npsubj1", "stan1293", "he")}
-        missing = _compute_missing_rows(ws, element_index, "stan1293", 3, 1)
+        missing = _compute_missing_rows(ws, element_index, "stan1293", 3, 1, **_PLAIN)
         assert missing == []
 
     def test_adds_row_for_planar_element_absent_from_sheet(self):
@@ -214,7 +232,7 @@ class TestComputeMissingRows:
             ["Element", "Position_Name", "Position_Number", "free", "Source", "Comments"],
         ])
         element_index = {"he@5": (5, "v:npsubj1", "stan1293", "he")}
-        missing = _compute_missing_rows(ws, element_index, "stan1293", 3, 1)
+        missing = _compute_missing_rows(ws, element_index, "stan1293", 3, 1, **_PLAIN)
         assert missing == [["he", "v:npsubj1", "5", "", "", ""]]
 
     def test_keystone_row_gets_na_param_values(self):
@@ -222,7 +240,7 @@ class TestComputeMissingRows:
             ["Element", "Position_Name", "Position_Number", "free", "Source", "Comments"],
         ])
         element_index = {"KEYSTONE@30": (30, "v:verbstem", "stan1293", "KEYSTONE")}
-        missing = _compute_missing_rows(ws, element_index, "stan1293", 3, 1)
+        missing = _compute_missing_rows(ws, element_index, "stan1293", 3, 1, **_PLAIN)
         assert missing == [["KEYSTONE", "v:verbstem", "30", "NA", "", ""]]
 
     def test_hyphen_wrapped_elements_get_bracketed(self):
@@ -232,7 +250,7 @@ class TestComputeMissingRows:
             ["Element", "Position_Name", "Position_Number", "free", "Source", "Comments"],
         ])
         element_index = {"-s@13": (13, "v:perfectinflection", "stan1293", "-s")}
-        missing = _compute_missing_rows(ws, element_index, "stan1293", 3, 1)
+        missing = _compute_missing_rows(ws, element_index, "stan1293", 3, 1, **_PLAIN)
         assert missing[0][0] == "[-s]"
 
     def test_ignores_elements_from_other_languages(self):
@@ -240,7 +258,7 @@ class TestComputeMissingRows:
             ["Element", "Position_Name", "Position_Number", "free", "Source", "Comments"],
         ])
         element_index = {"foo@3": (3, "v:foo", "arao1248", "foo")}
-        missing = _compute_missing_rows(ws, element_index, "stan1293", 3, 1)
+        missing = _compute_missing_rows(ws, element_index, "stan1293", 3, 1, **_PLAIN)
         assert missing == []
 
     def test_this_is_the_exact_248_failure_shape(self):
@@ -260,7 +278,7 @@ class TestComputeMissingRows:
             "me@34": (34, "v:obj-part", "stan1293", "me"),
             "PRON{P,T}@34": (34, "v:obj-part", "stan1293", "PRON{P,T}"),  # retired, but present in the stale index
         }
-        missing = _compute_missing_rows(ws, stale_element_index, "stan1293", 3, 1)
+        missing = _compute_missing_rows(ws, stale_element_index, "stan1293", 3, 1, **_PLAIN)
         assert missing == [["PRON{P,T}", "v:obj-part", "34", "", "", ""]]
 
 

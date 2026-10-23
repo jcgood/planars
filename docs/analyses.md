@@ -182,7 +182,7 @@ All four annotation columns (`left-edge-of-free-form`, `right-edge-of-free-form`
 
 Three-stage annotation workflow corresponding to Principles A, B, and C:
 
-**Stage 1 — prescreening sheet** (`prescreening` construction, element rows, `referential={y,n}`): identifies which elements can participate as binder or bindee. Only `referential=y` elements generate pair rows in Stages 2–4.
+**Stage 1 — prescreening sheet** (`prescreening` construction, element rows, `referential={y,n}`): identifies which elements can participate as binder or bindee. Only `referential=y` elements generate pair rows in Stages 2–4. `NP{…}` rows start as `y` (the construction's `prefill_by_label` in `diagnostic_classes.yaml`, #318); pronouns are left to the annotator.
 
 **Stages 2–4 — pair sheets** (one per construction):
 

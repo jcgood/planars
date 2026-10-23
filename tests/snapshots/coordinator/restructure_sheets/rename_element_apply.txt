@@ -80,8 +80,12 @@ Language: stan1293
 
   free_occurrence (current v2)
     [general] downloaded 142 rows
+    [WARNING] Elements not found in noninterruption TSV: ['NP{P, T}']
+              free column left blank for those elements.
     [general] carry over 140; rename 1; new blank 1; drop 1 (NP{P,T}@v:obj-part)
     Archived to _archived/free_occurrence_stan1293_v2
+    [WARNING] Elements not found in noninterruption TSV: ['NP{P, T}']
+              free column left blank for those elements.
     [general] wrote: carried 141, new blank 1, dropped 1
     Locked tab Instructions: create
     Locked tab Instructions: protect
