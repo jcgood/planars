@@ -57,6 +57,7 @@ from fake_drive import (FIXTURE_DIR, FROZEN_CODED_DATA, FakeDriveDoorway, MANIFE
                         point_coded_data_at)
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
+from planars.schema_values import TRAILING_COLUMNS
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "update_sheets"
@@ -355,7 +356,7 @@ def test_a_keystone_row_is_added_with_na_not_blank(env):
     added = [r for r in rows if r[0] == NEW_ELEMENT]
     assert len(added) == 1
     assert added[0][1] == "v:verbstem"
-    criteria = rows[0][3:rows[0].index("Source")]
+    criteria = rows[0][3:rows[0].index(TRAILING_COLUMNS[0])]
     assert added[0][3:3 + len(criteria)] == ["NA"] * len(criteria)
 
 
@@ -612,4 +613,4 @@ def test_a_keystone_row_writes_na_only_into_criterion_columns(env):
     rows = ws.get_all_values()
     added = [r for r in rows if r[0] == NEW_ELEMENT]
     assert len(added) == 1
-    assert added[0] == [NEW_ELEMENT, "v:verbstem", "30", "NA", "", ""]
+    assert added[0] == [NEW_ELEMENT, "v:verbstem", "30", "NA"] + [""] * len(TRAILING_COLUMNS)

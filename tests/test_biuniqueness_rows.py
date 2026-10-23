@@ -260,7 +260,7 @@ def test_restructure_renames_positions_and_elements_in_keyed_rows():
         ["do", "v:frontedauxiliary", "does", "filled", "y", "v:npsubj1", "", ""],
         ["be + v:verbinflection", "v:verbinflection", "[-ing]", "co_exponent", "y", "", "", ""],
     ]
-    out, changed, flagged = _transform_keyed_rows(
+    out, changed, flagged, _ = _transform_keyed_rows(
         header, rows, {"conditioned_by"},
         rename_map={"v:npsubj1": "v:subj", "v:verbinflection": "v:infl"},
         element_rename_map={"do": "doo"}, split_element_map={})
@@ -274,11 +274,13 @@ def test_restructure_flags_rows_on_a_split_element_rather_than_guessing():
     from coding.restructure_sheets import _transform_keyed_rows
     header = br.MORPHS_STRUCT + ["occurs_here", "Source", "Comments"]
     rows = [["will", "v:modal1", "'ll", "filled", "y", "", "seen in corpus"]]
-    out, changed, flagged = _transform_keyed_rows(
+    out, changed, flagged, notes = _transform_keyed_rows(
         header, rows, set(), {}, {}, {"will": ["will.FUT", "will.VOL"]})
     assert flagged == 1 and changed == 0
     assert out[0][:3] == ["will", "v:modal1", "'ll"]               # unchanged
-    assert out[0][-1] == "split will -> will.FUT, will.VOL: review | seen in corpus"
+    assert out[0][-1] == "seen in corpus"                          # Comments is the annotator's
+    assert notes == [(0, 0, "will was split into will.FUT, will.VOL: "
+                            "check which this row is about")]
 
 
 def test_restructure_rebuilds_elements_from_in_scope_elements_only(tmp_path):

@@ -35,6 +35,7 @@ _COMMANDS = {
     "apply-pending":               "coding.apply_pending",
     "prune-manifest":              "coding.prune_manifest",
     "check-notes":                 "coding.check_notes",
+    "check-comments":              "coding.check_comments",
     "refresh-dropdowns":           "coding.refresh_dropdowns",
     "import-planar":               "coding.import_planar",
     "generate-status-sheet":       "coding.generate_status_sheet",

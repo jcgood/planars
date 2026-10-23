@@ -69,6 +69,7 @@ from fake_drive import (FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, a
                         point_coded_data_at)
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
+from planars.schema_values import ELEMENT_ROW_COLUMNS
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "restructure_sheets"
@@ -360,6 +361,32 @@ def test_apply_split_element_digest(env):
     check_snapshot("split_element_apply_digest.txt", render(env.doorway.mutations))
 
 
+def test_a_split_quotes_the_old_answers_in_a_note_and_leaves_comments_alone(env):
+    """The new rows' earlier judgment goes in a note on the answer cell, never
+    in Comments, which is the annotator's channel to the coordinator (#318)."""
+    env.split_element("stan1293", "her", ["heracc", "herdat"])
+    env.run(["--apply", "--lang", "stan1293", "--split-element", "her:heracc,herdat"])
+
+    ws = env.tab("stan1293", "ciscategorial", "general")
+    rows = ws.get_all_values()
+    header = rows[0]
+    first_answer, comments = len(ELEMENT_ROW_COLUMNS), header.index("Comments")
+    new = [i for i, r in enumerate(rows) if r[0] in ("heracc", "herdat")]
+    assert len(new) == 2
+    for i in new:
+        assert rows[i][comments] == ""
+        assert ws._cell(i, first_answer).note.startswith("Split from her, which had ")
+
+    pair = env.tab("stan1293", "coreference", "reflexivization")
+    prow = pair.get_all_values()
+    crit, pcomments = prow[0].index("reflexive_allowed"), prow[0].index("Comments")
+    split_rows = [i for i, r in enumerate(prow) if r[0] in ("heracc", "herdat")]
+    assert split_rows
+    for i in split_rows:
+        assert prow[i][pcomments] == ""
+        assert "Split from her" in pair._cell(i, crit).note
+
+
 def test_apply_split_element_self_pair_transcript(env):
     """A row where BOTH sides are the retired element is flagged, not fanned out."""
     env.split_element("stan1293", "her", ["heracc", "herdat"])
@@ -551,7 +578,7 @@ def test_finding_16_pair_tab_dropdown_lands_on_the_criterion_column_not_comments
     ss_id = env.sheet_id("stan1293", "nonpermutability")
     ws = env.tab("stan1293", "nonpermutability", "general")
     header = ws.row_values(1)
-    assert header == ["Element_A", "Element_B", "scopal", "Source", "Comments"]
+    assert header == ["Element_A", "Element_B", "scopal", "Example", "Source", "Comments"]
     writes = [
         m for m in env.doorway.mutations
         if m.get("op") == "batch_request" and m["request_type"] == "setDataValidation"

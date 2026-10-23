@@ -34,6 +34,11 @@ def env(monkeypatch, tmp_path):
     returns (output, exit code)."""
     doorway = FakeDriveDoorway.from_fixtures()
     coded = use_frozen_coded_data(monkeypatch, tmp_path)
+    # No language has a proposal sheet yet here (the ID file below records
+    # none), so none has the record of what one was filled with either; the
+    # frozen data holds the real ones since 2026-10-22.
+    for base in coded.glob("*/lang_setup/proposal_base_*.json"):
+        base.unlink()
     manifest = json.loads((FIXTURE_DIR / "manifest.json").read_text(encoding="utf-8"))
     config = FakeDriveDoorway.drive_config()
     for lang_id, entry in manifest.items():

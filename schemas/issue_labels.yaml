@@ -249,6 +249,18 @@ labels:
       issues, file warranted ones, then close this issue.
     filed_by: check-notes --apply (data-refresh.yml)
 
+  - name: collaborator-comments
+    color: "0075ca"
+    description: "New or changed Comments cells need coordinator triage. Paste the prompt, review, close."
+    meaning: >-
+      An annotator wrote or changed a Comments cell in a class sheet (one
+      issue per language, "Comments — {Name [glottocode]}"; a later run
+      comments on it while it is open). Each comment is listed with its tab,
+      row and answers. Resolve: paste the Claude prompt from the issue into a
+      Claude Code session, which sorts the comments and drafts replies and
+      issues for the coordinator to approve; then close this issue.
+    filed_by: check-comments --apply (data-refresh.yml)
+
   - name: collaborator-check
     color: "e4e669"
     description: "In-progress sheet has anomalous changes; coordinator should verify with collaborator"

@@ -108,10 +108,16 @@ pair_row_shapes:
 # types it (tests/test_no_hidden_facts.py checks).
 keystone_position_name: "v:verbstem"
 
-# Columns appended after criterion columns on every annotation tab.
-# Ordered: Source before Comments. Used by generate_sheets.py, validate_coding.py,
-# integrity_check.py, and planars/io.py.
-trailing_columns: [Source, Comments]
+# Columns appended after criterion columns on every annotation tab, all the
+# annotator's, free text, never validated. In order:
+#   Example   the forms or sentences that show the answer (*, ?, ?? marked
+#             as usual), the evidence for a speaker's own judgements
+#   Source    a page or section of a published description
+#   Comments  anything the annotator wants the coordinator to see; read by
+#             the daily refresh (check-comments). The tooling never writes here.
+# update-sheets inserts a missing one at its place in this order.
+# Read through planars.schema_values.TRAILING_COLUMNS.
+trailing_columns: [Example, Source, Comments]
 
 # The Status tab every annotation sheet carries, its columns, and the two
 # values an annotator sets on each construction's row there. Code reads these

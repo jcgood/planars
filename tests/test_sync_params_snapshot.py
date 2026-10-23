@@ -353,7 +353,7 @@ def test_removing_a_column_does_not_mask_a_sibling_criterions_stale_dropdown(env
     ws = env.tab("synth0001", "coreference", "reflexivization")
     header = ws.row_values(1)
     assert header == ["Element_A", "Position_A", "Position_B", "Direction",
-                      "reflexive_allowed", "Source", "Comments"], (
+                      "reflexive_allowed", "Example", "Source", "Comments"], (
         "the removed columns should be gone and reflexive_allowed still present")
     r_col = header.index("reflexive_allowed")
     written = [

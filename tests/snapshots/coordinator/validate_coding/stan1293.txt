@@ -1,26 +1,39 @@
 Connecting to Google APIs...
 
 stan1293
-  [biuniqueness_deviations/elements] 101 blank cell(s) — annotation in progress
-  [biuniqueness_deviations/morphemes] no issues
+  [biuniqueness_deviations/elements] no issues
+  [biuniqueness_deviations/morphemes] 12 blank cell(s) — annotation in progress
   [biuniqueness_deviations/morphs] no issues
   [ciscategorial/general] no issues
-  [coreference/prescreening] 15 blank cell(s) — annotation in progress
-  [coreference/reflexivization] 54 blank cell(s) — annotation in progress
-  [coreference/pronominalization] 54 blank cell(s) — annotation in progress
-  [coreference/np_reference] 54 blank cell(s) — annotation in progress
-  [free_occurrence/general] 1 issue(s):
-    [WARNING] general row 131 'her': unexpected value '\y' in 'free' (allowed: ['?', 'n', 'na', 'y'])
-    (60 blank cell(s) — annotation in progress; use --verbose to list)
+  [coreference/prescreening] no issues
+  [coreference/reflexivization] no issues
+  [coreference/pronominalization] no issues
+  [coreference/np_reference] no issues
+  [free_occurrence/general] 10 issue(s):
+    [WARNING] general row 24 'he': unexpected value '3,4' in 'dependent-on-left' (allowed: ['<position_number>', '?', 'na'])
+    [WARNING] general row 24 'he': unexpected value '8, 12, 18, 22, 31' in 'dependent-on-right' (allowed: ['<position_number>', '?', 'na'])
+    [WARNING] general row 25 'I': unexpected value '3,4' in 'dependent-on-left' (allowed: ['<position_number>', '?', 'na'])
+    [WARNING] general row 25 'I': unexpected value '8, 12, 18, 22, 31' in 'dependent-on-right' (allowed: ['<position_number>', '?', 'na'])
+    [WARNING] general row 28 'she': unexpected value '3,4' in 'dependent-on-left' (allowed: ['<position_number>', '?', 'na'])
+    [WARNING] general row 28 'she': unexpected value '8, 12, 18, 22, 31' in 'dependent-on-right' (allowed: ['<position_number>', '?', 'na'])
+    [WARNING] general row 29 'they': unexpected value '3,4' in 'dependent-on-left' (allowed: ['<position_number>', '?', 'na'])
+    [WARNING] general row 29 'they': unexpected value '8, 12, 18, 22, 31' in 'dependent-on-right' (allowed: ['<position_number>', '?', 'na'])
+    [WARNING] general row 30 'we': unexpected value '3,4' in 'dependent-on-left' (allowed: ['<position_number>', '?', 'na'])
+    [WARNING] general row 30 'we': unexpected value '8, 12, 18, 22, 31' in 'dependent-on-right' (allowed: ['<position_number>', '?', 'na'])
   [metrical/stress_domain] 1 issue(s):
     [ERROR] stress_domain row 125 'KEYSTONE': unexpected value 'n' in 'independence' for keystone row (expected 'na')
   [noninterruption/general] no issues
   [nonpermutability/element_prescreening] no issues
   [nonpermutability/general] no issues
-  [phrasal_accent/prescreening] 142 blank cell(s) — annotation in progress
+  [phrasal_accent/prescreening] 1 blank cell(s) — annotation in progress
   [phrasal_accent/general] no issues
-  [proform/do_so_substitution] 15 blank cell(s) — annotation in progress
-  [proform/vp_ellipsis] 136 blank cell(s) — annotation in progress
+  [proform/do_so_substitution] no issues
+  [proform/vp_ellipsis] 4 issue(s):
+    [WARNING] vp_ellipsis row 6 'NP{S,A,P}': unexpected value 'y/unclear' in 'shareable_proform_replace' (allowed: ['?', 'both', 'n', 'na', 'unclear', 'y'])
+    [WARNING] vp_ellipsis row 21 '[-n]': unexpected value 'both/unclear' in 'shareable_proform_replace' (allowed: ['?', 'both', 'n', 'na', 'unclear', 'y'])
+    [WARNING] vp_ellipsis row 22 '[-s]': unexpected value 'both/unclear' in 'shareable_proform_replace' (allowed: ['?', 'both', 'n', 'na', 'unclear', 'y'])
+    [WARNING] vp_ellipsis row 23 '[-v]': unexpected value 'both/unclear' in 'shareable_proform_replace' (allowed: ['?', 'both', 'n', 'na', 'unclear', 'y'])
+    (118 blank cell(s) — annotation in progress; use --verbose to list)
   [segmental/aspiration_prominence] no issues
   [segmental/flapping] no issues
   [subspanrepetition/andCoordination] no issues
@@ -31,4 +44,4 @@ stan1293
 ──────────────────────────────────────────────────
 Validated 23 sheet(s).  Errors: 1
 Cell highlighting and each sheet's Status tab updated in Google Sheets.
-Drive door (enforce): checked 33 write(s) to 23 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 28 write(s) to 23 tab(s) or file(s); 0 broke a rule.

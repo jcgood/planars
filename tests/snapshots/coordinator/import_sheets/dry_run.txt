@@ -87,8 +87,7 @@ Language: stan1293
     [general] [backup] No changes → coded_data/stan1293/phrasal_accent/general.tsv
 
   biuniqueness_deviations
-    [elements] status: 'in-progress' — importing for backup
-    [elements] [backup] No changes → coded_data/stan1293/biuniqueness_deviations/elements.tsv
+    [elements] No changes → coded_data/stan1293/biuniqueness_deviations/elements.tsv
     [morphemes] status: 'in-progress' — importing for backup
     [morphemes] [backup] No changes → coded_data/stan1293/biuniqueness_deviations/morphemes.tsv
     [morphs] status: 'in-progress' — importing for backup
@@ -161,4 +160,4 @@ Language: synth0001
     [general] [backup] No changes → coded_data/synth0001/phrasal_accent/general.tsv
 
 Done. 0 file(s) written, 1 warning(s).
-Drive door (enforce): checked 34 write(s) to 34 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 29 write(s) to 29 tab(s) or file(s); 0 broke a rule.

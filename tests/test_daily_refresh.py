@@ -108,6 +108,7 @@ def test_a_clean_run_runs_every_command_in_order_and_closes_every_issue(refresh_
         "import-planar --apply",
         "import-sheets --apply --ignore-status",
         "check-notes --apply",
+        "check-comments --apply",
         "sync-diagnostics-yaml --apply",
         "sync-diagnostics-yaml --to-sheet --apply",
         "proposal-sheets --apply",

@@ -21,6 +21,8 @@ lost every day. They now live in ``coded_data/.state/`` (hidden, like
 - ``NOTES_STATE_PATH``: what check-notes last saw in each notes Doc, and
   each annotator's open notes issue (at planars-data's top level until unit
   6b).
+- ``COMMENTS_STATE_PATH``: what check-comments last saw in each Comments
+  cell, and each language's open comments issue.
 - ``RENUMBERING_PATH``: import-planar's record, while a new planar's
   numbers are being carried into the class sheets, of the numbering each
   sheet's position cells already use, so a run that stops partway never
@@ -53,6 +55,7 @@ PROVENANCE_LOG = STATE_DIR / "provenance_log.jsonl"
 SNAPSHOT_DIR = STATE_DIR / "regen_snapshots"
 JOURNAL_PATH = STATE_DIR / "restructure_journal.json"
 NOTES_STATE_PATH = STATE_DIR / "notes_state.json"
+COMMENTS_STATE_PATH = STATE_DIR / "comments_state.json"
 RENUMBERING_PATH = STATE_DIR / "renumbering.json"
 ID_FILE = CODED_DATA / "drive_config.json"
 

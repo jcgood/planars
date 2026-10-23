@@ -25,7 +25,11 @@ LANG, CLASS, CON = "synth0001", "ciscategorial", "general"
 
 @pytest.fixture()
 def coded(monkeypatch, tmp_path) -> Path:
-    return use_frozen_coded_data(monkeypatch, tmp_path)
+    """A private copy of the frozen data, with an empty change log, so each
+    test reads only the lines its own writes added."""
+    coded = use_frozen_coded_data(monkeypatch, tmp_path)
+    (coded / LANG / "changes.tsv").unlink(missing_ok=True)
+    return coded
 
 
 def _rows(text: str):
@@ -189,9 +193,10 @@ def test_an_overwrite_archives_the_old_text_and_logs_what_changed(coded):
 
 
 def test_the_door_keeps_the_bytes_it_is_given(coded):
-    """CRLF line ends (as many annotation TSVs still have) survive the write."""
-    text = file_door.read(_target())
-    assert "\r\n" in text
+    """CRLF line ends (as some annotation TSVs still have) survive the write."""
+    text = _text(_rows(file_door.read(_target())))
+    _target().path.write_bytes(text.encode("utf-8"))   # the file on disk, CRLF
+    assert "\r\n" in file_door.read(_target())
     rows = _rows(text)
     rows[2][3] = "n"
     with drive_door.running("t", may_write=True):

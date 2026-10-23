@@ -327,12 +327,13 @@ def test_a_pair_row_construction_gets_a_real_percentage(env):
     counted the same way element rows are, not given a placeholder note --
     see pair_annotation_status() in validate_coding.py."""
     doorway, run, _ = env
-    run(["gen", "--lang", "stan1293", "--apply"])
-    ss = the_sheet(doorway, "status_stan1293")
+    run(["gen", "--lang", "synth0001", "--apply"])
+    ss = the_sheet(doorway, "status_synth0001")
     ws = ss.worksheet("Status")
-    # coreference/reflexivization is partly filled in the recording (and has
-    # stayed so across refreezes; nonpermutability/general, used until
-    # 2026-10-17, was finished by its annotator) -- so a real count, yellow.
+    # coreference/reflexivization is partly filled in the synthetic language's
+    # recording -- so a real count, yellow. (English's pair tabs were all
+    # finished by 2026-10-22: nonpermutability/general, used until 2026-10-17,
+    # then English's reflexivization, until that refreeze.)
     row = status_row_index(ss, "coreference", "reflexivization")
     text = ws.get_all_values()[row][2]
     m = re.fullmatch(r"(\d+)/(\d+) filled \(\d+%\)", text)

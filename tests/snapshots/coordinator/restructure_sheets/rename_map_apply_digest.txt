@@ -111,11 +111,11 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
 
   fake_ss_0002  tab=general
-    add_worksheet: rows=144, cols=8, index=None, sheet_id=1
-    update: anchor A1 raw=True 143x8
-      | ['Element', 'Position_Name', 'Position_Number', 'V-combines', 'N-combines', 'A-combines', 'Source', 'Comments']
-      | ['also', 'v:leftedge', '1', 'y', 'n', 'n', '', '']
-      | ['and', 'v:leftedge', '1', 'y', 'y', 'y', '', '']
+    add_worksheet: rows=144, cols=9, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x9
+      | ['Element', 'Position_Name', 'Position_Number', 'V-combines', 'N-combines', 'A-combines', 'Example', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'y', 'n', 'n', '', '', '']
+      | ['and', 'v:leftedge', '1', 'y', 'y', 'y', '', '', '']
       | ...
 
   fake_ss_0002  tab=sheetId=1
@@ -176,11 +176,11 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 6}, "visibility": "DOCUMENT"}}
 
   fake_ss_0004  tab=andCoordination
-    add_worksheet: rows=144, cols=8, index=None, sheet_id=1
-    update: anchor A1 raw=True 143x8
-      | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Source', 'Comments']
-      | ['also', 'v:leftedge', '1', 'n', 'n', 'y', '', '']
-      | ['and', 'v:leftedge', '1', 'n', 'n', 'n', '', '']
+    add_worksheet: rows=144, cols=9, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x9
+      | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Example', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'n', 'n', 'y', '', '', '']
+      | ['and', 'v:leftedge', '1', 'n', 'n', 'n', '', '', '']
       | ...
 
   fake_ss_0004  tab=sheetId=1
@@ -194,11 +194,11 @@ SHEET OPERATIONS
     repeatCell: col 5 (BEYOND HEADER) rows 0-1
 
   fake_ss_0004  tab=control
-    add_worksheet: rows=144, cols=8, index=None, sheet_id=2
-    update: anchor A1 raw=True 143x8
-      | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Source', 'Comments']
-      | ['also', 'v:leftedge', '1', 'n', 'n', 'n', '', '*also martin also tried to unify the reform movement']
-      | ['and', 'v:leftedge', '1', 'n', 'n', 'n', '', '']
+    add_worksheet: rows=144, cols=9, index=None, sheet_id=2
+    update: anchor A1 raw=True 143x9
+      | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Example', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'n', 'n', 'n', '*also martin also tried to unify the reform movement', '', '']
+      | ['and', 'v:leftedge', '1', 'n', 'n', 'n', '', '', '']
       | ...
 
   fake_ss_0004  tab=sheetId=2
@@ -212,11 +212,11 @@ SHEET OPERATIONS
     repeatCell: col 5 (BEYOND HEADER) rows 0-1
 
   fake_ss_0004  tab=thatCOMP
-    add_worksheet: rows=144, cols=8, index=None, sheet_id=3
-    update: anchor A1 raw=True 143x8
-      | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Source', 'Comments']
-      | ['also', 'v:leftedge', '1', 'n', 'n', 'n', '', 'martin believed that then ...']
-      | ['and', 'v:leftedge', '1', 'n', 'n', 'n', '', '']
+    add_worksheet: rows=144, cols=9, index=None, sheet_id=3
+    update: anchor A1 raw=True 143x9
+      | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Example', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'n', 'n', 'n', 'martin believed that then ...', '', '']
+      | ['and', 'v:leftedge', '1', 'n', 'n', 'n', '', '', '']
       | ...
 
   fake_ss_0004  tab=sheetId=3
@@ -230,11 +230,11 @@ SHEET OPERATIONS
     repeatCell: col 5 (BEYOND HEADER) rows 0-1
 
   fake_ss_0004  tab=asyndeticPart
-    add_worksheet: rows=144, cols=8, index=None, sheet_id=4
-    update: anchor A1 raw=True 143x8
-      | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Source', 'Comments']
-      | ['also', 'v:leftedge', '1', 'y', 'n', 'n', '', '']
-      | ['and', 'v:leftedge', '1', 'y', 'n', 'n', '', '']
+    add_worksheet: rows=144, cols=9, index=None, sheet_id=4
+    update: anchor A1 raw=True 143x9
+      | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Example', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'y', 'n', 'n', '', '', '']
+      | ['and', 'v:leftedge', '1', 'y', 'n', 'n', '', '', '']
       | ...
 
   fake_ss_0004  tab=sheetId=4
@@ -291,11 +291,11 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
 
   fake_ss_0006  tab=general
-    add_worksheet: rows=144, cols=7, index=None, sheet_id=1
-    update: anchor A1 raw=True 143x7
-      | ['Element', 'Position_Name', 'Position_Number', 'free', 'multiple', 'Source', 'Comments']
-      | ['also', 'v:leftedge', '1', 'y', 'n', '', '']
-      | ['and', 'v:leftedge', '1', 'y', 'n', '', '']
+    add_worksheet: rows=144, cols=8, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x8
+      | ['Element', 'Position_Name', 'Position_Number', 'free', 'multiple', 'Example', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'y', 'n', '', '', '']
+      | ['and', 'v:leftedge', '1', 'y', 'n', '', '', '']
       | ...
 
   fake_ss_0006  tab=sheetId=1
@@ -348,11 +348,11 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
 
   fake_ss_0008  tab=stress_domain
-    add_worksheet: rows=144, cols=10, index=None, sheet_id=1
-    update: anchor A1 raw=True 143x10
-      | ['Element', 'Position_Name', 'Position_Number', 'accented', 'obligatory', 'independence', 'left-interaction', 'right-interaction', 'Source', 'Comments']
-      | ['also', 'v:leftedge', '1', 'y', 'y', 'y', 'n', 'n', '', '']
-      | ['and', 'v:leftedge', '1', 'both', 'n', 'y', 'n', 'n', '', '']
+    add_worksheet: rows=144, cols=11, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x11
+      | ['Element', 'Position_Name', 'Position_Number', 'accented', 'obligatory', 'independence', 'left-interaction', 'right-interaction', 'Example', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'y', 'y', 'y', 'n', 'n', '', '', '']
+      | ['and', 'v:leftedge', '1', 'both', 'n', 'y', 'n', 'n', '', '', '']
       | ...
 
   fake_ss_0008  tab=sheetId=1
@@ -415,11 +415,11 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 5}, "visibility": "DOCUMENT"}}
 
   fake_ss_0010  tab=element_prescreening
-    add_worksheet: rows=144, cols=6, index=None, sheet_id=1
-    update: anchor A1 raw=True 143x6
-      | ['Element', 'Position_Name', 'Position_Number', 'scopal', 'Source', 'Comments']
-      | ['also', 'v:leftedge', '1', 'n', '', '']
-      | ['and', 'v:leftedge', '1', 'n', '', '']
+    add_worksheet: rows=144, cols=7, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x7
+      | ['Element', 'Position_Name', 'Position_Number', 'scopal', 'Example', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'n', '', '', '']
+      | ['and', 'v:leftedge', '1', 'n', '', '', '']
       | ...
 
   fake_ss_0010  tab=sheetId=1
@@ -429,11 +429,11 @@ SHEET OPERATIONS
     repeatCell: col 3 (BEYOND HEADER) rows 0-1
 
   fake_ss_0010  tab=general
-    add_worksheet: rows=26, cols=7, index=None, sheet_id=2
-    update: anchor A1 raw=True 24x5
-      | ['Element_A', 'Element_B', 'scopal', 'Source', 'Comments']
-      | ['AD-S', 'AD-VP', 'n', '', '']
-      | ['AD-S', 'KEYSTONE', 'n', '', '']
+    add_worksheet: rows=26, cols=8, index=None, sheet_id=2
+    update: anchor A1 raw=True 24x6
+      | ['Element_A', 'Element_B', 'scopal', 'Example', 'Source', 'Comments']
+      | ['AD-S', 'AD-VP', 'n', '', '', '']
+      | ['AD-S', 'KEYSTONE', 'n', '', '', '']
       | ...
 
   fake_ss_0010  tab=sheetId=2
@@ -503,11 +503,11 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
 
   fake_ss_0012  tab=aspiration_prominence
-    add_worksheet: rows=144, cols=6, index=None, sheet_id=1
-    update: anchor A1 raw=True 143x6
-      | ['Element', 'Position_Name', 'Position_Number', 'aspirated', 'Source', 'Comments']
-      | ['also', 'v:leftedge', '1', 'na', '', '']
-      | ['and', 'v:leftedge', '1', 'na', '', '']
+    add_worksheet: rows=144, cols=7, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x7
+      | ['Element', 'Position_Name', 'Position_Number', 'aspirated', 'Example', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'na', '', '', '']
+      | ['and', 'v:leftedge', '1', 'na', '', '', '']
       | ...
 
   fake_ss_0012  tab=sheetId=1
@@ -517,11 +517,11 @@ SHEET OPERATIONS
     repeatCell: col 3 (BEYOND HEADER) rows 0-1
 
   fake_ss_0012  tab=flapping
-    add_worksheet: rows=144, cols=8, index=None, sheet_id=2
-    update: anchor A1 raw=True 143x8
-      | ['Element', 'Position_Name', 'Position_Number', 'flapping_left', 'flapping_internal', 'flapping_right', 'Source', 'Comments']
-      | ['also', 'v:leftedge', '1', 'na', 'na', 'na', '', '']
-      | ['and', 'v:leftedge', '1', 'na', 'na', 'na', '', '']
+    add_worksheet: rows=144, cols=9, index=None, sheet_id=2
+    update: anchor A1 raw=True 143x9
+      | ['Element', 'Position_Name', 'Position_Number', 'flapping_left', 'flapping_internal', 'flapping_right', 'Example', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'na', 'na', 'na', '', '', '']
+      | ['and', 'v:leftedge', '1', 'na', 'na', 'na', '', '', '']
       | ...
 
   fake_ss_0012  tab=sheetId=2
@@ -577,11 +577,11 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
 
   fake_ss_0014  tab=general
-    add_worksheet: rows=144, cols=10, index=None, sheet_id=1
-    update: anchor A1 raw=True 143x10
-      | ['Element', 'Position_Name', 'Position_Number', 'free', 'left-edge-of-free-form', 'right-edge-of-free-form', 'dependent-on-left', 'dependent-on-right', 'Source', 'Comments']
-      | ['also', 'v:leftedge', '1', 'y', 'na', 'na', 'na', 'na', '', '']
-      | ['and', 'v:leftedge', '1', 'y', 'na', 'na', 'na', 'na', '', '']
+    add_worksheet: rows=144, cols=11, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x11
+      | ['Element', 'Position_Name', 'Position_Number', 'free', 'left-edge-of-free-form', 'right-edge-of-free-form', 'dependent-on-left', 'dependent-on-right', 'Example', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'y', 'na', 'na', 'na', 'na', '', '', '']
+      | ['and', 'v:leftedge', '1', 'y', 'na', 'na', 'na', 'na', '', '', '']
       | ...
 
   fake_ss_0014  tab=sheetId=1
@@ -648,11 +648,11 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 7}, "visibility": "DOCUMENT"}}
 
   fake_ss_0016  tab=prescreening
-    add_worksheet: rows=144, cols=6, index=None, sheet_id=1
-    update: anchor A1 raw=True 143x6
-      | ['Element', 'Position_Name', 'Position_Number', 'referential', 'Source', 'Comments']
-      | ['also', 'v:leftedge', '1', 'n', '', '']
-      | ['and', 'v:leftedge', '1', 'n', '', '']
+    add_worksheet: rows=144, cols=7, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x7
+      | ['Element', 'Position_Name', 'Position_Number', 'referential', 'Example', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'n', '', '', '']
+      | ['and', 'v:leftedge', '1', 'n', '', '', '']
       | ...
 
   fake_ss_0016  tab=sheetId=1
@@ -662,11 +662,11 @@ SHEET OPERATIONS
     repeatCell: col 3 (BEYOND HEADER) rows 0-1
 
   fake_ss_0016  tab=reflexivization
-    add_worksheet: rows=166, cols=9, index=None, sheet_id=2
-    update: anchor A1 raw=True 164x7
-      | ['Element_A', 'Position_A', 'Position_B', 'Direction', 'reflexive_allowed', 'Source', 'Comments']
-      | ['NP{S,A,P}', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', '', '*then Sarah, John spoke to herself (otherwise not sure how to construct this sentence, but I perhaps needed to think harder about fronted NPs in this position)']
-      | ['QWORDS', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'y', '', 'Whom has spoken to himself.']
+    add_worksheet: rows=166, cols=10, index=None, sheet_id=2
+    update: anchor A1 raw=True 164x8
+      | ['Element_A', 'Position_A', 'Position_B', 'Direction', 'reflexive_allowed', 'Example', 'Source', 'Comments']
+      | ['NP{S,A,P}', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', '*then Sarah, John spoke to herself (otherwise not sure how to construct this sentence, but I perhaps needed to think harder about fronted NPs in this position)', '', '']
+      | ['QWORDS', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'y', 'Whom has spoken to himself.', '', '']
       | ...
 
   fake_ss_0016  tab=sheetId=2
@@ -675,11 +675,11 @@ SHEET OPERATIONS
     setDataValidation: col 4 (BEYOND HEADER) rows 1-164 -> ['y', 'n', 'untestable'] (strict=False)
 
   fake_ss_0016  tab=pronominalization
-    add_worksheet: rows=166, cols=9, index=None, sheet_id=3
-    update: anchor A1 raw=True 164x7
-      | ['Element_A', 'Position_A', 'Position_B', 'Direction', 'pronoun_allowed', 'Source', 'Comments']
-      | ['NP{S,A,P}', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', '', 'I struggle with the test sentences here.']
-      | ['QWORDS', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', '', 'Who has John spoken to him']
+    add_worksheet: rows=166, cols=10, index=None, sheet_id=3
+    update: anchor A1 raw=True 164x8
+      | ['Element_A', 'Position_A', 'Position_B', 'Direction', 'pronoun_allowed', 'Example', 'Source', 'Comments']
+      | ['NP{S,A,P}', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', '', '', 'I struggle with the test sentences here.']
+      | ['QWORDS', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', 'Who has John spoken to him', '', '']
       | ...
 
   fake_ss_0016  tab=sheetId=3
@@ -688,11 +688,11 @@ SHEET OPERATIONS
     setDataValidation: col 4 (BEYOND HEADER) rows 1-164 -> ['y', 'n', 'untestable'] (strict=False)
 
   fake_ss_0016  tab=np_reference
-    add_worksheet: rows=166, cols=9, index=None, sheet_id=4
-    update: anchor A1 raw=True 164x7
-      | ['Element_A', 'Position_A', 'Position_B', 'Direction', 'np_allowed', 'Source', 'Comments']
-      | ['NP{S,A,P}', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', '', '']
-      | ['QWORDS', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', '', '']
+    add_worksheet: rows=166, cols=10, index=None, sheet_id=4
+    update: anchor A1 raw=True 164x8
+      | ['Element_A', 'Position_A', 'Position_B', 'Direction', 'np_allowed', 'Example', 'Source', 'Comments']
+      | ['NP{S,A,P}', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', '', '', '']
+      | ['QWORDS', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', '', '', '']
       | ...
 
   fake_ss_0016  tab=sheetId=4
@@ -765,11 +765,11 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
 
   fake_ss_0018  tab=do_so_substitution
-    add_worksheet: rows=144, cols=6, index=None, sheet_id=1
-    update: anchor A1 raw=True 143x6
-      | ['Element', 'Position_Name', 'Position_Number', 'shareable_proform_replace', 'Source', 'Comments']
-      | ['also', 'v:leftedge', '1', 'unclear', '', 'Also Martin ate sausage and Pope Leo did too']
-      | ['and', 'v:leftedge', '1', 'unclear', '', '']
+    add_worksheet: rows=144, cols=7, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x7
+      | ['Element', 'Position_Name', 'Position_Number', 'shareable_proform_replace', 'Example', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'y', 'Also Martin ate sausage and Pope Leo did too', '', '']
+      | ['and', 'v:leftedge', '1', 'n', '', '', 'This is actually unclear']
       | ...
 
   fake_ss_0018  tab=sheetId=1
@@ -779,11 +779,11 @@ SHEET OPERATIONS
     repeatCell: col 3 (BEYOND HEADER) rows 0-1
 
   fake_ss_0018  tab=vp_ellipsis
-    add_worksheet: rows=144, cols=6, index=None, sheet_id=2
-    update: anchor A1 raw=True 143x6
-      | ['Element', 'Position_Name', 'Position_Number', 'shareable_proform_replace', 'Source', 'Comments']
-      | ['also', 'v:leftedge', '1', 'unclear', '', 'Also Martin drank beer and also John as well']
-      | ['and', 'v:leftedge', '1', 'unclear', '', '']
+    add_worksheet: rows=144, cols=7, index=None, sheet_id=2
+    update: anchor A1 raw=True 143x7
+      | ['Element', 'Position_Name', 'Position_Number', 'shareable_proform_replace', 'Example', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'unclear', 'Also Martin drank beer and also John as well', '', '']
+      | ['and', 'v:leftedge', '1', 'unclear', '', '', '']
       | ...
 
   fake_ss_0018  tab=sheetId=2
@@ -837,11 +837,11 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
 
   fake_ss_0020  tab=prescreening
-    add_worksheet: rows=144, cols=6, index=None, sheet_id=1
-    update: anchor A1 raw=True 143x6
-      | ['Element', 'Position_Name', 'Position_Number', 'accented', 'Source', 'Comments']
-      | ['also', 'v:leftedge', '1', '', '', '']
-      | ['and', 'v:leftedge', '1', '', '', '']
+    add_worksheet: rows=144, cols=7, index=None, sheet_id=1
+    update: anchor A1 raw=True 143x7
+      | ['Element', 'Position_Name', 'Position_Number', 'accented', 'Example', 'Source', 'Comments']
+      | ['also', 'v:leftedge', '1', 'y', '', '', '']
+      | ['and', 'v:leftedge', '1', 'both', '', '', '']
       | ...
 
   fake_ss_0020  tab=sheetId=1
@@ -851,9 +851,9 @@ SHEET OPERATIONS
     repeatCell: col 3 (BEYOND HEADER) rows 0-1
 
   fake_ss_0020  tab=general
-    add_worksheet: rows=3, cols=7, index=None, sheet_id=2
-    update: anchor A1 raw=True 1x5
-      | ['Element_A', 'Element_B', 'joint_accent', 'Source', 'Comments']
+    add_worksheet: rows=3, cols=8, index=None, sheet_id=2
+    update: anchor A1 raw=True 1x6
+      | ['Element_A', 'Element_B', 'joint_accent', 'Example', 'Source', 'Comments']
 
   fake_ss_0020  tab=sheetId=2
     updateSheetProperties: (whole sheet)
@@ -913,11 +913,11 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 6}, "visibility": "DOCUMENT"}}
 
   fake_ss_0022  tab=elements
-    add_worksheet: rows=137, cols=8, index=None, sheet_id=1
-    update: anchor A1 raw=True 136x8
-      | ['Element', 'Position_Name', 'Position_Number', 'has_allomorphs', 'members', 'co_exponents', 'Source', 'Comments']
-      | ['and', 'v:leftedge', '1', 'y', 'and, nd', '', '', '']
-      | ['also', 'v:leftedge', '1', 'n', '', '', '', '']
+    add_worksheet: rows=137, cols=9, index=None, sheet_id=1
+    update: anchor A1 raw=True 136x9
+      | ['Element', 'Position_Name', 'Position_Number', 'has_allomorphs', 'members', 'co_exponents', 'Example', 'Source', 'Comments']
+      | ['and', 'v:leftedge', '1', 'y', 'ænd, nd', '', '', '', '']
+      | ['also', 'v:leftedge', '1', 'n', '', '', '', '', '']
       | ...
 
   fake_ss_0022  tab=sheetId=1
@@ -929,21 +929,24 @@ SHEET OPERATIONS
     repeatCell: col 5 (BEYOND HEADER) rows 0-1
 
   fake_ss_0022  tab=morphemes
-    add_worksheet: rows=2, cols=7, index=None, sheet_id=2
-    update: anchor A1 raw=True 1x7
-      | ['Morpheme', 'Origin', 'Found_At', 'morpheme_class', 'forms_relation', 'Source', 'Comments']
+    add_worksheet: rows=20, cols=8, index=None, sheet_id=2
+    update: anchor A1 raw=True 19x8
+      | ['Morpheme', 'Origin', 'Found_At', 'morpheme_class', 'forms_relation', 'Example', 'Source', 'Comments']
+      | ['and', 'filled', 'v:leftedge', '', '', '', '', '']
+      | ['be', 'filled', 'v:frontedauxiliary', '', '', '', '', '']
+      | ...
 
   fake_ss_0022  tab=sheetId=2
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
-    setDataValidation: col 4 (BEYOND HEADER) rows 1-1 -> ['alternate', 'co-occur'] (strict=False)
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-19 -> ['alternate', 'co-occur'] (strict=False)
     repeatCell: col 3 (BEYOND HEADER) rows 0-1
     repeatCell: col 4 (BEYOND HEADER) rows 0-1
 
   fake_ss_0022  tab=morphs
-    add_worksheet: rows=2, cols=11, index=None, sheet_id=3
-    update: anchor A1 raw=True 1x11
-      | ['Morpheme', 'Position_Name', 'Form', 'Origin', 'occurs_here', 'conditioning_type', 'conditioning_features', 'conditioned_by', 'trigger_filled', 'Source', 'Comments']
+    add_worksheet: rows=2, cols=12, index=None, sheet_id=3
+    update: anchor A1 raw=True 1x12
+      | ['Morpheme', 'Position_Name', 'Form', 'Origin', 'occurs_here', 'conditioning_type', 'conditioning_features', 'conditioned_by', 'trigger_filled', 'Example', 'Source', 'Comments']
 
   fake_ss_0022  tab=sheetId=3
     updateSheetProperties: (whole sheet)

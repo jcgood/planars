@@ -55,22 +55,16 @@ deletion test) is #319;
 (f) Comments cells reach nobody: the collaborator guide invites
 questions there, import-sheets copies them, nothing reports them (and the
 guide never mentions the notes Doc, the channel check-notes watches).
-Plan agreed in outline with Jeff (2026-10-22); English has 402 filled
-Comments, 284 of them tooling notes (`[split from …]`, `[new: …]`,
-`[carried from split …]`) and 118 Adam's: ~70 example sentences, ~25
-problems, the rest notes. (1) an `Examples` column before Source
-(`schemas/planar.yaml` `trailing_columns`; pushing it makes the next
-refresh add the column to live sheets, so Jeff's go-ahead first, and a
-note on #318); (2) the tooling stops writing into Comments (the change
-log and archived sheets already say where a value came from) and a
-migration deletes the 284 notes; (3) the refresh finds new or changed
-Comments and files one issue per language with a generated prompt (each
-comment with its tab, element, position and answers), like check-notes;
-a Claude Code session run from the issue sorts them and drafts replies,
-nothing posted without Jeff; no API key; (4) Claude proposes the split
-of Adam's 118 cells into Examples/Comments, Adam confirms, a migration
-moves them. **Waiting on Jeff:** the column name and placement, and
-whether Adam confirms (4).
+Done 2026-10-22 (Jeff's decisions: column `Example`, before Source; no
+confirmation from Adam): every class sheet has an `Example` column
+(`schemas/planar.yaml` `trailing_columns`); the tooling never writes in
+Comments (restructure-sheets quotes a split element's old answers in a
+cell note); `check-comments` runs in the daily refresh and files one
+`collaborator-comments` issue per language with a Claude prompt; and
+`migrations/sort_comments_into_example.py` cleared the 284 tooling notes
+and moved 86 examples, leaving Adam's 32 questions and notes. **Next:**
+the first `collaborator-comments` issue (the 2026-10-23 refresh) is the
+backlog of 32: run its prompt and bring Jeff the drafts.
 Also open, linguistic: displacement, the one standard constituency test
 with no class (#56; English is its data, Adam to write the frames).
 Not now: 8 (drop impossible pairs), 10–12 (proform frames, the

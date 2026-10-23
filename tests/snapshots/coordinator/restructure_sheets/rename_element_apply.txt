@@ -138,7 +138,7 @@ Language: stan1293
     [elements] carry over 134; rename 1; new blank 0
     Archived to _archived/biuniqueness_deviations_stan1293_v1
     [elements] wrote: carried 135, new blank 0, dropped 0
-    [morphemes] (keyed tab) copied 0 rows, 0 cell(s) renamed
+    [morphemes] (keyed tab) copied 18 rows, 0 cell(s) renamed
     [morphs] (keyed tab) copied 0 rows, 0 cell(s) renamed
     Locked tab Instructions: create
     Locked tab Instructions: protect

@@ -218,6 +218,7 @@ PROVENANCE_LOG = "provenance_log"
 REGEN_SNAPSHOT = "regen_snapshot"
 RESTRUCTURE_JOURNAL = "restructure_journal"
 NOTES_STATE = "notes_state"
+COMMENTS_STATE = "comments_state"
 RENUMBERING = "renumbering"
 ID_FILE = "id_file"
 
@@ -234,6 +235,8 @@ STATE_KINDS: Dict[str, Dict[str, object]] = {
                           "what": "restructure-sheets' record of an interrupted run"},
     NOTES_STATE:         {"path": lambda f: state_files.NOTES_STATE_PATH,
                           "what": "what check-notes last saw in each notes Doc"},
+    COMMENTS_STATE:      {"path": lambda f: state_files.COMMENTS_STATE_PATH,
+                          "what": "what check-comments last saw in each Comments cell"},
     RENUMBERING:         {"path": lambda f: state_files.RENUMBERING_PATH,
                           "what": "import-planar's record of class sheets renumbered "
                                   "ahead of a new planar"},
@@ -294,6 +297,10 @@ def restructure_journal() -> StateFile:
 
 def notes_state() -> StateFile:
     return StateFile(NOTES_STATE)
+
+
+def comments_state() -> StateFile:
+    return StateFile(COMMENTS_STATE)
 
 
 def renumbering() -> StateFile:

@@ -813,6 +813,28 @@
   cascades_triggered: []
   modes: []
 
+- id: check_comments
+  cli_command: check-comments
+  writes_to_drive: false
+  writes_locally: true
+  description: >-
+    Files each language's new or changed Comments cells (read from the
+    imported TSVs) as one collaborator-comments issue, with a Claude prompt.
+  side_effects:
+    - "creates or comments on one collaborator-comments issue per language with new or changed comments"
+    - "writes coded_data/.state/comments_state.json, through the local-file door (the comments it last saw)"
+  idempotent: true
+  idempotency_note: >-
+    The state is saved per language right after its issue is filed, and
+    records every comment then present, so a second run with nothing
+    changed files nothing; a run that stops partway reports only the
+    languages it had not reached.
+  apply_gate: "--apply"
+  preconditions: [coded_data_git_identity_configured]
+  facts_touched: []
+  cascades_triggered: []
+  modes: []
+
 - id: refresh_dropdowns
   cli_command: refresh-dropdowns
   writes_to_drive: true
@@ -1042,7 +1064,7 @@
     the steps. Writes nothing to Drive itself; each command it runs is
     checked by the Drive door under its own record.
   side_effects:
-    - "runs import-planar, import-sheets, check-notes, sync-diagnostics-yaml (both directions), proposal-sheets, sync-params, generate-sheets --regen-dependents, update-sheets and generate-status-sheet with --apply, each with its own side effects (proposal-sheets files and closes the proposal issues itself)"
+    - "runs import-planar, import-sheets, check-notes, check-comments, sync-diagnostics-yaml (both directions), proposal-sheets, sync-params, generate-sheets --regen-dependents, update-sheets and generate-status-sheet with --apply, each with its own side effects (proposal-sheets files and closes the proposal issues itself)"
     - "files, updates or closes the daily issues (planar-changed, import-error, diagnostics-yaml-error, regen-dependents-error, dependent-stale, diagnostics-drift, codebook-error, stale-manifest, integrity-error, data-overwrite, sheet-drift, status-sheet-error) and comments on stale pending-changes issues"
     - "files an audit issue when none is open and none has closed in 30 days"
     - "each command it runs commits and pushes what it wrote in coded_data/ (planars-data) when it ends, through the local-file door"

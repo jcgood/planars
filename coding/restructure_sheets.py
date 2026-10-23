@@ -32,9 +32,9 @@ Run from the repo root:
     --split-element takes "old_element:new1,new2,..." (comma-separated, at least 2 targets)
       and can be repeated. There's no principled 1:1 value to carry over from one generic
       old element to several specific new ones, so new rows are left blank as usual — but
-      if the old element had existing annotations, each new row's Comments cell gets a
-      breadcrumb note pointing back to the archived sheet so re-annotators aren't working
-      from memory. An element cannot appear in both --rename-element and --split-element.
+      if the old element had existing annotations, each new row's first answer cell gets
+      a note quoting them so re-annotators aren't working from memory (a note, never
+      Comments, which is the annotator's own column). An element cannot appear in both --rename-element and --split-element.
       Also cascades into every pair-row construction (nonpermutability's `general`,
       coreference's three, and any future one — found generically via row_type:
       pair_rows, not hardcoded by class name) that references the retired element in
@@ -42,8 +42,8 @@ Run from the repo root:
       element, left BLANK (never pre-filled with the old value, even though it's often
       linguistically the same fact — a coordinator happening to know the language
       doesn't scale to contributor languages nobody on the team speaks), with the old
-      row's criterion value, Source, and Comments quoted verbatim into the new row's
-      Comments cell. A row where BOTH sides of a pair are the retired element (a
+      row's criterion value, Example, Source and Comments quoted in a note on the new
+      row's criterion cell. A row where BOTH sides of a pair are the retired element (a
       self-pair) is left untouched and flagged for manual review instead of guessed at.
       See issues #241/#262 for the design discussion this resolves.
     --rename-class takes "old_class_name:new_class_name" and can be repeated.
@@ -238,8 +238,8 @@ def _lock_archived_sheet(doorway, file_id: str, lang_id: str) -> None:
     """Remove any 'anyone' permission from a just-archived sheet and share it
     read-only with the language's annotator, if one is on file.
 
-    Archived sheets carry real prior judgments (--split-element's breadcrumb
-    notes point back to them) so the annotator still needs to be able to open
+    Archived sheets carry real prior judgments (the full record behind
+    --split-element's notes) so the annotator still needs to be able to open
     and read them — just not edit them, since they're no longer the live copy.
 
     Uses `drive.remove_anyone_permission`, the one copy of that sequence
@@ -406,8 +406,9 @@ def _write_tab_with_carryover(
     into several finer-grained replacements. There's no principled value to carry
     over 1:1 for these (a generic annotation doesn't tell us how each new element
     individually behaves), so they're left as new blank rows — but if the old
-    element had existing annotations, the new row's Comments cell gets a breadcrumb
-    pointing back to it, since that data is only recoverable from the archived sheet.
+    element had existing annotations, the new row's first answer cell gets a note
+    quoting them (``_split_note``), so the annotator decides with the old judgment
+    in view. Comments is never written: it is the annotator's.
 
     Returns:
         (carried_count, new_count, dropped_count)
@@ -424,6 +425,7 @@ def _write_tab_with_carryover(
     new = 0
     reachable_old_keys: set = set()
     all_rows = [header]
+    notes: List[Tuple[int, int, str]] = []
 
     for row in rows:
         element = str(row[0])
@@ -441,12 +443,10 @@ def _write_tab_with_carryover(
             param_vals = ["NA"] * len(param_names) if is_keystone else [""] * len(param_names)
             trailing_vals = [""] * len(_TRAILING_COLS)
             split_source = new_to_old_split.get(element)
-            if split_source is not None and existing.get((split_source, pos_name)) is not None:
-                if "Comments" in _TRAILING_COLS:
-                    c_idx = _TRAILING_COLS.index("Comments")
-                    trailing_vals[c_idx] = (
-                        f"[split from {split_source} — see archived sheet for prior judgment]"
-                    )
+            old_split = existing.get((split_source, pos_name)) if split_source else None
+            if old_split is not None and param_names:
+                notes.append((len(all_rows) - 1, len(ELEMENT_ROW_COLUMNS),
+                              _split_note(split_source, old_split)))
             new += 1
 
         all_rows.append([element, pos_name, pos_num] + param_vals + trailing_vals)
@@ -476,8 +476,30 @@ def _write_tab_with_carryover(
     per_col_values = [param_values[p] for p in param_names]  # values come from criteria_for
     per_col_notes = _build_criterion_notes(param_names)
     _format_and_validate(ws, len(rows), per_col_values, param_notes=per_col_notes)
+    _add_cell_notes(ws, notes)
 
     return carried, new, dropped
+
+
+def _split_note(old_element: str, old_values: Dict[str, str]) -> str:
+    """The note on a split row's first answer cell: what the element it was
+    split from had here. The annotator decides with it in view; Comments stays
+    theirs (the tooling never writes there, schemas/planar.yaml)."""
+    answered = "; ".join(f"{c}: {v}" for c, v in old_values.items() if str(v).strip())
+    return (f"Split from {old_element}, which had " + (answered or "no answers")
+            + ". Decide this row afresh.")
+
+
+def _add_cell_notes(ws, notes: List[Tuple[int, int, str]]) -> None:
+    """Attach each (data row index, column index, text) as a note on that
+    cell (row 0 is the first row under the header)."""
+    if not notes:
+        return
+    requests = [{"repeatCell": {
+        "range": {"sheetId": ws.id, "startRowIndex": r + 1, "endRowIndex": r + 2,
+                  "startColumnIndex": c, "endColumnIndex": c + 1},
+        "cell": {"note": text}, "fields": "note"}} for r, c, text in notes]
+    ws.spreadsheet.batch_update({"requests": requests})
 
 
 # ---------------------------------------------------------------------------
@@ -633,7 +655,7 @@ def _apply_split_to_pair_rows(
     data_rows: List[List[str]],
     split_element_map: Dict[str, List[str]],
     criterion_col: Optional[str],
-) -> Tuple[List[List[str]], int, int]:
+) -> Tuple[List[List[str]], int, int, List[Tuple[int, int, str]]]:
     """Fan out pair-row(s) referencing a retired (split) element into one row per
     replacement element, per issue #241's resolved design (policy (b)).
 
@@ -642,10 +664,12 @@ def _apply_split_to_pair_rows(
     with that column substituted, the criterion column BLANKED (never carried
     forward as a live default -- a coordinator happening to know the language
     doesn't scale to contributor languages nobody on the team speaks, see #262).
-    The old row's criterion value, Source, and Comments are quoted verbatim into
-    the new row's Comments cell (Source is cleared on the new row, ready for a
-    fresh citation) so the prior judgment is visible right where the new decision
-    needs to be made instead of requiring a hunt through an archived sheet.
+    The old row's criterion value and every filled trailing column (Example,
+    Source, Comments) are quoted in a note on the new row's criterion cell
+    (``_split_note``), and the new row's trailing columns start blank, so the
+    prior judgment is visible right where the new decision is made. Until
+    2026-10-22 the quote went into Comments, the annotator's own column, where
+    nothing could tell it from what they wrote (#318).
 
     A row where BOTH Element_A and Element_B match an element being split (a
     self-pair) is left untouched but counted separately -- fanning out both sides
@@ -655,19 +679,21 @@ def _apply_split_to_pair_rows(
     No-ops (returns data_rows unchanged) if split_element_map is empty or the
     header has no Element_A column at all (not an element-identified pair shape).
 
-    Returns (new_data_rows, n_fanned_out, n_needs_manual_review).
+    Returns (new_data_rows, n_fanned_out, n_needs_manual_review, notes), notes
+    as ``_add_cell_notes`` takes them (indexes into new_data_rows).
     """
     if not split_element_map or "Element_A" not in header:
-        return data_rows, 0, 0
+        return data_rows, 0, 0, []
 
     col_idx = {c: i for i, c in enumerate(header)}
     a_idx = col_idx["Element_A"]
     b_idx = col_idx.get("Element_B")
-    comments_idx = col_idx.get("Comments")
-    source_idx = col_idx.get("Source")
+    trailing_idx = {c: col_idx[c] for c in _TRAILING_COLS if c in col_idx}
     crit_idx = col_idx.get(criterion_col) if criterion_col else None
+    note_idx = crit_idx if crit_idx is not None else a_idx
 
     new_rows: List[List[str]] = []
+    notes: List[Tuple[int, int, str]] = []
     n_fanned = 0
     n_manual = 0
     for row in data_rows:
@@ -686,19 +712,10 @@ def _apply_split_to_pair_rows(
             continue
 
         old_el = a_val if a_hit else b_val
-        old_crit_val = padded[crit_idx] if crit_idx is not None else ""
-        old_comment = padded[comments_idx] if comments_idx is not None else ""
-        old_source = padded[source_idx] if source_idx is not None else ""
-        crit_part = (
-            f"{criterion_col}={old_crit_val!r}" if criterion_col else None
-        )
-        breadcrumb = f"[carried from split of {old_el!r}]"
-        if crit_part:
-            breadcrumb += f" {crit_part}"
-        if old_source:
-            breadcrumb += f"; old Source: {old_source}"
-        if old_comment:
-            breadcrumb += f"; old Comments: {old_comment}"
+        old_values = {c: padded[i] for c, i in trailing_idx.items()}
+        if crit_idx is not None:
+            old_values = {criterion_col: padded[crit_idx], **old_values}
+        note = _split_note(old_el, old_values)
 
         for new_el in split_element_map[old_el]:
             new_row = list(padded)
@@ -708,14 +725,13 @@ def _apply_split_to_pair_rows(
                 new_row[b_idx] = new_el
             if crit_idx is not None:
                 new_row[crit_idx] = ""
-            if source_idx is not None:
-                new_row[source_idx] = ""
-            if comments_idx is not None:
-                new_row[comments_idx] = breadcrumb
+            for i in trailing_idx.values():
+                new_row[i] = ""
+            notes.append((len(new_rows), note_idx, note))
             new_rows.append(new_row)
             n_fanned += 1
 
-    return new_rows, n_fanned, n_manual
+    return new_rows, n_fanned, n_manual, notes
 
 
 def _count_pair_rename_impacts(tsv_path: Path, rename_map: Dict[str, str]) -> int:
@@ -740,7 +756,7 @@ def _count_pair_split_impacts(
     if not tsv_path.exists() or not split_element_map:
         return 0, 0
     df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
-    _, fanned, manual = _apply_split_to_pair_rows(
+    _, fanned, manual, _ = _apply_split_to_pair_rows(
         list(df.columns), df.values.tolist(), split_element_map, criterion_col
     )
     return fanned, manual
@@ -845,11 +861,19 @@ def _copy_pair_tab_with_rename(
         ws.update([header], "A1")
         return 0, 0, 0, 0
 
-    header = all_values[0]
+    # The trailing columns are the schema's, in its order, whatever the old
+    # tab had: a column added to schemas/planar.yaml since the old sheet was
+    # made (Example, 2026-10-22) must be on the rebuilt one, and a trailing
+    # column the schema dropped must not be. Cells move by column name.
+    old_header = all_values[0]
+    header = [c for c in old_header if c not in _TRAILING_COLS] + list(_TRAILING_COLS)
+    old_idx = {c: i for i, c in enumerate(old_header)}
+    rows_by_name = [[(row[old_idx[c]] if c in old_idx and old_idx[c] < len(row) else "")
+                     for c in header] for row in all_values[1:]]
     col_indices = {col: header.index(col) for col in _PAIR_POS_COLS if col in header}
     renamed = 0
     new_data = [header]
-    for row in all_values[1:]:
+    for row in rows_by_name:
         new_row = list(row)
         for col_name, col_idx in col_indices.items():
             if col_idx < len(new_row):
@@ -859,7 +883,7 @@ def _copy_pair_tab_with_rename(
                     renamed += 1
         new_data.append(new_row)
 
-    new_data[1:], split_fanned, split_manual = _apply_split_to_pair_rows(
+    new_data[1:], split_fanned, split_manual, split_notes = _apply_split_to_pair_rows(
         header, new_data[1:], split_element_map, criterion_col
     )
 
@@ -889,6 +913,7 @@ def _copy_pair_tab_with_rename(
         # columns are the ones immediately before the trailing columns.
         col_start = len(header) - len(_TRAILING_COLS) - len(param_names)
     _format_and_validate(ws, len(new_data) - 1, per_col, col_start=col_start)
+    _add_cell_notes(ws, split_notes)
     return len(new_data) - 1, renamed, split_fanned, split_manual
 
 
@@ -901,7 +926,7 @@ def _copy_pair_tab_with_rename(
 # (Position_Name, Found_At, any <position_names> criterion such as
 # conditioned_by) or an element (Morpheme, Form). A co-exponent label
 # ("be + v:verbinflection") names both. A split element cannot be resolved
-# automatically: its rows are kept unchanged, flagged in Comments, and counted
+# automatically: its rows are kept unchanged, flagged with a cell note, and counted
 # for manual review.
 
 _POSITION_LIST_COLS = ("Found_At",)
@@ -929,11 +954,15 @@ def _transform_keyed_rows(
     rename_map: Dict[str, str],
     element_rename_map: Dict[str, str],
     split_element_map: Dict[str, List[str]],
-) -> Tuple[List[List[str]], int, int]:
-    """Apply renames to a keyed tab's rows. Returns (rows, cells_changed, rows_flagged)."""
+) -> Tuple[List[List[str]], int, int, List[Tuple[int, int, str]]]:
+    """Apply renames to a keyed tab's rows. Returns (rows, cells_changed,
+    rows_flagged, notes): a row naming a split element is kept as it is and
+    flagged with a note on its first cell (``_add_cell_notes``), never in
+    Comments, which is the annotator's."""
     idx = {c: i for i, c in enumerate(header)}
     changed = flagged = 0
     out = []
+    notes: List[Tuple[int, int, str]] = []
     for raw in data_rows:
         row = list(raw) + [""] * (len(header) - len(raw))
         before = list(row)
@@ -954,15 +983,13 @@ def _transform_keyed_rows(
         touched |= {row[idx["Form"]]} if "Form" in idx else set()
         touched |= {row[idx["Morpheme"]].split(" + ", 1)[0]} if "Morpheme" in idx else set()
         split_hits = [old for old in split_element_map if old in touched]
-        if split_hits and "Comments" in idx:
-            notes = "; ".join(f"split {old} -> {', '.join(split_element_map[old])}: review"
-                              for old in split_hits)
-            cur = row[idx["Comments"]]
-            if notes not in cur:
-                row[idx["Comments"]] = f"{notes} | {cur}" if cur else notes
+        if split_hits:
+            notes.append((len(out), 0, "; ".join(
+                f"{old} was split into {', '.join(split_element_map[old])}: "
+                f"check which this row is about" for old in split_hits)))
             flagged += 1
         out.append(row)
-    return out, changed, flagged
+    return out, changed, flagged, notes
 
 
 def _position_param_cols(param_values: Dict[str, List[str]]) -> Set[str]:
@@ -1003,7 +1030,7 @@ def _count_keyed_impacts(
     if not tsv_path.exists():
         return 0, 0
     df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
-    _, changed, flagged = _transform_keyed_rows(
+    _, changed, flagged, _ = _transform_keyed_rows(
         list(df.columns), df.values.tolist(), _position_param_cols(param_values),
         rename_map, element_rename_map, split_element_map)
     return changed, flagged
@@ -1027,11 +1054,12 @@ def _copy_keyed_tab_with_rename(
     except WorksheetNotFound:
         all_values = []
     header = all_values[0] if all_values else keyed["columns"] + param_names + list(_TRAILING_COLS)
-    rows, changed, flagged = _transform_keyed_rows(
+    rows, changed, flagged, notes = _transform_keyed_rows(
         header, all_values[1:], _position_param_cols(param_values),
         rename_map, element_rename_map, split_element_map)
-    _populate_tab_keyed(new_ss, tab_name, keyed["columns"], param_names, param_values,
-                        [dict(zip(header, r)) for r in rows])
+    ws = _populate_tab_keyed(new_ss, tab_name, keyed["columns"], param_names, param_values,
+                             [dict(zip(header, r)) for r in rows])
+    _add_cell_notes(ws, notes)
     return len(rows), changed, flagged
 
 
@@ -1389,7 +1417,7 @@ def _describe_split_impacts(
 
     For each old_element -> [new1, new2, ...] mapping, reports how many of the new
     elements are present in the new row set and whether the old element had existing
-    annotations (meaning the new rows will carry a breadcrumb Comments note).
+    annotations (meaning the new rows will carry a note quoting them).
     """
     lines: List[str] = []
     for old, news in split_element_map.items():
@@ -1403,7 +1431,7 @@ def _describe_split_impacts(
         if news_present:
             lines.append(
                 f"split: {old} -> {', '.join(news)} "
-                f"({len(news_present)} new, breadcrumbed to archived sheet)"
+                f"({len(news_present)} new, old answers in a note on each)"
             )
     return lines
 
@@ -1479,9 +1507,9 @@ def main(args: argparse.Namespace | None = None) -> None:
     With --split-element old:new1,new2,..., retires one element in favor of several
     finer-grained replacements within the same position. New rows are left blank
     (no principled 1:1 value to carry over from a generic annotation), but each
-    gets a Comments breadcrumb pointing back to the archived sheet if the old
-    element had existing data, so re-annotators have a pointer to the prior
-    judgment instead of needing to remember or hunt for it. This also cascades
+    gets a note quoting the old element's answers if it had any, so
+    re-annotators see the prior judgment instead of needing to remember or
+    hunt for it. This also cascades
     into every pair-row construction referencing the retired element (see
     _apply_split_to_pair_rows) -- not just the "home" element-row construction.
     """
@@ -1692,7 +1720,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                         msg = f"    [{construction}] (keyed tab) rename {n_cells} cell(s)"
                         if n_flagged:
                             msg += (f", {n_flagged} row(s) on a split element — "
-                                    f"NEEDS MANUAL REVIEW, flagged in Comments")
+                                    f"NEEDS MANUAL REVIEW, flagged with a note on the row")
                         print(msg)
                         class_needs_restructure = True
                     continue
@@ -1805,7 +1833,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                     }
                     msg = f"    [{construction}] (pair tab) copied {rows_copied} rows, {cells_renamed} cell(s) renamed"
                     if rows_split:
-                        msg += f", {rows_split} row(s) split (blank, old judgment quoted in Comments)"
+                        msg += f", {rows_split} row(s) split (blank, old judgment quoted in a note)"
                     if rows_manual:
                         msg += f", {rows_manual} self-pair row(s) on a split element — NEEDS MANUAL REVIEW, not auto-handled"
                     print(msg)

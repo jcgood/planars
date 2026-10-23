@@ -26,8 +26,9 @@ A few rules:
 - **Keystone row** (`v:verbstem`): Pre-filled with `NA`. Do not change these cells.
 - **Blank cells**: Leave blank if you have not yet annotated this element. Blanks appear as warnings when the coordinator imports the data and are excluded from span computations.
 - **`?`**: Use `?` (not a blank) when you have consulted the source and genuinely cannot determine the value. A `?` is a positive annotation of uncertainty — it tells the coordinator "I looked and could not decide", which is different from "I have not looked yet". Both are flagged on import, but they mean different things for the record.
-- **Source column**: Use this for page or section references that justify your annotation for that row (e.g. `§4.3`, `p. 217`, `Table 6.2`). Free text, never validated. Filling this in creates an audit trail so anyone can verify a decision later.
-- **Comments column**: Use this for anything you want to flag — uncertainty, alternative analyses, questions for the coordinator. It is passed through unchanged and is never used in computation.
+- **Example column**: the forms or sentences that show your answer (`*Martin babysat himself`, `diagnose vs. diagram`).
+- **Source column**: page or section references that justify your answer (`§4.3`, `p. 217`).
+- **Comments column**: anything you want the coordinator to see — a question, a doubt about a value, something the columns can't express. New comments are passed to the coordinator each day. (Details below.)
 
 ### When a construction is finished
 
@@ -90,15 +91,19 @@ Pink means the value is not in the allowed list for that criterion. Common cause
 
 Fix the cell using the dropdown, then re-run the validation notebook to confirm the pink is gone.
 
-### Using the Source and Comments columns
+### Using the Example, Source and Comments columns
 
-Both columns are free text and are never validated.
+All three are free text and are never checked.
 
-**Source** — Put page or section references here that justify the annotation for that row (e.g. `§4.3`, `p. 217`, `Table 6.2`). This creates an audit trail so anyone can verify a decision later without re-reading the whole grammar. You can leave it blank, but filling it in is strongly encouraged, especially for `y` annotations and any value you found difficult to determine.
+**Example** — The forms or sentences that show your answer, marked `*`, `?` or `??` as usual. Separate several with `;`. If you are judging your own language, this is your evidence.
 
-**Comments** — Use for anything else you want to flag:
-- Uncertainty (`"unclear — see example 3.12"`)
-- Alternative analyses
-- Questions for the coordinator
+**Source** — Page or section references for a published description (`§4.3`, `p. 217`, `Table 6.2`), so anyone can check a decision later without re-reading the whole grammar.
 
-Both columns are preserved through `import-sheets` and are available in the filled TSV.
+**Comments** — Only for things the coordinator should see:
+- a question
+- a doubt about a value (`unclear — see example 3.12`)
+- something the columns can't express, or a test that doesn't fit
+
+Each day, new and changed comments are collected into one GitHub issue for the coordinator, who replies there. Put examples in Example rather than here, so your questions stand out.
+
+A small triangle in a cell's corner is a note from the tooling (for instance, the earlier answer of an element that was split in two). Hover over it to read it.

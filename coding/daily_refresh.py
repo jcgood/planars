@@ -547,6 +547,10 @@ def check_notes(r: Refresh) -> None:
     r.unreported("collaborator notes", run("check-notes", "--apply"))
 
 
+def check_comments(r: Refresh) -> None:
+    r.unreported("collaborator comments", run("check-comments", "--apply"))
+
+
 def diagnostics_to_tsv(r: Refresh) -> None:
     r.diag_tsv = run("sync-diagnostics-yaml", "--apply")
 
@@ -719,6 +723,8 @@ STEPS: List[Step] = [
     Step("import", "import-sheets --apply --ignore-status → import-error", import_sheets),
     Step("pending reminder", "remind on a pending-changes issue open over 7 days", remind_pending),
     Step("notes", "check-notes --apply (files its own collaborator-notes issues)", check_notes),
+    Step("comments", "check-comments --apply (files its own collaborator-comments issues)",
+         check_comments),
     Step("diagnostics tsv", "sync-diagnostics-yaml --apply", diagnostics_to_tsv),
     Step("diagnostics sheet", "sync-diagnostics-yaml --to-sheet --apply → diagnostics-yaml-error",
          diagnostics_to_sheet),

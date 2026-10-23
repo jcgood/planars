@@ -87,11 +87,11 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
 
   fake_ss_0007  tab=general
-    add_worksheet: rows=75, cols=9, index=None, sheet_id=1
-    update: anchor A1 raw=True 74x9
-      | ['Element', 'Position_Name', 'Position_Number', 'V-combines', 'N-combines', 'A-combines', 'PRED-combines', 'Source', 'Comments']
-      | ['ADVERBIALS', 'v:leftXP', '1', '', '', '', '', '', '']
-      | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '', '', '']
+    add_worksheet: rows=75, cols=10, index=None, sheet_id=1
+    update: anchor A1 raw=True 74x10
+      | ['Element', 'Position_Name', 'Position_Number', 'V-combines', 'N-combines', 'A-combines', 'PRED-combines', 'Example', 'Source', 'Comments']
+      | ['ADVERBIALS', 'v:leftXP', '1', '', '', '', '', '', '', '']
+      | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '', '', '', '']
       | ...
 
   fake_ss_0007  tab=sheetId=1
@@ -148,11 +148,11 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
 
   fake_ss_0009  tab=general
-    add_worksheet: rows=75, cols=7, index=None, sheet_id=1
-    update: anchor A1 raw=True 74x7
-      | ['Element', 'Position_Name', 'Position_Number', 'free', 'multiple', 'Source', 'Comments']
-      | ['ADVERBIALS', 'v:leftXP', '1', '', '', '', '']
-      | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '']
+    add_worksheet: rows=75, cols=8, index=None, sheet_id=1
+    update: anchor A1 raw=True 74x8
+      | ['Element', 'Position_Name', 'Position_Number', 'free', 'multiple', 'Example', 'Source', 'Comments']
+      | ['ADVERBIALS', 'v:leftXP', '1', '', '', '', '', '']
+      | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '', '']
       | ...
 
   fake_ss_0009  tab=sheetId=1
@@ -209,11 +209,11 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 5}, "visibility": "DOCUMENT"}}
 
   fake_ss_0011  tab=element_prescreening
-    add_worksheet: rows=75, cols=6, index=None, sheet_id=1
-    update: anchor A1 raw=True 74x6
-      | ['Element', 'Position_Name', 'Position_Number', 'scopal', 'Source', 'Comments']
-      | ['ADVERBIALS', 'v:leftXP', '1', '', '', '']
-      | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '']
+    add_worksheet: rows=75, cols=7, index=None, sheet_id=1
+    update: anchor A1 raw=True 74x7
+      | ['Element', 'Position_Name', 'Position_Number', 'scopal', 'Example', 'Source', 'Comments']
+      | ['ADVERBIALS', 'v:leftXP', '1', '', '', '', '']
+      | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '']
       | ...
 
   fake_ss_0011  tab=sheetId=1
@@ -223,11 +223,11 @@ SHEET OPERATIONS
     repeatCell: col 3 (BEYOND HEADER) rows 0-1
 
   fake_ss_0011  tab=general
-    add_worksheet: rows=255, cols=5, index=None, sheet_id=2
-    update: anchor A1 raw=True 254x5
-      | ['Element_A', 'Element_B', 'scopal', 'Source', 'Comments']
-      | ['ADVERBIALS', 'INTERROGATIVES', '', '', '']
-      | ['ADVERBIALS', 'NP{NP,PP,S}', '', '', '']
+    add_worksheet: rows=255, cols=6, index=None, sheet_id=2
+    update: anchor A1 raw=True 254x6
+      | ['Element_A', 'Element_B', 'scopal', 'Example', 'Source', 'Comments']
+      | ['ADVERBIALS', 'INTERROGATIVES', '', '', '', '']
+      | ['ADVERBIALS', 'NP{NP,PP,S}', '', '', '', '']
       | ...
 
   fake_ss_0011  tab=sheetId=2
@@ -295,11 +295,11 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
 
   fake_ss_0013  tab=general
-    add_worksheet: rows=75, cols=10, index=None, sheet_id=1
-    update: anchor A1 raw=True 74x10
-      | ['Element', 'Position_Name', 'Position_Number', 'free', 'left-edge-of-free-form', 'right-edge-of-free-form', 'dependent-on-left', 'dependent-on-right', 'Source', 'Comments']
-      | ['ADVERBIALS', 'v:leftXP', '1', '', '', '', '', '', '', '']
-      | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '', '', '', '']
+    add_worksheet: rows=75, cols=11, index=None, sheet_id=1
+    update: anchor A1 raw=True 74x11
+      | ['Element', 'Position_Name', 'Position_Number', 'free', 'left-edge-of-free-form', 'right-edge-of-free-form', 'dependent-on-left', 'dependent-on-right', 'Example', 'Source', 'Comments']
+      | ['ADVERBIALS', 'v:leftXP', '1', '', '', '', '', '', '', '', '']
+      | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '', '', '', '', '']
       | ...
 
   fake_ss_0013  tab=sheetId=1
@@ -360,11 +360,11 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
 
   fake_ss_0015  tab=auxiliary_construction
-    add_worksheet: rows=75, cols=8, index=None, sheet_id=1
-    update: anchor A1 raw=True 74x8
-      | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Source', 'Comments']
-      | ['ADVERBIALS', 'v:leftXP', '1', '', '', '', '', '']
-      | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '', '']
+    add_worksheet: rows=75, cols=9, index=None, sheet_id=1
+    update: anchor A1 raw=True 74x9
+      | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Example', 'Source', 'Comments']
+      | ['ADVERBIALS', 'v:leftXP', '1', '', '', '', '', '', '']
+      | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '', '', '']
       | ...
 
   fake_ss_0015  tab=sheetId=1
@@ -378,11 +378,11 @@ SHEET OPERATIONS
     repeatCell: col 5 (BEYOND HEADER) rows 0-1
 
   fake_ss_0015  tab=tso_clause_linkage
-    add_worksheet: rows=75, cols=8, index=None, sheet_id=2
-    update: anchor A1 raw=True 74x8
-      | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Source', 'Comments']
-      | ['ADVERBIALS', 'v:leftXP', '1', '', '', '', '', '']
-      | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '', '']
+    add_worksheet: rows=75, cols=9, index=None, sheet_id=2
+    update: anchor A1 raw=True 74x9
+      | ['Element', 'Position_Name', 'Position_Number', 'widescope_right', 'widescope_left', 'fillable_botheither_conjunct', 'Example', 'Source', 'Comments']
+      | ['ADVERBIALS', 'v:leftXP', '1', '', '', '', '', '', '']
+      | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '', '', '']
       | ...
 
   fake_ss_0015  tab=sheetId=2
@@ -438,11 +438,11 @@ SHEET OPERATIONS
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Status", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
 
   fake_ss_0017  tab=general
-    add_worksheet: rows=75, cols=6, index=None, sheet_id=1
-    update: anchor A1 raw=True 74x6
-      | ['Element', 'Position_Name', 'Position_Number', 'shareable_proform_replace', 'Source', 'Comments']
-      | ['ADVERBIALS', 'v:leftXP', '1', '', '', '']
-      | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '']
+    add_worksheet: rows=75, cols=7, index=None, sheet_id=1
+    update: anchor A1 raw=True 74x7
+      | ['Element', 'Position_Name', 'Position_Number', 'shareable_proform_replace', 'Example', 'Source', 'Comments']
+      | ['ADVERBIALS', 'v:leftXP', '1', '', '', '', '']
+      | ['INTERROGATIVES', 'v:leftXP', '1', '', '', '', '']
       | ...
 
   fake_ss_0017  tab=sheetId=1

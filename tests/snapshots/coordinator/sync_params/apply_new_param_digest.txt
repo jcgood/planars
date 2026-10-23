@@ -17,4 +17,4 @@ SHEET OPERATIONS
       | ['']
       | ['']
       | ...
-    setDataValidation: col 7 (Source) rows 1-74 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 7 (Example) rows 1-74 -> ['y', 'n'] (strict=False)
