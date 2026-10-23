@@ -19,18 +19,17 @@ this project is trying to remove.
 
 Five live threads. Read whichever matches what you're picking up.
 
-### Thread: reviewing the qualification rules with Adam (parked 2026-10-22)
+### Thread: reviewing the qualification rules with Adam (Jeff told Adam, 2026-10-22)
 
-Changing a rule has a procedure (coordinator guide § "Updating a
-qualification rule"); getting Adam's sign-off has none, and
-`diagnostic_classes_status.yaml`'s "module-review workflow" (phrasal_accent)
-points at nothing. Proposed to Jeff, not yet approved: one short issue per
-class for Adam, giving the rule in plain words, the spans it produces from
-his English answers, and what to confirm. Start with free_occurrence and
-segmental to settle the format. **Next action:** ask Jeff whether to write
-that procedure into the coordinator guide, fix the dangling reference and
-draft the first issue. Classes awaiting review: the `status` values in
-`schemas/diagnostic_classes_status.yaml`.
+The procedure is coordinator guide § "Reviewing a rule with the domain
+expert" (one issue per class). Classes awaiting review: the `status` values
+in `schemas/diagnostic_classes_status.yaml`. **Next action:** segmental goes
+first. Its draft (does `na` block a span? whose consonant does
+`flapping_right` mean?) was shown to Jeff on 2026-10-22; file it once he
+approves. free_occurrence comes after #318 (b), because its English answers
+use comma lists ("3,4") that the code reads as no dependency at all. When
+drafting it, also ask about *it* at npsubj1 (free=y but answered) and about
+the prefixes at 28/29 (right-edge=y although they sit left of the stem).
 
 ### Thread: Adam's English coding requests (#318)
 

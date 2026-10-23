@@ -258,8 +258,8 @@ classes:
     criterion_set_status: "[NEEDS REVIEW]"  # accented is reused as-is from metrical
       # (stable there); joint_accent is new and unvalidated against real data.
     status: "[NEEDS REVIEW]"  # Derivation undecided; coding scheme itself pending real
-      # annotation. Requires Adam's sign-off per the module-review workflow before any
-      # promotion. See issue #237.
+      # annotation. Requires Adam's sign-off before any promotion (coordinator guide
+      # § "Reviewing a rule with the domain expert"). See issue #237.
     collection_required: "n"
     module_pending: "#237"  # annotation collected; span derivation not built yet
 

@@ -349,6 +349,25 @@ The prompt includes the current rule text, the current module source, and the ex
 
 Paste the generated prompt into Claude and ask it to explain what changed before making any edits. The prompt contains enough context for Claude to reason about the linguistic implications of the rule change.
 
+### Reviewing a rule with the domain expert
+
+The hash records that the code matches the rule. Whether the rule is *right* is a separate question, and only the domain expert (Adam, or an equivalent coordinator) can answer it. Until they do, the class's `status` in `schemas/diagnostic_classes_status.yaml` stays `[AUTO-DERIVED]` or `[NEEDS REVIEW]`. Each review happens in a GitHub issue, one class per issue, using a language whose annotation is complete enough to give real spans (English for now).
+
+1. **Regenerate the spans** (`python generate_snapshots.py`) so they reflect today's data. The spans for the issue come from `tests/snapshots/{lang_id}_{class}_*.txt`.
+2. **Ask Claude to draft the issue.** Ask it to read the class's `qualification_rule`, its module, the language's TSVs and the snapshots, then write a short body with four parts:
+   - **The rule in plain words:** a few lines, in the terms the annotator used on the sheet.
+   - **What it gives:** the spans the expert's own answers produce, named by position.
+   - **Where the answers and the rule seem to disagree:** for example, a value the rule reads differently from what the annotator meant, or a Comments-cell question about the criterion. Each is a yes/no question, and each says what changes under either answer.
+   - **What to confirm:** the one-line reply that would promote the class.
+
+   Keep it short (CLAUDE.md, "Keep anything an annotator reads short"). Title it `Rule review — {display name} [{class}]` and give it the labels `linguistics` and `needs-input`, mentioning the expert. Filing is a live write: read the draft before it is posted.
+3. **Act on the reply.**
+   - *Confirmed:* set `status: stable` in `diagnostic_classes_status.yaml`, citing the issue in the comment, and commit with `Closes #N`. Only a coordinator promotes a class, so the commit records their decision rather than Claude's.
+   - *Rule change:* edit `qualification_rule` and follow the 7-step workflow above. Then comment the new spans on the same issue and ask again.
+   - *Data correction:* the expert fixes the sheet. After the next import, regenerate the snapshots and comment the new spans.
+
+Start with classes whose rule is short. Answers on one class often settle a question that several classes share, such as what `na` means to a span.
+
 ---
 
 ### Schema changes
