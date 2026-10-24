@@ -81,7 +81,13 @@ Applied live the same day (every language's sheets now match). **Next:**
 (3) reply posted on #322, 2026-10-23 (asks which elements QWORDS
 splits into); (4) definitions to
 tighten: vp_ellipsis's test (#319), flapping and `multiple` (#321);
-(5) QWORDS split, his OK on the new elements.
+(5) QWORDS split, his OK on the new elements;
+(6) a pink cell says nothing about what is wrong (warnings on in-progress
+tabs reach the annotator only as pink; 2026-10-24, Jeff asked): put the
+issue's message in a note on the cell (`validate_coding.highlight_cells`).
+Mind that restructure-sheets already writes cell notes (a split element's
+old answers), so clearing must remove only validate-coding's own notes, and
+the class-sheet spec in `sheet_spec.py` (enforced live) must allow them.
 Also open, linguistic: displacement, the one standard constituency test
 with no class (#56; English is its data, Adam to write the frames).
 Not now: 8 (drop impossible pairs), 10–12 (proform frames, the
