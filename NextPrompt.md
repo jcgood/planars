@@ -5,7 +5,8 @@ and say: **"Read NextPrompt.md and carry on."**
 
 **This file holds no state.** What is done, what is next, and why lives in the
 progress doc for whichever work is live — `NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`
-for the chart package, `docs/data-layer-progress.md` for the data layer — and
+for the chart package, `docs/data-layer-progress.md` for the data layer,
+`docs/laminar-analysis-progress.md` for the analysis on English — and
 in the issue tracker, which own those facts. The
 one thing here that needs editing between sessions is the *Now* section below.
 Everything else is standing instruction and should change rarely. If you find
@@ -17,7 +18,18 @@ this project is trying to remove.
 
 ## Now
 
-Five live threads. Read whichever matches what you're picking up.
+Six live threads. Read whichever matches what you're picking up.
+
+### Thread: the laminar analysis on English, for a paper (2026-10-24)
+
+The Chichewa/CCDB analysis and charts move out of `NonCollaborative/` into
+the main repo and run on any planars language, English first. **Plan and
+Jeff's decisions: `docs/laminar-analysis-plan.md`** (don't re-ask them);
+**state: `docs/laminar-analysis-progress.md`**. **Next action:** Phase 1,
+taking the Chichewa assumptions out of the standalone analysis scripts in
+place, checked by all 22 bundles re-exporting byte-identical. Jeff's cuts
+to the cross-language charts (CCDB thread below) go before Phase 2 or
+after it, not during.
 
 ### Thread: reviewing the span rules with Adam (Jeff told Adam, 2026-10-22)
 
