@@ -55,27 +55,23 @@ export_planarsviz_data.py writes, which calls compute_boundary_strength()
 here.
 
 Usage:
-  python scripts/analysis/boundary_strength.py
-  python scripts/analysis/boundary_strength.py --subset morphosyntactic,length
+  python -m laminar.boundary_strength
+  python -m laminar.boundary_strength --subset morphosyntactic,length
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
-import sys
 from pathlib import Path
 from collections import defaultdict
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-sys.path.insert(0, str(SCRIPT_DIR))
-
-from laminar_analysis import (  # noqa: E402
+from laminar.laminar_analysis import (
     load_spans,
     find_conflicts,
     enumerate_maximal_laminar_families,
 )
-from datasets import add_dataset_arguments, resolve_dataset_arguments  # noqa: E402
+from laminar.datasets import add_dataset_arguments, resolve_dataset_arguments
 
 
 def strength_from_families(

@@ -33,9 +33,21 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from planars_groupings import GROUPINGS
+from laminar.planars_groupings import GROUPINGS
 
-NC = Path(__file__).resolve().parents[2]
+REPO = Path(__file__).resolve().parents[1]
+# Where Chichewa's and the CCDB structures' inputs and outputs live
+# (domains/, planar_tables/, results/). Their paths are frozen
+# (docs/laminar-analysis-plan.md decision 8); every module reads this one.
+NC = REPO / "NonCollaborative"
+
+
+def repo_relative(path: Path) -> str:
+    """How a bundle records a file it read: relative to the repository root
+    when it is inside it, so the record is the same wherever the command was
+    run from."""
+    path = Path(path).resolve()
+    return str(path.relative_to(REPO)) if path.is_relative_to(REPO) else str(path)
 
 # The exporter's --groupings default, and so every dataset's unless its
 # settings say otherwise.
@@ -81,7 +93,7 @@ def dataset_settings(dataset: str) -> dict[str, tuple[object, str]]:
     }
     if ccdb_file.exists():
         ccdb = read_json(ccdb_file)
-        source = str(ccdb_file.relative_to(NC))
+        source = repo_relative(ccdb_file)
         settings["language_name"] = (f"{ccdb['language_name']} ({ccdb['planar_type']})", source)
         settings["groupings"] = ("ccdb", source)
         settings["planar_type"] = (ccdb["planar_type"], source)
@@ -92,9 +104,9 @@ def dataset_settings(dataset: str) -> dict[str, tuple[object, str]]:
         own = read_json(settings_file)
         unknown = sorted(set(own) - set(settings))
         if unknown:
-            sys.exit(f"{settings_file.relative_to(NC)}: unknown key(s) {', '.join(unknown)}; "
+            sys.exit(f"{repo_relative(settings_file)}: unknown key(s) {', '.join(unknown)}; "
                      f"known keys are {', '.join(settings)}.")
-        source = str(settings_file.relative_to(NC))
+        source = repo_relative(settings_file)
         for key, value in own.items():
             settings[key] = (value, source)
     return settings

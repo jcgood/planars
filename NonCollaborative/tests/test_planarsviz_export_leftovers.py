@@ -5,13 +5,11 @@ the bundle, so a table left over from an earlier export would be drawn as if it
 belonged to the data just exported (found 2026-09-23, CCDB step 5).
 """
 
-import sys
 from pathlib import Path
 
-ROOT = Path(__file__).parents[1]
-sys.path.insert(0, str(ROOT / "scripts" / "analysis"))
+from laminar.export_planarsviz_data import export_bundle
 
-from export_planarsviz_data import export_bundle  # noqa: E402
+ROOT = Path(__file__).parents[1]
 
 TABLES = [
     "fragmentation_test.tsv", "fragmentation_null.tsv",

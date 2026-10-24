@@ -17,7 +17,7 @@ finding means either a real style slip or a case `.lintr` does not yet know
 to excuse, and either way it wants a look before it piles up the way phase
 D's own opening pass had to work through 939 at once.
 
-Both R calls below run from `NonCollaborative/`, for the same reason
+Both R calls below run from the repository root, for the same reason
 `test_roxygen_up_to_date.py` does: `.Rprofile` there is what points R at
 the versions `renv.lock` pins, lintr among them. Run from anywhere else and
 a machine that only ran `renv::restore()` would have no lintr installed at
@@ -32,8 +32,8 @@ from pathlib import Path
 
 import pytest
 
-NC_ROOT = Path(__file__).parents[1]
-PACKAGE_DIR = NC_ROOT / "planarsviz"
+REPO_ROOT = Path(__file__).parents[2]
+PACKAGE_DIR = REPO_ROOT / "planarsviz"
 
 RSCRIPT = shutil.which("Rscript")
 
@@ -44,7 +44,7 @@ def _lintr_available():
     result = subprocess.run(
         [RSCRIPT, "-e", 'quit(status = !requireNamespace("lintr", quietly=TRUE))'],
         capture_output=True,
-        cwd=NC_ROOT,
+        cwd=REPO_ROOT,
     )
     return result.returncode == 0
 
@@ -68,7 +68,7 @@ def test_planarsviz_package_has_no_lints():
         ],
         capture_output=True,
         text=True,
-        cwd=NC_ROOT,
+        cwd=REPO_ROOT,
     )
     assert result.returncode == 0, (
         "lintr::lint_package() failed to run against planarsviz. Its output was:\n"

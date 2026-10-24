@@ -1,96 +1,96 @@
 {
   "contract_version": 1,
   "dataset": "cross_language",
-  "producer": "scripts/analysis/export_cross_language.py",
+  "producer": "laminar/export_cross_language.py",
   "n_structures": 22,
   "inputs": [
     {
       "dataset": "arao1248_verbal",
-      "metadata_sha256": "b668b0cbe69ae438d5080cbf5297ec008fb1badb8742115746140f3d5fcf0378"
+      "metadata_sha256": "8d5b67cf8692de78ea04f4296ec6081000d0e8f752b2fb194007b20a4370acda"
     },
     {
       "dataset": "ayau1235_verbal",
-      "metadata_sha256": "7053b5661a4c01ef5fd0914c3f64b1152e2203916ae312ba56e28c8f956b0185"
+      "metadata_sha256": "54a1332ec40c53a21952e9f9ceaef9b7fa346b0d6fc3b623a0549c53c40f6531"
     },
     {
       "dataset": "cent2127_verbal",
-      "metadata_sha256": "aff9aad6db9e3d0fc9e6d7fbcb96b9ce655c50c831386dab227bf0ba27418dda"
+      "metadata_sha256": "8f77d276ff265d00972dc0749fd5c01ccf8f477233094ad0bdf663cc9814860c"
     },
     {
       "dataset": "chac1251_nominal",
-      "metadata_sha256": "5849f6024b2641bf5cde75ec699337480b7ec150498d042a65cd8bceaa717f1a"
+      "metadata_sha256": "5cf711229d57dd05658b4af11d45f41a4856093467464912848967efd5b484f4"
     },
     {
       "dataset": "chac1251_verbal",
-      "metadata_sha256": "caedcfce2088d4e4eed0af2042f854d3ab9e04771ab0c392861a3f1607d96a6d"
+      "metadata_sha256": "ae178c0b54debd48813e35fad65a86bf7e31cc3be2859e78609018485a8fb927"
     },
     {
       "dataset": "cher1273_verbal",
-      "metadata_sha256": "461a114fddda9d526a1305933e4be5d0e693d2ba0e06233293a13b1034a4dd86"
+      "metadata_sha256": "5d899568e3b7c86f7c1d47c998256d6148ac317827e4c1538c699b63d52612d2"
     },
     {
       "dataset": "dura0000_nominal",
-      "metadata_sha256": "93c733ec875352773c57dc867cc37dd282fda40187fcba4ce31f20cd930f6325"
+      "metadata_sha256": "23a0b57694f71529e7d7b6a6b1e19c613f160c508a64e3a9071d9635c579612f"
     },
     {
       "dataset": "dura0000_verbal",
-      "metadata_sha256": "b70c1d633e685b15268ec42817ef6df8583f86f0ca61b7d3d1fe3bed25f3b043"
+      "metadata_sha256": "fefaf87071fd030a3d94c0b533031113c24a1a162e12f533ee42390e811f0c4d"
     },
     {
       "dataset": "hupd1244_nominal",
-      "metadata_sha256": "05807f3e8f07977d9a41ecb0aa2376555ca87f6824d6a63947c13fc4143ff41e"
+      "metadata_sha256": "909046cbac5c39f1be6090f47cb81d924d2414ff52207e5d08f520d4e9635945"
     },
     {
       "dataset": "hupd1244_verbal",
-      "metadata_sha256": "44f855e0faf89e35449f4e11d373f643f4f2ea7c95726da3085355429dcb2214"
+      "metadata_sha256": "a953bce43c4c19913db9c714cf4561097f73e543ee8afbbaa292cb35e201ed0d"
     },
     {
       "dataset": "iyoj1235_verbal",
-      "metadata_sha256": "37797c0704932123160ca386b66dbe440f5c60824ce75e02d57c8ac8e39f6c6f"
+      "metadata_sha256": "2050231a655f67a5a147529c8769bf429d96fc02cd2ef4f93a67b5c63b18a48c"
     },
     {
       "dataset": "kaya1330_verbal",
-      "metadata_sha256": "c484bde0abfc3168c50e6f44a4110f231aed2a0647f92c3977ebcb1f7027ceb3"
+      "metadata_sha256": "5f6d30ab66c7a1deb1a9d3e4bb41c01a27390abf009d564c7851ac6aa215ae24"
     },
     {
       "dataset": "kiow1266_verbal",
-      "metadata_sha256": "b3a35af71c5afc02aae84f9358215c0b7d793caca6766174f5cd418ba20558e0"
+      "metadata_sha256": "f991219ad84ec1d4c5bda28a9bde8778d6c98c462165f611b7cbcd8bbfcd925b"
     },
     {
       "dataset": "mart1259_verbal",
-      "metadata_sha256": "76211fe91aa0be55bf61770b851976a36933b47bac45b334d2797feb2d792c45"
+      "metadata_sha256": "6a3b7489f110b0200593f20ca6ac3d39ce6c5a1f8e3c69dc2ea61c1e709faa83"
     },
     {
       "dataset": "moco1246_verbal",
-      "metadata_sha256": "68b3c8b1b9141ea3475864f173c3d81e314ce465a141b86ad88a958067d75601"
+      "metadata_sha256": "b3b8a60906a10e620afd86a3a812e48986bdba0985f15d80d84dab3a647f25f6"
     },
     {
       "dataset": "nyan1308",
-      "metadata_sha256": "b19d7add2d6a00b4476ad1ae7e13f35057fef882c1d7f74f62c11a6874ed153f"
+      "metadata_sha256": "a1644374fb8b29b9d5a756e20aa7df3d80903de14ec69daecfc99bd0716e0371"
     },
     {
       "dataset": "siks1238_verbal",
-      "metadata_sha256": "31c9d68a0e382335194eb121ffc4f954b5b95436efccdbae0578fe3ba2bb4c65"
+      "metadata_sha256": "2337515873b9d674aec6ac9ebc99b379b0956757c9ccc92e6ee4e6f43547ae55"
     },
     {
       "dataset": "sout2991_verbal",
-      "metadata_sha256": "0235756b288e88d585983df62ab92f2d0a3456e3042040983a250c6b1f366428"
+      "metadata_sha256": "be6a903e88ec028a0acefdf17d5d1a0dd49670ecdd84038b6afdb421bf0726e9"
     },
     {
       "dataset": "teot1238_nominal",
-      "metadata_sha256": "647a70118d4510f8b007e11805a4526f6a9f87305a6e2bfd187e7dc8f37250e8"
+      "metadata_sha256": "36d189b08132d2faa648aba771c1ed252c81a9b69170973ae2383e3dfa3a1d42"
     },
     {
       "dataset": "teot1238_verbal",
-      "metadata_sha256": "4544c53decc08363eb8970eef5e869b543a473ec3ee9af067ad17d908768c597"
+      "metadata_sha256": "c5070022cd328c406e67b01f743c7d50e6b44eb14126c74bceef39f70450acc1"
     },
     {
       "dataset": "yucu1253_verbal",
-      "metadata_sha256": "66a5233d1c7d415e54bf1eb1e678518b219ce19c61935e84591f61fa4c306b1c"
+      "metadata_sha256": "37438da29e1813322e25db79ac76dc3a4424b187a3026791c6a1fc9583eebc7a"
     },
     {
       "dataset": "zenz1235_verbal",
-      "metadata_sha256": "68b1439eb7dcea8b7c3d2e9a6284a055d4ff29bc2f6cfa615f4e1f3778bb9506"
+      "metadata_sha256": "f82d84efdf4dc02538eb625a54cb687585d20189b9fcaac62b24784acd143d1c"
     }
   ],
   "sides": {

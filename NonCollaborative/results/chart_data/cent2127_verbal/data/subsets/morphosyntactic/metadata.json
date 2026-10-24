@@ -13,7 +13,7 @@
   "n_positions": 21,
   "n_unique_spans": 6,
   "n_universal_spans": 3,
-  "source_domain_file": "domains/domains_cent2127_verbal.tsv",
+  "source_domain_file": "NonCollaborative/domains/domains_cent2127_verbal.tsv",
   "source_domain_sha256": "d362d67629d29c9867d014c56cbdfdfdc6f5e4c1b87c066538d2d808b4e08680",
   "subset_id": "morphosyntactic",
   "synthetic_root": true

@@ -31,7 +31,7 @@ pdf = ["weasyprint>=70.0", "kaleido"]
 Repository = "https://github.com/jcgood/planars"
 
 [tool.setuptools.packages.find]
-include = ["planars*", "coding*", "schemas*"]
+include = ["planars*", "coding*", "schemas*", "laminar*"]
 
 [tool.setuptools.package-data]
 schemas = ["*.yaml"]
@@ -40,7 +40,7 @@ schemas = ["*.yaml"]
 testpaths = ["tests"]
 markers = [
     # Tests that need R installed, and usually the pinned R packages that
-    # NonCollaborative/renv.lock records. CI has no R, so it runs the
+    # renv.lock records. CI has no R, so it runs the
     # NonCollaborative suite as: pytest NonCollaborative/tests -m "not needs_r".
     # Running them needs a Mac set up for the chart work; see
     # NonCollaborative/CLAUDE.md.

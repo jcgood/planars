@@ -1,19 +1,19 @@
-$ /Users/jcgood/gitrepos/planars/NonCollaborative/../.venv/bin/python scripts/planarsviz_language.py teot1238_verbal --apply
+$ /Users/jcgood/gitrepos/planars/.venv/bin/python -m laminar charts teot1238_verbal --apply
 Dataset teot1238_verbal
-  language_name  Teotitlán del Valle Zapotec (verbal) from planar_tables/ccdb_teot1238_verbal.json
-  groupings      ccdb                             from planar_tables/ccdb_teot1238_verbal.json
-  root_position  12                               from planar_tables/ccdb_teot1238_verbal.json
-  planar_type    verbal                           from planar_tables/ccdb_teot1238_verbal.json
-  forest_axis    planar                           from planar_tables/ccdb_teot1238_verbal.json
+  language_name  Teotitlán del Valle Zapotec (verbal) from NonCollaborative/planar_tables/ccdb_teot1238_verbal.json
+  groupings      ccdb                             from NonCollaborative/planar_tables/ccdb_teot1238_verbal.json
+  root_position  12                               from NonCollaborative/planar_tables/ccdb_teot1238_verbal.json
+  planar_type    verbal                           from NonCollaborative/planar_tables/ccdb_teot1238_verbal.json
+  forest_axis    planar                           from NonCollaborative/planar_tables/ccdb_teot1238_verbal.json
   permutations   5000                             all four tests
 
 == Export ==
-/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_teot1238_verbal.tsv --groupings ccdb --root-position 12 --language-name 'Teotitlán del Valle Zapotec (verbal)' --planar-type verbal --forest-axis planar --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
+/Users/jcgood/gitrepos/planars/.venv/bin/python -m laminar.export_planarsviz_data --domain-file NonCollaborative/domains/domains_teot1238_verbal.tsv --groupings ccdb --root-position 12 --language-name 'Teotitlán del Valle Zapotec (verbal)' --planar-type verbal --forest-axis planar --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
 Exported planarsviz bundle: /Users/jcgood/gitrepos/planars/NonCollaborative/results/chart_data/teot1238_verbal
-Export finished in 19 s.
+Export finished in 25 s.
 
 == Render ==
-Rscript scripts/render_planarsviz.R --bundle results/chart_data/teot1238_verbal --output results
+Rscript laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data/teot1238_verbal --output NonCollaborative/results
 wrote teot1238_verbal/pooled/teot1238_verbal_pooled_plot.pdf
 wrote teot1238_verbal/pooled/teot1238_verbal_pooled_domainplot.pdf
 wrote teot1238_verbal/pooled/teot1238_verbal_pooled_plot_indeterminate.pdf
@@ -85,9 +85,9 @@ wrote teot1238_verbal/boundaries/teot1238_verbal_boundary_strength_test_level_mo
 wrote teot1238_verbal/boundaries/teot1238_verbal_boundary_strength.pdf
 wrote teot1238_verbal/boundaries/teot1238_verbal_boundary_strength_distributions.pdf
 wrote teot1238_verbal/boundaries/teot1238_verbal_boundary_strength_overlay.pdf
-71 files for 71 of 71 charts; manifest: results/teot1238_verbal_planarsviz_manifest.tsv
-Render finished in 35 s.
+71 files for 71 of 71 charts; manifest: NonCollaborative/results/teot1238_verbal/teot1238_verbal_planarsviz_manifest.tsv
+Render finished in 41 s.
 
-Bundle: results/chart_data/teot1238_verbal/   Charts: results/teot1238_verbal/
+Bundle: NonCollaborative/results/chart_data/teot1238_verbal/   Charts: NonCollaborative/results/teot1238_verbal/
 
-[batch] exit code 0 after 54 s
+[batch] exit code 0 after 67 s

@@ -27,7 +27,7 @@ python <- "/Users/jcgood/gitrepos/planars/.venv/bin/python"
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
 status <- system2("R", c("CMD", "INSTALL", "--no-test-load", paste0("--library=", lib),
-                         "planarsviz"), stdout = FALSE, stderr = FALSE)
+                         file.path("..", "planarsviz")), stdout = FALSE, stderr = FALSE)
 if (status != 0) stop("R CMD INSTALL failed")
 suppressPackageStartupMessages({
   library(planarsviz, lib.loc = lib)

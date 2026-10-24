@@ -38,14 +38,14 @@ python <- "/Users/jcgood/gitrepos/planars/.venv/bin/python"
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
 status <- system2("R", c("CMD", "INSTALL", "--no-test-load", paste0("--library=", lib),
-                         "planarsviz"), stdout = FALSE, stderr = FALSE)
+                         file.path("..", "planarsviz")), stdout = FALSE, stderr = FALSE)
 if (status != 0) stop("R CMD INSTALL failed")
 suppressPackageStartupMessages(library(planarsviz, lib.loc = lib))
 
 if (!file.exists(file.path(bundle_dir, "data", "fragmentation_test.tsv"))) {
-  stop("This bundle has no fragmentation tables. Re-export it with\n",
-       "  python scripts/analysis/export_planarsviz_data.py --domain-file ... ",
-       "--fragmentation-permutations 5000", call. = FALSE)
+  stop("This bundle has no fragmentation tables. Re-export it, from the ",
+       "repository root, with\n",
+       "  python -m laminar charts <dataset> --apply", call. = FALSE)
 }
 
 bundle <- read_planars_bundle(bundle_dir)

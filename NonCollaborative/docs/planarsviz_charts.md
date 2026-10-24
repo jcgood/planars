@@ -2,7 +2,7 @@
 
 Every chart the library draws: what it shows, the call, its options, the
 canvas it was designed for, and an example from nyan1308 (Chichewa). The
-**renderer name** is what `scripts/render_planarsviz.R --plots` takes and
+**renderer name** is what `laminar/render_planarsviz.R --plots` takes and
 what follows the dataset in the file name; **old file** is the file in
 `results/` it replaces.
 
@@ -12,7 +12,8 @@ position axis is widened in proportion for a structure with more
 shown. Heights and the count and permutation-test charts, which have no
 position axis, do not change.
 
-Setup for every example:
+Setup for every example (bundle paths are inside `NonCollaborative/`; from the
+repo root, write `NonCollaborative/results/chart_data/…`):
 
 ```r
 library(planarsviz)

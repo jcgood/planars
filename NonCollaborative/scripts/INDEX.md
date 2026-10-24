@@ -1,13 +1,24 @@
 # Scripts Index
 
-Every script under `analysis/`, `verification/`, `exploratory/` and
-`planarsviz_checks/`, plus the handful of top-level pipeline commands that
-chain those together (`render_planarsviz.R`, `planarsviz_language.py`,
-`planarsviz_ccdb_batch.py`). The hand-written R and the LaTeX utilities that
-otherwise sit at the top of `scripts/` are described in `CLAUDE.md` instead.
+Every analysis module (now the `laminar/` package at the repo root), plus
+`verification/`, `exploratory/` and `planarsviz_checks/` here. The hand-written
+R and the LaTeX utilities that sit at the top of `scripts/` are described in
+`CLAUDE.md` instead.
 
-**Where to run them from:** `NonCollaborative/`. Every path below is relative
-to it, and that is where the porting checks run too.
+**Where the code lives (moved 2026-10-24, laminar analysis plan Phase 2):**
+the analysis modules that were in `scripts/analysis/` are `laminar/*.py` at the
+repo root, and `scripts/exploratory/catalan.py` is `laminar/catalan.py`. The
+renderer `scripts/render_planarsviz.R` is `laminar/render_planarsviz.R`.
+`planarsviz_language.py` and `planarsviz_ccdb_batch.py` are gone, replaced by
+`python -m laminar charts` (below). Headings below keep the module names
+without the `laminar/` prefix.
+
+**Where to run them from:** the `laminar/` modules run from anywhere, as
+`python -m laminar.<module>` (the renderer from the repo root). They still read
+`domains/` and `planar_tables/` and write to `results/` here, so the paths
+under Input and Output below are relative to `NonCollaborative/`. The
+porting checks (`planarsviz_checks/`) and the verification scripts still run
+from `NonCollaborative/`.
 
 ## Core Analysis
 
@@ -20,9 +31,9 @@ from the name through `datasets.py`: its groupings (a CCDB structure gets
 analysed are the ones the data actually has (`planars_groupings.py`), so a
 script run on its own gives the same numbers as the exported bundle.
 Default: nyan1308, whose paths the outputs below show. To export and draw a
-whole dataset, use `planarsviz_language.py <dataset> --apply`.
+whole dataset, use `python -m laminar charts <dataset> --apply`.
 
-**`analysis/laminar_analysis.py`**
+**`laminar/laminar_analysis.py`**
 - **Purpose**: Main workhorse for laminar family enumeration
 - **Input**: Domain span TSV file (`domains/domains_{lang_id}.tsv`)
 - **Algorithm**: Four-phase approach:
@@ -35,7 +46,7 @@ whole dataset, use `planarsviz_language.py <dataset> --apply`.
   `truncated`). It writes nothing to disk. Until the 2026-09-20 cutover it
   also wrote the charts' R scripts; the `planarsviz` package draws them now
   from the bundle `export_planarsviz_data.py` writes.
-- **Run it**: `python scripts/analysis/laminar_analysis.py` prints the report
+- **Run it**: `python -m laminar.laminar_analysis` prints the report
   for nyan1308 pooled, then per domain type, then per bundle;
   `--domain-file` picks another dataset.
 - **Dependencies**: `pandas`
@@ -46,21 +57,21 @@ whole dataset, use `planarsviz_language.py <dataset> --apply`.
   filter, no aggregation) and then `aggregate_spans()` themselves.
   `load_spans()` is those two in sequence and is unchanged.
 
-**`analysis/refinement_counts.py`**
+**`laminar/refinement_counts.py`**
 - **Purpose**: For each of the 69 maximal laminar families, count how many
   finer trees hide inside it at its polytomies (nodes with more than two
   children) — i.e. how much tree structure the family leaves undetermined
 - **Two conventions, both reported** because whether constituents must be
   binary is an open question: little Schröder per polytomy (any arity
   allowed; this project calls the sequence "super-Catalan", see
-  `exploratory/catalan.py`) and Catalan per polytomy (binary only). Totals
+  `laminar/catalan.py`) and Catalan per polytomy (binary only). Totals
   across all 69 families: 8,599,689 against 125,032.
 - **Output**: `results/nyan1308/laminar-families/nyan1308_refinement_counts.tsv` (per family),
   `results/nyan1308/laminar-families/nyan1308_refinement_polytomies.tsv` (per distinct polytomy, so
   the aggregate can be checked against the nodes it came from)
-- **Example**: `python scripts/analysis/refinement_counts.py`
+- **Example**: `python -m laminar.refinement_counts`
 
-**`analysis/span_placement_test.py`**
+**`laminar/span_placement_test.py`**
 - **Purpose**: A different Tree-hypothesis test from the fragmentation test
   below, though it looks similar. That one shuffles which *label* sits on
   which test; this one holds a group's own span *lengths* fixed and asks
@@ -85,7 +96,7 @@ whole dataset, use `planarsviz_language.py <dataset> --apply`.
 - **Output**: `results/nyan1308/counts-and-chance/nyan1308_span_placement_test.tsv` (one row per
   group), `_span_placement_null_tally.tsv` (`group, family_count, n` —
   a tally, not one row per draw)
-- **Example**: `python scripts/analysis/span_placement_test.py`
+- **Example**: `python -m laminar.span_placement_test`
 - **Also in the bundle**, since 2026-09-21: the exporter calls this same
   `run_test()` behind `--span-placement-permutations`, so the package's
   charts and the committed TSVs above carry the same numbers.
@@ -100,7 +111,7 @@ absolute family count is not comparable across groups of very different span
 counts, so a shared axis would squash the small groups and misplace their own
 annotations, which actually happened with `scales = "free_x"` alone.)*
 
-**`analysis/class_fragmentation_test.py`**
+**`laminar/class_fragmentation_test.py`**
 - **Purpose**: Ask whether a domain class is more fragmented than its own
   number of tests would predict by chance. A class with many tests has more
   chances to produce conflicting spans, so a raw family count cannot be read
@@ -124,7 +135,7 @@ annotations, which actually happened with `scales = "free_x"` alone.)*
   not redefined here
 - **Also called by the exporter**, through `run_test()`, when
   `--fragmentation-permutations` is given, with the same groups.
-- **Example**: `python scripts/analysis/class_fragmentation_test.py`
+- **Example**: `python -m laminar.class_fragmentation_test`
   (reproduces the committed files exactly: 5000 draws, seed 0)
 
 *(The R that drew this test, `analysis/fragmentation_test_plot.r`, was archived
@@ -134,7 +145,7 @@ with `groups` for the two-bundle variant — from a bundle exported with
 `--fragmentation-permutations`. Until then it and the package both wrote
 `nyan1308_fragmentation_test_plot.pdf` and nothing recorded which had won.)*
 
-**`analysis/laminar_tree_counts.py`**
+**`laminar/laminar_tree_counts.py`**
 - **Purpose**: Count maximal laminar families pooled, per domain class, per
   bundle, and with size-2 (adjacent-position) spans removed
 - **Output**: `results/nyan1308/counts-and-chance/nyan1308_tree_counts.tsv`. The bar charts of these
@@ -143,9 +154,9 @@ with `groups` for the two-bundle variant — from a bundle exported with
 - **Also owns `CLASS_COLORS`** — the five domain-type colours, in one place.
   `class_fragmentation_test.py` imports them and so does the exporter's
   `DOMAIN_TYPE_STYLE`, which is how they reach R.
-- **Example**: `python scripts/analysis/laminar_tree_counts.py`
+- **Example**: `python -m laminar.laminar_tree_counts`
 
-**`analysis/boundary_strength.py`**
+**`laminar/boundary_strength.py`**
 - **Purpose**: Per-position boundary ("juncture") strength — for each cut
   between positions, how strongly it is treated as a constituent edge across
   the 69 families, on each side. A different unit of analysis from everything
@@ -158,13 +169,13 @@ with `groups` for the two-bundle variant — from a bundle exported with
   the analysis to some domain types and tags the filename with them. The
   charts are drawn by the package; this script drew them in matplotlib until
   the cutover.
-- **Example**: `python scripts/analysis/boundary_strength.py`
+- **Example**: `python -m laminar.boundary_strength`
 - **`strength_from_families()`** is the reusable core (spans + an
   already-enumerated family list in, summed/capped left/right dicts out),
   factored out so `boundary_strength_test.py` below can run the same
   counting logic on a permuted replicate's own spans/families.
 
-**`analysis/boundary_strength_test.py`**
+**`laminar/boundary_strength_test.py`**
 - **Purpose**: Is `boundary_strength.py`'s per-position strength — and,
   specifically, the jump from one position to the next — higher than a
   same-length-profile random arrangement of spans would produce by chance?
@@ -195,13 +206,13 @@ with `groups` for the two-bundle variant — from a bundle exported with
   the chart needs an envelope band, not a distribution shape.
 - **Also called by the exporter**, through `run_test()`, when
   `--boundary-strength-test-permutations` is given.
-- **Example**: `python scripts/analysis/boundary_strength_test.py`
+- **Example**: `python -m laminar.boundary_strength_test`
   (reproduces the committed file exactly: 5000 draws, seed 0)
 - **In the package** as `plot_boundary_strength_test()` — written directly
   there from the start, like `plot_fragmentation_test()`, with no earlier
   script to port or reference image to freeze.
 
-**`analysis/planars_groupings.py`**
+**`laminar/planars_groupings.py`**
 - **Purpose**: The named groupings of domain types, defined once — `BUNDLES`
   (the three pooled morphosyntax/phonology approximations, with colours and
   display labels) and `FILTERS` (the domain types a subset analysis leaves
@@ -214,27 +225,27 @@ with `groups` for the two-bundle variant — from a bundle exported with
   data has, in a fixed order (the permutation tests' numbers depend on it).
   Not runnable on its own.
 
-**`analysis/datasets.py`**
+**`laminar/datasets.py`**
 - **Purpose**: What a dataset name means — its domains file, planar table
   and position count, and its settings (`dataset_settings()`: its own
   `chart_settings_<dataset>.json`, else its CCDB import file, else the
   exporter's defaults). Also the command-line options every standalone
   analysis script shares. Read by those scripts, the exporter and
-  `planarsviz_language.py`. Not runnable on its own.
+  `python -m laminar charts`. Not runnable on its own.
 
-**`analysis/export_planarsviz_illustrations.py`**
+**`laminar/export_planarsviz_illustrations.py`**
 - **Purpose**: Writes the `illustrations` bundle — the one `planarsviz`
   bundle with no language behind it (phase E, 2026-09-22): every (or a
   sample of) n-ary tree shape for small leaf counts, Catalan/little Schröder
   count growth, and a uniformly-random tree sample for the ghost-overlay
-  chart. Reuses `catalan.py`'s enumeration and sampling directly rather than
+  chart. Reuses `laminar/catalan.py`'s enumeration and sampling directly rather than
   re-deriving either.
 - **Output**: `results/chart_data/illustrations/data/tree_shapes.tsv`,
   `tree_count_growth.tsv`, `random_trees.tsv`, `metadata.json`.
-- **Example**: `python scripts/analysis/export_planarsviz_illustrations.py`
+- **Example**: `python -m laminar.export_planarsviz_illustrations`
   (`--seed`, `--n-random-trees`, `--n-leaves`, `--tree-counts-max-n`)
 
-**`analysis/export_cross_language.py`**
+**`laminar/export_cross_language.py`**
 - **Purpose**: Writes the `cross_language` bundle, setting every
   structure's own bundle side by side (nyan1308 and the 21 CCDB
   structures, 2026-09-23; plan `docs/PLAN_cross_language_charts.md`). Reads
@@ -246,12 +257,13 @@ with `groups` for the two-bundle variant — from a bundle exported with
   `boundary_profile.tsv`, `convergent_spans.tsv`, `summary.tsv`,
   `metadata.json`), plus `results/cross_language/cross_language_summary.md`
   and `.tex`.
-- **Example**: `python scripts/analysis/export_cross_language.py --apply`
+- **Example**: `python -m laminar.export_cross_language --apply`
   (dry run without `--apply`; `--shuffles`, `--seed`,
-  `--convergence-ranks`). Then draw with `Rscript scripts/render_planarsviz.R
-  --bundle results/chart_data/cross_language --output results`.
+  `--convergence-ranks`). Then, from the repo root, draw with `Rscript
+  laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data/cross_language
+  --output NonCollaborative/results`.
 
-**`analysis/arbitrary_layers_test.py`**
+**`laminar/arbitrary_layers_test.py`**
 - **Purpose**: the third and weakest of the project's three permutation
   nulls. It holds nothing about the real data except how many spans a group
   has: each draw picks that many intervals of arbitrary size at arbitrary
@@ -278,13 +290,13 @@ with `groups` for the two-bundle variant — from a bundle exported with
   its real value, so a bundle test fails if any draw hits even the raised one.
 - **Output**: `results/nyan1308/counts-and-chance/nyan1308_arbitrary_layers_test.tsv`
   and `_arbitrary_layers_null_tally.tsv`
-- **Example**: `python scripts/analysis/arbitrary_layers_test.py`
+- **Example**: `python -m laminar.arbitrary_layers_test`
 - **Also in the bundle**, behind `--arbitrary-layers-permutations`, drawn by
   the package as `plot_arbitrary_layers_test()`.
 
 ## Data export
 
-**`analysis/import_ccdb.py`**
+**`laminar/import_ccdb.py`**
 - **Purpose**: The one place that reads the Constituency and Convergence
   Database (CCDB) clone (default `~/gitrepos/Constituency-Database`,
   read-only — this script never writes to, commits to, fetches, or pulls
@@ -309,11 +321,11 @@ with `groups` for the two-bundle variant — from a bundle exported with
   the exact content read.
 - **Dry run by default**; `--apply` writes. Re-running with no change to the
   CCDB clone reproduces the same files byte-for-byte.
-- **Example**: `python scripts/analysis/import_ccdb.py` (dry run, all
-  structures), `python scripts/analysis/import_ccdb.py --apply`,
-  `python scripts/analysis/import_ccdb.py --planar-id chac1251_verbal --apply`
+- **Example**: `python -m laminar.import_ccdb` (dry run, all
+  structures), `python -m laminar.import_ccdb --apply`,
+  `python -m laminar.import_ccdb --planar-id chac1251_verbal --apply`
 
-**`analysis/export_planarsviz_data.py`**
+**`laminar/export_planarsviz_data.py`**
 - **Purpose**: Export validated Python analysis results for the `planarsviz` R package
 - **Output**: `results/chart_data/<dataset>/data/` TSV/JSON bundle
 - **Source of truth**: Reuses `laminar_analysis.py`; does not re-enumerate families
@@ -331,13 +343,16 @@ with `groups` for the two-bundle variant — from a bundle exported with
   filters)
 - **`--planar-type`, `--language-name`, `--forest-axis`**: chart-title
   wording and where each per-domain-type forest's axis stops. A CCDB
-  structure sets all of these itself via `planarsviz_language.py` below,
+  structure sets all of these itself via `python -m laminar charts` below,
   rather than needing them typed by hand.
-- **Example**: `python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_nyan1308.tsv --output-dir results/chart_data`
-  (for a CCDB structure, use `planarsviz_language.py` instead of calling
+- **Records its inputs relative to the repo root** in `metadata.json`
+  (`source_domain_file`, `producer`), so a bundle does not depend on where
+  the exporter was run from.
+- **Example**: `python -m laminar.export_planarsviz_data --domain-file NonCollaborative/domains/domains_nyan1308.tsv`
+  (for a CCDB structure, use `python -m laminar charts` instead of calling
   this directly — see the Core Analysis note above)
 
-**`render_planarsviz.R`**
+**`laminar/render_planarsviz.R`**
 - **Purpose**: Render the charts from a validated planarsviz bundle — the only
   planarsviz code that writes files
 - **Output**: one PDF per chart in `--output` (default `<bundle>/plots`), plus
@@ -347,28 +362,30 @@ with `groups` for the two-bundle variant — from a bundle exported with
   pooled pair per domain type, a forest per `forests.json` entry plus one chart
   per tree in that forest, a variant per highlight and per filter subset, and so
   on). Run with `--list` to see the charts a given bundle supports.
-- **Example**: `Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308 --output results`
+- **Example** (from the repo root): `Rscript laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data/nyan1308 --output NonCollaborative/results`
 
-**`planarsviz_language.py`**
+**`python -m laminar charts <dataset>`**
 - **Purpose**: Draw every chart for one language in one step: works out the
   exporter's options from the dataset name (root position, groupings and
   display name from `planar_tables/chart_settings_<dataset>.json` or a CCDB
   structure's `planar_tables/ccdb_<dataset>.json`), prints the exporter and
   renderer commands, and with `--apply` runs them. Holds no analysis or
-  drawing code of its own.
+  drawing code of its own. Replaced `planarsviz_language.py` (2026-10-24).
 - **Output**: the bundle in `results/chart_data/<dataset>/`, the charts in
   `results/<dataset>/<topic>/`
-- **Example**: `python scripts/planarsviz_language.py chac1251_verbal --apply`
-  (dry run without `--apply`; `--no-permutations` to skip the four
-  permutation tests)
+- **Example**: `python -m laminar charts chac1251_verbal --apply`
+  (dry run without `--apply`; all four permutation tests run at 5000 draws
+  by default; `--no-permutations` skips them, `--permutations N` sets the
+  count, `--formats pdf,png`, `--plots a,b`)
 
-**`planarsviz_ccdb_batch.py`**
-- **Purpose**: Run `planarsviz_language.py` over every CCDB structure
-  `import_ccdb.py` wrote (found from its `planar_tables/ccdb_<Planar_ID>.json`
+**`python -m laminar charts --ccdb`**
+- **Purpose**: Run the one-language command over every CCDB structure
+  `laminar.import_ccdb` wrote (found from its `planar_tables/ccdb_<Planar_ID>.json`
   files) and write one summary of how it went, rather than calling the
   one-language command by hand 21 times. A structure that fails does not
   stop the others. Holds no analysis or drawing code of its own.
-  Plan step 4, `docs/PLAN_ccdb_planarsviz.md`.
+  Plan step 4, `docs/PLAN_ccdb_planarsviz.md`. Replaced
+  `planarsviz_ccdb_batch.py` (2026-10-24).
 - **Output**: each structure's full output in
   `results/ccdb_batch/<Planar_ID>.log`; a combined
   `results/ccdb_batch/summary.md` reporting, per structure, whether the
@@ -379,11 +396,11 @@ with `groups` for the two-bundle variant — from a bundle exported with
   with, very long structures, characters the standard PDF fonts can't
   draw, truncated permutation draws).
 - **`--summary-only`** rewrites the summary from the logs and bundles
-  already on disk, without running anything.
-- **Example**: `python scripts/planarsviz_ccdb_batch.py` (dry run: lists what
-  would run), `python scripts/planarsviz_ccdb_batch.py --apply` (all 21,
-  four at a time), `python scripts/planarsviz_ccdb_batch.py --apply --only chac1251_nominal,mart1259_verbal`,
-  `python scripts/planarsviz_ccdb_batch.py --summary-only`
+  already on disk, without running anything; `--jobs N` sets how many run at once.
+- **Example**: `python -m laminar charts --ccdb` (dry run: lists what
+  would run), `python -m laminar charts --ccdb --apply` (all 21),
+  `python -m laminar charts --ccdb --apply --only chac1251_nominal,mart1259_verbal`,
+  `python -m laminar charts --ccdb --summary-only`
 
 ## Porting checks
 
@@ -447,7 +464,7 @@ against the chart that chart's own R script drew, frozen as a reference.
   certified maximum — the conflict graph induced by crossing intervals is a
   circle graph and no closed form is derived here.
 - **Status**: exploratory. The chance-baseline half of this script became
-  `analysis/arbitrary_layers_test.py` on 2026-09-22; what is left is the
+  `laminar/arbitrary_layers_test.py` on 2026-09-22; what is left is the
   search, which looks for a bound rather than testing a hypothesis and so
   does not fit the shape the project's permutation tests share.
 - **Its published 1238-family figure is for the wrong layer count.** Both
@@ -470,7 +487,7 @@ against the chart that chart's own R script drew, frozen as a reference.
 - **Status**: Superseded by `laminar_analysis.py`
 - **Note**: Kept for historical reference; do not use for new work
 
-**`exploratory/catalan.py`**
+**`laminar/catalan.py`** (moved here from `exploratory/catalan.py`, 2026-10-24)
 - **Purpose**: Live, actively-used counting/enumeration/sampling for n-ary
   ordered trees (each internal node ≥2 children): `all_trees_new()` (OEIS
   A001003, little Schröder numbers — the correct sequence for this, verified
@@ -481,7 +498,7 @@ against the chart that chart's own R script drew, frozen as a reference.
   (moved here 2026-09-22 from the now-archived
   `analysis/random_tree_overlay.py`, whose only remaining job — writing a
   generated `.r` file — the `illustrations` bundle replaced). Imported
-  directly by `analysis/export_planarsviz_illustrations.py`.
+  directly by `laminar/export_planarsviz_illustrations.py`.
 - **Note**: `all_trees_old()` and `OCPSplus()` are kept on purpose as
   documented-broken comparisons (see their own docstrings for the exact
   bugs), not live code — everything else in this file is correct and used.
@@ -489,7 +506,7 @@ against the chart that chart's own R script drew, frozen as a reference.
 **`exploratory/catalan_old.py`**
 - **Purpose**: Earlier version of Catalan enumeration
 - **Status**: Archive
-- **Note**: Superseded by current catalan.py
+- **Note**: Superseded by `laminar/catalan.py`
 
 ## Where the charts went
 
@@ -516,11 +533,11 @@ sitting in `results/` beside the PDFs, written by generator functions in
 
 ## Organization Guide
 
-- **analysis/** — Core algorithms, the CCDB import, and the exporter
+- **`laminar/` (repo root)** — Core algorithms, the CCDB import, the exporter, the renderer and `python -m laminar charts`
 - **verification/** — Verification scripts (`verify_*.py`)
-- **exploratory/** — Prototype and archive work (`treeTraversal.py`, `catalan.py`)
+- **exploratory/** — Prototype and archive work (`treeTraversal.py`)
 - **planarsviz_checks/** — Checks that the R package draws what the old scripts drew
-- **top-level pipeline commands** — `render_planarsviz.R`, `planarsviz_language.py`, `planarsviz_ccdb_batch.py` (the hand-written R and LaTeX utilities also at the top of `scripts/` are in `CLAUDE.md`, not here)
+- The hand-written R and LaTeX utilities at the top of `scripts/` are in `CLAUDE.md`, not here
 
 See `docs/VERIFICATION.md` for methodology, results, and theoretical framework,
 `docs/planarsviz_charts.md` for every chart the package draws, and

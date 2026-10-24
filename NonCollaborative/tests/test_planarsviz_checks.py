@@ -53,6 +53,7 @@ from pathlib import Path
 import pytest
 
 NC = Path(__file__).resolve().parent.parent
+REPO = NC.parent
 CHECKS = NC / "scripts" / "planarsviz_checks"
 SNAPSHOTS = Path(__file__).parent / "snapshots" / "planarsviz_checks"
 VENV_PYTHON = NC.parent / ".venv" / "bin" / "python"
@@ -229,7 +230,7 @@ def _renv_out_of_sync():
     matches the lockfile, the pixel comparisons below are not evidence of
     anything yet.
     """
-    if shutil.which("Rscript") is None or not (NC / "renv.lock").exists():
+    if shutil.which("Rscript") is None or not (REPO / "renv.lock").exists():
         return None
     result = subprocess.run(
         ["Rscript", "-e", "quit(status = !isTRUE(renv::status()$synchronized))"],
@@ -251,11 +252,11 @@ def tools():
     drift = _renv_out_of_sync()
     if drift:
         pytest.fail(
-            "The R packages installed here no longer match NonCollaborative/"
-            "renv.lock, so these checks would compare charts drawn by the "
+            "The R packages installed here no longer match renv.lock, so "
+            "these checks would compare charts drawn by the "
             "wrong versions -- and renv's own notice about it would land in "
             "every R check's output and fail them all for the wrong reason.\n"
-            "Fix: from NonCollaborative/, run\n"
+            "Fix: from the repository root, run\n"
             "    Rscript -e 'renv::restore()'      # use the pinned versions\n"
             "or, if the change was deliberate,\n"
             "    Rscript -e 'renv::snapshot()'     # pin what is installed\n"
@@ -295,14 +296,15 @@ def test_renderer_check_reports_what_it_did(tools, tmp_path, request):
     render = _run(
         [
             "Rscript",
-            str(NC / "scripts" / "render_planarsviz.R"),
+            str(REPO / "laminar" / "render_planarsviz.R"),
             "--bundle",
-            str(BUNDLE.relative_to(NC)),
+            str(BUNDLE.relative_to(REPO)),
             "--output",
             str(output),
             "--formats",
             "pdf,png",
-        ]
+        ],
+        cwd=REPO,
     )
     assert render.returncode == 0, (
         f"render_planarsviz.R exited {render.returncode}.\n"

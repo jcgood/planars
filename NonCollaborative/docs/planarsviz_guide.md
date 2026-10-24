@@ -3,10 +3,15 @@
 How to go from a domains file to finished charts, how to add a new
 language, and how to check that a chart is right. For what each chart shows
 and its options, see the [chart catalogue](planarsviz_charts.md). For the
-package overview, see [`planarsviz/README.md`](../planarsviz/README.md).
+package overview, see [`planarsviz/README.md`](../../planarsviz/README.md).
 
-All commands run from `NonCollaborative/`, using the project's Python
-environment.
+Since 2026-10-24 the analysis code is the `laminar/` package and the R package
+is `planarsviz/`, both at the repo root. The `python -m laminar …` commands
+run from anywhere, the renderer and `R CMD INSTALL` from the repo root, and the
+porting checks (§6) from `NonCollaborative/`. Python commands use the
+project's Python environment. Paths like `domains/`, `planar_tables/` and
+`results/` below are inside `NonCollaborative/`, where the data and results
+stay.
 
 ---
 
@@ -14,9 +19,9 @@ environment.
 
 | Step | Tool | Output |
 |---|---|---|
-| Analyse and export | `scripts/analysis/export_planarsviz_data.py` (Python) | a bundle: `results/chart_data/<dataset>/data/` |
+| Analyse and export | `laminar/export_planarsviz_data.py` (Python) | a bundle: `results/chart_data/<dataset>/data/` |
 | Draw | the `planarsviz` R package, `plot_*()` functions | ggplot / patchwork objects |
-| Save everything | `scripts/render_planarsviz.R` | PDFs and PNGs, plus `<dataset>/<dataset>_planarsviz_manifest.tsv` |
+| Save everything | `laminar/render_planarsviz.R` | PDFs and PNGs, plus `<dataset>/<dataset>_planarsviz_manifest.tsv` |
 | Check | `scripts/planarsviz_checks/` | comparison images and pass/fail messages |
 
 The exporter does all analysis by calling the existing, verified Python
@@ -34,9 +39,9 @@ follows.
 ## 2. Export a bundle
 
 ```sh
-python scripts/analysis/export_planarsviz_data.py \
-    --domain-file domains/domains_nyan1308.tsv \
-    --planar-file planar_tables/planar_nyan1308.tsv \
+python -m laminar.export_planarsviz_data \
+    --domain-file NonCollaborative/domains/domains_nyan1308.tsv \
+    --planar-file NonCollaborative/planar_tables/planar_nyan1308.tsv \
     --language-name Chichewa
 ```
 
@@ -50,7 +55,7 @@ gives `nyan1308`, and the bundle goes to `results/chart_data/nyan1308/`.
 | `--labels-file` | `planar_tables/display_labels_<dataset>.tsv` if present | Chart labels for positions, when they differ from the planar table's `Position_Label` codes. |
 | `--root-element` | `root` | The `Elements` value marking the root position in the planar table. |
 | `--root-position` | none | Position number that is the root, overriding the `Elements == root_element` lookup (validated against 1..n_positions). Needed for planar tables -- every CCDB one -- that don't mark a root position in `Elements` at all. |
-| `--groupings` | `chichewa` | Named set of domain-type bundles/filters this dataset is analysed with (`scripts/analysis/planars_groupings.py`'s `GROUPINGS`): `chichewa` for nyan1308's phonology-like/syntax-like bundles and `no_tono` filter, or `ccdb` for the single morphosyntactic + indeterminate bundle CCDB structures use. |
+| `--groupings` | `chichewa` | Named set of domain-type bundles/filters this dataset is analysed with (`laminar/planars_groupings.py`'s `GROUPINGS`): `chichewa` for nyan1308's phonology-like/syntax-like bundles and `no_tono` filter, or `ccdb` for the single morphosyntactic + indeterminate bundle CCDB structures use. |
 | `--language-name` | none (titles use the dataset id) | Name used in chart titles, e.g. "Chichewa (nyan1308)". |
 | `--planar-type` | none (axis titles say "verbal") | What the planar structure is of, for axis titles such as "Positions on the nominal planar structure". Written to `metadata.json` only when given. |
 | `--forest-axis` | `subset` | Where each per-domain-type forest's axis stops: `subset`, at that type's last position (what nyan1308's forests have always drawn); `planar`, at the planar structure's last position, like every other chart. CCDB bundles use `planar`. Written to `metadata.json` only when not the default. |
@@ -85,14 +90,14 @@ and the R package refuses to draw from one.
 Install the package once (or after changing its code):
 
 ```sh
-R CMD INSTALL planarsviz
+R CMD INSTALL planarsviz     # from the repo root
 ```
 
-Then:
+Then, from the repo root:
 
 ```r
 library(planarsviz)
-bundle <- read_planars_bundle("results/chart_data/nyan1308")
+bundle <- read_planars_bundle("NonCollaborative/results/chart_data/nyan1308")
 
 p <- plot_laminar_overlay(bundle, groups = "all", alpha_divisor = 1,
                           thickness_exponent = 0.75, highlight = "orthographic_word")
@@ -125,8 +130,10 @@ Points to know:
 ## 4. Render everything
 
 ```sh
-Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308 --formats pdf,png
+Rscript laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data/nyan1308 --output NonCollaborative/results --formats pdf,png
 ```
+
+(Run from the repo root.)
 
 | Option | Default | What it does |
 |---|---|---|
@@ -157,11 +164,11 @@ already in the Constituency and Convergence Database (CCDB).
 **Already in the CCDB:** no file is written by hand.
 
 ```sh
-python scripts/analysis/import_ccdb.py --planar-id <Planar_ID> --apply
-python scripts/planarsviz_language.py <Planar_ID> --apply
+python -m laminar.import_ccdb --planar-id <Planar_ID> --apply
+python -m laminar charts <Planar_ID> --apply
 ```
 
-`import_ccdb.py` reads the local CCDB clone and writes
+`laminar.import_ccdb` reads the local CCDB clone and writes
 `domains/domains_<Planar_ID>.tsv`, `planar_tables/planar_<Planar_ID>.tsv`
 and `planar_tables/ccdb_<Planar_ID>.json` (root position, language name,
 planar type, and the CCDB commit read); dry run first — its `--help` says
@@ -174,7 +181,7 @@ position, groupings (always `ccdb`) and planar type the one-language command
 needs, so of steps 1–5 below only 4 (a genuinely new domain type) and 5 (a
 grouping neither `chichewa` nor `ccdb` fits) can still apply — everything
 else is already there. To run every CCDB structure at once rather than one
-at a time, see `scripts/planarsviz_ccdb_batch.py` at the end of this
+at a time, see `python -m laminar charts --ccdb` at the end of this
 section.
 
 **Not in the CCDB:** write the domains file and planar table by hand, then
@@ -205,7 +212,7 @@ Steps 3–6 apply either way:
 3. **Optional settings files** in `planar_tables/`, each picked up
    automatically by name:
    - `chart_settings_<dataset>.json` — read (through
-     `scripts/analysis/datasets.py`) by the one-language command in step 6
+     `laminar/datasets.py`) by the one-language command in step 6
      and by the standalone analysis scripts, not by the exporter directly:
      optional keys `language_name`
      (chart titles), `groupings`, `root_position`, `planar_type` (axis
@@ -225,20 +232,20 @@ Steps 3–6 apply either way:
      `defining_span_id`; one row may leave the span empty to collect every
      other family. nyan1308's: A `5-13`, B `6-17`, C the rest.
 4. **Domain types** — colours and orders for known types are in
-   `DOMAIN_TYPE_STYLE` at the top of `export_planarsviz_data.py`. A type not
+   `DOMAIN_TYPE_STYLE` at the top of `laminar/export_planarsviz_data.py`. A type not
    listed there still works: it gets grey and sorts after the known types.
    Add a row there to give it a proper colour.
 5. **Groupings** — class bundles (`BUNDLES`) and filters that leave out
    domain types (`FILTERS`, e.g. `no_tono`) are defined once in
-   `scripts/analysis/planars_groupings.py`, as named sets in `GROUPINGS`
+   `laminar/planars_groupings.py`, as named sets in `GROUPINGS`
    (`chichewa`, `ccdb`) that a dataset picks with `--groupings` (or
    `chart_settings`'s `groupings`). A dataset whose domain types fit neither
    set needs a new named set added there.
 6. **Export, then render, with one command:**
 
    ```sh
-   python scripts/planarsviz_language.py <dataset>            # dry run: prints both commands
-   python scripts/planarsviz_language.py <dataset> --apply    # runs them
+   python -m laminar charts <dataset>            # dry run: prints both commands
+   python -m laminar charts <dataset> --apply    # runs them
    ```
 
    It works out the root position, groupings, display name, planar type and
@@ -246,8 +253,8 @@ Steps 3–6 apply either way:
    `ccdb_<dataset>.json`), shows where each came from, and runs the exporter
    and then the renderer with all four permutation tests at 5000 draws.
    `--no-permutations` skips them (seconds instead of minutes, but the
-   bundle then lacks their tables and charts); `--formats` and `--plots`
-   pass through to the renderer. Look at the charts: nothing about nyan1308
+   bundle then lacks their tables and charts); `--permutations N` sets the
+   draw count; `--formats` and `--plots` pass through to the renderer. Look at the charts: nothing about nyan1308
    is assumed in the R code, but a new language is the real test.
 
 For a full walk-through of this route on one real language, start to
@@ -255,9 +262,9 @@ finish — including which charts to look at first and what the numbers
 mean — see [the tutorial](planarsviz_tutorial.md). This section only says
 what each piece does.
 
-**Every CCDB structure at once:** `scripts/planarsviz_ccdb_batch.py` runs
-the one-language command for every structure `import_ccdb.py` has written
-(one `planar_tables/ccdb_*.json` per structure), several at a time, and
+**Every CCDB structure at once:** `python -m laminar charts --ccdb` runs
+the one-language command for every structure `laminar.import_ccdb` has written
+(one `planar_tables/ccdb_*.json` per structure), `--jobs N` at a time, and
 writes `results/ccdb_batch/summary.md`: which structures failed, which
 chart kinds a structure has none of, and what's worth a look before
 trusting a chart (very few families, very long structures, characters the
@@ -333,13 +340,15 @@ drew. That comparison is only worth something if both were drawn by the same
 R packages — and ggplot2 4.x changed several defaults against 3.x, so "the
 same packages" is not a given across machines or across time.
 
-`renv.lock` in `NonCollaborative/` records the exact version of every R
+`renv.lock` at the repo root (it was in `NonCollaborative/` until 2026-10-24)
+records the exact version of every R
 package these charts were drawn with: 130 of them, including ggplot2 4.0.3,
-ape 5.8.1 and ggtree 4.2.0, on R 4.6.1. `.Rprofile` makes R use them
-automatically whenever it starts in `NonCollaborative/`, so nothing in the
+ape 5.8.1 and ggtree 4.2.0, on R 4.6.1. The root `.Rprofile` makes R use them
+automatically whenever it starts in the repo root or in `NonCollaborative/`
+(whose `.Rprofile` just sources the root one), so nothing in the
 guide above needs a different command.
 
-On a machine that has never run this project:
+On a machine that has never run this project (from the repo root):
 
 ```sh
 Rscript -e 'install.packages("renv")'
@@ -347,7 +356,7 @@ Rscript -e 'renv::restore()'
 ```
 
 `renv::restore()` installs every package at its recorded version into
-`NonCollaborative/renv/library/`, which is not in version control. It takes a
+`renv/library/` at the repo root, which is not in version control. It takes a
 while the first time. After that, `renv::status()` reports whether the
 installed packages still match the lockfile.
 
@@ -363,12 +372,12 @@ Two things worth knowing:
   to be the only thing loading it is not run by any check, since its port is
   checked against a frozen reference instead — see
   `check_illustrations.R`'s header comment for why.)
-- **`.renvignore` lists the scripts renv does not read.** They are
+- **The root `.renvignore` lists the scripts renv does not read.** They are
   hand-written files nothing runs any more, and they load packages that are
   not installed here, which renv cannot record a version for. The file says
   which and why.
 
-After changing what a script or the package loads, run `renv::snapshot()` to
+After changing what a script or the package loads, run `renv::snapshot()` (from the repo root) to
 bring the lockfile back in line, and commit it with the change.
 
 ---
@@ -377,14 +386,14 @@ bring the lockfile back in line, and commit it with the change.
 
 | Path | Contents |
 |---|---|
-| `planarsviz/` | The R package (`R/` one file per chart family). |
-| `planarsviz/inst/data-contract.md` | Every bundle file and column. |
-| `scripts/analysis/export_planarsviz_data.py` | The exporter. |
-| `scripts/analysis/planars_groupings.py` | Class bundles and filters. |
-| `scripts/analysis/import_ccdb.py` | Imports one or all CCDB structures into `domains/`, `planar_tables/`. |
-| `scripts/planarsviz_language.py` | One dataset, export and render, in one command. |
-| `scripts/planarsviz_ccdb_batch.py` | Runs the one-language command for every CCDB structure and summarises. |
-| `scripts/render_planarsviz.R` | The renderer. |
+| `planarsviz/` (repo root) | The R package (`R/` one file per chart family). |
+| `planarsviz/inst/data-contract.md` (repo root) | Every bundle file and column. |
+| `laminar/export_planarsviz_data.py` | The exporter. |
+| `laminar/planars_groupings.py` | Class bundles and filters. |
+| `laminar/import_ccdb.py` | Imports one or all CCDB structures into `domains/`, `planar_tables/`. |
+| `python -m laminar charts <dataset>` | One dataset, export and render, in one command. |
+| `python -m laminar charts --ccdb` | Runs the one-language command for every CCDB structure and summarises. |
+| `laminar/render_planarsviz.R` | The renderer. |
 | `scripts/planarsviz_checks/` | Porting checks. |
 | `results/<dataset>/` | Published charts, grouped into `laminar-families/`, `pooled/`, `boundaries/` and `counts-and-chance/`. |
 | `results/chart_data/<dataset>/` | Bundles (`data/`) and rendered charts (`plots/`). |

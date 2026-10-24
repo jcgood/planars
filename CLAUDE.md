@@ -65,6 +65,7 @@ tab is each language's status sheet.
 | Data layer redesign (#271): rationale, plan, **current state** | `docs/data-layer-design.md`, `docs/data-layer-implementation-plan.md`, `docs/data-layer-progress.md` |
 | Tests and saved outputs | `docs/testing.md`; span snapshots in `tests/snapshots/` |
 | One-time migrations | `migrations/` — convention in `migrations/README.md` |
+| Laminar-family analysis and charts | `laminar/` (run `python -m laminar charts <dataset>`) and `planarsviz/` (R chart package); plan `docs/laminar-analysis-plan.md`, state `docs/laminar-analysis-progress.md` |
 | Personal working area, not the pipeline | `NonCollaborative/` |
 
 ## Working rules for every Claude on this project

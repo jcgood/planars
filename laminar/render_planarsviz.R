@@ -27,13 +27,15 @@
 # a --plots run merges into the manifest already there rather than replacing
 # it, and drops only rows whose file has gone. So it describes the directory,
 # which is what makes it useful after a partial render. It is bookkeeping, not
-# evidence that a chart is correct -- that is what scripts/planarsviz_checks/
-# is for. It carries the dataset name because the output directory is
-# results/, shared with everything else this project generates, where a file
-# called "manifest" says nothing.
+# evidence that a chart is correct -- that is what
+# NonCollaborative/scripts/planarsviz_checks/ is for. It carries the dataset
+# name because the output directory is results/, shared with everything else
+# this project generates, where a file called "manifest" says nothing.
 #
-# Usage (from NonCollaborative/):
-#   Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308 \
+# `python -m laminar charts <dataset>` runs this with the dataset's options.
+# On its own (from the repository root, where .Rprofile sets up the pinned
+# packages):
+#   Rscript laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data/nyan1308 \
 #     [--output DIR] [--plots all|name,name,...] [--formats pdf,png] [--list]
 # --output defaults to <bundle>/plots. --plots takes chart names as printed by
 # --list (the file name without the dataset prefix). png is made from the PDF
@@ -49,13 +51,17 @@
 # needs a real language's position labels, which is what --positions-bundle
 # is for (any ordinary --bundle path); the tree-shape and tree-count-growth
 # charts don't need it and are still listed without it.
-#   Rscript scripts/render_planarsviz.R --bundle results/chart_data/illustrations \
-#     --positions-bundle results/chart_data/nyan1308 --output results
+#   Rscript laminar/render_planarsviz.R \
+#     --bundle NonCollaborative/results/chart_data/illustrations \
+#     --positions-bundle NonCollaborative/results/chart_data/nyan1308 \
+#     --output NonCollaborative/results
 #
 # --bundle can also be the cross-language bundle (results/chart_data/cross_language),
 # detected by data/structures.tsv. Its charts, like the illustrations', land
 # with no topic subfolder, in <output>/cross_language/.
-#   Rscript scripts/render_planarsviz.R --bundle results/chart_data/cross_language --output results
+#   Rscript laminar/render_planarsviz.R \
+#     --bundle NonCollaborative/results/chart_data/cross_language \
+#     --output NonCollaborative/results
 
 parse_args <- function(args) {
   out <- list(bundle = NULL, positions_bundle = NULL, output = NULL, plots = "all",

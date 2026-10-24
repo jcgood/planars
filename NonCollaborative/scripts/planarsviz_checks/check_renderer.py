@@ -1,8 +1,9 @@
 """Compare every PNG the renderer wrote with the frozen reference images.
 
-For docs/PLAN_planarsviz_library.md section 8.3: after
-    Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308 --output DIR --formats pdf,png
-run
+For docs/PLAN_planarsviz_library.md section 8.3: after, from the repository
+root,
+    Rscript laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data/nyan1308 --output DIR --formats pdf,png
+run, from NonCollaborative/,
     python scripts/planarsviz_checks/check_renderer.py DIR
 Reads DIR/<dataset>/<dataset>_planarsviz_manifest.tsv, pairs each
 <dataset>/<folder>/<dataset>_<chart>.png with

@@ -13,7 +13,7 @@
   "n_positions": 46,
   "n_unique_spans": 5,
   "n_universal_spans": 5,
-  "source_domain_file": "domains/domains_iyoj1235_verbal.tsv",
+  "source_domain_file": "NonCollaborative/domains/domains_iyoj1235_verbal.tsv",
   "source_domain_sha256": "ea6838eee4742bcbd1c6d28d14cbe6dd3f62d1cbc873b1137dd670e2cd9fe61a",
   "subset_id": "indeterminate",
   "synthetic_root": true

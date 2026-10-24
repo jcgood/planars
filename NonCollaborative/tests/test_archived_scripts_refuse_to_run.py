@@ -12,11 +12,13 @@ the same filename. Nothing in `results/` records which program wrote which
 file, so the swap is silent: the chart simply becomes wrong, and stays wrong
 until someone notices a figure that does not match the analysis.
 
-`NonCollaborative/.Rprofile` prevents this by refusing to run any file under
-`OlderFiles/`. This test exists because that guard is easy to lose by
-accident -- `.Rprofile` is infrastructure that gets rewritten for unrelated
-reasons (it also sets up renv), and nothing else would notice its disappearance
-until a chart had already been overwritten.
+The repository root's `.Rprofile` prevents this by refusing to run any file
+under `NonCollaborative/OlderFiles/`; `NonCollaborative/.Rprofile` hands over
+to it, so the guard holds whether R starts at the root or in
+`NonCollaborative/`, and each test runs from both. This test exists because
+that guard is easy to lose by accident -- `.Rprofile` is infrastructure that
+gets rewritten for unrelated reasons (it also sets up renv), and nothing else
+would notice its disappearance until a chart had already been overwritten.
 
 The test drives a throwaway file rather than a real archived script, for the
 obvious reason: proving the guard works by running a script it is meant to
@@ -32,6 +34,7 @@ import pytest
 from pathlib import Path
 
 NC_ROOT = Path(__file__).parents[1]
+REPO_ROOT = NC_ROOT.parent
 ARCHIVE = NC_ROOT / "OlderFiles"
 
 RSCRIPT = shutil.which("Rscript")
@@ -43,6 +46,9 @@ pytestmark = [
     ),
 ]
 
+# The folders R may start in, each with its own .Rprofile.
+START_DIRS = pytest.mark.parametrize("start", [NC_ROOT, REPO_ROOT], ids=["NonCollaborative", "root"])
+
 
 @pytest.fixture
 def probe():
@@ -53,25 +59,26 @@ def probe():
     path.unlink(missing_ok=True)
 
 
-def _run(path, extra_env=None):
+def _run(path, start, extra_env=None):
     env = dict(os.environ)
     env.pop("PLANARS_RUN_ARCHIVED", None)
     env.update(extra_env or {})
     return subprocess.run(
-        [RSCRIPT, str(path.relative_to(NC_ROOT))],
-        cwd=NC_ROOT,
+        [RSCRIPT, str(path.relative_to(start))],
+        cwd=start,
         capture_output=True,
         text=True,
         env=env,
     )
 
 
-def test_running_an_archived_script_is_refused(probe):
-    result = _run(probe)
+@START_DIRS
+def test_running_an_archived_script_is_refused(probe, start):
+    result = _run(probe, start)
 
     assert result.returncode != 0, (
-        "An R file under OlderFiles/ ran to completion. The guard in "
-        "NonCollaborative/.Rprofile is gone or no longer matches that path, "
+        "An R file under OlderFiles/ ran to completion. The guard in the "
+        "root .Rprofile is gone or no longer matches that path, "
         "so running an archived chart script would now overwrite a chart the "
         "planarsviz package produced, silently.\n"
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
@@ -91,8 +98,9 @@ def test_running_an_archived_script_is_refused(probe):
         )
 
 
-def test_the_deliberate_override_still_works(probe):
-    result = _run(probe, {"PLANARS_RUN_ARCHIVED": "1"})
+@START_DIRS
+def test_the_deliberate_override_still_works(probe, start):
+    result = _run(probe, start, {"PLANARS_RUN_ARCHIVED": "1"})
 
     assert result.returncode == 0 and "probe ran" in result.stdout, (
         "PLANARS_RUN_ARCHIVED=1 no longer lets an archived script run. The "
@@ -103,11 +111,12 @@ def test_the_deliberate_override_still_works(probe):
     )
 
 
-def test_a_script_outside_the_archive_is_untouched(tmp_path):
-    outside = NC_ROOT / ".guard_probe_outside.R"
+@START_DIRS
+def test_a_script_outside_the_archive_is_untouched(start):
+    outside = start / ".guard_probe_outside.R"
     outside.write_text('cat("probe ran\\n")\n')
     try:
-        result = _run(outside)
+        result = _run(outside, start)
     finally:
         outside.unlink(missing_ok=True)
 

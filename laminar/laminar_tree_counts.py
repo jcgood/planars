@@ -17,29 +17,25 @@ The bar charts these counts feed are drawn by the planarsviz package
 reads collect_counts()/collect_bundle_counts() here.
 
 Usage:
-  python scripts/analysis/laminar_tree_counts.py
-  python scripts/analysis/laminar_tree_counts.py --domain-file domains_chac1251_verbal.tsv
+  python -m laminar.laminar_tree_counts
+  python -m laminar.laminar_tree_counts --domain-file domains_chac1251_verbal.tsv
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
-import sys
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-sys.path.insert(0, str(SCRIPT_DIR))
-
-from laminar_analysis import (  # noqa: E402
+from laminar.laminar_analysis import (
     find_conflicts,
     enumerate_maximal_laminar_families,
     load_spans,
 )
 # Pooled multi-class bundles come from planars_groupings.py, the one place
 # they are defined; their colours match each bundle's own forest chart.
-from planars_groupings import BUNDLES, CLASS_ORDER, observed_groups  # noqa: E402
-from datasets import add_dataset_arguments, resolve_dataset_arguments  # noqa: E402
+from laminar.planars_groupings import BUNDLES, CLASS_ORDER, observed_groups
+from laminar.datasets import add_dataset_arguments, resolve_dataset_arguments
 
 # Exact pooled-plot colors. Read by class_fragmentation_test.py and by
 # export_planarsviz_data.py's DOMAIN_TYPE_STYLE, which is where R gets them.

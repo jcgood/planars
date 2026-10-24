@@ -13,7 +13,7 @@
   "n_positions": 32,
   "n_unique_spans": 6,
   "n_universal_spans": 6,
-  "source_domain_file": "domains/domains_hupd1244_verbal.tsv",
+  "source_domain_file": "NonCollaborative/domains/domains_hupd1244_verbal.tsv",
   "source_domain_sha256": "6004929cca93b46c9d4a35b2e008a5cc5c7bdb6c933fe386f1b6516c4f926d51",
   "subset_id": "morphosyntactic",
   "synthetic_root": false

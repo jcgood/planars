@@ -8,22 +8,21 @@ and how to make it again.
 commands make every chart in this file that the package draws:
 
 ```
-cd NonCollaborative
-
-python scripts/analysis/export_planarsviz_data.py \
-  --domain-file domains/domains_nyan1308.tsv \
-  --output-dir results/chart_data \
+python -m laminar.export_planarsviz_data \
+  --domain-file NonCollaborative/domains/domains_nyan1308.tsv \
   --language-name Chichewa
 
-Rscript scripts/render_planarsviz.R \
-  --bundle results/chart_data/nyan1308 \
-  --output results
+Rscript laminar/render_planarsviz.R \
+  --bundle NonCollaborative/results/chart_data/nyan1308 \
+  --output NonCollaborative/results
 ```
 
-**Run these from `NonCollaborative/`**, which is where the porting checks run
-too. The exporter records the domain file's path as you gave it, so running it
-from somewhere else writes a bundle that differs from the committed one in
-that one field and nothing else. Add `--plots name1,name2` to the second
+**Run the renderer from the repo root**; the exporter and every other
+`python -m laminar.<module>` command run from anywhere (moved from
+`scripts/analysis/` to the `laminar/` package, 2026-10-24), and a bundle
+records its inputs relative to the repo root. (`python -m laminar charts
+nyan1308 --apply` does both.) The porting checks and the `scripts/` utilities
+named below still run from `NonCollaborative/`. Add `--plots name1,name2` to the second
 command to draw only some charts; `--list` prints the names a bundle supports.
 The sections below give the `--plots` name for each chart.
 
@@ -416,8 +415,8 @@ labels, same margins. Since 2026-09-21 it is literally the same code —
 
 To regenerate one:
 ```
-Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308 \
-  --output results --plots syntaxlike_tree_09
+Rscript laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data/nyan1308 \
+  --output NonCollaborative/results --plots syntaxlike_tree_09
 ```
 or leave `--plots` off to draw every chart in the bundle.
 
@@ -448,9 +447,9 @@ is what `.Rprofile`'s guard on `OlderFiles/` exists to prevent.
   `.r` files are the only record of how they chose which families to draw. Those rules were
   recovered from the files themselves and are now in the exporter; see
   `docs/PLAN_planarsviz_library.md` §4.1 for how each was recovered.
-- `scripts/render_planarsviz.R` installs the package into a temporary library itself, so there
+- `laminar/render_planarsviz.R` installs the package into a temporary library itself, so there
   is no install step to remember. The package's own dependencies are in
-  `planarsviz/DESCRIPTION`; the tree charts additionally need `ape` and `ggtree`, which are
+  `planarsviz/DESCRIPTION` (repo root); the tree charts additionally need `ape` and `ggtree`, which are
   listed under `Suggests` because the other charts do not.
 
 ---
@@ -463,8 +462,8 @@ exporter writes. PDFs are written to `results/nyan1308/pooled/`.
 
 To render:
 ```
-Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308 \
-  --output results --plots pooled_plot,pooled_domainplot
+Rscript laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data/nyan1308 \
+  --output NonCollaborative/results --plots pooled_plot,pooled_domainplot
 ```
 Leave `--plots` off to draw every chart the bundle supports.
 
@@ -519,8 +518,8 @@ are generated on every run.
 Drawn by the `planarsviz` package from the exported data bundle:
 
 ```
-Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308 \
-  --output results --plots boundary_skyline
+Rscript laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data/nyan1308 \
+  --output NonCollaborative/results --plots boundary_skyline
 ```
 
 The hand-written script this came from, `nyan_boundary_skyline.r`, is archived at
@@ -720,7 +719,7 @@ problem here).
 **What it is:** A side-by-side comparison of Catalan numbers (strictly binary trees) and the
 little Schröder numbers (arbitrary n-ary trees, ≥2 children per internal node — the correct
 sequence for the laminar family problem, see `../REFERENCES.md` § "Counting Constituency Trees"
-and `../scripts/exploratory/catalan.py`) — what each counts, their first several values, closed
+and `../../laminar/catalan.py`) — what each counts, their first several values, closed
 form (Catalan only — no comparably simple closed form is known for the Schröder numbers),
 recurrence, and generating function. Both recurrences and generating functions were verified
 numerically against the known sequences (`sympy` series expansion, checked against
@@ -738,8 +737,8 @@ tree space is relative to the 69 actual maximal laminar families found for nyan1
 labels — the positions are real, the sample is not this language's actual data. `--plots
 random_tree_overlay` on the command below draws it.
 ```
-Rscript scripts/render_planarsviz.R --bundle results/chart_data/illustrations \
-  --positions-bundle results/chart_data/nyan1308 --output results
+Rscript laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data/illustrations \
+  --positions-bundle NonCollaborative/results/chart_data/nyan1308 --output NonCollaborative/results
 ```
 Reuses the same "stack N ghost trees on one shared `patchwork` cell" mechanism
 `plot_laminar_overlay()` uses for chart 7, minus the `groupOTU`/branch-thickness mapping — there's
@@ -749,7 +748,7 @@ Tip labels ("position number" over "name") are added once, on the last tree draw
 layer sits above all 200 ghost trees rather than underneath most of them.
 
 **Absorbed in phase E (2026-09-22), and this is the one thing about it that actually changed**:
-the sample now has a recorded seed (`export_planarsviz_illustrations.py --seed`, default `0`,
+the sample now has a recorded seed (`laminar.export_planarsviz_illustrations --seed`, default `0`,
 written to `metadata.json`). The generated-R-script version this replaced,
 `scripts/analysis/random_tree_overlay.py` (archived in
 `OlderFiles/planarsviz_superseded/scripts/analysis/`), sampled 200 trees and pasted their Newick
@@ -758,7 +757,7 @@ never be reproduced or checked, only ever looked at again. `--seed 0`'s sample i
 200 trees than that file drew (there was nothing to reproduce), but is otherwise drawn by the
 exact same, still-live sampler (`sample_tree()`/`sample_forest()`/`sample_labeled_tree()`, moved
 to `scripts/exploratory/catalan.py` where the counting recurrence they turn into weighted choices
-already lived) — verified exactly uniform by sampling 11,000 trees at n=4 (11 distinct shapes) and
+already lived; that file is now `laminar/catalan.py`, 2026-10-24) — verified exactly uniform by sampling 11,000 trees at n=4 (11 distinct shapes) and
 confirming each appeared at ~9.09% ± noise, matching 1/11. The offset/vjust tip-label tuning that
 took real measurement to get right (checked against a `geom_tippoint()` reference rather than
 inferred from the coordinate system) carried over unchanged into `plot_random_tree_overlay()` —
@@ -791,7 +790,7 @@ literal 69 in the chart code.
 **What it is:** Bar charts (and the underlying counts) summarizing how many maximal laminar
 families ("trees" in the project's terms — a maximal set of observed spans that are mutually
 nested or disjoint) nyan1308's data supports under a few conditions. The counting is
-`scripts/analysis/laminar_tree_counts.py`, which reuses `laminar_analysis.py`'s own span-loading
+`laminar/laminar_tree_counts.py`, which reuses `laminar_analysis.py`'s own span-loading
 and family-enumeration logic, so these counts agree with the conflict and forest charts above.
 
 - **`nyan1308_tree_count_all.pdf`** — single bar: 69 maximal families across all 26 unique
@@ -812,7 +811,7 @@ and family-enumeration logic, so these counts agree with the conflict and forest
 
 To regenerate the TSV:
 ```
-python scripts/analysis/laminar_tree_counts.py
+python -m laminar.laminar_tree_counts
 ```
 `--domain-file`, `--domains-dir`, `--output-dir` are adjustable — see the script's own docstring.
 The charts come from the two commands at the top of this file
@@ -869,7 +868,7 @@ from syntaxlike moves it back toward unremarkable (p=0.454).
 
 To regenerate the tables:
 ```
-python scripts/analysis/class_fragmentation_test.py
+python -m laminar.class_fragmentation_test
 ```
 The plain command reproduces the committed files exactly (5000 draws, seed 0). `--n-permutations`
 and `--seed` are adjustable; both summary files record what they were.
@@ -879,9 +878,9 @@ and `--seed` are adjustable; both summary files record what they were.
 one chart whose bundle tables are not written on every export:
 
 ```
-python scripts/analysis/export_planarsviz_data.py \
-  --domain-file domains/domains_nyan1308.tsv \
-  --output-dir results/chart_data --language-name Chichewa \
+python -m laminar.export_planarsviz_data \
+  --domain-file NonCollaborative/domains/domains_nyan1308.tsv \
+  --language-name Chichewa \
   --fragmentation-permutations 5000
 ```
 
@@ -951,7 +950,7 @@ different questions about the same 26 spans.
 
 To regenerate the tables:
 ```
-python scripts/analysis/span_placement_test.py
+python -m laminar.span_placement_test
 ```
 
 **All three charts come from the package** since 2026-09-21 —
@@ -959,9 +958,9 @@ python scripts/analysis/span_placement_test.py
 fragmentation chart, they need a bundle exported with the test asked for:
 
 ```
-python scripts/analysis/export_planarsviz_data.py \
-  --domain-file domains/domains_nyan1308.tsv \
-  --planar-file planar_tables/planar_nyan1308.tsv --language-name Chichewa \
+python -m laminar.export_planarsviz_data \
+  --domain-file NonCollaborative/domains/domains_nyan1308.tsv \
+  --planar-file NonCollaborative/planar_tables/planar_nyan1308.tsv --language-name Chichewa \
   --span-placement-permutations 5000
 ```
 
@@ -976,7 +975,7 @@ before the package did, was archived to `OlderFiles/planarsviz_superseded/script
 **What it is:** the third and weakest of the project's three permutation nulls, and the one a
 raw family count is implicitly read against. It holds nothing about the real data except how
 many spans each group has: every draw picks that many intervals of arbitrary size at arbitrary
-positions. Generated by `scripts/analysis/arbitrary_layers_test.py` (5000 draws, seed 0), one
+positions. Generated by `laminar/arbitrary_layers_test.py` (5000 draws, seed 0), one
 panel per group.
 
 The three tests differ deliberately, and the ordering is the point:
@@ -1009,7 +1008,7 @@ span-placement test, which asks the same question one notch less naively.
 
 To regenerate the tables:
 ```
-python scripts/analysis/arbitrary_layers_test.py
+python -m laminar.arbitrary_layers_test
 ```
 
 The chart comes from the package (`--plots arbitrary_layers_test_by_group_plot`) and needs a
@@ -1062,16 +1061,16 @@ p=0.0004.
 
 To regenerate the table:
 ```
-python scripts/analysis/boundary_strength_test.py
+python -m laminar.boundary_strength_test
 ```
 This reproduces the committed file exactly (5000 draws, seed 0).
 
 The charts come from the package (`plot_boundary_strength_test()`, catalogue §18) and need a
 bundle exported with the test asked for:
 ```
-python scripts/analysis/export_planarsviz_data.py \
-  --domain-file domains/domains_nyan1308.tsv \
-  --planar-file planar_tables/planar_nyan1308.tsv --language-name Chichewa \
+python -m laminar.export_planarsviz_data \
+  --domain-file NonCollaborative/domains/domains_nyan1308.tsv \
+  --planar-file NonCollaborative/planar_tables/planar_nyan1308.tsv --language-name Chichewa \
   --boundary-strength-test-permutations 5000
 ```
 The exporter calls `boundary_strength_test.py`'s own `run_test()`, so the bundle and the
@@ -1085,13 +1084,13 @@ reference image — it was written in the package from the start, with no earlie
 **What it is:** A maximal laminar family is not a single tree. Where a node has more than two
 children (a polytomy), the observed spans do not say how those children group, so each polytomy
 stands for many finer trees. These two tables count them, per family and per polytomy, generated
-by `scripts/analysis/refinement_counts.py`.
+by `laminar/refinement_counts.py`.
 
 Two conventions are reported side by side, because whether a constituent must be binary is an
 open question rather than a settled one:
 
 - **little Schröder per polytomy** — any arity allowed in the refinement. The project calls this
-  sequence "super-Catalan" (see `scripts/exploratory/catalan.py`). Total across all 69 families:
+  sequence "super-Catalan" (see `laminar/catalan.py`). Total across all 69 families:
   8,599,689.
 - **Catalan per polytomy** — binary refinements only. Total: 125,032.
 
@@ -1102,7 +1101,7 @@ open question rather than a settled one:
 
 To regenerate:
 ```
-python scripts/analysis/refinement_counts.py
+python -m laminar.refinement_counts
 ```
 
 ---
@@ -1129,8 +1128,8 @@ The numbers behind the last four rows come from Python, and those commands are
 worth knowing separately from the drawing:
 
 ```
-python scripts/analysis/boundary_strength.py
-python scripts/make_forestspans_table.py
+python -m laminar.boundary_strength
+python scripts/make_forestspans_table.py     # from NonCollaborative/
 ```
 
 The first writes `nyan1308_boundary_strength.tsv`. The second writes the
@@ -1190,24 +1189,24 @@ Chichewa specifically:
 
 **To draw one CCDB structure's charts:**
 ```
-python scripts/planarsviz_language.py <dataset>            # dry run: prints what it would do
-python scripts/planarsviz_language.py <dataset> --apply    # exports the bundle, then renders every chart
+python -m laminar charts <dataset>            # dry run: prints what it would do
+python -m laminar charts <dataset> --apply    # exports the bundle, then renders every chart
 ```
 `<dataset>` is a Planar_ID such as `chac1251_verbal`. This is the same command nyan1308 itself
-can be redrawn with (`python scripts/planarsviz_language.py nyan1308 --apply`) — nothing about
+can be redrawn with (`python -m laminar charts nyan1308 --apply`) — nothing about
 which language it draws is hardcoded. For a CCDB structure it reads the root position, display
 name and planar type (verbal/nominal) from `planar_tables/ccdb_<dataset>.json`, written when the
-structure was imported (`scripts/analysis/import_ccdb.py`), and always uses the `ccdb` groupings;
+structure was imported (`laminar/import_ccdb.py`), and always uses the `ccdb` groupings;
 a `planar_tables/chart_settings_<dataset>.json` would override any of those if a structure needed
 hand-tuned settings, the same file nyan1308's own settings (just its display name, "Chichewa")
 live in.
 
 **To draw all 21 at once:**
 ```
-python scripts/planarsviz_ccdb_batch.py             # dry run
-python scripts/planarsviz_ccdb_batch.py --apply     # about 7 minutes for all 21, 5000 permutation draws each
+python -m laminar charts --ccdb             # dry run
+python -m laminar charts --ccdb --apply     # about 7 minutes for all 21, 5000 permutation draws each
 ```
-Runs the one-language command above for every `planar_tables/ccdb_*.json`, four structures at a
+Runs the one-language command above for every `planar_tables/ccdb_*.json`, `--jobs N` structures at a
 time, carrying on past a failure rather than stopping at the first one. `--only
 chac1251_verbal,teot1238_verbal` restricts it to some structures; `--no-permutations` skips the
 four permutation tests for a much faster run (the bundle then lacks their tables and charts);
@@ -1249,8 +1248,8 @@ Any number quoted across structures comes with a caveat: the structures share te
 authors and sometimes language families, so they are not independent cases.
 
 ```
-python scripts/analysis/export_cross_language.py --apply
-Rscript scripts/render_planarsviz.R --bundle results/chart_data/cross_language --output results
+python -m laminar.export_cross_language --apply
+Rscript laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data/cross_language --output NonCollaborative/results
 ```
 
 Re-run both whenever any language's bundle is re-exported;

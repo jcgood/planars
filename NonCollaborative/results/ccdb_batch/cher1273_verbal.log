@@ -1,19 +1,19 @@
-$ /Users/jcgood/gitrepos/planars/NonCollaborative/../.venv/bin/python scripts/planarsviz_language.py cher1273_verbal --apply
+$ /Users/jcgood/gitrepos/planars/.venv/bin/python -m laminar charts cher1273_verbal --apply
 Dataset cher1273_verbal
-  language_name  Oklahoma Cherokee (verbal)       from planar_tables/ccdb_cher1273_verbal.json
-  groupings      ccdb                             from planar_tables/ccdb_cher1273_verbal.json
-  root_position  12                               from planar_tables/ccdb_cher1273_verbal.json
-  planar_type    verbal                           from planar_tables/ccdb_cher1273_verbal.json
-  forest_axis    planar                           from planar_tables/ccdb_cher1273_verbal.json
+  language_name  Oklahoma Cherokee (verbal)       from NonCollaborative/planar_tables/ccdb_cher1273_verbal.json
+  groupings      ccdb                             from NonCollaborative/planar_tables/ccdb_cher1273_verbal.json
+  root_position  12                               from NonCollaborative/planar_tables/ccdb_cher1273_verbal.json
+  planar_type    verbal                           from NonCollaborative/planar_tables/ccdb_cher1273_verbal.json
+  forest_axis    planar                           from NonCollaborative/planar_tables/ccdb_cher1273_verbal.json
   permutations   5000                             all four tests
 
 == Export ==
-/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_cher1273_verbal.tsv --groupings ccdb --root-position 12 --language-name 'Oklahoma Cherokee (verbal)' --planar-type verbal --forest-axis planar --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
+/Users/jcgood/gitrepos/planars/.venv/bin/python -m laminar.export_planarsviz_data --domain-file NonCollaborative/domains/domains_cher1273_verbal.tsv --groupings ccdb --root-position 12 --language-name 'Oklahoma Cherokee (verbal)' --planar-type verbal --forest-axis planar --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
 Exported planarsviz bundle: /Users/jcgood/gitrepos/planars/NonCollaborative/results/chart_data/cher1273_verbal
-Export finished in 29 s.
+Export finished in 30 s.
 
 == Render ==
-Rscript scripts/render_planarsviz.R --bundle results/chart_data/cher1273_verbal --output results
+Rscript laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data/cher1273_verbal --output NonCollaborative/results
 wrote cher1273_verbal/pooled/cher1273_verbal_pooled_plot.pdf
 wrote cher1273_verbal/pooled/cher1273_verbal_pooled_domainplot.pdf
 wrote cher1273_verbal/pooled/cher1273_verbal_pooled_plot_indeterminate.pdf
@@ -85,9 +85,9 @@ wrote cher1273_verbal/boundaries/cher1273_verbal_boundary_strength_test_level_mo
 wrote cher1273_verbal/boundaries/cher1273_verbal_boundary_strength.pdf
 wrote cher1273_verbal/boundaries/cher1273_verbal_boundary_strength_distributions.pdf
 wrote cher1273_verbal/boundaries/cher1273_verbal_boundary_strength_overlay.pdf
-71 files for 71 of 71 charts; manifest: results/cher1273_verbal_planarsviz_manifest.tsv
-Render finished in 34 s.
+71 files for 71 of 71 charts; manifest: NonCollaborative/results/cher1273_verbal/cher1273_verbal_planarsviz_manifest.tsv
+Render finished in 36 s.
 
-Bundle: results/chart_data/cher1273_verbal/   Charts: results/cher1273_verbal/
+Bundle: NonCollaborative/results/chart_data/cher1273_verbal/   Charts: NonCollaborative/results/cher1273_verbal/
 
-[batch] exit code 0 after 63 s
+[batch] exit code 0 after 67 s

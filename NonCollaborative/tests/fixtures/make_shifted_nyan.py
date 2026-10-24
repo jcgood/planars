@@ -17,20 +17,21 @@ unchanged; only facts a chart might have typed in are changed:
 Not to be confused with domains/domains_nyan1293_test.tsv, an older,
 unrelated test file.
 
-Usage (from NonCollaborative/):
-    python tests/fixtures/make_shifted_nyan.py
+Usage (from the repository root):
+    python NonCollaborative/tests/fixtures/make_shifted_nyan.py
 
 Writes tests/fixtures/domains_shifted_nyan.tsv, planar_shifted_nyan.tsv,
 display_labels_shifted_nyan.tsv, highlights_shifted_nyan.tsv and
-conflict_groups_shifted_nyan.tsv. Export its bundle with:
-    python scripts/analysis/export_planarsviz_data.py \\
-        --domain-file tests/fixtures/domains_shifted_nyan.tsv \\
-        --planar-file tests/fixtures/planar_shifted_nyan.tsv \\
-        --labels-file tests/fixtures/display_labels_shifted_nyan.tsv \\
-        --highlights-file tests/fixtures/highlights_shifted_nyan.tsv \\
-        --conflict-groups-file tests/fixtures/conflict_groups_shifted_nyan.tsv \\
+conflict_groups_shifted_nyan.tsv. Export its bundle (into
+NonCollaborative/results/chart_data/shifted_nyan/) with:
+    python -m laminar.export_planarsviz_data \\
+        --domain-file NonCollaborative/tests/fixtures/domains_shifted_nyan.tsv \\
+        --planar-file NonCollaborative/tests/fixtures/planar_shifted_nyan.tsv \\
+        --labels-file NonCollaborative/tests/fixtures/display_labels_shifted_nyan.tsv \\
+        --highlights-file NonCollaborative/tests/fixtures/highlights_shifted_nyan.tsv \\
+        --conflict-groups-file NonCollaborative/tests/fixtures/conflict_groups_shifted_nyan.tsv \\
         --language-name "Shifted test data" \\
-        --output-dir results/chart_data
+        --fragmentation-permutations 5000
 """
 
 import csv

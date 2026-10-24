@@ -197,8 +197,8 @@ def load_domain_dataframe(domain_file: str, domains_dir: str | None = None,
 
     Args:
         domain_file: TSV filename.
-        domains_dir: Directory containing the file. Defaults to ../../domains/
-                     relative to this script's location.
+        domains_dir: Directory containing the file. Defaults to
+                     NonCollaborative/domains/ (datasets.NC).
         skip_prefix: Rows whose Test_Labels starts with this character are
                      excluded. Handles the '#DummyRoot' convention used in
                      the CCDB data to mark synthetic placeholders.
@@ -210,7 +210,8 @@ def load_domain_dataframe(domain_file: str, domains_dir: str | None = None,
         from is present here, exactly once, with its own Domain_Type intact.
     """
     if domains_dir is None:
-        domains_dir = os.path.join(os.path.dirname(__file__), "..", "..", "domains")
+        from laminar.datasets import NC
+        domains_dir = NC / "domains"
 
     df = pd.read_csv(os.path.join(domains_dir, domain_file), sep="\t")
 
@@ -800,8 +801,8 @@ def main(domain_file: str = "domains_nyan1308.tsv",
 
     Args:
         domain_file: TSV filename inside domains_dir.
-        domains_dir: Path to the domains/ folder. Defaults to ../../domains/
-                     relative to this script's location.
+        domains_dir: Path to the domains/ folder. Defaults to
+                     NonCollaborative/domains/ (datasets.NC).
         subset:      List of Domain_Type strings to include (e.g.
                      ["morphosyntactic"]). None = all types.
         show_trees:  If True, print indented tree structure in Phase 3.
@@ -870,11 +871,11 @@ if __name__ == "__main__":
     #
     # This used to write the R scripts for every chart as well. The charts now
     # come from the planarsviz package, which draws from the bundle
-    # export_planarsviz_data.py writes -- run that, then scripts/
-    # render_planarsviz.R, to redraw them.
+    # export_planarsviz_data.py writes -- `python -m laminar charts <dataset>`
+    # runs both, to redraw them.
     import argparse
-    from datasets import add_dataset_arguments, dataset_name, dataset_groupings
-    from planars_groupings import GROUPINGS, observed_groups
+    from laminar.datasets import add_dataset_arguments, dataset_name, dataset_groupings
+    from laminar.planars_groupings import GROUPINGS, observed_groups
 
     parser = argparse.ArgumentParser(description="Print the laminar family report for one dataset.")
     add_dataset_arguments(parser, None)

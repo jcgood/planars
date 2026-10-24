@@ -1,7 +1,7 @@
 """Checks on the committed cross-language planarsviz bundle.
 
 The bundle is built only by reading the per-language bundles
-(scripts/analysis/export_cross_language.py; contract in
+(laminar/export_cross_language.py; contract in
 planarsviz/inst/data-contract.md, "Cross-language bundle"). These tests check
 that it still matches them -- every structure present once, no input bundle
 changed since -- and recompute a few of its numbers straight from two source
@@ -42,7 +42,7 @@ def test_every_structure_present_once_and_no_input_changed():
         path = CHART_DATA / entry["dataset"] / "data" / "metadata.json"
         assert hashlib.sha256(path.read_bytes()).hexdigest() == entry["metadata_sha256"], (
             f"{entry['dataset']}'s bundle changed after the cross-language bundle was written. Re-run:\n"
-            "    python scripts/analysis/export_cross_language.py --apply\n"
+            "    python -m laminar.export_cross_language --apply\n"
             "from NonCollaborative/, then redraw its charts."
         )
     for table in ("structures.tsv", "conflict_divide.tsv", "summary.tsv"):

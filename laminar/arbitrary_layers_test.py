@@ -56,13 +56,14 @@ Groups are planars_groupings.permutation_groups(), the same as
 span_placement_test.py's, in the same order. The order is load-bearing:
 run_test() advances one shared random stream across the groups in order.
 
-Outputs (under results/<dataset>/counts-and-chance/ by default):
-<dataset>_arbitrary_layers_test.tsv and <dataset>_arbitrary_layers_null_tally.tsv.
+Outputs (under NonCollaborative/results/<dataset>/counts-and-chance/ by
+default): <dataset>_arbitrary_layers_test.tsv and
+<dataset>_arbitrary_layers_null_tally.tsv.
 
-Run from NonCollaborative/ (the dataset, its groupings and its planar table
-follow from --domain-file, see datasets.py):
-  python scripts/analysis/arbitrary_layers_test.py
-  python scripts/analysis/arbitrary_layers_test.py --domain-file domains_chac1251_verbal.tsv
+Run from anywhere (the dataset, its groupings and its planar table follow
+from --domain-file, see datasets.py):
+  python -m laminar.arbitrary_layers_test
+  python -m laminar.arbitrary_layers_test --domain-file domains_chac1251_verbal.tsv
 """
 
 from __future__ import annotations
@@ -70,24 +71,20 @@ from __future__ import annotations
 import argparse
 import contextlib
 import csv
-import sys
 from collections import Counter
 from pathlib import Path
 
 import numpy as np
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-sys.path.insert(0, str(SCRIPT_DIR))
-
-import laminar_analysis  # noqa: E402
-from laminar_analysis import (  # noqa: E402
+from laminar import laminar_analysis
+from laminar.laminar_analysis import (
     Span,
     load_spans,
     find_conflicts,
     enumerate_maximal_laminar_families,
 )
-from planars_groupings import permutation_groups  # noqa: E402
-from datasets import add_dataset_arguments, resolve_dataset_arguments  # noqa: E402
+from laminar.planars_groupings import permutation_groups
+from laminar.datasets import add_dataset_arguments, resolve_dataset_arguments
 
 # Enough headroom that an arbitrary-interval draw is essentially never
 # truncated. The scratch work this grew out of found draws into the high

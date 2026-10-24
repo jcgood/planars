@@ -7,16 +7,16 @@ conflict groups, tree counts and boundary strength.
 planarsviz draws; it does not analyse. The analysis — loading domain spans,
 finding conflicts, enumerating maximal laminar families, choosing
 representative families — stays in Python
-(`scripts/analysis/laminar_analysis.py` and its companions). A small
+(`laminar/laminar_analysis.py` and its companions, in the `laminar/` package at the repo root). A small
 exporter writes the results into a **data bundle**, a folder of plain TSV and
 JSON files, and every chart function in this package reads that bundle.
 
 ```
 domains_<dataset>.tsv ─┐
-planar_<dataset>.tsv  ─┼─► export_planarsviz_data.py ─► results/chart_data/<dataset>/data/
+planar_<dataset>.tsv  ─┼─► laminar/export_planarsviz_data.py ─► NonCollaborative/results/chart_data/<dataset>/data/
 optional settings     ─┘                                          │
                                                                   ▼
-                                   R: read_planars_bundle() ─► plot_*() ─► render_planarsviz.R
+                              R: read_planars_bundle() ─► plot_*() ─► laminar/render_planarsviz.R
 ```
 
 Facts about a language — how many positions, where the root is, position
@@ -34,7 +34,7 @@ done — nothing under `NonCollaborative/` writes a chart any other way. The
 scripts this package replaced are archived in
 `OlderFiles/planarsviz_superseded/`, where the porting checks still run them
 to prove the two draw the same thing, and must not be deleted. The porting
-record is `docs/PLANARSVIZ_LIBRARY_PROGRESS.md`.
+record is `NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`.
 
 ## Requirements
 
@@ -44,24 +44,27 @@ record is `docs/PLANARSVIZ_LIBRARY_PROGRESS.md`.
 - `pdftoppm` (poppler) if you want PNG output from the renderer.
 
 Those are the packages the code needs. Which *versions* it was checked
-against is a separate question, and `NonCollaborative/renv.lock` answers it —
+against is a separate question, and `renv.lock` at the repo root answers it —
 see "Package versions" in
-[`docs/planarsviz_guide.md`](../../docs/planarsviz_guide.md).
+[`NonCollaborative/docs/planarsviz_guide.md`](../NonCollaborative/docs/planarsviz_guide.md).
 
 ## Quick start
 
-From `NonCollaborative/`:
+From the repo root:
 
 ```sh
-# 1. Export a bundle
-python scripts/analysis/export_planarsviz_data.py \
-    --domain-file domains/domains_nyan1308.tsv \
-    --planar-file planar_tables/planar_nyan1308.tsv \
+# 1. Export a bundle (this step runs from anywhere)
+python -m laminar.export_planarsviz_data \
+    --domain-file NonCollaborative/domains/domains_nyan1308.tsv \
+    --planar-file NonCollaborative/planar_tables/planar_nyan1308.tsv \
     --language-name Chichewa
 
 # 2. Render every chart the bundle supports
-Rscript scripts/render_planarsviz.R --bundle results/chart_data/nyan1308 --formats pdf,png
+Rscript laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data/nyan1308 \
+    --output NonCollaborative/results --formats pdf,png
 ```
+
+(`python -m laminar charts nyan1308 --apply` does both steps.)
 
 Or draw one chart in R:
 
@@ -69,7 +72,7 @@ Or draw one chart in R:
 install.packages("planarsviz", repos = NULL, type = "source")
 library(planarsviz)
 
-bundle <- read_planars_bundle("results/chart_data/nyan1308")
+bundle <- read_planars_bundle("NonCollaborative/results/chart_data/nyan1308")
 p <- plot_pooled(bundle, domain_types = "phonological")
 size <- attr(p, "planarsviz_size")
 ggplot2::ggsave("phonological.pdf", p, width = size[["width"]],
@@ -82,9 +85,9 @@ its intended canvas size attached as `planarsviz_size` and
 
 ## Documentation
 
-- **User guide** — `docs/planarsviz_guide.md`: exporting, drawing,
+- **User guide** — `NonCollaborative/docs/planarsviz_guide.md`: exporting, drawing,
   rendering, adding a language, the settings files, and checking charts.
-- **Chart catalogue** — `docs/planarsviz_charts.md`: every chart, what it
+- **Chart catalogue** — `NonCollaborative/docs/planarsviz_charts.md`: every chart, what it
   shows, the call that draws it, its options and an example.
 - **Bundle contents** — `inst/data-contract.md`: every file the exporter
   writes and what each column means.

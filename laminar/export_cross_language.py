@@ -64,9 +64,9 @@ which gives the p-value (share between >= observed; 5000 shuffles, seed 0,
 by default). Synthetic spans (a full-structure span the exporter adds when a
 structure has none) are left out; they never conflict.
 
-Usage (from NonCollaborative/):
-    python scripts/analysis/export_cross_language.py            # dry run
-    python scripts/analysis/export_cross_language.py --apply
+Usage (from anywhere):
+    python -m laminar.export_cross_language            # dry run
+    python -m laminar.export_cross_language --apply
 """
 
 from __future__ import annotations
@@ -77,16 +77,12 @@ import hashlib
 import json
 import math
 import random
-import sys
 import unicodedata
 from itertools import combinations
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_DIR = SCRIPT_DIR.parents[1]
-sys.path.insert(0, str(SCRIPT_DIR))
-
-from planars_groupings import GROUPINGS  # noqa: E402
+from laminar.datasets import NC
+from laminar.planars_groupings import GROUPINGS
 
 CONTRACT_VERSION = 1
 DATASET = "cross_language"
@@ -171,7 +167,7 @@ def load(bundle_dir):
 def structure_row(b):
     m = b["meta"]
     ds = m["dataset"]
-    ccdb_json = REPO_DIR / "planar_tables" / f"ccdb_{ds}.json"
+    ccdb_json = NC / "planar_tables" / f"ccdb_{ds}.json"
     if ccdb_json.exists():
         ccdb = json.loads(ccdb_json.read_text())
         # The CCDB import files hold names with accents as separate combining
@@ -471,7 +467,7 @@ def summary_markdown(rows, pooled):
         "`p placement` / `p layers`: one-sided p-value that chance gives as few families as observed, on the",
         "span-placement and arbitrary-layers nulls. `Confl. betw.`: conflicting span pairs that fall wholly",
         "across the morphosyntax/phonology divide. * = not from CCDB (Chichewa).",
-        "Written by scripts/analysis/export_cross_language.py; do not edit by hand.",
+        "Written by laminar/export_cross_language.py; do not edit by hand.",
         "",
         "| " + " | ".join(h for _k, h in SUMMARY_COLUMNS) + " |",
         "|" + "|".join("---" for _ in SUMMARY_COLUMNS) + "|",
@@ -492,7 +488,7 @@ def summary_latex(rows):
     head = " & ".join(tex_escape(h) for _k, h in SUMMARY_COLUMNS)
     body = [" & ".join(tex_escape(cell(r, k)) for k, _h in SUMMARY_COLUMNS) + r" \\" for r in rows]
     return "\n".join([
-        "% Written by scripts/analysis/export_cross_language.py; do not edit by hand.",
+        "% Written by laminar/export_cross_language.py; do not edit by hand.",
         r"\begin{tabular}{l" + "r" * (len(SUMMARY_COLUMNS) - 1) + "}",
         r"\hline",
         head + r" \\",
@@ -506,8 +502,8 @@ def summary_latex(rows):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--apply", action="store_true", help="Write the bundle (default: dry run).")
-    parser.add_argument("--chart-data", type=Path, default=REPO_DIR / "results" / "chart_data")
-    parser.add_argument("--tables-dir", type=Path, default=REPO_DIR / "results" / DATASET,
+    parser.add_argument("--chart-data", type=Path, default=NC / "results" / "chart_data")
+    parser.add_argument("--tables-dir", type=Path, default=NC / "results" / DATASET,
                         help="Where the Markdown and LaTeX summary tables go.")
     parser.add_argument("--shuffles", type=int, default=5000, help="Label shuffles for chart C (default 5000).")
     parser.add_argument("--seed", type=int, default=0)
@@ -540,7 +536,7 @@ def main():
     metadata = {
         "contract_version": CONTRACT_VERSION,
         "dataset": DATASET,
-        "producer": "scripts/analysis/export_cross_language.py",
+        "producer": "laminar/export_cross_language.py",
         "n_structures": len(structures),
         "inputs": [{"dataset": ds, "metadata_sha256": bundles[ds]["meta_sha256"]} for ds in sorted(bundles)],
         "sides": {g: {role: {"group": grp, "domain_types": types} for role, (grp, types) in s.items()}

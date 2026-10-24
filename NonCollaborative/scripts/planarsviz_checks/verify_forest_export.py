@@ -23,14 +23,12 @@ import csv
 import io
 import json
 import re
-import sys
 from pathlib import Path
 
 from superseded import superseded
 
 NC = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(NC / "scripts" / "analysis"))
-DATA = NC / "results" / "chart_data" / "nyan1308" / "data"
+DATA =NC / "results" / "chart_data" / "nyan1308" / "data"
 ok = True
 
 
@@ -70,7 +68,7 @@ for meta in index:
             fail(f"{fid} tree {i + 1}: strengths differ")
 
 # BUNDLES refactor check
-import laminar_tree_counts as ltc  # noqa: E402
+from laminar import laminar_tree_counts as ltc  # noqa: E402
 
 with contextlib.redirect_stdout(io.StringIO()):
     bundle_rows = ltc.collect_bundle_counts("domains_nyan1308.tsv", NC / "domains")

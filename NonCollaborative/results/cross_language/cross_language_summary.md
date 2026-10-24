@@ -4,7 +4,7 @@ One row per structure. Positions in the last two columns are relative to the roo
 `p placement` / `p layers`: one-sided p-value that chance gives as few families as observed, on the
 span-placement and arbitrary-layers nulls. `Confl. betw.`: conflicting span pairs that fall wholly
 across the morphosyntax/phonology divide. * = not from CCDB (Chichewa).
-Written by scripts/analysis/export_cross_language.py; do not edit by hand.
+Written by laminar/export_cross_language.py; do not edit by hand.
 
 | Structure | Pos. | Tests | Spans | Fam. | Fam. syn. | Fam. phon. | p placement | p layers | Confl. betw. | Confl. | Strongest edge | Top span |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|

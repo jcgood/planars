@@ -25,10 +25,9 @@ import re
 import sys
 from pathlib import Path
 
-NC = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(NC / "scripts" / "exploratory"))
+from laminar.catalan import sample_labeled_tree
 
-from catalan import sample_labeled_tree  # noqa: E402
+NC = Path(__file__).resolve().parents[2]
 
 DATA = NC / "results" / "chart_data" / "illustrations" / "data"
 ok = True

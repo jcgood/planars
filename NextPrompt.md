@@ -25,11 +25,13 @@ Six live threads. Read whichever matches what you're picking up.
 The Chichewa/CCDB analysis and charts move out of `NonCollaborative/` into
 the main repo and run on any planars language, English first. **Plan and
 Jeff's decisions: `docs/laminar-analysis-plan.md`** (don't re-ask them);
-**state: `docs/laminar-analysis-progress.md`**. Phase 1 done
-(2026-10-24). **Next action:** Phase 2, moving the code into `laminar/`
-and `planarsviz/` to the repo root. Jeff's cuts to the cross-language
-charts (CCDB thread below) go before Phase 2 or after it, not during: ask
-him which before starting.
+**state: `docs/laminar-analysis-progress.md`**. Phases 1 and 2 done
+(2026-10-24): the analysis is `laminar/` at the repo root
+(`python -m laminar charts <dataset>`), with `planarsviz/` and renv beside
+it. **Next action:** Phase 3, the adapter that builds English's span table
+from `planars.reports.language_spans`. Jeff's cuts to the cross-language
+charts (CCDB thread below) come after Phase 2 (his call, 2026-10-24), so
+they can go in now or between later phases, not in the middle of one.
 
 ### Thread: reviewing the span rules with Adam (Jeff told Adam, 2026-10-22)
 
@@ -211,10 +213,10 @@ decisions, §7 which parts go to Sonnet subagents). The chart package itself
 is finished; its record is `PLANARSVIZ_LIBRARY_PROGRESS.md`, and how to use
 it is `planarsviz_guide.md` and `planarsviz_charts.md`.
 
-**Everything under `NonCollaborative/` runs from `NonCollaborative/`.** This
-matters for the exporter specifically: it records the domain file's path as
-given, so running it from the repo root writes a bundle that differs from the
-committed one in that field.
+**The analysis and charts now run from anywhere** (`python -m laminar ...`;
+the renderer from the repo root). A bundle records its inputs relative to
+the repo root, so where you run it no longer changes the bundle. The porting
+checks still run from `NonCollaborative/`.
 
 ### Next action: charts and summaries across languages
 
@@ -233,10 +235,14 @@ A bug with one obviously right fix is not a question: fix it and report it.
 
 ### Things that will bite
 
-- **A full bundle re-export needs all four permutation flags together** —
-  `--fragmentation-permutations 5000 --boundary-strength-test-permutations 5000
-  --span-placement-permutations 5000 --arbitrary-layers-permutations 5000` —
-  or the tables left un-asked-for drop out of the bundle. It takes ~11 minutes.
+- **A full bundle re-export needs all four permutation tests**, or the tables
+  left un-asked-for drop out of the bundle. `python -m laminar charts
+  <dataset> --apply` passes all four (5000 draws); nyan1308 takes ~11
+  minutes, all 21 CCDB structures (`--ccdb`) ~8.
+- **Redrawn PDFs always show as modified**: R stamps the date in each, and
+  the Quartz-drawn ones (IPA labels) differ in internal details too. Compare
+  as images before committing; if the pictures are identical, restore the
+  committed PDFs with `git checkout`.
 - **After any re-export, `git status` on `results/chart_data/<dataset>/` is the
   check that matters.** Every committed bundle file should come back
   byte-identical except what you meant to change. That settles in seconds what
@@ -273,7 +279,7 @@ A bug with one obviously right fix is not a question: fix it and report it.
   behind, those tests *skip* rather than fail, so a green local run can be
   hollow: pull `coded_data/` first. Change that data only with
   `python -m coding capture-drive-state --apply`, never by hand.
-- **An untracked or modified file under `planarsviz/` jams the roxygen
+- **An untracked or modified file under `planarsviz/` (now at the repo root) jams the roxygen
   pre-push guard.** Check the guard passes on its own rather than reaching for
   `--no-verify`, which has silently disarmed it before.
 - **R's cairo devices don't work on this Mac** (they need XQuartz, and fail

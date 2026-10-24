@@ -21,7 +21,7 @@ that last ran, so this test would fail every time someone runs it with a
 newer roxygen2 even when nothing in `R/` actually changed. That line is
 not something the drift check needs to care about.
 
-Both R calls below run from `NonCollaborative/`, and that is not incidental.
+Both R calls below run from the repository root, and that is not incidental.
 The `.Rprofile` there is what points R at the versions `renv.lock` pins,
 roxygen2 among them. Run from anywhere else, R would fall back to whatever
 is installed on the machine -- and on a machine that only ran
@@ -37,8 +37,8 @@ from pathlib import Path
 
 import pytest
 
-NC_ROOT = Path(__file__).parents[1]
-PACKAGE_DIR = NC_ROOT / "planarsviz"
+REPO_ROOT = Path(__file__).parents[2]
+PACKAGE_DIR = REPO_ROOT / "planarsviz"
 
 RSCRIPT = shutil.which("Rscript")
 
@@ -49,7 +49,7 @@ def _roxygen2_available():
     result = subprocess.run(
         [RSCRIPT, "-e", 'quit(status = !requireNamespace("roxygen2", quietly=TRUE))'],
         capture_output=True,
-        cwd=NC_ROOT,
+        cwd=REPO_ROOT,
     )
     return result.returncode == 0
 
@@ -72,7 +72,7 @@ def test_namespace_and_man_match_roxygen2_output():
             [RSCRIPT, "-e", 'roxygen2::roxygenise("%s")' % scratch_package],
             capture_output=True,
             text=True,
-            cwd=NC_ROOT,
+            cwd=REPO_ROOT,
         )
         assert result.returncode == 0, (
             "roxygen2::roxygenise() failed to run against a scratch copy of "
@@ -85,7 +85,7 @@ def test_namespace_and_man_match_roxygen2_output():
             "planarsviz/NAMESPACE does not match what roxygen2 generates from "
             "the #' comments in planarsviz/R/*.R right now. Someone edited a "
             "roxygen comment (an @export, @import, or similar tag) without "
-            "re-running roxygen2 afterward. Fix: from NC, run\n"
+            "re-running roxygen2 afterward. Fix: from the repository root, run\n"
             '    Rscript -e \'roxygen2::roxygenise("planarsviz")\'\n'
             "then commit the updated NAMESPACE."
         )
@@ -102,7 +102,7 @@ def test_namespace_and_man_match_roxygen2_output():
             "roxygen2 generates from R/ right now.\n"
             + ("Help pages roxygen2 would add: %s\n" % ", ".join(missing) if missing else "")
             + ("Help pages committed but no longer generated: %s\n" % ", ".join(extra) if extra else "")
-            + "Fix: from NC, run\n"
+            + "Fix: from the repository root, run\n"
             '    Rscript -e \'roxygen2::roxygenise("planarsviz")\'\n'
             "then commit the result (including any man/ files it deletes or adds)."
         )
@@ -115,7 +115,7 @@ def test_namespace_and_man_match_roxygen2_output():
             "The following planarsviz/man/ help pages are out of date with the "
             "#' comments in planarsviz/R/*.R: " + ", ".join(differing) + ". "
             "Someone edited a roxygen comment (an @param, @return, description, "
-            "or similar tag) without re-running roxygen2 afterward. Fix: from NC, run\n"
+            "or similar tag) without re-running roxygen2 afterward. Fix: from the repository root, run\n"
             '    Rscript -e \'roxygen2::roxygenise("planarsviz")\'\n'
             "then commit the updated man/ files."
         )

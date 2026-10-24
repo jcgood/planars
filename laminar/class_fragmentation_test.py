@@ -64,12 +64,13 @@ Outputs (under results/<dataset>/counts-and-chance/ by default):
                                                rather than needing R to
                                                re-run the permutation itself.
 
-Usage (from NonCollaborative/; the dataset, its groupings and its planar
-table follow from --domain-file, see datasets.py):
-  python scripts/analysis/class_fragmentation_test.py
-  python scripts/analysis/class_fragmentation_test.py --domain-file domains_chac1251_verbal.tsv
+Usage (from anywhere; the dataset, its groupings and its planar table
+follow from --domain-file, see datasets.py):
+  python -m laminar.class_fragmentation_test
+  python -m laminar.class_fragmentation_test --domain-file domains_chac1251_verbal.tsv
 
-The plain command reproduces the committed results/nyan1308/counts-and-chance/
+The plain command reproduces the committed
+NonCollaborative/results/nyan1308/counts-and-chance/
 files exactly (5000 draws, seed 0). Both summary TSVs record the draw count and
 seed that made them, so a file can always say where its p-values came from.
 """
@@ -78,24 +79,20 @@ from __future__ import annotations
 
 import argparse
 import csv
-import sys
 from pathlib import Path
 
 import numpy as np
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-sys.path.insert(0, str(SCRIPT_DIR))
-
-from laminar_analysis import (  # noqa: E402
+from laminar.laminar_analysis import (
     load_domain_dataframe,
     load_spans,
     aggregate_spans,
     find_conflicts,
     enumerate_maximal_laminar_families,
 )
-from planars_groupings import GROUPINGS, permutation_groups  # noqa: E402
-from laminar_tree_counts import CLASS_COLORS  # noqa: E402  (single source of truth for class colors)
-from datasets import add_dataset_arguments, resolve_dataset_arguments  # noqa: E402
+from laminar.planars_groupings import GROUPINGS, permutation_groups
+from laminar.laminar_tree_counts import CLASS_COLORS  # single source of truth for class colors
+from laminar.datasets import add_dataset_arguments, resolve_dataset_arguments
 
 # group name -> house-style color, every class and every grouping's bundles,
 # so the R plot doesn't need its own copy of either palette.

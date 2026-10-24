@@ -28,7 +28,7 @@ questions, both computed here because it is an open empirical question
 whether every constituent must ultimately be binary:
 
   little Schroder number for the node's arity (A001003, "super-Catalan" in
-  this project's own usage, see scripts/exploratory/catalan.py) -- counts
+  this project's own usage, see catalan.py) -- counts
   every way of resolving that node at ANY remaining level of vagueness,
   including refinements that still leave part of it flatter than fully
   binary. This is what "refinements"/"hidden completions" meant everywhere
@@ -48,13 +48,13 @@ neutral default. Both are computed side by side rather than picking one.
 Summing a family's total across all families (rather than needing to
 deduplicate) is safe under EITHER convention: the same injective-completion
 argument that proved distinct maximal families can't share a fully-binary
-completion (see REFERENCES.md's Catalan-ceiling proof) works unchanged for
+completion (see NonCollaborative/REFERENCES.md's Catalan-ceiling proof) works unchanged for
 ANY shared refinement, binary or not -- if two different maximal families
 both refined into some common tree T (fully resolved or not), all of their
 spans together would have to be pairwise compatible, contradicting
 maximality unless the two families were the same to begin with.
 
-Outputs (under results/<dataset>/laminar-families/ by default; the dataset
+Outputs (under NonCollaborative/results/<dataset>/laminar-families/ by default; the dataset
 is named after --domain-file):
   <dataset>_refinement_counts.tsv       -- one row per family: n_spans,
                                            n_polytomies, max_arity,
@@ -68,8 +68,8 @@ is named after --domain-file):
                                            trusting the aggregate product.
 
 Usage:
-  python scripts/analysis/refinement_counts.py
-  python scripts/analysis/refinement_counts.py --subset morphosyntactic,length
+  python -m laminar.refinement_counts
+  python -m laminar.refinement_counts --subset morphosyntactic,length
 """
 
 from __future__ import annotations
@@ -77,15 +77,9 @@ from __future__ import annotations
 import argparse
 import csv
 import math
-import sys
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-EXPLORATORY_DIR = SCRIPT_DIR.parent / "exploratory"
-sys.path.insert(0, str(SCRIPT_DIR))
-sys.path.insert(0, str(EXPLORATORY_DIR))
-
-from laminar_analysis import (  # noqa: E402
+from laminar.laminar_analysis import (
     Span,
     load_spans,
     find_conflicts,
@@ -93,8 +87,8 @@ from laminar_analysis import (  # noqa: E402
     build_parent_map,
     get_children,
 )
-from catalan import all_trees_new  # noqa: E402  (little Schroder numbers, A001003)
-from datasets import add_dataset_arguments, resolve_dataset_arguments  # noqa: E402
+from laminar.catalan import all_trees_new  # little Schroder numbers, A001003
+from laminar.datasets import add_dataset_arguments, resolve_dataset_arguments
 
 
 def catalan_number(n_leaves: int) -> int:

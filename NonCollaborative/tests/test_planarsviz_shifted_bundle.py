@@ -1,15 +1,7 @@
 """The shifted nyan1308 bundle must have exactly nyan1308's structure, moved.
 
 docs/PLAN_planarsviz_library.md section 10.2. Build and export it first:
-    python tests/fixtures/make_shifted_nyan.py
-    python scripts/analysis/export_planarsviz_data.py \
-        --domain-file tests/fixtures/domains_shifted_nyan.tsv \
-        --planar-file tests/fixtures/planar_shifted_nyan.tsv \
-        --labels-file tests/fixtures/display_labels_shifted_nyan.tsv \
-        --highlights-file tests/fixtures/highlights_shifted_nyan.tsv \
-        --conflict-groups-file tests/fixtures/conflict_groups_shifted_nyan.tsv \
-        --language-name "Shifted test data" \
-        --output-dir results/chart_data
+the two commands are in tests/fixtures/make_shifted_nyan.py's docstring.
 """
 
 import csv

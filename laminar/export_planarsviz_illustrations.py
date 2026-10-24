@@ -7,7 +7,7 @@ docs/PLANARSVIZ_LIBRARY_PROGRESS.md): the library's rule is "Python computes,
 R draws from a data folder," and these have data, just no language.
 
 Three tables, reusing the already-verified counting/enumeration code in
-scripts/exploratory/catalan.py rather than re-deriving any of it:
+catalan.py rather than re-deriving any of it:
 
 - `tree_shapes.tsv`: every distinct rooted ordered n-ary tree shape (each
   internal node >=2 children) for n=2..4 leaves (exhaustive: 1, 3, 11 shapes),
@@ -17,7 +17,7 @@ scripts/exploratory/catalan.py rather than re-deriving any of it:
 - `tree_count_growth.tsv`: Catalan numbers (binary trees) and little Schröder
   numbers / OEIS A001003 (n-ary trees), both reindexed by leaf count so they
   share one x axis, for n=1..--tree-counts-max-n. Both formulas verified
-  against results/nyan1308/counts-and-chance/tree_counting_equations.tex
+  against NonCollaborative/results/nyan1308/counts-and-chance/tree_counting_equations.tex
   before catalan.py's catalan_number() existed to compute them. Named
   differently from the per-language bundle's own tree_counts.tsv (laminar
   family counts by class) on purpose -- same word, unrelated schema, and this
@@ -34,8 +34,8 @@ scripts/exploratory/catalan.py rather than re-deriving any of it:
   checked. Recorded in metadata.json's `random_trees.seed`.
 
 Usage:
-    python scripts/analysis/export_planarsviz_illustrations.py
-    python scripts/analysis/export_planarsviz_illustrations.py --seed 7 --n-random-trees 300
+    python -m laminar.export_planarsviz_illustrations
+    python -m laminar.export_planarsviz_illustrations --seed 7 --n-random-trees 300
 """
 
 from __future__ import annotations
@@ -43,14 +43,10 @@ from __future__ import annotations
 import argparse
 import json
 import random
-import sys
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_DIR = SCRIPT_DIR.parents[1]
-sys.path.insert(0, str(REPO_DIR / "scripts" / "exploratory"))
-
-from catalan import (  # noqa: E402
+from laminar.datasets import NC
+from laminar.catalan import (
     all_trees_new,
     catalan_number,
     enumerate_trees,
@@ -124,7 +120,7 @@ def write_tsv(rows, path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results" / "chart_data")
+    parser.add_argument("--output-dir", type=Path, default=NC / "results" / "chart_data")
     parser.add_argument(
         "--tree-counts-max-n", type=int, default=15,
         help="Largest leaf count in tree_count_growth.tsv (default: 15 -- both sequences "

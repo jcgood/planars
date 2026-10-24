@@ -13,12 +13,11 @@ PyYAML
 ruamel.yaml    # edits diagnostics_{lang_id}.yaml keeping its comments and layout (#315) -- coordinator-only
 weasyprint>=70.0   # 70.0 fixes GHSA-jf6q-chmf-3h3v (SSRF) and clears GHSA-jhhc-3hcp-qhm5
 
-# NonCollaborative/ analysis scripts (imported directly there)
-matplotlib       # tree-count and boundary-strength charts
-networkx         # laminar-family verification scripts
+# laminar/ (the analysis) and the NonCollaborative/ scripts that check it
+networkx         # laminar-family verification scripts (NonCollaborative/scripts/verification/)
 numpy
 pillow           # planarsviz image checks
-scipy            # weighted density in scripts/analysis/boundary_strength.py (distributions chart)
+scipy            # checks laminar's weighted density against scipy's (verify_boundary_density.py)
 
 # Needed at runtime but not directly imported
 kaleido          # plotly image/PDF export backend

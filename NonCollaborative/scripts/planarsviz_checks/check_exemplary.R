@@ -25,7 +25,7 @@ source("scripts/planarsviz_checks/superseded.R")
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
 status <- system2("R", c("CMD", "INSTALL", "--no-test-load", paste0("--library=", lib),
-                         "planarsviz"), stdout = FALSE, stderr = FALSE)
+                         file.path("..", "planarsviz")), stdout = FALSE, stderr = FALSE)
 if (status != 0) stop("R CMD INSTALL failed")
 suppressPackageStartupMessages({
   library(planarsviz, lib.loc = lib)
@@ -84,10 +84,12 @@ if (!library_only) {
   pooled_src <- readLines(superseded("scripts", "domain_charts-cgpt.r"))
   # Name the domains file outright instead of letting the archived script's
   # here() look it up. here() used to land on the planars repo root, which is
-  # what that script's own comment says it relies on; since renv arrived it
-  # lands on NonCollaborative/ instead, because rprojroot counts an renv
-  # project as a project root, so the lookup built a doubled path and the
-  # script died before drawing anything. check_pooled.R already substitutes
+  # what that script's own comment says it relies on; while renv was set up in
+  # NonCollaborative/ (2026-09-22 to 2026-10-24) it landed there instead,
+  # because rprojroot counts an renv project as a project root, so the lookup
+  # built a doubled path and the script died before drawing anything. renv is
+  # at the root again now, but naming the file keeps this check independent of
+  # where here() lands. check_pooled.R already substitutes
   # this same line of this same script for its own reasons -- this is that
   # substitution, not a new idea. The file read is identical either way.
   data_line <- grep("^domains <- read_tsv\\(here", pooled_src)

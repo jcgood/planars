@@ -2,7 +2,7 @@
 
 For the illustrations bundle (docs/PLANARSVIZ_LIBRARY_PROGRESS.md, phase E):
 data/tree_shapes.tsv should have exactly the shapes
-scripts/exploratory/catalan.py's enumerate_trees() produces, in the same
+laminar/catalan.py's enumerate_trees() produces, in the same
 order, for n=2..4 (exhaustive) and the first 15 of n=5's 45. And
 data/tree_count_growth.tsv's two count columns should equal catalan_number()
 and all_trees_new() computed directly, for every n in the bundle.
@@ -15,10 +15,9 @@ import csv
 import sys
 from pathlib import Path
 
-NC = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(NC / "scripts" / "exploratory"))
+from laminar.catalan import all_trees_new, catalan_number, enumerate_trees
 
-from catalan import all_trees_new, catalan_number, enumerate_trees  # noqa: E402
+NC = Path(__file__).resolve().parents[2]
 
 DATA = NC / "results" / "chart_data" / "illustrations" / "data"
 ok = True

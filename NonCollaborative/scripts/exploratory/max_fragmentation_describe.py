@@ -9,9 +9,7 @@ layer count of 25. nyan1308 has 26 domains, and the search was corrected to
 match on 2026-09-22, so re-run the search and paste its new best in before
 reading anything into this at 26 layers.
 """
-import sys
-sys.path.insert(0, "/Users/jcgood/gitrepos/planars/NonCollaborative/scripts/analysis")
-from laminar_analysis import Span, find_conflicts, enumerate_maximal_laminar_families
+from laminar.laminar_analysis import Span, find_conflicts, enumerate_maximal_laminar_families
 
 N_POSITIONS = 22
 SPANS = [(1, 5), (1, 17), (1, 19), (1, 21), (1, 22), (2, 3), (2, 7), (2, 18), (3, 4), (5, 8),

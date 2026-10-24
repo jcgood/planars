@@ -1,7 +1,7 @@
 """Exploratory: how fragmented can a covering of N layers get?
 
 **Part (B) of this file is superseded.** The chance-baseline question it
-answered is now scripts/analysis/arbitrary_layers_test.py, a proper test with
+answered is now laminar/arbitrary_layers_test.py, a proper test with
 committed TSVs, bundle tables and a chart. What is still only here is part
 (A), the search for a maximally fragmented covering, which is a search for a
 bound rather than a hypothesis test and so does not fit that shape.
@@ -68,15 +68,11 @@ from __future__ import annotations
 import random
 import sys
 import time
-from pathlib import Path
 
-PROJECT_ANALYSIS_DIR = Path("/Users/jcgood/gitrepos/planars/NonCollaborative/scripts/analysis")
-sys.path.insert(0, str(PROJECT_ANALYSIS_DIR))
-
-import laminar_analysis  # noqa: E402
+from laminar import laminar_analysis
 laminar_analysis.MAX_FAMILIES = 50_000  # see module docstring above
 
-from laminar_analysis import Span, find_conflicts, enumerate_maximal_laminar_families  # noqa: E402
+from laminar.laminar_analysis import Span, find_conflicts, enumerate_maximal_laminar_families  # noqa: E402
 
 N_POSITIONS = 22
 N_FREE = 25  # + the fixed root = 26 total layers, matching nyan1308's 26 domains

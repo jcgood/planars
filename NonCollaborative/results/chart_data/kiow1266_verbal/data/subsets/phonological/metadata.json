@@ -13,7 +13,7 @@
   "n_positions": 39,
   "n_unique_spans": 8,
   "n_universal_spans": 2,
-  "source_domain_file": "domains/domains_kiow1266_verbal.tsv",
+  "source_domain_file": "NonCollaborative/domains/domains_kiow1266_verbal.tsv",
   "source_domain_sha256": "99c84a032b69a1ae86ffd1a50aa978b43e8e586236ce2e06c995b15c40d60522",
   "subset_id": "phonological",
   "synthetic_root": true

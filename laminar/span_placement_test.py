@@ -75,33 +75,29 @@ Outputs (under results/<dataset>/counts-and-chance/ by default):
                                               of every group's null
                                               distribution
 
-Usage (from NonCollaborative/; the dataset, its groupings and its planar
-table follow from --domain-file, see datasets.py):
-  python scripts/analysis/span_placement_test.py
-  python scripts/analysis/span_placement_test.py --domain-file domains_chac1251_verbal.tsv
+Usage (from anywhere; the dataset, its groupings and its planar table
+follow from --domain-file, see datasets.py):
+  python -m laminar.span_placement_test
+  python -m laminar.span_placement_test --domain-file domains_chac1251_verbal.tsv
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
-import sys
 from collections import Counter
 from pathlib import Path
 
 import numpy as np
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-sys.path.insert(0, str(SCRIPT_DIR))
-
-from laminar_analysis import (  # noqa: E402
+from laminar.laminar_analysis import (
     Span,
     load_spans,
     find_conflicts,
     enumerate_maximal_laminar_families,
 )
-from planars_groupings import permutation_groups  # noqa: E402
-from datasets import add_dataset_arguments, resolve_dataset_arguments  # noqa: E402
+from laminar.planars_groupings import permutation_groups
+from laminar.datasets import add_dataset_arguments, resolve_dataset_arguments
 
 
 def random_replicate(sizes: list[int], n_positions: int, rng: np.random.Generator) -> list[Span]:

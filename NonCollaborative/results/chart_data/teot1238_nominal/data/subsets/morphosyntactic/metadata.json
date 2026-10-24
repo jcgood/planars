@@ -13,7 +13,7 @@
   "n_positions": 20,
   "n_unique_spans": 4,
   "n_universal_spans": 1,
-  "source_domain_file": "domains/domains_teot1238_nominal.tsv",
+  "source_domain_file": "NonCollaborative/domains/domains_teot1238_nominal.tsv",
   "source_domain_sha256": "898ff4743b0b56c28e402e25d4dc56365821411afb67e2cee53f56befadcc22f",
   "subset_id": "morphosyntactic",
   "synthetic_root": true

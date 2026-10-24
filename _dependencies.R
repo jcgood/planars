@@ -2,7 +2,7 @@
 #
 # renv works out what to pin by reading every R file for library() calls.
 # That misses tools invoked from outside R -- and roxygen2 is one:
-# tests/test_roxygen_up_to_date.py runs it through Rscript to check that the
+# NonCollaborative/tests/test_roxygen_up_to_date.py runs it through Rscript to check that the
 # package's NAMESPACE and man/ still match what the roxygen comments in
 # planarsviz/R/ would generate.
 #

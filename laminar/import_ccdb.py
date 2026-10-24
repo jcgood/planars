@@ -64,10 +64,10 @@ each file is new, unchanged, or would change, without touching disk.
 (no partial files for it); every other structure is still processed.
 
 Usage:
-    python scripts/analysis/import_ccdb.py                  # dry run, all 21
-    python scripts/analysis/import_ccdb.py --apply
-    python scripts/analysis/import_ccdb.py --planar-id chac1251_verbal --apply
-    python scripts/analysis/import_ccdb.py --ccdb-dir /path/to/clone
+    python -m laminar.import_ccdb                  # dry run, all 21
+    python -m laminar.import_ccdb --apply
+    python -m laminar.import_ccdb --planar-id chac1251_verbal --apply
+    python -m laminar.import_ccdb --ccdb-dir /path/to/clone
 
 Refuses to run (clear message, exit code 1, nothing written) if the clone
 has uncommitted changes to ``domains.tsv``, ``planar.tsv`` or
@@ -90,8 +90,7 @@ from pathlib import Path
 
 import pandas as pd
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_DIR = SCRIPT_DIR.parents[1]
+from laminar.datasets import NC
 
 DEFAULT_CCDB_DIR = Path.home() / "gitrepos" / "Constituency-Database"
 DOMAINS_RELPATH = "domains.tsv"
@@ -99,8 +98,8 @@ PLANAR_RELPATH = "planar.tsv"
 OVERLAPS_RELPATH = "input/overlaps.tsv"
 DATA_RELPATHS = [DOMAINS_RELPATH, PLANAR_RELPATH, OVERLAPS_RELPATH]
 
-DOMAINS_OUT_DIR = REPO_DIR / "domains"
-PLANAR_OUT_DIR = REPO_DIR / "planar_tables"
+DOMAINS_OUT_DIR = NC / "domains"
+PLANAR_OUT_DIR = NC / "planar_tables"
 
 # A Domain_ID's own language/structure stem: 8 characters, then a single
 # letter for the structure type (v = verbal, n = nominal, a = adjective),

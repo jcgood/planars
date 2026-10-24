@@ -47,33 +47,29 @@ Outputs (under results/<dataset>/boundaries/ by default):
     null_p05, null_p95, p_value_ge_observed, n_permutations, seed (the
     exporter adds kind, label and colour in the bundle's copy).
 
-Usage (from NonCollaborative/; the dataset, its groupings and its planar
-table follow from --domain-file, see datasets.py):
-  python scripts/analysis/boundary_strength_test.py
-  python scripts/analysis/boundary_strength_test.py --domain-file domains_chac1251_verbal.tsv
+Usage (from anywhere; the dataset, its groupings and its planar table
+follow from --domain-file, see datasets.py):
+  python -m laminar.boundary_strength_test
+  python -m laminar.boundary_strength_test --domain-file domains_chac1251_verbal.tsv
 """
 
 from __future__ import annotations
 
 import argparse
-import sys
 import csv
 from pathlib import Path
 
 import numpy as np
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-sys.path.insert(0, str(SCRIPT_DIR))
-
-from laminar_analysis import (  # noqa: E402
+from laminar.laminar_analysis import (
     load_spans,
     find_conflicts,
     enumerate_maximal_laminar_families,
 )
-from boundary_strength import strength_from_families  # noqa: E402
-from span_placement_test import random_replicate  # noqa: E402
-from planars_groupings import permutation_groups  # noqa: E402
-from datasets import add_dataset_arguments, resolve_dataset_arguments  # noqa: E402
+from laminar.boundary_strength import strength_from_families
+from laminar.span_placement_test import random_replicate
+from laminar.planars_groupings import permutation_groups
+from laminar.datasets import add_dataset_arguments, resolve_dataset_arguments
 
 
 def curves_from_spans(spans, n_positions: int) -> tuple[np.ndarray, np.ndarray, bool]:

@@ -12,7 +12,7 @@ This test runs styler in its `dry = "fail"` mode, which restyles nothing and
 just reports whether restyling would change anything. If it would, someone
 edited `R/` without running `styler::style_pkg("planarsviz")` afterward.
 
-Both R calls below run from `NonCollaborative/`, for the same reason
+Both R calls below run from the repository root, for the same reason
 `test_roxygen_up_to_date.py` does: `.Rprofile` there is what points R at
 the versions `renv.lock` pins, styler among them. Run from anywhere else
 and a machine that only ran `renv::restore()` would have no styler
@@ -27,8 +27,8 @@ from pathlib import Path
 
 import pytest
 
-NC_ROOT = Path(__file__).parents[1]
-PACKAGE_DIR = NC_ROOT / "planarsviz"
+REPO_ROOT = Path(__file__).parents[2]
+PACKAGE_DIR = REPO_ROOT / "planarsviz"
 
 RSCRIPT = shutil.which("Rscript")
 
@@ -39,7 +39,7 @@ def _styler_available():
     result = subprocess.run(
         [RSCRIPT, "-e", 'quit(status = !requireNamespace("styler", quietly=TRUE))'],
         capture_output=True,
-        cwd=NC_ROOT,
+        cwd=REPO_ROOT,
     )
     return result.returncode == 0
 
@@ -61,13 +61,13 @@ def test_planarsviz_r_source_is_styled():
         ],
         capture_output=True,
         text=True,
-        cwd=NC_ROOT,
+        cwd=REPO_ROOT,
     )
     assert result.returncode == 0, (
         "planarsviz/R/*.R does not match what styler::style_pkg() would write. "
         "Someone edited R/ without re-running styler afterward. Its output was:\n"
         + result.stdout + result.stderr
-        + "\nFix: from NC, run\n"
+        + "\nFix: from the repository root, run\n"
         '    Rscript -e \'styler::style_pkg("planarsviz")\'\n'
         "review the diff, then commit it."
     )

@@ -1,19 +1,19 @@
-$ /Users/jcgood/gitrepos/planars/NonCollaborative/../.venv/bin/python scripts/planarsviz_language.py moco1246_verbal --apply
+$ /Users/jcgood/gitrepos/planars/.venv/bin/python -m laminar charts moco1246_verbal --apply
 Dataset moco1246_verbal
-  language_name  Mocoví (verbal)                  from planar_tables/ccdb_moco1246_verbal.json
-  groupings      ccdb                             from planar_tables/ccdb_moco1246_verbal.json
-  root_position  7                                from planar_tables/ccdb_moco1246_verbal.json
-  planar_type    verbal                           from planar_tables/ccdb_moco1246_verbal.json
-  forest_axis    planar                           from planar_tables/ccdb_moco1246_verbal.json
+  language_name  Mocoví (verbal)                  from NonCollaborative/planar_tables/ccdb_moco1246_verbal.json
+  groupings      ccdb                             from NonCollaborative/planar_tables/ccdb_moco1246_verbal.json
+  root_position  7                                from NonCollaborative/planar_tables/ccdb_moco1246_verbal.json
+  planar_type    verbal                           from NonCollaborative/planar_tables/ccdb_moco1246_verbal.json
+  forest_axis    planar                           from NonCollaborative/planar_tables/ccdb_moco1246_verbal.json
   permutations   5000                             all four tests
 
 == Export ==
-/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_moco1246_verbal.tsv --groupings ccdb --root-position 7 --language-name 'Mocoví (verbal)' --planar-type verbal --forest-axis planar --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
+/Users/jcgood/gitrepos/planars/.venv/bin/python -m laminar.export_planarsviz_data --domain-file NonCollaborative/domains/domains_moco1246_verbal.tsv --groupings ccdb --root-position 7 --language-name 'Mocoví (verbal)' --planar-type verbal --forest-axis planar --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
 Exported planarsviz bundle: /Users/jcgood/gitrepos/planars/NonCollaborative/results/chart_data/moco1246_verbal
-Export finished in 25 s.
+Export finished in 29 s.
 
 == Render ==
-Rscript scripts/render_planarsviz.R --bundle results/chart_data/moco1246_verbal --output results
+Rscript laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data/moco1246_verbal --output NonCollaborative/results
 quartz pooled_plot: text the standard PDF fonts can't draw
 wrote moco1246_verbal/pooled/moco1246_verbal_pooled_plot.pdf
 quartz pooled_domainplot: text the standard PDF fonts can't draw
@@ -104,9 +104,9 @@ wrote moco1246_verbal/boundaries/moco1246_verbal_boundary_strength_test_level_mo
 wrote moco1246_verbal/boundaries/moco1246_verbal_boundary_strength.pdf
 wrote moco1246_verbal/boundaries/moco1246_verbal_boundary_strength_distributions.pdf
 wrote moco1246_verbal/boundaries/moco1246_verbal_boundary_strength_overlay.pdf
-74 files for 74 of 74 charts; manifest: results/moco1246_verbal/moco1246_verbal_planarsviz_manifest.tsv
-Render finished in 34 s.
+74 files for 74 of 74 charts; manifest: NonCollaborative/results/moco1246_verbal/moco1246_verbal_planarsviz_manifest.tsv
+Render finished in 47 s.
 
-Bundle: results/chart_data/moco1246_verbal/   Charts: results/moco1246_verbal/
+Bundle: NonCollaborative/results/chart_data/moco1246_verbal/   Charts: NonCollaborative/results/moco1246_verbal/
 
-[batch] exit code 0 after 59 s
+[batch] exit code 0 after 78 s

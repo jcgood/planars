@@ -17,7 +17,6 @@ Run from NonCollaborative/:
 import csv
 import json
 import re
-import sys
 from pathlib import Path
 
 from superseded import superseded

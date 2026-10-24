@@ -3,11 +3,15 @@
 Phase 10 unit 19 (issue #271). `python -m planars` was broken from March to
 October with nothing using it, and snapshots of retired classes sat in
 tests/snapshots/ for weeks: code nobody runs still gets read, maintained and
-trusted. This test fails when a file in coding/ or planars/ can be reached
-from none of the project's starting points:
+trusted. This test fails when a file in coding/, planars/ or laminar/ can be
+reached from none of the project's starting points:
 
 - the `python -m coding` dispatcher and every command module it names
   (read from `coding.__main__._COMMANDS`, so a new command counts at once);
+- the `python -m laminar` dispatcher and every command module it names
+  (`laminar.__main__.COMMANDS`), and every laminar module that runs on its
+  own (`python -m laminar.<module>`, so it has an `if __name__ == "__main__"`
+  block);
 - every Python script at the repo root (generate_snapshots.py, the
   pre-commit hooks, render_codebook.py, ...), which the workflows,
   .pre-commit-config.yaml, the Makefile and the docs run;
@@ -38,7 +42,7 @@ from pathlib import Path
 from typing import Dict, Iterator, Set
 
 ROOT = Path(__file__).resolve().parent.parent
-PACKAGES = ("coding", "planars")
+PACKAGES = ("coding", "planars", "laminar")
 
 # file (repo-relative) -> why nothing reaches it and it stays anyway.
 KEPT: Dict[str, str] = {}
@@ -114,11 +118,16 @@ def _starting_trees() -> Iterator[ast.AST]:
 
 
 def reached_modules() -> Set[str]:
-    """Every module in coding/ and planars/ some starting point reaches."""
+    """Every module in the checked packages some starting point reaches."""
     from coding.__main__ import _COMMANDS
+    from laminar.__main__ import COMMANDS as LAMINAR_COMMANDS
 
     mods = _module_files()
     todo = ["coding.__main__", *_COMMANDS.values()]
+    todo += ["laminar.__main__", *(module for module, _line in LAMINAR_COMMANDS.values())]
+    todo += [name for name, path in mods.items()
+             if name.startswith("laminar.")
+             and 'if __name__ == "__main__"' in path.read_text(encoding="utf-8")]
     for tree in _starting_trees():
         todo += list(_imported_names(tree, "", False))
 
@@ -147,8 +156,9 @@ def unreached_files() -> Dict[str, Path]:
 def test_every_library_and_tooling_file_is_reached_from_a_starting_point():
     unreached = sorted(set(unreached_files()) - set(KEPT))
     assert not unreached, (
-        "These files are run by no command, root script, notebook template or "
-        "NonCollaborative script — only (at most) by tests:\n  "
+        "These files are run by no command, root script, notebook template, "
+        "standalone laminar module or NonCollaborative script — only (at most) "
+        "by tests:\n  "
         + "\n  ".join(unreached)
         + "\nDelete them (and their tests), or, if one must stay, add it to KEPT "
         "in tests/test_no_leftovers.py with the reason."

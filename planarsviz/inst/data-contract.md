@@ -5,7 +5,7 @@ This package separates analysis from visualization.
 Python is the analytical source of truth. The Python analysis code loads the
 domain TSV, validates span sizes, deduplicates spans, classifies conflicts,
 and enumerates maximal laminar families. The exporter
-(`scripts/analysis/export_planarsviz_data.py`) then writes a bundle for R.
+(`laminar/export_planarsviz_data.py`) then writes a bundle for R.
 R does not re-enumerate families, build tree topology, or choose which
 families to show: those come from the bundle.
 
@@ -48,7 +48,7 @@ synthetic root), used by the ForestSpans chart.
 `subsets.json` lists fresh analyses of part of the data, each in
 `subsets/<subset_id>/` with the same tables as `data/`: `kind` `domain_type`
 (one per observed type) or `filter` (every observed type except those a
-filter in `scripts/analysis/planars_groupings.py` leaves out, e.g. `no_tono`;
+filter in `laminar/planars_groupings.py` leaves out, e.g. `no_tono`;
 exported only when the data has a type to leave out). Their spans, families
 and counts are recomputed, not filtered from the full analysis.
 
@@ -244,7 +244,7 @@ contract, not a variant of the one above: it is pure tree-shape
 combinatorics with no language behind it, so none of `read_planars_bundle()`'s
 required tables (spans, tests, families, ...) apply. Read with
 `read_planars_illustrations()` instead of `read_planars_bundle()`. Written by
-`scripts/analysis/export_planarsviz_illustrations.py`.
+`laminar/export_planarsviz_illustrations.py`.
 
 ```text
 data/
@@ -264,7 +264,7 @@ whole space.
 
 `tree_count_growth.tsv`: `n`, `catalan` (binary trees, `catalan_number()`),
 `little_schroder` (n-ary trees, OEIS A001003, `all_trees_new()`) — both from
-`scripts/exploratory/catalan.py`, both reindexed by leaf count so they share
+`laminar/catalan.py`, both reindexed by leaf count so they share
 one x axis. Deliberately not named `tree_counts.tsv`: that name already
 belongs to the per-language bundle's own laminar-family counts (a completely
 different schema), and this project's bundles never reuse a filename for two
@@ -274,14 +274,14 @@ different contracts.
 numbers as leaves, matching whatever bundle's `n_positions` the sample was
 drawn for — `plot_random_tree_overlay()` checks this and refuses a mismatch).
 Sampled uniformly at random (a counting recurrence turned into weighted
-choices at each split, not an approximation) by `catalan.py`'s
+choices at each split, not an approximation) by `laminar/catalan.py`'s
 `sample_labeled_tree()`. `metadata.json`'s `random_trees.seed` records the
 seed that produced it, the one thing the generated-R-script version this
 bundle replaced never had — re-running the exporter with the same seed
 reproduces the table exactly (`verify_random_trees_export.py` checks this).
 
 `metadata.json`: `contract_version`, `dataset` (always `"illustrations"` —
-what tells `render_planarsviz.R` which reader to use and what to name output
+what tells `laminar/render_planarsviz.R` which reader to use and what to name output
 files), `tree_shapes` (which `n` values are exhaustive vs. sampled and at
 what sample size), `tree_count_growth` (`n_min`/`n_max`), `random_trees`
 (`n_trees`, `n_leaves`, `seed`).
@@ -298,7 +298,7 @@ reason).
 bundle side by side: nyan1308 and the 21 CCDB structures. Like the
 illustrations bundle it is its own contract, read with
 `read_planars_cross_language()`. Written by
-`scripts/analysis/export_cross_language.py`, which **re-runs no analysis**:
+`laminar/export_cross_language.py`, which **re-runs no analysis**:
 every number is read from, or arithmetic on, the per-language bundles' tables.
 Every input bundle must have been exported with all four permutation flags.
 

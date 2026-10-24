@@ -5,10 +5,10 @@ validated functions in ``laminar_analysis.py`` remain responsible for loading
 spans, detecting conflicts, and enumerating maximal laminar families.  This
 script serializes those results into a small, inspectable data bundle for R.
 
-Example:
-    python scripts/analysis/export_planarsviz_data.py \
-        --domain-file domains/domains_nyan1308.tsv \
-        --output-dir results/chart_data
+Usually run through ``python -m laminar charts <dataset>``, which passes
+the dataset's settings. On its own, from anywhere:
+    python -m laminar.export_planarsviz_data \
+        --domain-file NonCollaborative/domains/domains_nyan1308.tsv
 """
 
 from __future__ import annotations
@@ -18,18 +18,13 @@ import collections
 import csv
 import hashlib
 import json
-import sys
 import unicodedata
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_DIR = SCRIPT_DIR.parents[1]
-sys.path.insert(0, str(SCRIPT_DIR))
-
-from laminar_analysis import (  # noqa: E402
+from laminar.laminar_analysis import (
     OVERLAY_GROUPS,
     Span,
     build_parent_map,
@@ -40,18 +35,18 @@ from laminar_analysis import (  # noqa: E402
     select_representative_families,
     span_to_newick,
 )
-from planars_groupings import GROUPINGS, observed_groups, permutation_groups  # noqa: E402
-from datasets import planar_position_count  # noqa: E402
-from laminar_tree_counts import (  # noqa: E402
+from laminar.planars_groupings import GROUPINGS, observed_groups, permutation_groups
+from laminar.datasets import NC, planar_position_count, repo_relative
+from laminar.laminar_tree_counts import (
     CLASS_COLORS,
     collect_bundle_counts,
     collect_counts,
 )
-from boundary_strength import compute_boundary_strength  # noqa: E402
-from class_fragmentation_test import run_test as run_fragmentation_test  # noqa: E402
-from boundary_strength_test import run_test as run_boundary_strength_test  # noqa: E402
-from span_placement_test import run_test as run_span_placement_test  # noqa: E402
-from arbitrary_layers_test import run_test as run_arbitrary_layers_test  # noqa: E402
+from laminar.boundary_strength import compute_boundary_strength
+from laminar.class_fragmentation_test import run_test as run_fragmentation_test
+from laminar.boundary_strength_test import run_test as run_boundary_strength_test
+from laminar.span_placement_test import run_test as run_span_placement_test
+from laminar.arbitrary_layers_test import run_test as run_arbitrary_layers_test
 
 
 def forest_variants(bundles: list) -> list[tuple[str, list[str], str]]:
@@ -216,7 +211,7 @@ def export_highlights(dataset: str, data_dir: Path, highlights_file: Path | None
     layers win where ranges overlap). Absent file = no highlights.
     """
     if highlights_file is None:
-        candidate = REPO_DIR / "planar_tables" / f"highlights_{dataset}.tsv"
+        candidate = NC / "planar_tables" / f"highlights_{dataset}.tsv"
         highlights_file = candidate if candidate.exists() else None
     fields = ["highlight_id", "name", "left", "right", "colour", "layer"]
     rows = []
@@ -566,7 +561,7 @@ def load_conflict_group_config(dataset: str, conflict_groups_file: Path | None):
     gets every family not in another group. Absent file = no groups.
     """
     if conflict_groups_file is None:
-        candidate = REPO_DIR / "planar_tables" / f"conflict_groups_{dataset}.tsv"
+        candidate = NC / "planar_tables" / f"conflict_groups_{dataset}.tsv"
         conflict_groups_file = candidate if candidate.exists() else None
     if conflict_groups_file is None:
         return [], None
@@ -732,10 +727,7 @@ def export_selections(dataset: str, families, data_dir: Path,
         "exemplary_k": exemplary_k,
         "exemplary_include_sparsest": include_sparsest,
         "conflict_group_cap": cap,
-        "source_conflict_groups_file": (
-            str(source.relative_to(REPO_DIR)) if source and source.is_relative_to(REPO_DIR)
-            else str(source) if source else None
-        ),
+        "source_conflict_groups_file": repo_relative(source) if source else None,
     }
 
 # Domain-type display style: the order types are sorted in within a layer
@@ -1012,7 +1004,7 @@ def export_bundle(
     tests.to_csv(data_dir / "tests.tsv", sep="\t", index=False)
 
     if planar_file is None:
-        candidate = REPO_DIR / "planar_tables" / f"planar_{dataset}.tsv"
+        candidate = NC / "planar_tables" / f"planar_{dataset}.tsv"
         planar_file = candidate if candidate.exists() else None
 
     # Keep the full dataset's position count for every subset.  A subset may
@@ -1116,7 +1108,7 @@ def export_bundle(
     # chart labels differ from its planar table's slot codes); never from a
     # dataset-name special case.
     if labels_file is None:
-        candidate = REPO_DIR / "planar_tables" / f"display_labels_{dataset}.tsv"
+        candidate = NC / "planar_tables" / f"display_labels_{dataset}.tsv"
         labels_file = candidate if candidate.exists() else None
     position_rows = load_position_labels(planar_file, n_positions, labels_file)
     write_tsv(data_dir / "position_labels.tsv", ["position", "label"], position_rows)
@@ -1193,19 +1185,11 @@ def export_bundle(
         # stores some names' accents as separate combining marks ("Teotitlán",
         # "San Martín"), which R's PDF device draws as a period.
         "language_name": unicodedata.normalize("NFC", language_name) if language_name else language_name,
-        "source_domain_file": str(domain_file),
+        "source_domain_file": repo_relative(domain_file),
         "source_domain_sha256": sha256_file(domain_file),
-        "source_planar_file": (
-            str(planar_file.relative_to(REPO_DIR))
-            if planar_file and planar_file.is_relative_to(REPO_DIR)
-            else str(planar_file) if planar_file else None
-        ),
+        "source_planar_file": repo_relative(planar_file) if planar_file else None,
         "source_planar_sha256": sha256_file(planar_file) if planar_file else None,
-        "source_labels_file": (
-            str(labels_file.relative_to(REPO_DIR))
-            if labels_file and labels_file.is_relative_to(REPO_DIR)
-            else str(labels_file) if labels_file else None
-        ),
+        "source_labels_file": repo_relative(labels_file) if labels_file else None,
         "root_element": root_element,
         "root_position": root_position,
         "root_position_source": root_position_source,
@@ -1231,8 +1215,8 @@ def export_bundle(
         **boundary_strength_test_metadata,
         **span_placement_metadata,
         **arbitrary_layers_metadata,
-        "producer": "scripts/analysis/export_planarsviz_data.py",
-        "analysis_source": "scripts/analysis/laminar_analysis.py",
+        "producer": "laminar/export_planarsviz_data.py",
+        "analysis_source": "laminar/laminar_analysis.py",
     }
     (data_dir / "metadata.json").write_text(
         json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8"
@@ -1285,7 +1269,7 @@ def export_bundle(
             "subset_id": subset_slug,
             "kind": subset_kind,
             "domain_type": subset_types[0] if subset_kind == "domain_type" else None,
-            "source_domain_file": str(domain_file),
+            "source_domain_file": repo_relative(domain_file),
             "source_domain_sha256": sha256_file(domain_file),
             "n_positions": n_positions,
             "n_active_tests": len(subset_tests),
@@ -1331,7 +1315,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--domain-file", type=Path, required=True)
     parser.add_argument(
-        "--output-dir", type=Path, default=REPO_DIR / "results" / "chart_data"
+        "--output-dir", type=Path, default=NC / "results" / "chart_data"
     )
     parser.add_argument("--planar-file", type=Path, default=None)
     parser.add_argument(

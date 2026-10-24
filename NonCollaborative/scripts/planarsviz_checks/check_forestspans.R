@@ -25,7 +25,7 @@ source("scripts/planarsviz_checks/superseded.R")
 lib <- file.path(tempdir(), "planarsviz_lib")
 dir.create(lib, showWarnings = FALSE)
 status <- system2("R", c("CMD", "INSTALL", "--no-test-load", paste0("--library=", lib),
-                         "planarsviz"), stdout = FALSE, stderr = FALSE)
+                         file.path("..", "planarsviz")), stdout = FALSE, stderr = FALSE)
 if (status != 0) stop("R CMD INSTALL failed")
 suppressPackageStartupMessages({
   library(planarsviz, lib.loc = lib)
@@ -41,8 +41,16 @@ plain <- function(df) {
   df
 }
 build <- function(p) suppressMessages(suppressWarnings(ggplot2::ggplot_build(p)))
+# The library's chart has one layer the old script never had: the invisible
+# geom_blank that expand_limits(x = 1) adds so the axis always starts at
+# position 1 (CCDB step 4, 2026-09-23). It draws nothing, and nyan1308 already
+# has a span from 1, so leaving it out compares the layers that draw.
+drawn_layers <- function(p) {
+  p$layers <- Filter(function(l) !inherits(l$geom, "GeomBlank"), p$layers)
+  p
+}
 same_data <- function(po, pl, what) {
-  bo <- build(po); bl <- build(pl)
+  bo <- build(po); bl <- build(drawn_layers(pl))
   if (length(bo$data) != length(bl$data)) return(sprintf("%s: layer count", what))
   out <- character()
   for (k in seq_along(bo$data)) {

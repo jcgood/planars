@@ -1,19 +1,19 @@
-$ /Users/jcgood/gitrepos/planars/NonCollaborative/../.venv/bin/python scripts/planarsviz_language.py yucu1253_verbal --apply
+$ /Users/jcgood/gitrepos/planars/.venv/bin/python -m laminar charts yucu1253_verbal --apply
 Dataset yucu1253_verbal
-  language_name  Yukuna (verbal)                  from planar_tables/ccdb_yucu1253_verbal.json
-  groupings      ccdb                             from planar_tables/ccdb_yucu1253_verbal.json
-  root_position  10                               from planar_tables/ccdb_yucu1253_verbal.json
-  planar_type    verbal                           from planar_tables/ccdb_yucu1253_verbal.json
-  forest_axis    planar                           from planar_tables/ccdb_yucu1253_verbal.json
+  language_name  Yukuna (verbal)                  from NonCollaborative/planar_tables/ccdb_yucu1253_verbal.json
+  groupings      ccdb                             from NonCollaborative/planar_tables/ccdb_yucu1253_verbal.json
+  root_position  10                               from NonCollaborative/planar_tables/ccdb_yucu1253_verbal.json
+  planar_type    verbal                           from NonCollaborative/planar_tables/ccdb_yucu1253_verbal.json
+  forest_axis    planar                           from NonCollaborative/planar_tables/ccdb_yucu1253_verbal.json
   permutations   5000                             all four tests
 
 == Export ==
-/Users/jcgood/gitrepos/planars/.venv/bin/python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_yucu1253_verbal.tsv --groupings ccdb --root-position 10 --language-name 'Yukuna (verbal)' --planar-type verbal --forest-axis planar --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
+/Users/jcgood/gitrepos/planars/.venv/bin/python -m laminar.export_planarsviz_data --domain-file NonCollaborative/domains/domains_yucu1253_verbal.tsv --groupings ccdb --root-position 10 --language-name 'Yukuna (verbal)' --planar-type verbal --forest-axis planar --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
 Exported planarsviz bundle: /Users/jcgood/gitrepos/planars/NonCollaborative/results/chart_data/yucu1253_verbal
-Export finished in 30 s.
+Export finished in 34 s.
 
 == Render ==
-Rscript scripts/render_planarsviz.R --bundle results/chart_data/yucu1253_verbal --output results
+Rscript laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data/yucu1253_verbal --output NonCollaborative/results
 wrote yucu1253_verbal/pooled/yucu1253_verbal_pooled_plot.pdf
 wrote yucu1253_verbal/pooled/yucu1253_verbal_pooled_domainplot.pdf
 wrote yucu1253_verbal/pooled/yucu1253_verbal_pooled_plot_indeterminate.pdf
@@ -85,9 +85,9 @@ wrote yucu1253_verbal/boundaries/yucu1253_verbal_boundary_strength_test_level_mo
 wrote yucu1253_verbal/boundaries/yucu1253_verbal_boundary_strength.pdf
 wrote yucu1253_verbal/boundaries/yucu1253_verbal_boundary_strength_distributions.pdf
 wrote yucu1253_verbal/boundaries/yucu1253_verbal_boundary_strength_overlay.pdf
-71 files for 71 of 71 charts; manifest: results/yucu1253_verbal_planarsviz_manifest.tsv
-Render finished in 30 s.
+71 files for 71 of 71 charts; manifest: NonCollaborative/results/yucu1253_verbal/yucu1253_verbal_planarsviz_manifest.tsv
+Render finished in 34 s.
 
-Bundle: results/chart_data/yucu1253_verbal/   Charts: results/yucu1253_verbal/
+Bundle: NonCollaborative/results/chart_data/yucu1253_verbal/   Charts: NonCollaborative/results/yucu1253_verbal/
 
-[batch] exit code 0 after 61 s
+[batch] exit code 0 after 69 s

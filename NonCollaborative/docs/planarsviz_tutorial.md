@@ -11,9 +11,11 @@ This is a walk-through, not a reference. For what an option does, see the
 [user guide](planarsviz_guide.md); for what a chart shows and how to change
 it, the [chart catalogue](planarsviz_charts.md).
 
-**Run everything from `NonCollaborative/`**, with the project's Python
-environment active. The bundle records the paths it read, so running from
-somewhere else writes a bundle that differs from the committed one.
+**Run the `python -m laminar …` commands from anywhere** (the repo root is
+simplest), with the project's Python environment active; the renderer is run
+from the repo root. The bundle records the paths it read relative to the repo
+root, so it is the same wherever you ran it. File paths below such as
+`domains/` and `results/` are inside `NonCollaborative/`.
 
 ---
 
@@ -35,7 +37,7 @@ never changed) and writes both files, plus a small settings file,
 and planar type. Dry run first:
 
 ```sh
-python scripts/analysis/import_ccdb.py --planar-id chac1251_verbal
+python -m laminar.import_ccdb --planar-id chac1251_verbal
 ```
 
 It prints, for each file, whether it is new, unchanged, or would change, and
@@ -44,7 +46,7 @@ short label for any of its 38 tests, which is why chart labels are built from
 CCDB's `Domain_ID` instead). Then write:
 
 ```sh
-python scripts/analysis/import_ccdb.py --planar-id chac1251_verbal --apply
+python -m laminar.import_ccdb --planar-id chac1251_verbal --apply
 ```
 
 Leave out `--planar-id` to import all 21 CCDB structures that have tests.
@@ -100,22 +102,22 @@ One command does both halves — export the numbers into a **bundle**, then
 draw every chart from it. Without `--apply` it only says what it would do:
 
 ```sh
-python scripts/planarsviz_language.py chac1251_verbal
+python -m laminar charts chac1251_verbal
 ```
 
 ```
 Dataset chac1251_verbal
-  language_name  Chácobo (verbal)                 from planar_tables/ccdb_chac1251_verbal.json
-  groupings      ccdb                             from planar_tables/ccdb_chac1251_verbal.json
-  root_position  8                                from planar_tables/ccdb_chac1251_verbal.json
-  planar_type    verbal                           from planar_tables/ccdb_chac1251_verbal.json
-  forest_axis    planar                           from planar_tables/ccdb_chac1251_verbal.json
+  language_name  Chácobo (verbal)                 from NonCollaborative/planar_tables/ccdb_chac1251_verbal.json
+  groupings      ccdb                             from NonCollaborative/planar_tables/ccdb_chac1251_verbal.json
+  root_position  8                                from NonCollaborative/planar_tables/ccdb_chac1251_verbal.json
+  planar_type    verbal                           from NonCollaborative/planar_tables/ccdb_chac1251_verbal.json
+  forest_axis    planar                           from NonCollaborative/planar_tables/ccdb_chac1251_verbal.json
   permutations   5000                             all four tests
 
-Would run, from NonCollaborative/:
+Would run, from the repository root:
 
-  .../python scripts/analysis/export_planarsviz_data.py --domain-file domains/domains_chac1251_verbal.tsv --groupings ccdb --root-position 8 --language-name 'Chácobo (verbal)' --planar-type verbal --forest-axis planar --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
-  Rscript scripts/render_planarsviz.R --bundle results/chart_data/chac1251_verbal --output results
+  .../python -m laminar.export_planarsviz_data --domain-file NonCollaborative/domains/domains_chac1251_verbal.tsv --groupings ccdb --root-position 8 --language-name 'Chácobo (verbal)' --planar-type verbal --forest-axis planar --fragmentation-permutations 5000 --boundary-strength-test-permutations 5000 --span-placement-permutations 5000 --arbitrary-layers-permutations 5000
+  Rscript laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data/chac1251_verbal --output NonCollaborative/results
 
 Nothing was run. Add --apply to run both.
 ```
@@ -124,7 +126,7 @@ Read the settings block: each line says where the setting came from, so a
 wrong root position or missing name shows up here, before anything runs. Then:
 
 ```sh
-python scripts/planarsviz_language.py chac1251_verbal --apply
+python -m laminar charts chac1251_verbal --apply
 ```
 
 For Chácobo verbal this takes about four minutes: nearly three for the export,
@@ -132,8 +134,8 @@ almost all of it the four **permutation tests** (§4), and about a minute to
 draw 91 charts. It stops at the first failure. Two useful variations:
 
 ```sh
-python scripts/planarsviz_language.py chac1251_verbal --apply --no-permutations
-python scripts/planarsviz_language.py chac1251_verbal --apply --plots pooled_plot,spanchart
+python -m laminar charts chac1251_verbal --apply --no-permutations
+python -m laminar charts chac1251_verbal --apply --plots pooled_plot,spanchart
 ```
 
 The first skips the permutation tests — seconds instead of minutes, for a
@@ -141,17 +143,17 @@ first look — but the bundle then has none of their tables, and their charts
 from any earlier run are removed (the renderer says which), so nothing left
 in `results/` is out of date with the bundle. The second redraws only the charts named, from the bundle
 already there; it still re-exports first. To redraw charts without
-re-exporting, call the renderer directly:
+re-exporting, call the renderer directly, from the repo root:
 
 ```sh
-Rscript scripts/render_planarsviz.R --bundle results/chart_data/chac1251_verbal \
-  --output results --plots boundary_strength_overlay
+Rscript laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data/chac1251_verbal \
+  --output NonCollaborative/results --plots boundary_strength_overlay
 ```
 
 `--list` in place of `--plots` prints every chart name the bundle can draw.
 
 To run every CCDB structure at once, four at a time (about seven minutes for
-all 21): `python scripts/planarsviz_ccdb_batch.py --apply`. It writes a log
+all 21): `python -m laminar charts --ccdb --apply`. It writes a log
 per structure and a summary, `results/ccdb_batch/summary.md`, that lists
 failures and anything worth checking before trusting a chart.
 

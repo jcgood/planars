@@ -1,0 +1,20 @@
+# Which folders renv reads when it works out which R packages this project
+# needs (same pattern syntax as .gitignore). The R code is in planarsviz/,
+# laminar/ (the renderer) and NonCollaborative/ (the porting checks and the
+# archived scripts they run), plus two files at the root; everything else in
+# the repository is Python, data or documents, and scanning it only slows
+# renv down. NonCollaborative/.renvignore leaves out the hand-written scripts
+# there that nothing runs.
+
+/*
+!/planarsviz/
+!/laminar/
+!/NonCollaborative/
+!/_dependencies.R
+!/lint_and_style_planarsviz.R
+
+# Generated output and reference material, no R code.
+/NonCollaborative/results/
+/NonCollaborative/readings/
+/NonCollaborative/domains/
+/NonCollaborative/planar_tables/

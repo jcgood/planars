@@ -2,12 +2,13 @@
 
 ## Overview
 
-This directory contains Python scripts for analyzing constituency domains via **laminar family enumeration**. Given a set of observed domain spans over a planar morphosyntactic template, the analysis computes ALL maximal laminar families and tests three hypotheses about constituency structure.
+The `laminar/` package at the repo root (moved there 2026-10-24 from `scripts/analysis/`) contains Python scripts for analyzing constituency domains via **laminar family enumeration**. Given a set of observed domain spans over a planar morphosyntactic template, the analysis computes ALL maximal laminar families and tests three hypotheses about constituency structure.
 
-**Key script**: `analysis/laminar_analysis.py` — does all the heavy lifting.
+**Key script**: `laminar/laminar_analysis.py` — does all the heavy lifting.
 
-**Paths and commands in this file are relative to `NonCollaborative/`**, which
-is where they are meant to be run from.
+**Run the modules as `python -m laminar.<module>` from anywhere.** Data paths
+in this file (`domains/`, `results/`) are relative to `NonCollaborative/`,
+where the data and results stay. The renderer runs from the repo root.
 
 The charts are drawn by the `planarsviz` R package, which reads an exported
 data bundle rather than re-deriving anything — see "Output" below for the two
@@ -82,16 +83,17 @@ Each row is one span from one test. Loading it (`load_spans()`):
 ### Running
 
 ```bash
-python scripts/analysis/laminar_analysis.py
+python -m laminar.laminar_analysis
 ```
 
-from `NonCollaborative/`. It takes no arguments: it prints the four-phase
-report for nyan1308 — pooled, then one domain type at a time, then the three
-bundles. For a different file or subset, call `main()` from Python:
+from anywhere. By default it prints the four-phase report for nyan1308 —
+pooled, then one domain type at a time, then the three bundles;
+`--domain-file` picks another dataset. For a different subset, call `main()`
+from Python:
 
 ```python
-import sys; sys.path.insert(0, "scripts/analysis")
-from laminar_analysis import main
+from laminar import laminar_analysis
+result = laminar_analysis.main(domain_file="domains_arao1248.tsv", show_trees=False)
 result = main(domain_file="domains_arao1248.tsv", show_trees=False)
 result["n_families"]
 ```
@@ -112,13 +114,16 @@ elsewhere get resolved.
 and the `planarsviz` R package draws from it:
 
 ```bash
-python scripts/analysis/export_planarsviz_data.py \
-  --domain-file domains/domains_nyan1308.tsv \
-  --output-dir results/chart_data --language-name Chichewa
+python -m laminar.export_planarsviz_data \
+  --domain-file NonCollaborative/domains/domains_nyan1308.tsv \
+  --language-name Chichewa
 
-Rscript scripts/render_planarsviz.R \
-  --bundle results/chart_data/nyan1308 --output results
+# from the repo root
+Rscript laminar/render_planarsviz.R \
+  --bundle NonCollaborative/results/chart_data/nyan1308 --output NonCollaborative/results
 ```
+
+(`python -m laminar charts nyan1308 --apply` does both.)
 
 Until the 2026-09-20 cutover, `laminar_analysis.py` wrote the R scripts for
 those charts itself. It no longer does: the generators were removed and the
@@ -168,18 +173,19 @@ the archived scripts themselves and now live in the exporter — see
 - This is actually strong support for the Tree hypothesis!
 
 **A chart won't render**
-- `scripts/render_planarsviz.R` installs the package into a temporary library
+- `laminar/render_planarsviz.R` installs the package into a temporary library
   itself, so there is no install step to remember — but the package's own
-  dependencies must be there. They are listed in `planarsviz/DESCRIPTION`;
-  the tree charts also need `ape` and `ggtree`, under `Suggests` because the
-  other charts do not.
-- Run it from `NonCollaborative/`, and make sure the bundle exists: the
-  renderer draws from `results/chart_data/<dataset>/`, not from the TSV.
+  dependencies must be there. They are listed in `planarsviz/DESCRIPTION`
+  (repo root); the tree charts also need `ape` and `ggtree`, under `Suggests`
+  because the other charts do not.
+- Run it from the repo root, and make sure the bundle exists: the
+  renderer draws from `NonCollaborative/results/chart_data/<dataset>/`, not
+  from the TSV.
 
 ## See Also
 
-- `scripts/INDEX.md` — every script under `analysis/`, `verification/`,
-  `exploratory/` and `planarsviz_checks/`, one entry each
+- `scripts/INDEX.md` — every module in `laminar/` and every script under
+  `verification/`, `exploratory/` and `planarsviz_checks/`, one entry each
 - `results/visualizations.md` — what each artifact in `results/` shows and
   how to make it again
 - `docs/planarsviz_charts.md` — the chart catalogue: every chart the
