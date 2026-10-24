@@ -15,17 +15,24 @@ draft, started while Adam is still annotating. **Current state:
    - Selections at least: all variants; strict + loose on complete
      positions (the closest to Chichewa's Minimal/Maximal); the same on
      partial positions; one row where strict and loose coincide.
-   - Subspanrepetition's five categories (fill, ws-L, ws-R, ns-L, ns-R) stay
-     separate rows for now. Whether they are one test or five is a question
-     for Adam once the comparisons show it matters.
+   - Subspanrepetition's five categories (fill, ws-L, ws-R, ns-L, ns-R) are
+     **provisionally five separate tests**, each row tagged with its
+     construction: they can give different spans for one construction, so
+     merging them would mean choosing a span, a linguistic call. Whether
+     they are one test or five goes to Adam once the first English charts
+     show whether their weight distorts anything.
 3. **Partial spans carry a weight.** Each span records, for each position it
    gains beyond the complete span, *k of n*: how many of that position's
-   elements satisfy the rule. The weight is a named metric over those
-   counts (the mean ratio, the weakest position's ratio, the share of all
-   elements: candidates, not decided). Complete and strict spans have
-   weight 1. The analysis carries the weight without using it until a
-   weighted method is chosen. Stored in the bundle, never in annotation
-   files.
+   elements satisfy the rule. Complete and strict spans have weight 1.
+   **Provisionally all three metrics are computed, in every bundle:**
+   - *mean ratio* (the default, used wherever a chart shows one weight):
+     the average *k/n* over the gained positions, each position counting
+     equally, since positions are the unit spans are built from;
+   - *weakest position*: the lowest *k/n*, a conservative check;
+   - *element share*: satisfying elements over all elements in the gained
+     positions, which lets large open classes count for more.
+   The analysis carries the weights without using them until a weighted
+   method is chosen. Stored in the bundle, never in annotation files.
 4. **Groupings from the schema, both on:**
    - (a) by domain type and subtype from `schemas/diagnostic_classes.yaml`
      (morphosyntactic / indeterminate / phonological; segmental / prosodic),
@@ -119,5 +126,6 @@ R join the main suite; keep an eye on its run time.
   muddy the before/after comparison if made during Phase 2. Make them before
   Phase 2 starts or after it ends.
 - **Where the Chichewa draft gets its figures** is not known (not in
-  `~/gitrepos`). Its paths don't change under decision 8, so it should keep
-  working; if it breaks, fix it then.
+  `~/gitrepos`). Provisionally it includes charts from
+  `NonCollaborative/results/` by path; those paths are frozen (decision 8),
+  so no action. If it breaks, fix it then.
