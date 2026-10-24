@@ -7,18 +7,18 @@ Connecting to Google APIs...
     [element_prescreening] 66 element(s) with scopal=n excluded
     [element_prescreening] 838 → 231 pairs after filtering
     general: 231 retained, 0 added, 0 removed
-  [stan1293/coreference/reflexivization] already has rows — skipping auto-regeneration. Run:
-    python -m coding generate-sheets --lang stan1293 --regen-construction coreference:reflexivization
-  [stan1293/coreference/pronominalization] already has rows — skipping auto-regeneration. Run:
-    python -m coding generate-sheets --lang stan1293 --regen-construction coreference:pronominalization
-  [stan1293/coreference/np_reference] already has rows — skipping auto-regeneration. Run:
-    python -m coding generate-sheets --lang stan1293 --regen-construction coreference:np_reference
-  [synth0001/coreference/reflexivization] already has rows — skipping auto-regeneration. Run:
-    python -m coding generate-sheets --lang synth0001 --regen-construction coreference:reflexivization
-  [synth0001/coreference/pronominalization] already has rows — skipping auto-regeneration. Run:
-    python -m coding generate-sheets --lang synth0001 --regen-construction coreference:pronominalization
-  [synth0001/coreference/np_reference] already has rows — skipping auto-regeneration. Run:
-    python -m coding generate-sheets --lang synth0001 --regen-construction coreference:np_reference
+  [stan1293/coreference/reflexive_coreference] already has rows — skipping auto-regeneration. Run:
+    python -m coding generate-sheets --lang stan1293 --regen-construction coreference:reflexive_coreference
+  [stan1293/coreference/pronoun_coreference] already has rows — skipping auto-regeneration. Run:
+    python -m coding generate-sheets --lang stan1293 --regen-construction coreference:pronoun_coreference
+  [stan1293/coreference/np_coreference] already has rows — skipping auto-regeneration. Run:
+    python -m coding generate-sheets --lang stan1293 --regen-construction coreference:np_coreference
+  [synth0001/coreference/reflexive_coreference] already has rows — skipping auto-regeneration. Run:
+    python -m coding generate-sheets --lang synth0001 --regen-construction coreference:reflexive_coreference
+  [synth0001/coreference/pronoun_coreference] already has rows — skipping auto-regeneration. Run:
+    python -m coding generate-sheets --lang synth0001 --regen-construction coreference:pronoun_coreference
+  [synth0001/coreference/np_coreference] already has rows — skipping auto-regeneration. Run:
+    python -m coding generate-sheets --lang synth0001 --regen-construction coreference:np_coreference
   [stan1293/biuniqueness_deviations/morphemes] already has rows — skipping auto-regeneration. Run:
     python -m coding generate-sheets --lang stan1293 --regen-construction biuniqueness_deviations:morphemes
   [stan1293/biuniqueness_deviations/morphs] empty — waiting for 'morphemes' to be marked ready-for-review (now: in-progress)

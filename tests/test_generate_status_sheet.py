@@ -162,18 +162,18 @@ def test_build_row_skeletons_marks_pair_row_constructions():
         _spec("nonpermutability", "element_prescreening"),
         _spec("nonpermutability", "general"),
         _spec("coreference", "prescreening"),
-        _spec("coreference", "reflexivization"),
+        _spec("coreference", "reflexive_coreference"),
     ]
     pair_row_constructions = {
         "nonpermutability": {"general"},
-        "coreference": {"reflexivization", "pronominalization", "np_reference"},
+        "coreference": {"reflexive_coreference", "pronoun_coreference", "np_coreference"},
     }
     skeletons = _build_row_skeletons(specs, pair_row_constructions)
     is_pair_by_construction = {s["construction"]: s["is_pair"] for s in skeletons}
     assert is_pair_by_construction["element_prescreening"] is False
     assert is_pair_by_construction["general"] is True
     assert is_pair_by_construction["prescreening"] is False
-    assert is_pair_by_construction["reflexivization"] is True
+    assert is_pair_by_construction["reflexive_coreference"] is True
 
 
 def test_build_row_skeletons_no_pair_map_defaults_to_element_rows():

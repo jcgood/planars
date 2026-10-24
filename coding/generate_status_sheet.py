@@ -148,7 +148,7 @@ def _row_status(status: Dict[str, int]) -> Tuple[str, Dict[str, float]]:
     """Return (status_text, color) for one construction row.
 
     Pair-row constructions (nonpermutability's `general`, coreference's
-    `reflexivization`/`pronominalization`/`np_reference`) are generated
+    `reflexive_coreference`/`pronoun_coreference`/`np_coreference`) are generated
     combinatorially from element pairs rather than from positions, but each
     pair row still has the same criterion cells an element row has, so the
     same filled/total percentage applies. The caller picks which counting

@@ -86,9 +86,9 @@ Refreshing sheet dropdowns
 
   [stan1293] coreference
     prescreening 'referential': no dropdown → y, n
-    reflexivization 'reflexive_allowed': no dropdown → y, n, untestable
-    pronominalization 'pronoun_allowed': no dropdown → y, n, untestable
-    np_reference 'np_allowed': no dropdown → y, n, untestable
+    reflexive_coreference 'reflexive_allowed': no dropdown → y, n, untestable
+    pronoun_coreference 'pronoun_allowed': no dropdown → y, n, untestable
+    np_coreference 'np_allowed': no dropdown → y, n, untestable
     Status 'Status': no dropdown → in-progress, ready-for-review
 
   [stan1293] proform
@@ -159,9 +159,9 @@ Refreshing sheet dropdowns
 
   [synth0001] coreference
     prescreening 'referential': no dropdown → y, n
-    reflexivization 'reflexive_allowed': no dropdown → y, n, untestable
-    pronominalization 'pronoun_allowed': no dropdown → y, n, untestable
-    np_reference 'np_allowed': no dropdown → y, n, untestable
+    reflexive_coreference 'reflexive_allowed': no dropdown → y, n, untestable
+    pronoun_coreference 'pronoun_allowed': no dropdown → y, n, untestable
+    np_coreference 'np_allowed': no dropdown → y, n, untestable
     Status 'Status': no dropdown → in-progress, ready-for-review
 
   [synth0001] proform
@@ -173,7 +173,5 @@ Refreshing sheet dropdowns
     prescreening 'accented': no dropdown → y, n, both
     Status 'Status': no dropdown → in-progress, ready-for-review
 
-Manifest updated on Drive.
-
 Done.
-Drive door (enforce): checked 74 write(s) to 74 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 73 write(s) to 73 tab(s) or file(s); 0 broke a rule.

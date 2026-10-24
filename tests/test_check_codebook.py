@@ -472,7 +472,7 @@ def test_span_constructions_reads_the_schema():
     from planars.reports import span_constructions
     assert span_constructions("nonpermutability") == frozenset({"general"})
     assert span_constructions("coreference") == frozenset(
-        {"reflexivization", "pronominalization", "np_reference"})
+        {"reflexive_coreference", "pronoun_coreference", "np_coreference"})
     assert span_constructions("biuniqueness_deviations") == frozenset({"morphs"})
     assert span_constructions("ciscategorial") is None   # no feeder tabs
 

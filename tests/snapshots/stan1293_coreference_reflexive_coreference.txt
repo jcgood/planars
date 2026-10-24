@@ -1,5 +1,5 @@
-English Coreference Reflexivization
-===================================
+English Coreference Reflexive Coreference
+=========================================
 
 Keystone position: 30 (v:verbstem)
 

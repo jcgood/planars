@@ -575,8 +575,8 @@ def pair_annotation_status(
     """Return completeness/validity counts for one pair-row annotation sheet tab.
 
     Same shape as annotation_status(), for pair-row sheets (nonpermutability's
-    `general`, coreference's `reflexivization`/`pronominalization`/
-    `np_reference`) instead of element rows. There is no keystone row to
+    `general`, coreference's `reflexive_coreference`/`pronoun_coreference`/
+    `np_coreference`) instead of element rows. There is no keystone row to
     exclude here -- pair rows are generated from element pairs, not from
     positions, so every data row counts in full. Reads whatever rows the live
     sheet has at call time, so a caller that re-reads the sheet after pairs

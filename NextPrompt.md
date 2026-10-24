@@ -28,8 +28,7 @@ match, stamps the hash and merges. The procedure is coordinator guide
 and the known questions for each class are in the tracking issue #321. Jeff sent Adam the
 prompt for his Claude (2026-10-22). **Next action:** review each `Span rule: {class}`
 pull request as it arrives, following the 7-step workflow on its branch.
-Unblocking the later classes: #318 (b) and (c) are done (2026-10-23);
-(d), the coreference renaming, remains.
+Unblocking the later classes: #318 (b), (c) and (d) are done (2026-10-23).
 
 ### Thread: Adam's English coding requests (#318)
 
@@ -51,8 +50,11 @@ free_occurrence span-rule review, #321);
 diagnostic_classes.yaml; English's five NP rows were already y, so
 nothing changed live);
 (d) rename the coreference constructions to `reflexive_coreference`,
-`pronoun_coreference`, `np_coreference`, in one pass (sheet links change:
-a live step for Jeff to approve);
+`pronoun_coreference`, `np_coreference` — done live 2026-10-23 by the new
+`rename-construction` command (tabs renamed in place, so the links did
+not change); Adam told on #318. The 2026-10-24 refresh should refresh
+each coreference sheet's Instructions tab (its text names the
+constructions): check it did, and that no empty tab appeared;
 (e) a description per construction, shown on its sheet (none exist; Adam's
 point 10 is that `vp_ellipsis` doesn't say its proform is Ø). The text
 for `vp_ellipsis` is Jeff's call; what the ellipsis tests should be

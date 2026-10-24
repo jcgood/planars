@@ -127,11 +127,11 @@ classes:
         python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:CONSTRUCTION_NAME
       Each row (Element_A, Position_A, Position_B, Direction) represents a potential
       antecedent-anaphor pair. Position columns use "N (name)" format e.g. "5 (v:npsubj1)".
-      For reflexivization:   mark reflexive_allowed=y if a reflexive at Position_B can be
+      For reflexive_coreference: mark reflexive_allowed=y if a reflexive at Position_B can be
                              bound by Element_A at Position_A; n if it cannot. (Principle A)
-      For pronominalization: mark pronoun_allowed=y if a pronoun at Position_B can be
-                             bound by Element_A at Position_A; n if it cannot. (Principle B)
-      For np_reference:      mark np_allowed=y if an NP at Position_B can corefer with
+      For pronoun_coreference:   mark pronoun_allowed=y if a non-reflexive pronoun at Position_B
+                             can be bound by Element_A at Position_A; n if it cannot. (Principle B)
+      For np_coreference:        mark np_allowed=y if an NP at Position_B can corefer with
                              Element_A at Position_A; n if it cannot. (Principle C)
     span_rule_hash: "96a13eba"
     status: "[AUTO-DERIVED: NEEDS REVIEW — proposed in issue #163 (Apr 2026). Pair-row

@@ -350,7 +350,7 @@ def test_removing_a_column_does_not_mask_a_sibling_criterions_stale_dropdown(env
 
     assert ("reflexive_allowed: ['y', 'n', 'untestable'] → "
             "['y', 'n', 'untestable', 'maybe']") in out
-    ws = env.tab("synth0001", "coreference", "reflexivization")
+    ws = env.tab("synth0001", "coreference", "reflexive_coreference")
     header = ws.row_values(1)
     assert header == ["Element_A", "Position_A", "Position_B", "Direction",
                       "reflexive_allowed", "Example", "Source", "Comments"], (
@@ -432,7 +432,7 @@ def test_remove_deletes_only_the_columns_absent_from_diagnostics(env):
     """The real synth0001 drift: each pair tab keeps its own criterion."""
     env.run(["sync-params", "--apply", "--remove"])
 
-    header = env.tab("synth0001", "coreference", "reflexivization").row_values(1)
+    header = env.tab("synth0001", "coreference", "reflexive_coreference").row_values(1)
     assert "reflexive_allowed" in header
     assert "pronoun_allowed" not in header
     assert "np_allowed" not in header

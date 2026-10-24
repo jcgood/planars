@@ -96,7 +96,7 @@ DRIVE OPERATIONS
   update_file: file_id='fake_ss_0022', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'biuniqueness_deviations'}
   move_file: file_id='fake_ss_0022', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
   create_permission: file_id='fake_ss_0022', type='user', role='writer', email='annotator@example.org', notify=False
-  update_file: file_id='fake_manifest_file', bytes=53828
+  update_file: file_id='fake_manifest_file', bytes=53591
 
 SHEET OPERATIONS
 
@@ -653,17 +653,17 @@ SHEET OPERATIONS
 
   fake_ss_0016  tab=-
     create_spreadsheet: title='coreference_stan1293'
-    reorder_worksheets: order=['Instructions', 'prescreening', 'reflexivization', 'pronominalization', 'np_reference', 'Planar Structure', 'Status']
+    reorder_worksheets: order=['Instructions', 'prescreening', 'reflexive_coreference', 'pronoun_coreference', 'np_coreference', 'Planar Structure', 'Status']
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 5}, "visibility": "DOCUMENT"}}
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Instructions", "location": {"sheetId": 5}, "visibility": "DOCUMENT"}}
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "prescreening", "location": {"sheetId": 1}, "visibility": "DOCUMENT"}}
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "reflexivization", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "reflexive_coreference", "location": {"sheetId": 2}, "visibility": "DOCUMENT"}}
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "pronominalization", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "pronoun_coreference", "location": {"sheetId": 3}, "visibility": "DOCUMENT"}}
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "construction", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
-    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "np_reference", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
+    createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "np_coreference", "location": {"sheetId": 4}, "visibility": "DOCUMENT"}}
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "locked", "location": {"sheetId": 6}, "visibility": "DOCUMENT"}}
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab", "metadataValue": "Planar Structure", "location": {"sheetId": 6}, "visibility": "DOCUMENT"}}
     createDeveloperMetadata: {"developerMetadata": {"metadataKey": "planars_tab_kind", "metadataValue": "status", "location": {"sheetId": 7}, "visibility": "DOCUMENT"}}
@@ -685,7 +685,7 @@ SHEET OPERATIONS
     repeatCell: col 3 (BEYOND HEADER) rows 130-131
     repeatCell: col 3 (BEYOND HEADER) rows 131-132
 
-  fake_ss_0016  tab=reflexivization
+  fake_ss_0016  tab=reflexive_coreference
     add_worksheet: rows=171, cols=10, index=None, sheet_id=2
     update: anchor A1 raw=True 169x8
       | ['Element_A', 'Position_A', 'Position_B', 'Direction', 'reflexive_allowed', 'Example', 'Source', 'Comments']
@@ -708,7 +708,7 @@ SHEET OPERATIONS
     repeatCell: col 4 (BEYOND HEADER) rows 163-164
     repeatCell: col 4 (BEYOND HEADER) rows 164-165
 
-  fake_ss_0016  tab=pronominalization
+  fake_ss_0016  tab=pronoun_coreference
     add_worksheet: rows=171, cols=10, index=None, sheet_id=3
     update: anchor A1 raw=True 169x8
       | ['Element_A', 'Position_A', 'Position_B', 'Direction', 'pronoun_allowed', 'Example', 'Source', 'Comments']
@@ -731,7 +731,7 @@ SHEET OPERATIONS
     repeatCell: col 4 (BEYOND HEADER) rows 163-164
     repeatCell: col 4 (BEYOND HEADER) rows 164-165
 
-  fake_ss_0016  tab=np_reference
+  fake_ss_0016  tab=np_coreference
     add_worksheet: rows=171, cols=10, index=None, sheet_id=4
     update: anchor A1 raw=True 169x8
       | ['Element_A', 'Position_A', 'Position_B', 'Direction', 'np_allowed', 'Example', 'Source', 'Comments']
@@ -797,7 +797,7 @@ SHEET OPERATIONS
     update: anchor A1 raw=True 5x3
       | ['Construction', 'Status', 'Needs fixing']
       | ['prescreening', 'in-progress', '']
-      | ['reflexivization', 'in-progress', '']
+      | ['reflexive_coreference', 'in-progress', '']
       | ...
 
   fake_ss_0016  tab=sheetId=7

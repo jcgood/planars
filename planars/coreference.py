@@ -1,7 +1,7 @@
 """Coreference domains, from pair-row tabs rather than element rows.
 
 Unlike the standard analysis module, this reads one pair-row TSV per
-construction (``reflexivization``, ``pronominalization``, ``np_reference``)
+construction (``reflexive_coreference``, ``pronoun_coreference``, ``np_coreference``)
 and derives binder/bindee domains instead of complete/partial position sets.
 The class's ``prescreening`` tab (criterion ``referential``) only decides
 which elements those pair tabs get; it produces no spans itself.
@@ -60,7 +60,7 @@ def _construction_criterion_map() -> Dict[str, str]:
 def _criterion_column(construction: str, pair_cols: Set[str]) -> str:
     """Return the criterion column this construction's judgments live in.
 
-    The construction is what decides: ``reflexivization.tsv`` is about
+    The construction is what decides: ``reflexive_coreference.tsv`` is about
     ``reflexive_allowed`` whatever else the sheet happens to carry. The
     construction name (the TSV's filename, per the project's
     ``{construction}.tsv`` convention, or the tab name when reading a Sheet)

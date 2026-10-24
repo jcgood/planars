@@ -1,9 +1,9 @@
 Position number remap: {5: 6}
 Connecting to Google APIs...
 
-synth0001/coreference/reflexivization
+synth0001/coreference/reflexive_coreference
     [prescreening] 56 element(s) excluded
     [prescreening] 4055 → 1176 pairs after filtering
-    reflexivization: 569 retained, 607 added, 38 removed
+    reflexive_coreference: 569 retained, 607 added, 38 removed
     Removed pairs will surface via import-sheets --apply → apply-pending.
 Drive door (enforce): checked 4 write(s) to 1 tab(s) or file(s); 0 broke a rule.

@@ -88,9 +88,9 @@ DRY RUN — Refreshing sheet dropdowns
 
   [stan1293] coreference
     prescreening 'referential': no dropdown → y, n
-    reflexivization 'reflexive_allowed': no dropdown → y, n, untestable
-    pronominalization 'pronoun_allowed': no dropdown → y, n, untestable
-    np_reference 'np_allowed': no dropdown → y, n, untestable
+    reflexive_coreference 'reflexive_allowed': no dropdown → y, n, untestable
+    pronoun_coreference 'pronoun_allowed': no dropdown → y, n, untestable
+    np_coreference 'np_allowed': no dropdown → y, n, untestable
     Status 'Status': no dropdown → in-progress, ready-for-review
 
   [stan1293] proform
@@ -161,9 +161,9 @@ DRY RUN — Refreshing sheet dropdowns
 
   [synth0001] coreference
     prescreening 'referential': no dropdown → y, n
-    reflexivization 'reflexive_allowed': no dropdown → y, n, untestable
-    pronominalization 'pronoun_allowed': no dropdown → y, n, untestable
-    np_reference 'np_allowed': no dropdown → y, n, untestable
+    reflexive_coreference 'reflexive_allowed': no dropdown → y, n, untestable
+    pronoun_coreference 'pronoun_allowed': no dropdown → y, n, untestable
+    np_coreference 'np_allowed': no dropdown → y, n, untestable
     Status 'Status': no dropdown → in-progress, ready-for-review
 
   [synth0001] proform

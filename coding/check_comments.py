@@ -64,6 +64,26 @@ def _save_state(state: Dict) -> None:
                                                                  ensure_ascii=False) + "\n")
 
 
+def _tab_prefix(class_name: str, construction: str) -> str:
+    """How a seen comment's key starts: the tab it is on."""
+    return f"{class_name}/{construction} | "
+
+
+def rename_tab_in_state(lang_id: str, class_name: str, old: str, new: str) -> int:
+    """Carry what was seen on a tab over to its new name (rename-construction),
+    so its comments are not reported again as new. How many keys moved."""
+    state = _load_state()
+    seen = state.get(lang_id, {}).get("seen", {})
+    before, after = _tab_prefix(class_name, old), _tab_prefix(class_name, new)
+    moved = {after + k[len(before):]: v for k, v in seen.items() if k.startswith(before)}
+    if not moved:
+        return 0
+    state[lang_id]["seen"] = {**{k: v for k, v in seen.items() if not k.startswith(before)},
+                              **moved}
+    _save_state(state)
+    return len(moved)
+
+
 def issue_title(lang_id: str) -> str:
     from planars.languages import get_display_name
     return f"Comments — {get_display_name(lang_id)}"
@@ -113,7 +133,7 @@ def read_comments(lang_id: str) -> Tuple[Dict[str, Dict], List[str]]:
             if not text:
                 continue
             key = {c: row[c] for c in key_cols}
-            ident = f"{class_name}/{construction} | " + " | ".join(key.values())
+            ident = _tab_prefix(class_name, construction) + " | ".join(key.values())
             found[ident] = {
                 "class": class_name, "construction": construction, "key": key,
                 "answers": {c: row[c] for c in answer_cols},

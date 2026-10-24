@@ -25,9 +25,9 @@ Mode:     dry run
   [nonpermutability/element_prescreening] OK — dropdowns up to date
   [nonpermutability/general] OK — dropdowns up to date
   [coreference/prescreening] OK — dropdowns up to date
-  [coreference/reflexivization] OK — dropdowns up to date
-  [coreference/pronominalization] OK — dropdowns up to date
-  [coreference/np_reference] OK — dropdowns up to date
+  [coreference/reflexive_coreference] OK — dropdowns up to date
+  [coreference/pronoun_coreference] OK — dropdowns up to date
+  [coreference/np_coreference] OK — dropdowns up to date
   [proform/do_so_substitution] OK — dropdowns up to date
   [proform/vp_ellipsis] OK — dropdowns up to date
   [phrasal_accent/prescreening] OK — dropdowns up to date
@@ -50,17 +50,13 @@ Mode:     dry run
   [nonpermutability/element_prescreening] OK — dropdowns up to date
   [nonpermutability/general] OK — dropdowns up to date
   [free_occurrence/general] OK — dropdowns up to date
-  [coreference/prescreening] Would update dropdowns:
-    referential: ? → ['y', 'n']
-  [coreference/reflexivization] OK — dropdowns up to date
-  [coreference/pronominalization] OK — dropdowns up to date
-  [coreference/np_reference] OK — dropdowns up to date
+  [coreference/prescreening] OK — dropdowns up to date
+  [coreference/reflexive_coreference] OK — dropdowns up to date
+  [coreference/pronoun_coreference] OK — dropdowns up to date
+  [coreference/np_coreference] OK — dropdowns up to date
   [proform/do_so_substitution] OK — dropdowns up to date
   [proform/vp_ellipsis] OK — dropdowns up to date
   [phrasal_accent/prescreening] OK — dropdowns up to date
   [phrasal_accent/general] OK — dropdowns up to date
 
-Dry run — changes detected. To apply:
-
-    python -m coding sync-params --refresh-dropdowns --apply
-
+All sheets are up to date.

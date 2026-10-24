@@ -46,13 +46,13 @@ DRY RUN — Language: stan1293
 
   coreference (current v4)
     [prescreening] downloaded 142 rows
-    [reflexivization] downloaded 0 rows
-    [pronominalization] downloaded 0 rows
-    [np_reference] downloaded 0 rows
+    [reflexive_coreference] downloaded 0 rows
+    [pronoun_coreference] downloaded 0 rows
+    [np_coreference] downloaded 0 rows
     [prescreening] carry over 134; rename 8; new blank 0
-    [reflexivization] (pair tab) no position renames needed
-    [pronominalization] (pair tab) no position renames needed
-    [np_reference] (pair tab) no position renames needed
+    [reflexive_coreference] (pair tab) no position renames needed
+    [pronoun_coreference] (pair tab) no position renames needed
+    [np_coreference] (pair tab) no position renames needed
 
   proform (current v2)
     [do_so_substitution] downloaded 142 rows

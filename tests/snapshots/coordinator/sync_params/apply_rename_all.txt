@@ -47,9 +47,9 @@ Renames:  ['free:free_form']
   [nonpermutability/element_prescreening] Rename: free not found — skipping
   [nonpermutability/general] Rename: free not found — skipping
   [coreference/prescreening] Rename: free not found — skipping
-  [coreference/reflexivization] Rename: free not found — skipping
-  [coreference/pronominalization] Rename: free not found — skipping
-  [coreference/np_reference] Rename: free not found — skipping
+  [coreference/reflexive_coreference] Rename: free not found — skipping
+  [coreference/pronoun_coreference] Rename: free not found — skipping
+  [coreference/np_coreference] Rename: free not found — skipping
   [proform/do_so_substitution] Rename: free not found — skipping
   [proform/vp_ellipsis] Rename: free not found — skipping
   [phrasal_accent/prescreening] Rename: free not found — skipping
@@ -84,9 +84,9 @@ Renames:  ['free:free_form']
   [free_occurrence/general] Rename: free → free_form
     Renamed.
   [coreference/prescreening] Rename: free not found — skipping
-  [coreference/reflexivization] Rename: free not found — skipping
-  [coreference/pronominalization] Rename: free not found — skipping
-  [coreference/np_reference] Rename: free not found — skipping
+  [coreference/reflexive_coreference] Rename: free not found — skipping
+  [coreference/pronoun_coreference] Rename: free not found — skipping
+  [coreference/np_coreference] Rename: free not found — skipping
   [proform/do_so_substitution] Rename: free not found — skipping
   [proform/vp_ellipsis] Rename: free not found — skipping
   [phrasal_accent/prescreening] Rename: free not found — skipping

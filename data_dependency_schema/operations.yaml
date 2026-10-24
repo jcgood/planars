@@ -765,6 +765,37 @@
   cascades_triggered: []
   modes: []
 
+- id: rename_construction
+  cli_command: rename-construction
+  writes_to_drive: true
+  writes_locally: true
+  edits_sources: [diagnostics_yaml]
+  description: >-
+    Renames a construction (a tab of a class sheet) in every language that
+    has it, after the schema has been renamed: the diagnostics file, the
+    tab and its Status row in place (same sheet, same link, same answers),
+    the manifest, the local TSV and check-comments' record (#318 d).
+  side_effects:
+    - "edits the construction's name in diagnostics_{lang_id}.yaml (comments and layout kept), regenerates diagnostics_{lang_id}.tsv and pushes it to the diagnostics Sheet"
+    - "renames the tab and its Status-tab row on the live class sheet"
+    - "renames the construction in sheets_manifest.json's constructions and construction_params, and uploads it"
+    - "moves coded_data/{lang}/{class}/OLD.tsv to NEW.tsv through the local-file door (old version archived, both logged)"
+    - "renames the tab's keys in check-comments' state file"
+    - "commits and pushes the files it wrote in planars-data when it ends (the local-file door)"
+  idempotent: true
+  idempotency_note: >-
+    Each step looks at what is there first (OLD in the file, a tab called
+    OLD, OLD.tsv, OLD in the manifest) and skips what is already renamed,
+    so a second run, or a run after one that stopped partway, finishes the
+    rename and changes nothing else.
+  apply_gate: "--apply"
+  preconditions: [coded_data_clean_tree, coded_data_git_identity_configured, coded_data_up_to_date]
+  facts_touched:
+    - {fact: diagnostics_scope, role: writes}
+    - {fact: manifest_class_registration, role: writes}
+  cascades_triggered: []
+  modes: []
+
 - id: check_notes
   cli_command: check-notes
   writes_to_drive: true

@@ -26,9 +26,9 @@ Mode:     apply
   [nonpermutability/element_prescreening] OK — no changes
   [nonpermutability/general] OK — no changes
   [coreference/prescreening] OK — no changes
-  [coreference/reflexivization] OK — no changes
-  [coreference/pronominalization] OK — no changes
-  [coreference/np_reference] OK — no changes
+  [coreference/reflexive_coreference] OK — no changes
+  [coreference/pronoun_coreference] OK — no changes
+  [coreference/np_coreference] OK — no changes
   [proform/do_so_substitution] OK — no changes
   [proform/vp_ellipsis] OK — no changes
   [phrasal_accent/prescreening] OK — no changes
@@ -52,9 +52,9 @@ Mode:     apply
   [nonpermutability/general] OK — no changes
   [free_occurrence/general] OK — no changes
   [coreference/prescreening] OK — no changes
-  [coreference/reflexivization] OK — no changes
-  [coreference/pronominalization] OK — no changes
-  [coreference/np_reference] OK — no changes
+  [coreference/reflexive_coreference] OK — no changes
+  [coreference/pronoun_coreference] OK — no changes
+  [coreference/np_coreference] OK — no changes
   [proform/do_so_substitution] OK — no changes
   [proform/vp_ellipsis] OK — no changes
   [phrasal_accent/prescreening] OK — no changes

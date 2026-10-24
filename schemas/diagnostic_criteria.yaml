@@ -580,7 +580,7 @@ analyses:
   - name: coreference
     description: >
       [AUTO-DERIVED: NEEDS REVIEW] Tests which spans encompass the binding domains for
-      coreference constructions (reflexivization, pronominalization, np_reference). Uses a
+      coreference constructions (reflexive_coreference, pronoun_coreference, np_coreference). Uses a
       two-stage workflow: upstream prescreening identifies referential elements, then pair
       rows annotate whether each antecedent-anaphor pair exhibits the relevant binding relation.
     diagnostic_criteria:
@@ -596,21 +596,21 @@ analyses:
       - name: reflexive_allowed
         values: [y, n, untestable]
         description: >
-          Pair-row criterion (reflexivization construction; Principle A). Whether a reflexive
+          Pair-row criterion (reflexive_coreference construction; Principle A). Whether a reflexive
           in Element_B's position can be bound by an antecedent in Element_A's position.
           y = reflexive binding holds for this antecedent-anaphor pair.
           n = reflexive binding does not hold for this pair.
       - name: pronoun_allowed
         values: [y, n, untestable]
         description: >
-          Pair-row criterion (pronominalization construction; Principle B). Whether a pronoun
-          in Element_B's position can be coreferential with an antecedent in Element_A's position.
+          Pair-row criterion (pronoun_coreference construction; Principle B). Whether a
+          non-reflexive pronoun in Element_B's position can be coreferential with an antecedent in Element_A's position.
           y = pronominal coreference holds for this pair.
           n = pronominal coreference does not hold for this pair.
       - name: np_allowed
         values: [y, n, untestable]
         description: >
-          Pair-row criterion (np_reference construction; Principle C). Whether a full NP
+          Pair-row criterion (np_coreference construction; Principle C). Whether a full NP
           in Element_B's position can be coreferential with an antecedent in Element_A's position.
           y = full NP coreference holds for this pair.
           n = full NP coreference does not hold for this pair.

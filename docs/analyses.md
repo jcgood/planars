@@ -186,9 +186,11 @@ Three-stage annotation workflow corresponding to Principles A, B, and C:
 
 **Stages 2–4 — pair sheets** (one per construction):
 
-- `reflexivization` (Principle A) — criterion `reflexive_allowed={y,n}`
-- `pronominalization` (Principle B) — criterion `pronoun_allowed={y,n}`
-- `np_reference` (Principle C) — criterion `np_allowed={y,n}`
+- `reflexive_coreference` (Principle A) — criterion `reflexive_allowed={y,n}`
+- `pronoun_coreference` (Principle B; non-reflexive pronouns) — criterion `pronoun_allowed={y,n}`
+- `np_coreference` (Principle C) — criterion `np_allowed={y,n}`
+
+(Named `reflexivization`, `pronominalization`, `np_reference` until 2026-10-23, #318.)
 
 Each pair sheet has rows `(Element_A, Position_A, Position_B, Direction, <criterion>)`. `Element_A` is the antecedent (binder) at `Position_A`; `Position_B` is the structural position of the anaphor (bindee). The annotator marks the criterion `=y` if the construction is allowed for that pair, `=n` if not.
 

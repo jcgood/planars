@@ -360,7 +360,7 @@ def test_regen_coreference_with_pos_remap_transcript(env):
     see resolve_referential_divergence_for_test's docstring."""
     resolve_referential_divergence_for_test(env, "synth0001")
     out = env.run(["generate-sheets", "--lang", "synth0001",
-                  "--regen-construction", "coreference:reflexivization",
+                  "--regen-construction", "coreference:reflexive_coreference",
                   "--pos-remap", "5:6", "--confirm-drop"])
     check_snapshot("regen_coref_remap.txt", out)
 
@@ -652,7 +652,7 @@ def test_nothing_criterion_shaped_is_written_onto_trailing_columns_on_regen(env)
     env.run(["generate-sheets", "--lang", "synth0001",
             "--regen-construction", "nonpermutability:general"])
     env.run(["generate-sheets", "--lang", "synth0001",
-            "--regen-construction", "coreference:reflexivization",
+            "--regen-construction", "coreference:reflexive_coreference",
             "--confirm-drop"])
     assert_no_criterion_writes_onto_trailing_columns(env.doorway)
 

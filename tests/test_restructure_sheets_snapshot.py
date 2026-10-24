@@ -377,7 +377,7 @@ def test_a_split_quotes_the_old_answers_in_a_note_and_leaves_comments_alone(env)
         assert rows[i][comments] == ""
         assert ws._cell(i, first_answer).note.startswith("Split from her, which had ")
 
-    pair = env.tab("stan1293", "coreference", "reflexivization")
+    pair = env.tab("stan1293", "coreference", "reflexive_coreference")
     prow = pair.get_all_values()
     crit, pcomments = prow[0].index("reflexive_allowed"), prow[0].index("Comments")
     split_rows = [i for i, r in enumerate(prow) if r[0] in ("heracc", "herdat")]
@@ -417,12 +417,12 @@ def test_rename_class_apply_transcript(env):
 def test_missing_tab_hit_on_download_and_pair_copy(env):
     """Deleting a coreference pair tab before a restructuring apply hits
     WorksheetNotFound twice: once downloading annotations, once re-copying."""
-    env.delete_tab("stan1293", "coreference", "np_reference")
+    env.delete_tab("stan1293", "coreference", "np_coreference")
     env.rename_position("stan1293", "v:npsubj1", "v:npsubj1new")
     out = env.run(["--apply", "--lang", "stan1293",
                   "--rename-map", "v:npsubj1:v:npsubj1new"])
     check_snapshot("missing_tab.txt", out)
-    assert out.count("[np_reference] tab not found") == 1
+    assert out.count("[np_coreference] tab not found") == 1
 
 
 def test_lang_filter_leaves_other_languages_untouched(env):

@@ -184,9 +184,9 @@ def test_coreference_pair_params_carry_untestable():
     [y, n, untestable]. Dropdowns are built from the per-language YAML and so
     offered "untestable", which validation then flagged pink."""
     for construction, crit in [
-        ("reflexivization", "reflexive_allowed"),
-        ("pronominalization", "pronoun_allowed"),
-        ("np_reference", "np_allowed"),
+        ("reflexive_coreference", "reflexive_allowed"),
+        ("pronoun_coreference", "pronoun_allowed"),
+        ("np_coreference", "np_allowed"),
     ]:
         vals = _COREFERENCE_CONSTRUCTION_PARAMS[construction]["values"][crit]
         assert "untestable" in vals, f"{construction}/{crit} lost untestable"
@@ -211,17 +211,17 @@ def _pair_rows(value: str) -> list[list[str]]:
 
 def test_untestable_accepted_on_coreference_pair_sheet():
     """End-to-end: the value the dropdown offers must validate cleanly."""
-    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexivization"]
+    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexive_coreference"]
     _, issues = validate_pair_rows(_pair_rows("untestable"), info["params"],
-                                   "reflexivization", info["values"])
+                                   "reflexive_coreference", info["values"])
     assert [i for i in issues if "unexpected value" in i.message] == []
 
 
 def test_genuinely_invalid_value_still_rejected_on_pair_sheet():
     """Confirms the fix widened the allowed set rather than disabling the check."""
-    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexivization"]
+    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexive_coreference"]
     _, issues = validate_pair_rows(_pair_rows("maybe"), info["params"],
-                                   "reflexivization", info["values"])
+                                   "reflexive_coreference", info["values"])
     assert any("unexpected value" in i.message for i in issues)
 
 
@@ -252,7 +252,7 @@ def test_element_rows_where_pair_rows_are_expected_report_once():
 def test_pair_rows_where_element_rows_are_expected_report_once():
     """The same mistake the other way round, which was equally unguarded."""
     _, issues = validate_annotation_rows(_pair_rows("y"), ["reflexive_allowed"],
-                                         "reflexivization")
+                                         "reflexive_coreference")
     assert len(issues) == 1
     assert issues[0].level == "error"
 
@@ -285,9 +285,9 @@ def test_the_rows_still_come_back_untouched():
 
 def test_a_correctly_shaped_sheet_is_still_checked_cell_by_cell():
     """The stop only fires on a shape mismatch, not on a bad value."""
-    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexivization"]
+    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexive_coreference"]
     _, issues = validate_pair_rows(_pair_rows("maybe"), info["params"],
-                                   "reflexivization", info["values"])
+                                   "reflexive_coreference", info["values"])
     assert any("unexpected value" in i.message for i in issues)
 
 
@@ -307,7 +307,7 @@ def _pair_sheet(*values: str) -> list[list[str]]:
 
 
 def test_pair_annotation_status_counts_filled_and_total():
-    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexivization"]
+    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexive_coreference"]
     status = pair_annotation_status(
         _pair_sheet("y", "n", "", "y"), info["params"], info["values"],
     )
@@ -315,7 +315,7 @@ def test_pair_annotation_status_counts_filled_and_total():
 
 
 def test_pair_annotation_status_counts_invalid_separately_from_blank():
-    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexivization"]
+    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexive_coreference"]
     status = pair_annotation_status(
         _pair_sheet("y", "maybe"), info["params"], info["values"],
     )
@@ -325,7 +325,7 @@ def test_pair_annotation_status_counts_invalid_separately_from_blank():
 
 
 def test_pair_annotation_status_fully_complete():
-    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexivization"]
+    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexive_coreference"]
     status = pair_annotation_status(
         _pair_sheet("y", "n", "na"), info["params"], info["values"],
     )
@@ -340,7 +340,7 @@ def test_pair_annotation_status_no_data_rows_is_zero():
 def test_pair_annotation_status_tracks_a_regenerated_row_count():
     """Rows added or removed (e.g. by a sheet regeneration) change the total
     on the next read -- nothing here caches a prior count."""
-    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexivization"]
+    info = _COREFERENCE_CONSTRUCTION_PARAMS["reflexive_coreference"]
     before = pair_annotation_status(_pair_sheet("y", "n"), info["params"], info["values"])
     after = pair_annotation_status(_pair_sheet("y", "n", "y"), info["params"], info["values"])
     assert before["total"] == 2

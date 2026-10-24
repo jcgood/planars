@@ -94,15 +94,15 @@ Language: stan1293
 
   coreference (current v4)
     [prescreening] downloaded 142 rows
-    [reflexivization] downloaded 0 rows
-    [pronominalization] downloaded 0 rows
-    [np_reference] downloaded 0 rows
+    [reflexive_coreference] downloaded 0 rows
+    [pronoun_coreference] downloaded 0 rows
+    [np_coreference] downloaded 0 rows
     [prescreening] carry over 140; rename 1; new blank 1; drop 1 (NP{P,T}@v:obj-part)
     Archived to _archived/coreference_stan1293_v4
     [prescreening] wrote: carried 141, new blank 1, dropped 1
-    [reflexivization] (pair tab) copied 163 rows, 0 cell(s) renamed
-    [pronominalization] (pair tab) copied 163 rows, 0 cell(s) renamed
-    [np_reference] (pair tab) copied 163 rows, 0 cell(s) renamed
+    [reflexive_coreference] (pair tab) copied 163 rows, 0 cell(s) renamed
+    [pronoun_coreference] (pair tab) copied 163 rows, 0 cell(s) renamed
+    [np_coreference] (pair tab) copied 163 rows, 0 cell(s) renamed
     Locked tab Instructions: create
     Locked tab Instructions: protect
     Locked tab Planar Structure: create

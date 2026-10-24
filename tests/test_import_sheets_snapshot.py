@@ -728,7 +728,7 @@ def test_pair_row_and_standard_constructions_both_import_cleanly(env):
     out, exit_code = env.run(["import-sheets", "--lang", "stan1293", "--apply"])
     assert_finished(out, exit_code)
     assert env.output_tsv("stan1293", "ciscategorial", "general").exists()       # element rows
-    assert env.output_tsv("stan1293", "coreference", "reflexivization").exists()  # pair rows
+    assert env.output_tsv("stan1293", "coreference", "reflexive_coreference").exists()  # pair rows
     assert env.output_tsv("stan1293", "nonpermutability", "general").exists()     # pair rows
 
 
@@ -744,7 +744,7 @@ def test_pair_row_constructions_are_read_from_the_schema_not_hardcoded(env):
     with its Element_A/Position_A/Position_B columns intact."""
     env.run(["import-sheets", "--lang", "stan1293", "--apply"])
     header = pd.read_csv(
-        env.output_tsv("stan1293", "coreference", "reflexivization"), sep="\t", nrows=0,
+        env.output_tsv("stan1293", "coreference", "reflexive_coreference"), sep="\t", nrows=0,
     ).columns.tolist()
     assert header[:3] == ["Element_A", "Position_A", "Position_B"]
     assert "Element" not in header  # the element-row path's own column

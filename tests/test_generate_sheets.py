@@ -359,7 +359,7 @@ class TestFilterReflexPairsByPrescreening:
         ])
         with pytest.raises(SystemExit):
             _filter_reflex_pairs_by_prescreening(
-                [["a", "1 (p1)", "2 (p2)", "forward"]], "lang0001", "reflexivization")
+                [["a", "1 (p1)", "2 (p2)", "forward"]], "lang0001", "reflexive_coreference")
 
         assert len(github.calls_of("create")) == 1
         assert github.calls_of("edit") == []
@@ -374,7 +374,7 @@ class TestFilterReflexPairsByPrescreening:
         existing = github.seed_issue(title, "diagnostics")
         with pytest.raises(SystemExit):
             _filter_reflex_pairs_by_prescreening(
-                [["a", "1 (p1)", "2 (p2)", "forward"]], "lang0001", "reflexivization")
+                [["a", "1 (p1)", "2 (p2)", "forward"]], "lang0001", "reflexive_coreference")
 
         assert github.calls_of("create") == []
         assert [c[1] for c in github.calls_of("edit")] == [existing]
@@ -473,7 +473,7 @@ class TestPrefillByLabel:
         assert [r[3] for r in out] == ["y", "y", "", "n", ""]
 
     def test_a_construction_without_a_rule_is_untouched(self):
-        out = _gs._prefill_by_label(self._rows(), ["referential"], "coreference", "reflexivization")
+        out = _gs._prefill_by_label(self._rows(), ["referential"], "coreference", "reflexive_coreference")
         assert [r[3] for r in out] == ["", "", "", "n", ""]
 
     def test_an_unregistered_label_raises(self, monkeypatch):
@@ -1058,7 +1058,7 @@ class TestPlanLanguageCreation:
         "ciscategorial": [("general", ["V-combines"], {"V-combines": ["y", "n"]})],
         "coreference": [
             ("prescreening", ["referential"], {"referential": ["y", "n"]}),
-            ("reflexivization", ["reflexive_allowed"], {"reflexive_allowed": ["y", "n"]}),
+            ("reflexive_coreference", ["reflexive_allowed"], {"reflexive_allowed": ["y", "n"]}),
         ],
     }
 
@@ -1080,7 +1080,7 @@ class TestPlanLanguageCreation:
             "diagnostics_spreadsheet_id": "d1",
             "sheets": {
                 "ciscategorial": {"constructions": ["general"]},
-                "coreference": {"constructions": ["prescreening", "reflexivization"]},
+                "coreference": {"constructions": ["prescreening", "reflexive_coreference"]},
             },
         }
         plan = _plan_language_creation(self._ALL_CLASSES, existing_lang_data, force=False)
@@ -1113,12 +1113,12 @@ class TestPlanLanguageCreation:
             "planar_spreadsheet_id": "p1", "diagnostics_spreadsheet_id": "d1",
             "sheets": {
                 "ciscategorial": {"constructions": ["general"]},
-                "coreference": {"constructions": ["prescreening"]},  # reflexivization missing
+                "coreference": {"constructions": ["prescreening"]},  # reflexive_coreference missing
             },
         }
         plan = _plan_language_creation(self._ALL_CLASSES, existing_lang_data, force=False)
         assert plan["new_classes"] == []
-        assert plan["new_constructions"] == {"coreference": ["reflexivization"]}
+        assert plan["new_constructions"] == {"coreference": ["reflexive_coreference"]}
         assert plan["anything"]
 
     def test_force_requires_planar_and_diagnostics_sheet_even_if_present(self):
@@ -1127,7 +1127,7 @@ class TestPlanLanguageCreation:
             "planar_spreadsheet_id": "p1", "diagnostics_spreadsheet_id": "d1",
             "sheets": {
                 "ciscategorial": {"constructions": ["general"]},
-                "coreference": {"constructions": ["prescreening", "reflexivization"]},
+                "coreference": {"constructions": ["prescreening", "reflexive_coreference"]},
             },
         }
         plan = _plan_language_creation(self._ALL_CLASSES, existing_lang_data, force=True)
@@ -1143,7 +1143,7 @@ class TestPlanLanguageCreation:
             "notes_doc_id": "n1", "planar_spreadsheet_id": "p1", "diagnostics_spreadsheet_id": "d1",
             "sheets": {
                 "ciscategorial": {"constructions": ["general"]},
-                "coreference": {"constructions": ["prescreening", "reflexivization"]},
+                "coreference": {"constructions": ["prescreening", "reflexive_coreference"]},
             },
         }
         plan = _plan_language_creation(self._ALL_CLASSES, existing_lang_data, force=False)

@@ -134,7 +134,7 @@ _COREFERENCE_DIAG_CLASSES = {
     "coreference": {
         "constructions": [
             {"name": "prescreening", "row_type": "element"},
-            {"name": "reflexivization", "row_type": "pair_rows",
+            {"name": "reflexive_coreference", "row_type": "pair_rows",
              "depends_on": "prescreening", "staleness_check": "element_set"},
         ],
         "required_criteria": [],
@@ -153,7 +153,7 @@ def _write_coreference_fixture(tmp_path, lang_id, prescreening_rows, dep_rows):
     # Explicit columns even when dep_rows is empty -- an empty DataFrame with
     # no columns writes a file pandas can't read back ("No columns to parse").
     pd.DataFrame(dep_rows, columns=_DEP_COLUMNS).to_csv(
-        d / "reflexivization.tsv", sep="\t", index=False)
+        d / "reflexive_coreference.tsv", sep="\t", index=False)
     # A matching planar, so _find_stale_position_cells (a separate check --
     # see its own module docstring) has real position names to compare
     # against instead of an empty dict, which would flag every position cell

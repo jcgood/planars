@@ -169,7 +169,7 @@
     which elements are in scope for a "prescreening -> pair construction"
     dependent pair, e.g. nonpermutability's element_prescreening feeding
     general's pair list (same shape recurs for coreference's prescreening
-    feeding reflexivization/pronominalization/np_reference)
+    feeding reflexive_coreference/pronoun_coreference/np_coreference)
   locations:
     - {entity: construction_tsv, detail: "the SOURCE construction's in-scope decisions, e.g. nonpermutability/element_prescreening.tsv -- this is the authoritative one"}
     - {entity: construction_tsv, detail: "the DEPENDENT pair-row construction's Element_A/Element_B pairs, e.g. nonpermutability/general.tsv"}
@@ -401,7 +401,7 @@
   description: the position NUMBER embedded in a pair-row construction's Position_A/Position_B cells (format "N (name)") must match the current planar structure's numbering for that position name
   locations:
     - {entity: annotation_sheet, detail: "live pair-row tabs -- nonpermutability/general is Element_A/Element_B-only and unaffected; coreference's three constructions use Element_A + Position_A/Position_B/Direction and are the ones exposed"}
-    - {entity: construction_tsv, detail: "coded_data/{lang}/coreference/{reflexivization,pronominalization,np_reference}.tsv -- local copies of the above"}
+    - {entity: construction_tsv, detail: "coded_data/{lang}/coreference/{reflexive_coreference,pronoun_coreference,np_coreference}.tsv -- local copies of the above"}
     - {entity: planar_tsv, detail: "coded_data/{lang}/lang_setup/planar_{lang_id}.tsv -- current source of truth for which number a position name has"}
   authoritative: planar_tsv
   cascade:

@@ -190,6 +190,19 @@ def test_apply_leaves_annotation_content_byte_identical(fake, monkeypatch):
         assert fake.spreadsheet(ss_id).worksheet(title).get_all_values() == values
 
 
+def _make_manifest_stale(fake) -> None:
+    """Give synth0001's reflexive_coreference all three pair criteria in the
+    manifest, the stale entry the frozen data held until the daily
+    refresh-dropdowns (#322) cleared it on Drive, so the command has a
+    manifest change to upload."""
+    manifest = fake.download_file_json(MANIFEST_FILE_ID)
+    manifest["synth0001"]["sheets"]["coreference"]["construction_params"][
+        "reflexive_coreference"]["param_values"] = {
+            c: ["y", "n", "untestable"]
+            for c in ("reflexive_allowed", "pronoun_allowed", "np_allowed")}
+    fake.file(MANIFEST_FILE_ID).content = json.dumps(manifest).encode("utf-8")
+
+
 def test_apply_updates_the_manifest_in_place(fake, monkeypatch):
     """Manifest write now goes through drive.upload_manifest, the same shared
     writer generate_sheets.py, sync_params.py, update_sheets.py,
@@ -197,6 +210,7 @@ def test_apply_updates_the_manifest_in_place(fake, monkeypatch):
     the ID is known, the behaviour a caller sees is the same as before: update
     in place, no new file.
     """
+    _make_manifest_stale(fake)
     run(["refresh-dropdowns", "--apply"], monkeypatch)
     updates = fake.mutations_of("update_file")
     assert [u["file_id"] for u in updates] == [MANIFEST_FILE_ID]
@@ -204,7 +218,7 @@ def test_apply_updates_the_manifest_in_place(fake, monkeypatch):
 
     manifest = fake.download_file_json(MANIFEST_FILE_ID)
     stored = (manifest["synth0001"]["sheets"]["coreference"]
-              ["construction_params"]["reflexivization"]["param_values"])
+              ["construction_params"]["reflexive_coreference"]["param_values"])
     assert stored == {"reflexive_allowed": ["y", "n", "untestable"]}
 
 
@@ -228,6 +242,7 @@ def test_apply_writes_the_manifest_through_the_shared_upload_manifest_helper(fak
         return real_upload_manifest(doorway, manifest, root_folder_id, existing_file_id)
 
     monkeypatch.setattr(refresh_dropdowns, "upload_manifest", spy)
+    _make_manifest_stale(fake)
     run(["refresh-dropdowns", "--apply"], monkeypatch)
     assert calls == [(ROOT_FOLDER_ID, MANIFEST_FILE_ID)]
 
@@ -242,6 +257,7 @@ def test_manifest_upload_with_no_id_recorded_updates_the_one_drive_holds(fake, m
     monkeypatch.setattr(refresh_dropdowns, "_save_drive_config", saved.update)
     without_id = {"_root_folder_id": ROOT_FOLDER_ID}
     monkeypatch.setattr(refresh_dropdowns, "_load_drive_config", lambda: without_id)
+    _make_manifest_stale(fake)
 
     out = run(["refresh-dropdowns", "--apply"], monkeypatch)
 
@@ -256,6 +272,7 @@ def test_manifest_upload_creates_one_only_when_drive_holds_none(fake, monkeypatc
     monkeypatch.setattr(refresh_dropdowns, "_save_drive_config", saved.update)
     without_id = {"_root_folder_id": ROOT_FOLDER_ID}
     monkeypatch.setattr(refresh_dropdowns, "_load_drive_config", lambda: without_id)
+    _make_manifest_stale(fake)
     fake.file(MANIFEST_FILE_ID).trashed = True     # still downloadable, as a stand-in
 
     run(["refresh-dropdowns", "--apply"], monkeypatch)

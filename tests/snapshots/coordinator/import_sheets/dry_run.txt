@@ -67,12 +67,12 @@ Language: stan1293
   coreference
     [prescreening] status: 'in-progress' — importing for backup
     [prescreening] [backup] No changes → coded_data/stan1293/coreference/prescreening.tsv
-    [reflexivization] status: 'in-progress' — importing for backup
-    [reflexivization] [backup] No changes → coded_data/stan1293/coreference/reflexivization.tsv
-    [pronominalization] status: 'in-progress' — importing for backup
-    [pronominalization] [backup] No changes → coded_data/stan1293/coreference/pronominalization.tsv
-    [np_reference] status: 'in-progress' — importing for backup
-    [np_reference] [backup] No changes → coded_data/stan1293/coreference/np_reference.tsv
+    [reflexive_coreference] status: 'in-progress' — importing for backup
+    [reflexive_coreference] [backup] No changes → coded_data/stan1293/coreference/reflexive_coreference.tsv
+    [pronoun_coreference] status: 'in-progress' — importing for backup
+    [pronoun_coreference] [backup] No changes → coded_data/stan1293/coreference/pronoun_coreference.tsv
+    [np_coreference] status: 'in-progress' — importing for backup
+    [np_coreference] [backup] No changes → coded_data/stan1293/coreference/np_coreference.tsv
 
   proform
     [do_so_substitution] status: 'in-progress' — importing for backup
@@ -140,12 +140,12 @@ Language: synth0001
   coreference
     [prescreening] status: 'in-progress' — importing for backup
     [prescreening] [backup] No changes → coded_data/synth0001/coreference/prescreening.tsv
-    [reflexivization] status: 'in-progress' — importing for backup
-    [reflexivization] [backup] No changes → coded_data/synth0001/coreference/reflexivization.tsv
-    [pronominalization] status: 'in-progress' — importing for backup
-    [pronominalization] [backup] No changes → coded_data/synth0001/coreference/pronominalization.tsv
-    [np_reference] status: 'in-progress' — importing for backup
-    [np_reference] [backup] No changes → coded_data/synth0001/coreference/np_reference.tsv
+    [reflexive_coreference] status: 'in-progress' — importing for backup
+    [reflexive_coreference] [backup] No changes → coded_data/synth0001/coreference/reflexive_coreference.tsv
+    [pronoun_coreference] status: 'in-progress' — importing for backup
+    [pronoun_coreference] [backup] No changes → coded_data/synth0001/coreference/pronoun_coreference.tsv
+    [np_coreference] status: 'in-progress' — importing for backup
+    [np_coreference] [backup] No changes → coded_data/synth0001/coreference/np_coreference.tsv
 
   proform
     [do_so_substitution] status: 'in-progress' — importing for backup
@@ -160,4 +160,4 @@ Language: synth0001
     [general] [backup] No changes → coded_data/synth0001/phrasal_accent/general.tsv
 
 Done. 0 file(s) written, 1 warning(s).
-Drive door (enforce): checked 29 write(s) to 29 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 28 write(s) to 28 tab(s) or file(s); 0 broke a rule.

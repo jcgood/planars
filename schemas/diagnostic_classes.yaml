@@ -324,9 +324,12 @@ classes:
     specificity: construction_specific
     known_constructions:
       - prescreening               # upstream prescreening: which elements are referential
-      - reflexivization            # Principle A: reflexive_allowed=y/n (anaphors)
-      - pronominalization          # Principle B: pronoun_allowed=y/n (pronouns)
-      - np_reference               # Principle C: np_allowed=y/n (referring expressions)
+      - reflexive_coreference      # Principle A: reflexive_allowed=y/n (anaphors)
+      - pronoun_coreference        # Principle B: pronoun_allowed=y/n (non-reflexive pronouns)
+      - np_coreference             # Principle C: np_allowed=y/n (referring expressions)
+      # Named reflexivization / pronominalization / np_reference until
+      # 2026-10-23: the old names read as an NP being turned into another
+      # category, but the tests are about coreference (Adam, #318 § 9).
       - morphological_reflexive_voice  # verb carries reflexive marker; keystone often bindee
       - reciprocal                 # reciprocal constructions
     # Two-stage workflow (mirrors nonpermutability):
@@ -346,19 +349,19 @@ classes:
         # the annotator (Adam #318 § 6, Jeff 2026-10-22).
         prefill_by_label:
           referential: {value: y, labels: [NP]}
-      - name: reflexivization
+      - name: reflexive_coreference
         row_type: pair_rows
         pair_shape: position_pairs
         depends_on: prescreening
         staleness_check: element_set
         criterion: reflexive_allowed
-      - name: pronominalization
+      - name: pronoun_coreference
         row_type: pair_rows
         pair_shape: position_pairs
         depends_on: prescreening
         staleness_check: element_set
         criterion: pronoun_allowed
-      - name: np_reference
+      - name: np_coreference
         row_type: pair_rows
         pair_shape: position_pairs
         depends_on: prescreening

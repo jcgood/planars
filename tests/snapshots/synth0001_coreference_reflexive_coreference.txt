@@ -1,5 +1,5 @@
-Synth0001 Coreference Pronominalization
-=======================================
+Synth0001 Coreference Reflexive Coreference
+===========================================
 
 Keystone position: 30 (v:verbstem)
 

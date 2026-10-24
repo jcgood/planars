@@ -489,15 +489,15 @@ def test_apply_mutation_digest(env):
 # ---------------------------------------------------------------------------
 
 def test_pair_row_construction_uses_the_pair_path(env):
-    """coreference/reflexivization is row_type: pair_rows. Its issue labels
+    """coreference/reflexive_coreference is row_type: pair_rows. Its issue labels
     read "Element_A -> pos Position_B", which only validate_pair_rows
     produces -- validate_annotation_rows labels a row by its own Element."""
     doorway, coded, run_main = env
-    set_cell(coded, "stan1293", "coreference", "reflexivization",
+    set_cell(coded, "stan1293", "coreference", "reflexive_coreference",
             "Element_A", "NP{S,A,P}", "reflexive_allowed", "maybe")
 
     out, _ = run_main(["validate-coding", "--lang", "stan1293"])
-    assert "coreference/reflexivization" in out
+    assert "coreference/reflexive_coreference" in out
     assert "→ pos" in out
     assert "unexpected value 'maybe' in 'reflexive_allowed'" in out
 

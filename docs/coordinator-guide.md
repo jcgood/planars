@@ -452,9 +452,9 @@ python -m coding generate-sheets --lang LANG_ID --regen-construction nonpermutab
 3. Regenerate each pair construction filtered to referential elements:
 
 ```bash
-python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexivization
-python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:pronominalization
-python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:np_reference
+python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexive_coreference
+python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:pronoun_coreference
+python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:np_coreference
 ```
 
 Each pair sheet uses its own criterion column: `reflexive_allowed` (Principle A), `pronoun_allowed` (Principle B), `np_allowed` (Principle C).
@@ -471,7 +471,7 @@ Each pair sheet uses its own criterion column: `reflexive_allowed` (Principle A)
 - **The position numbers shifted** (a position was inserted or deleted elsewhere in the planar structure) — the annotation is for a still-valid element, just filed under a stale position number. `integrity-check`'s DEPENDENT CONSTRUCTION STALENESS section detects this proactively (not just when you happen to hit the guard) and prints the exact `--pos-remap` flags to use — no need to compare old and new planar TSVs by hand:
 
 ```bash
-python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexivization \
+python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexive_coreference \
     --pos-remap 5:6 --pos-remap 34:35
 ```
 
@@ -515,6 +515,17 @@ python -m coding restructure-sheets --rename-class old1:new1 --rename-class old2
 For each renamed class, `--apply` archives the old spreadsheet, creates a new one under the new name with all annotations carried over, renames `coded_data/{lang}/{old}/` to `coded_data/{lang}/{new}/` in-place (preserving git history), and updates the Drive manifest.
 
 **Do NOT use `prune-manifest` for a rename** — it would discard annotation data. `prune-manifest` is for retiring a class entirely.
+
+#### Renaming a construction
+
+A construction is a tab of a class sheet. Rename it in `schemas/diagnostic_classes.yaml` first (the command refuses until the schema lists the new name and not the old), then:
+
+```bash
+python -m coding rename-construction CLASS:OLD:NEW            # dry run, every language
+python -m coding rename-construction CLASS:OLD:NEW --apply    # repeat CLASS:OLD:NEW for several
+```
+
+In every language that has it, `--apply` renames it in `diagnostics_{lang_id}.yaml` (and regenerates the TSV and the diagnostics Sheet), renames the tab and its Status row in place — the sheet keeps its link and its answers — and renames it in the manifest, the local TSV and check-comments' record. Tell the annotators: their tab has a new name. Do the schema commit, the run and both pushes in one sitting; the daily refresh would otherwise add an empty tab under the new name beside the answered one. A run that stopped partway is finished by running it again.
 
 #### Retiring an analysis class
 

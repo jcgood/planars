@@ -16,13 +16,13 @@ newly added to an existing class. Existing tabs are left untouched.
 To sync param column changes to existing sheets: python -m coding sync-params --apply
 
 To regenerate a dependent pair construction after prescreening is annotated:
-    python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexivization
+    python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexive_coreference
     python -m coding generate-sheets --lang LANG_ID --regen-construction nonpermutability:general
 
 If position numbers have shifted since the pair tab was last generated (e.g. a position
 was inserted or deleted), add --pos-remap OLD:NEW (repeatable) to carry over existing
 annotations to the new row numbers:
-    python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexivization \
+    python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexive_coreference \
         --pos-remap 5:6 --pos-remap 34:35
 
 --regen-construction ABORTS instead of writing if it would silently drop an annotated
@@ -34,7 +34,7 @@ renamed or split, run one of
 first (issue #241); that carries the judgment forward and this check then passes cleanly,
 since the old rows are already gone by the time --regen-construction runs. If the drop really is
 intentional (e.g. a prescreening scope change, not a rename/split), add --confirm-drop:
-    python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexivization \
+    python -m coding generate-sheets --lang LANG_ID --regen-construction coreference:reflexive_coreference \
         --confirm-drop
 
 --regen-construction rewrites the tab inside drive_door.replacing (_rebuild_tab), carrying

@@ -25,10 +25,12 @@ LANG, CLASS, CON = "synth0001", "ciscategorial", "general"
 
 @pytest.fixture()
 def coded(monkeypatch, tmp_path) -> Path:
-    """A private copy of the frozen data, with an empty change log, so each
-    test reads only the lines its own writes added."""
+    """A private copy of the frozen data, with empty change logs, so each
+    test reads only the lines its own writes added. Every language's, not
+    only LANG's: refresh_writes and overwrites read them all."""
     coded = use_frozen_coded_data(monkeypatch, tmp_path)
-    (coded / LANG / "changes.tsv").unlink(missing_ok=True)
+    for log in coded.glob("*/changes.tsv"):
+        log.unlink()
     return coded
 
 

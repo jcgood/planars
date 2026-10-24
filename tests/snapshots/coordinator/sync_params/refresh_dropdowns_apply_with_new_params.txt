@@ -25,9 +25,9 @@ Mode:     apply
   [nonpermutability/element_prescreening] OK — dropdowns up to date
   [nonpermutability/general] OK — dropdowns up to date
   [coreference/prescreening] OK — dropdowns up to date
-  [coreference/reflexivization] OK — dropdowns up to date
-  [coreference/pronominalization] OK — dropdowns up to date
-  [coreference/np_reference] OK — dropdowns up to date
+  [coreference/reflexive_coreference] OK — dropdowns up to date
+  [coreference/pronoun_coreference] OK — dropdowns up to date
+  [coreference/np_coreference] OK — dropdowns up to date
   [proform/do_so_substitution] OK — dropdowns up to date
   [proform/vp_ellipsis] OK — dropdowns up to date
   [phrasal_accent/prescreening] OK — dropdowns up to date
@@ -54,12 +54,10 @@ Mode:     apply
   [nonpermutability/element_prescreening] OK — dropdowns up to date
   [nonpermutability/general] OK — dropdowns up to date
   [free_occurrence/general] OK — dropdowns up to date
-  [coreference/prescreening] Would update dropdowns:
-    referential: ? → ['y', 'n']
-    Done.
-  [coreference/reflexivization] OK — dropdowns up to date
-  [coreference/pronominalization] OK — dropdowns up to date
-  [coreference/np_reference] OK — dropdowns up to date
+  [coreference/prescreening] OK — dropdowns up to date
+  [coreference/reflexive_coreference] OK — dropdowns up to date
+  [coreference/pronoun_coreference] OK — dropdowns up to date
+  [coreference/np_coreference] OK — dropdowns up to date
   [proform/do_so_substitution] OK — dropdowns up to date
   [proform/vp_ellipsis] OK — dropdowns up to date
   [phrasal_accent/prescreening] OK — dropdowns up to date
@@ -67,4 +65,4 @@ Mode:     apply
 
 Manifest updated on Drive.
 
-Drive door (enforce): checked 6 write(s) to 3 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 5 write(s) to 2 tab(s) or file(s); 0 broke a rule.

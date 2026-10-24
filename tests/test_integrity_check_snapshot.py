@@ -291,14 +291,17 @@ def test_stale_merged_column_uses_the_merge_wording(env):
 # ---------------------------------------------------------------------------
 
 def test_stale_param_values_reports_a_real_mismatch_without_crashing(env):
-    """synth0001's coreference pair tabs are a real, already-known instance
-    of stale param_values (see docs/data-layer-progress.md's "Held until
-    Phase 9" list): each manifest entry still lists all three
-    pair criteria (reflexive_allowed, pronoun_allowed, np_allowed) while the
-    diagnostics YAML gives each construction just the one it actually uses.
-    No manifest mutation needed to exercise this -- the mismatch already
-    exists in the fixtures."""
-    _, run_main = env
+    """A manifest whose stored values for a criterion differ from the
+    diagnostics YAML's is reported, not a crash. The frozen data used to hold
+    a real instance (synth0001's coreference tabs); the daily refresh-dropdowns
+    (#322) cleared it on Drive, so the test now makes its own: a stale value
+    list for prescreening's referential."""
+    doorway, run_main = env
+
+    def stale(manifest):
+        params = manifest["synth0001"]["sheets"]["coreference"]["construction_params"]
+        params["prescreening"]["param_values"]["referential"] = ["y", "n", "stale"]
+    mutate_manifest(doorway, stale)
     out, _ = run_main(["integrity-check", "--sheets", "--lang", "synth0001"])
     assert "param_values out of sync with YAML" in out
     assert "coreference · prescreening" in out

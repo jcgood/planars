@@ -205,7 +205,7 @@ class TestTsvContentChanged:
         # first, dropping the removed column before the comparison.
         old_header = ["Element", "reflexive_allowed", "np_allowed"]
         new_header = ["Element", "reflexive_allowed"]
-        p = tmp_path / "reflexivization.tsv"
+        p = tmp_path / "reflexive_coreference.tsv"
         _write_tsv_file(p, old_header, [{"Element": "a", "reflexive_allowed": "y", "np_allowed": ""}])
         assert _tsv_content_changed(p, new_header, [{"Element": "a", "reflexive_allowed": "y"}]) is True
 

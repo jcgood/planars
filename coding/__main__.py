@@ -53,6 +53,7 @@ _COMMANDS = {
     "lookup-lang":                 "coding.glottolog",
     "apply-pending":               "coding.apply_pending",
     "prune-manifest":              "coding.prune_manifest",
+    "rename-construction":         "coding.rename_construction",
     "check-notes":                 "coding.check_notes",
     "check-comments":              "coding.check_comments",
     "refresh-dropdowns":           "coding.refresh_dropdowns",

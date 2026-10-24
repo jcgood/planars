@@ -1,10 +1,6 @@
 SUMMARY
    121  batch_request
-     1  update_file
    121    └─ setDataValidation
-
-DRIVE OPERATIONS
-  update_file: file_id='fake_manifest_file', bytes=54211
 
 SHEET OPERATIONS
 
@@ -133,13 +129,13 @@ SHEET OPERATIONS
   stan1293/class:coreference  tab=prescreening
     setDataValidation: col 3 (referential) rows 1-144 -> ['y', 'n'] (strict=False)
 
-  stan1293/class:coreference  tab=reflexivization
+  stan1293/class:coreference  tab=reflexive_coreference
     setDataValidation: col 4 (reflexive_allowed) rows 1-164 -> ['y', 'n', 'untestable'] (strict=False)
 
-  stan1293/class:coreference  tab=pronominalization
+  stan1293/class:coreference  tab=pronoun_coreference
     setDataValidation: col 4 (pronoun_allowed) rows 1-164 -> ['y', 'n', 'untestable'] (strict=False)
 
-  stan1293/class:coreference  tab=np_reference
+  stan1293/class:coreference  tab=np_coreference
     setDataValidation: col 4 (np_allowed) rows 1-164 -> ['y', 'n', 'untestable'] (strict=False)
 
   stan1293/class:coreference  tab=Status
@@ -248,13 +244,13 @@ SHEET OPERATIONS
   synth0001/class:coreference  tab=prescreening
     setDataValidation: col 3 (referential) rows 1-144 -> ['y', 'n'] (strict=False)
 
-  synth0001/class:coreference  tab=reflexivization
+  synth0001/class:coreference  tab=reflexive_coreference
     setDataValidation: col 4 (reflexive_allowed) rows 1-608 -> ['y', 'n', 'untestable'] (strict=False)
 
-  synth0001/class:coreference  tab=pronominalization
+  synth0001/class:coreference  tab=pronoun_coreference
     setDataValidation: col 4 (pronoun_allowed) rows 1-608 -> ['y', 'n', 'untestable'] (strict=False)
 
-  synth0001/class:coreference  tab=np_reference
+  synth0001/class:coreference  tab=np_coreference
     setDataValidation: col 4 (np_allowed) rows 1-608 -> ['y', 'n', 'untestable'] (strict=False)
 
   synth0001/class:coreference  tab=Status

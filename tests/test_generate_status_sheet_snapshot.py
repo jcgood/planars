@@ -330,11 +330,11 @@ def test_a_pair_row_construction_gets_a_real_percentage(env):
     run(["gen", "--lang", "synth0001", "--apply"])
     ss = the_sheet(doorway, "status_synth0001")
     ws = ss.worksheet("Status")
-    # coreference/reflexivization is partly filled in the synthetic language's
+    # coreference/reflexive_coreference is partly filled in the synthetic language's
     # recording -- so a real count, yellow. (English's pair tabs were all
     # finished by 2026-10-22: nonpermutability/general, used until 2026-10-17,
-    # then English's reflexivization, until that refreeze.)
-    row = status_row_index(ss, "coreference", "reflexivization")
+    # then English's reflexivization (now reflexive_coreference), until that refreeze.)
+    row = status_row_index(ss, "coreference", "reflexive_coreference")
     text = ws.get_all_values()[row][2]
     m = re.fullmatch(r"(\d+)/(\d+) filled \(\d+%\)", text)
     assert m and 0 < int(m.group(1)) < int(m.group(2)), text

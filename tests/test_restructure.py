@@ -406,11 +406,11 @@ def test_apply_rename_unparseable_unchanged():
 
 def _make_pair_tsv(tmp_path, rows):
     """Write a minimal pair TSV where the local-file door looks for
-    lang0001's coreference/reflexivization and return its path."""
+    lang0001's coreference/reflexive_coreference and return its path."""
     import pandas as pd
     from coding import file_door
     file_door.CODED_DATA = tmp_path   # put back after the test by conftest's monkeypatch
-    p = file_door.annotation("lang0001", "coreference", "reflexivization").path
+    p = file_door.annotation("lang0001", "coreference", "reflexive_coreference").path
     p.parent.mkdir(parents=True, exist_ok=True)
     df = pd.DataFrame(rows)
     df.to_csv(p, sep="\t", index=False)
@@ -493,9 +493,9 @@ def test_count_pair_rename_impacts(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_pair_construction_criterion_coreference():
-    assert _pair_construction_criterion("coreference", "reflexivization") == "reflexive_allowed"
-    assert _pair_construction_criterion("coreference", "pronominalization") == "pronoun_allowed"
-    assert _pair_construction_criterion("coreference", "np_reference") == "np_allowed"
+    assert _pair_construction_criterion("coreference", "reflexive_coreference") == "reflexive_allowed"
+    assert _pair_construction_criterion("coreference", "pronoun_coreference") == "pronoun_allowed"
+    assert _pair_construction_criterion("coreference", "np_coreference") == "np_allowed"
 
 
 def test_pair_construction_criterion_nonpermutability():
@@ -517,7 +517,7 @@ _NONPERM_HEADER = ["Element_A", "Element_B", "scopal", "Source", "Comments"]
 
 def test_apply_split_element_a_side_coreference_shape_fans_out_blank():
     # Real-world shape: the citation lives in Source (index 5), Comments (index 6)
-    # starts empty -- matches the actual stan1293 PRON{P,T} reflexivization row.
+    # starts empty -- matches the actual stan1293 PRON{P,T} reflexive_coreference row.
     rows = [
         ["PRON{P,T}", "33 (v:obj-part)", "34 (v:rec)", "forward", "y",
          "Lasnik example", ""],
@@ -658,4 +658,4 @@ def test_get_pair_row_constructions_covers_all_registered_classes():
     assert "nonpermutability" in result
     assert "general" in result["nonpermutability"]
     assert "coreference" in result
-    assert {"reflexivization", "pronominalization", "np_reference"} <= result["coreference"]
+    assert {"reflexive_coreference", "pronoun_coreference", "np_coreference"} <= result["coreference"]

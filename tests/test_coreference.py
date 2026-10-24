@@ -78,7 +78,7 @@ class TestDeriveCoreferenceDomainsMissingColumns:
         pair_df = pd.DataFrame({"Position_B": ["1"], "reflexive_allowed": ["y"]})
         with pytest.raises(ValueError, match="Missing required column"):
             derive_coreference_domains(
-                tsv_path=Path("reflexivization.tsv"),
+                tsv_path=Path("reflexive_coreference.tsv"),
                 _data=(pair_df, 5, {5: "v:verbstem"}, {"FOO": {1}}),
             )
 
@@ -101,9 +101,9 @@ class TestDeriveCoreferenceFromASheet:
 
     def test_the_construction_name_stands_in_for_the_filename(self):
         from_sheet = derive_coreference_domains(
-            construction="reflexivization", _data=self._DATA, strict=False)
+            construction="reflexive_coreference", _data=self._DATA, strict=False)
         from_file = derive_coreference_domains(
-            tsv_path=Path("reflexivization.tsv"), _data=self._DATA, strict=False)
+            tsv_path=Path("reflexive_coreference.tsv"), _data=self._DATA, strict=False)
         assert from_sheet == from_file
 
     def test_no_construction_and_no_file_is_a_plain_error(self):

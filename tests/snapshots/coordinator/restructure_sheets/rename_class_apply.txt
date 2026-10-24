@@ -70,9 +70,9 @@ Language: stan1293
 
   coreference (current v4)
     [prescreening] downloaded 142 rows
-    [reflexivization] downloaded 0 rows
-    [pronominalization] downloaded 0 rows
-    [np_reference] downloaded 0 rows
+    [reflexive_coreference] downloaded 0 rows
+    [pronoun_coreference] downloaded 0 rows
+    [np_coreference] downloaded 0 rows
     [prescreening] carry over 142; new blank 0
     (no changes — skipping)
 
