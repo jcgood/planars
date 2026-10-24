@@ -405,7 +405,7 @@ The daily refresh runs both, so the TSV and the diagnostics Google Sheet follow 
 `planar_{lang_id}.tsv` and `diagnostics_{lang_id}.yaml` in planars-data are the only places to change a language's planar structure or diagnostics. The planar and diagnostics Google Sheets are read-only copies for the annotator (Phase 10 unit 11b, 2026-10-24): nothing is ever read back from them, and the daily refresh rebuilds them (`sync-planar --apply`, `sync-diagnostics-yaml --to-sheet --apply`).
 
 - **You** edit the file, commit it in planars-data, and let the daily refresh carry it to the Sheets (or run the command now).
-- **An annotator** proposes a change on the language's proposal sheet; you review it with `accept-proposal`, which writes the accepted parts to the file. See [the collaborator guide](collaborator-guide.md#proposing-a-change-to-the-planar-structure-or-the-diagnostics).
+- **An annotator** suggests a change on the language's "planars and diagnostics" sheet (e.g. "English [stan1293] planars and diagnostics"; in the code, the proposal sheet); you review it with `accept-proposal`, which writes the accepted parts to the file. See [the collaborator guide](collaborator-guide.md#suggesting-changes-to-the-planar-structure-or-the-diagnostics).
 
 When the planar's positions changed, `sync-planar` first renumbers any position numbers typed in the class sheets' answers, then updates the Sheet, and files a `planar-changed` issue naming the command that carries the change into the class sheets (`update-sheets` for added positions, `restructure-sheets` for moved, renamed or removed ones).
 

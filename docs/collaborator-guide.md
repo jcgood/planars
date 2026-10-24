@@ -44,22 +44,23 @@ While a construction is still `in-progress`, nothing is listed there: wrong valu
 
 Your language's read-only status page (`status_{lang_id}`, in the "Annotation Status" folder shared with you) shows how much of each construction is filled in. It is rebuilt once a day, and its second line says when, so edits you made after that time aren't counted yet.
 
-### Proposing a change to the planar structure or the diagnostics
+### Suggesting changes to the planar structure or the diagnostics
 
-The `planar_{lang_id}` and `diagnostics_{lang_id}` sheets in your language's folder are read-only: they show the current planar structure and diagnostics. Your language's folder has one more sheet, `proposal_{lang_id}`, where you propose changes to the planar structure (the positions and their elements) or to the diagnostics (which classes, constructions and criteria apply). It has three tabs:
+The `planar_{lang_id}` and `diagnostics_{lang_id}` sheets in your language's folder are read-only: they show the current planar structure and diagnostics. To change either, use the sheet called "*your language* planars and diagnostics" (for English, "English [stan1293] planars and diagnostics"). It is for editing, and has four tabs:
 
-- **Planar** and **Diagnostics**: copies of the two, with a **What changed?** column at the end.
-- **Last review**: the outcome of the last time the coordinator reviewed a proposal.
+- **Instructions**: what the sheet is for and how to use it.
+- **Last review**: the outcome of the last time the coordinator reviewed your changes.
+- **Planar** and **Diagnostics**: copies of the planar structure (the positions and their elements) and the diagnostics (which classes, constructions and criteria apply), with a **What changed?** column at the end.
 
-To propose a change, edit the Planar or Diagnostics tab as you would like it to be: change a cell, add a row, or delete one. Then say why in that row's **What changed?** cell. A deleted row takes its cell with it, so give the reason for a deletion on the row just above it. For a new position, add its row where it belongs and renumber the positions after it. Give the reason on the new row; the renumbered rows don't need one.
+To suggest a change, edit the Planar or Diagnostics tab as you would like it to be: change a cell, add a row, or delete one. Then say why in that row's **What changed?** cell. A deleted row takes its cell with it, so give the reason for a deletion on the row just above it. For a new position, add its row where it belongs and renumber the positions after it. Give the reason on the new row; the renumbered rows don't need one.
 
-Nothing else changes while you edit: your annotation sheets stay as they are. Within a day a GitHub issue titled "Proposal — " and your language's name lists each change you made and your reasons. The coordinator then accepts or declines each one. Then:
+Nothing else changes while you edit: your annotation sheets stay as they are. Within a day a GitHub issue titled "Changes suggested — " and the sheet's name lists each change you made and your reasons. The coordinator then accepts or declines each one. Then:
 
 - The accepted changes go into the planar structure and diagnostics. The tabs are filled again from the new versions, so your edits disappear from them. A declined change goes back to how it was.
 - **Last review** lists what was accepted, what was not and why, and the issue closes.
 - If an accepted change affects your annotation sheets (a new position or a new class, say), the coordinator updates those sheets.
 
-If the coordinator edits the planar or diagnostics while your proposal is open, their change is copied into the tabs without touching yours. If you both changed the same row in different ways, the issue says so, and the coordinator decides which version to keep.
+If the coordinator edits the planar or diagnostics while your changes are waiting, their change is copied into the tabs without touching yours. If you both changed the same row in different ways, the issue says so, and the coordinator decides which version to keep.
 
 ### Viewing your results
 

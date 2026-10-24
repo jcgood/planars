@@ -46,7 +46,7 @@ from . import drive_door, file_door
 from .drive import _load_drive_config
 from .drive_doorway import get_doorway
 from .proposal_diff import Row, apply, compare, describe, without
-from .proposal_sheets import (FIRST_REVIEW_TEXT, ID_KEY, LABEL, _read_base, _write_base,
+from .proposal_sheets import (ID_KEY, LABEL, _read_base, _write_base,
                               issue_title, sheet_name)
 from .sheet_spec import (PROPOSAL_DIAGNOSTICS_TAB, PROPOSAL_PLANAR_TAB, PROPOSAL_TABS,
                          REVIEW_TAB_TITLE, WHAT_CHANGED_COLUMN, proposal_sheet_spec)
@@ -217,7 +217,8 @@ def _review_rows(decisions: List[Decision], issue: Optional[int], by_hand: List[
         rows.append(["Accepted, to be made by the coordinator by hand:"])
         rows += [[f"  {line}"] for line in by_hand]
         rows.append([""])
-    rows += [[line] for line in FIRST_REVIEW_TEXT[2:]]
+    while rows and rows[-1] == [""]:
+        rows.pop()
     return rows
 
 

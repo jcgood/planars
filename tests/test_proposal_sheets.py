@@ -1,7 +1,8 @@
 """`python -m coding proposal-sheets` (Phase 10 unit 11a), against the offline
 Drive and a copy of the frozen language folders.
 
-Each language gets one proposal sheet (Last review, Planar, Diagnostics),
+Each language gets one proposal sheet, "English [stan1293] planars and
+diagnostics" (Instructions, Last review, Planar, Diagnostics),
 shared with its annotator; what it was filled with is saved as the
 language's base; a tab still holding the base is refilled when its source
 changes, and a tab holding a proposal is left alone.
@@ -18,8 +19,8 @@ import pytest
 
 from coding import drive_door, drive_doorway, file_door, state_files
 from coding import proposal_sheets as cmd
-from coding.sheet_spec import (PROPOSAL_DIAGNOSTICS_TAB, PROPOSAL_PLANAR_TAB, REVIEW_TAB_TITLE,
-                               WHAT_CHANGED_COLUMN)
+from coding.sheet_spec import (PROPOSAL_DIAGNOSTICS_TAB, PROPOSAL_INSTRUCTIONS_TAB,
+                               PROPOSAL_PLANAR_TAB, REVIEW_TAB_TITLE, WHAT_CHANGED_COLUMN)
 from coding.proposal_diff import compare, describe, normal, three_way
 from command_runner import run_command
 from fake_drive import FIXTURE_DIR, FakeDriveDoorway, use_frozen_coded_data
@@ -81,7 +82,8 @@ def accept(monkeypatch, answers: List[str], *flags: str):
 
 
 def the_sheet(doorway):
-    found =[ss for ss in doorway._spreadsheets.values() if ss.title == f"proposal_{LANG}"]
+    found = [ss for ss in doorway._spreadsheets.values()
+             if ss.title == "English [stan1293] planars and diagnostics"]
     assert len(found) == 1, f"{len(found)} proposal sheets"
     return found[0]
 
@@ -97,7 +99,7 @@ def trimmed(grid):
 
 
 def open_proposals(github):
-    return [i for i in github.issues if "proposal" in i["labels"] and i["state"] == "OPEN"]
+    return [i for i in github.issues if cmd.LABEL in i["labels"] and i["state"] == "OPEN"]
 
 
 def annotate(doorway, row: int, column: str, value: str) -> None:
@@ -114,12 +116,42 @@ def edit_planar_file(coded, old: str, new: str) -> None:
     path.write_text(text.replace(old, new, 1), encoding="utf-8")
 
 
+def test_a_sheet_made_before_2026_10_24_is_retitled_and_given_its_instructions(env):
+    """The live sheets were titled proposal_{lang} and had no Instructions
+    tab; the next run brings them up to date, and the one after writes
+    nothing."""
+    doorway, run, coded = env
+    run("--apply")
+    ss = the_sheet(doorway)
+    ss.del_worksheet(ss.worksheet(PROPOSAL_INSTRUCTIONS_TAB))
+    doorway.file(ss.id).name = ss.title = f"proposal_{LANG}"
+    review = ss.worksheet(REVIEW_TAB_TITLE)
+    review.clear()
+    review.update([[REVIEW_TAB_TITLE], ["No proposal reviewed yet."], [""],
+                   ["To propose a change, edit the Planar or Diagnostics tab."]], "A1")
+    doorway.clear_mutations()
+
+    out, code = run("--apply")
+
+    assert code == 0, out
+    assert f"retitle 'proposal_{LANG}'" in out
+    ss = the_sheet(doorway)
+    assert [ws.title for ws in ss.worksheets()][:2] == [PROPOSAL_INSTRUCTIONS_TAB,
+                                                        REVIEW_TAB_TITLE]
+    assert ss.list_protected_ranges(ss.worksheet(PROPOSAL_INSTRUCTIONS_TAB).id)
+    assert "propose" not in str(ss.worksheet(REVIEW_TAB_TITLE).get_all_values())
+    doorway.clear_mutations()
+    run("--apply")
+    assert doorway.mutations == []
+
+
 def test_a_dry_run_makes_nothing(env):
     doorway, run, coded = env
     out, code = run()
     assert code == 0
-    assert f"would make proposal_{LANG}" in out
-    assert not [ss for ss in doorway._spreadsheets.values() if ss.title.startswith("proposal_")]
+    assert "would make English [stan1293] planars and diagnostics" in out
+    assert not [ss for ss in doorway._spreadsheets.values()
+                if ss.title.endswith("planars and diagnostics")]
     assert not file_door.proposal_base(LANG).path.exists()
 
 
@@ -129,13 +161,17 @@ def test_apply_makes_the_sheet_filled_from_the_sources(env):
     assert code == 0, out
     ss = the_sheet(doorway)
     assert [ws.title for ws in ss.worksheets()] == [
-        REVIEW_TAB_TITLE, PROPOSAL_PLANAR_TAB, PROPOSAL_DIAGNOSTICS_TAB]
+        PROPOSAL_INSTRUCTIONS_TAB, REVIEW_TAB_TITLE, PROPOSAL_PLANAR_TAB,
+        PROPOSAL_DIAGNOSTICS_TAB]
+    instructions = ss.worksheet(PROPOSAL_INSTRUCTIONS_TAB)
+    assert "This sheet is for editing" in str(instructions.get_all_values())
+    assert ss.list_protected_ranges(instructions.id)
     planar = ss.worksheet(PROPOSAL_PLANAR_TAB).get_all_values()
     source = planar_grid(coded)
     assert planar[0] == source[0] + [WHAT_CHANGED_COLUMN]
     assert trimmed([r[:len(source[0])] for r in planar]) == trimmed(source)
     assert ss.worksheet(PROPOSAL_DIAGNOSTICS_TAB).get_all_values()[0][-1] == WHAT_CHANGED_COLUMN
-    assert "No proposal reviewed yet." in str(
+    assert "No changes reviewed yet." in str(
         ss.worksheet(REVIEW_TAB_TITLE).get_all_values())
     # In the language's folder, labelled, shared with its annotator as writer.
     config = json.loads(state_files.ID_FILE.read_text(encoding="utf-8"))

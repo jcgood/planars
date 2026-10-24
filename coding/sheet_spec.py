@@ -9,7 +9,8 @@ up as a wrong check, not as a quietly stale table.
 Every kind of Drive file has a spec: class sheets (`class_sheet_spec`),
 the planar and diagnostics Sheets (`copy_sheet_spec`), the status sheets
 (`status_sheet_spec`: one `Status` tab listing every construction, all the
-tooling's), the proposal sheets (`proposal_sheet_spec`: Last review, the
+tooling's), the proposal sheets (`proposal_sheet_spec`, titled
+`proposal_sheet_title`: a locked Instructions tab, Last review, the
 tooling's, then Planar and Diagnostics, copies of the two sources plus a
 What changed? column, every cell the annotator's), and the files that are not spreadsheets — notes Docs, the
 manifest, notebooks, PDF reports and folders (`file_spec`: name, folder,
@@ -359,10 +360,16 @@ def copy_sheet_spec(kind: str, lang_id: str, data_dir: Path) -> CopySheetSpec:
 # The proposal sheet: where an annotator proposes changes to the sources
 # ---------------------------------------------------------------------------
 
-# Its tabs, in order (ownership-design § 3.2). Last review is the tooling's:
-# what the last review accepted and rejected (accept-proposal writes it). The
-# other two are copies of the planar and of the diagnostics file as the
+# Its tabs, in order (ownership-design § 3.2). Instructions is locked: it
+# says the sheet is for editing, unlike the read-only planar and diagnostics
+# Sheets, and how (Jeff, 2026-10-24). Last review is the tooling's: what the
+# last review accepted and rejected (accept-proposal writes it). The other
+# two are copies of the planar and of the diagnostics file as the
 # diagnostics Sheet shows it, plus a column for the annotator's reason.
+# Named as the class sheets' instructions tab is (schemas/planar.yaml
+# locked_tabs), so annotators find the same tab under the same name.
+PROPOSAL_INSTRUCTIONS_TAB = next(s["title"] for s in locked_tab_specs()
+                                 if s["builder"] == "instructions")
 REVIEW_TAB_TITLE = "Last review"
 PROPOSAL_PLANAR_TAB = "Planar"
 PROPOSAL_DIAGNOSTICS_TAB = "Diagnostics"
@@ -374,12 +381,44 @@ PROPOSAL_TABS: Tuple[Tuple[str, str], ...] = (
 )
 
 
+def proposal_sheet_title(lang_id: str) -> str:
+    """What the sheet is called on Drive: "English [stan1293] planars and
+    diagnostics" (Jeff, 2026-10-24; it was proposal_{lang_id})."""
+    from planars.languages import get_display_name
+    return f"{get_display_name(lang_id)} planars and diagnostics"
+
+
+def proposal_instructions_rows(lang_id: str) -> Tuple[Tuple[str, ...], ...]:
+    """The Instructions tab. Short: an annotator reads it (Adam, #318). Moves
+    into the schema with the other sentences annotators read (unit 11d)."""
+    lines = (
+        proposal_sheet_title(lang_id),
+        "",
+        f"This sheet is for editing. The planar_{lang_id} and diagnostics_{lang_id} "
+        "sheets in this folder are read-only: they show the current versions.",
+        "",
+        "To suggest a change:",
+        "1. Edit the Planar or Diagnostics tab as you would like it to be: change a "
+        "cell, add a row, or delete one.",
+        "2. Say why in that row's What changed? cell. For a deleted row, give the "
+        "reason on the row just above it.",
+        "3. For a new position, add its row where it belongs and renumber the "
+        "positions after it.",
+        "",
+        "Within a day a GitHub issue lists your changes. The coordinator accepts or "
+        "declines each one. The outcome goes on the Last review tab, and the Planar "
+        "and Diagnostics tabs are refilled from the new versions.",
+    )
+    return tuple((line,) for line in lines)
+
+
 @dataclass(frozen=True)
 class ProposalSheetSpec:
-    """Last review, then the Planar and Diagnostics tabs: each the source's
-    columns and rows (``copy_sheet_spec``) plus WHAT_CHANGED_COLUMN, every
-    cell the annotator's. Nothing is protected: Last review is rewritten
-    after each review, so an edit to it is simply replaced."""
+    """Instructions (locked, protected), Last review, then the Planar and
+    Diagnostics tabs: each the source's columns and rows
+    (``copy_sheet_spec``) plus WHAT_CHANGED_COLUMN, every cell the
+    annotator's. Last review is not protected: it is rewritten after each
+    review, so an edit to it is simply replaced."""
     lang_id: str
     tabs: Tuple[TabSpec, ...]
 
@@ -391,12 +430,14 @@ class ProposalSheetSpec:
         for t in self.tabs:
             if t.title == title:
                 return t
-        raise KeyError(f"proposal_{self.lang_id} has no tab {title!r}")
+        raise KeyError(f"{proposal_sheet_title(self.lang_id)} has no tab {title!r}")
 
 
 def proposal_sheet_spec(lang_id: str, data_dir: Path) -> ProposalSheetSpec:
     """The spec for one language's proposal sheet, from its two sources."""
-    tabs = [TabSpec(REVIEW_TAB_TITLE, REVIEW, (ColumnSpec(REVIEW_TAB_TITLE, TOOLING, None),))]
+    tabs = [TabSpec(PROPOSAL_INSTRUCTIONS_TAB, LOCKED,
+                    rows=proposal_instructions_rows(lang_id), protected=True),
+            TabSpec(REVIEW_TAB_TITLE, REVIEW, (ColumnSpec(REVIEW_TAB_TITLE, TOOLING, None),))]
     for title, kind in PROPOSAL_TABS:
         copy = copy_sheet_spec(kind, lang_id, data_dir).tab
         columns = tuple(ColumnSpec(c.name, ANNOTATOR, None) for c in copy.columns) \

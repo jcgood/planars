@@ -66,9 +66,10 @@ tests). Reads pass straight through. Every write is checked first:
 - **The rules for a proposal sheet** (unit 11a; ``sheet_spec.proposal_sheet_spec``):
   its Planar and Diagnostics tabs are the annotator's proposal, every cell
   theirs, so rule 1 holds for all of them (a refill goes through
-  ``replacing()``); Last review is the tooling's; no dropdowns; no
-  protection; and rule 6 checks its three tabs and their order, and that
-  each proposal tab written has its source's columns and What changed?.
+  ``replacing()``); Instructions is a locked tab (rule 2, protected); Last
+  review is the tooling's; no dropdowns; and rule 6 checks its four tabs,
+  their order and protection, and that each proposal tab written has its
+  source's columns and What changed?.
 - **Rule 8, the files that are not spreadsheets** (``FILE_KINDS``: notes
   Docs, reports, notebooks, the manifest, folders; design § 8, "5f";
   ``sheet_spec.file_spec``): a create, rename, move or upload sends only the
@@ -270,8 +271,9 @@ COPY_TAB = "copy"
 # on every run (sheet_spec.status_sheet_spec). Not a label either.
 STATUS_PAGE_TAB = "status page"
 # A proposal sheet's tabs (sheet_spec.proposal_sheet_spec), told apart by
-# title: Last review is the tooling's, rewritten after each review; the
-# Planar and Diagnostics tabs are the annotator's proposal, every cell theirs.
+# title: Instructions is a locked tab (LOCKED_TAB); Last review is the
+# tooling's, rewritten after each review; the Planar and Diagnostics tabs are
+# the annotator's proposal, every cell theirs.
 REVIEW_TAB = "review"
 PROPOSAL_TAB = "proposal"
 # The tabs whose filled cells are annotators' answers (rule 1).
@@ -999,8 +1001,8 @@ class CheckedDoorway:
 
     def _proposal_shape_problems(self, ss: "CheckedSpreadsheet", spec,
                                  where: str) -> List[str]:
-        """Rule 6 for a proposal sheet: its three tabs in order, none
-        protected, and each proposal tab the command wrote has its source's
+        """Rule 6 for a proposal sheet: its four tabs in order, only
+        Instructions protected, and each proposal tab the command wrote has its source's
         columns and What changed?. Its rows are the annotator's proposal, so
         they are not compared. Only what is new is reported."""
         after = self._sheet_layout(ss)
@@ -1939,7 +1941,9 @@ class CheckedWorksheet:
         if identity is not None and identity.kind == STATUS_SHEET:
             return STATUS_PAGE_TAB, None
         if identity is not None and identity.kind == PROPOSAL_SHEET:
-            from .sheet_spec import REVIEW_TAB_TITLE
+            from .sheet_spec import PROPOSAL_INSTRUCTIONS_TAB, REVIEW_TAB_TITLE
+            if self.title == PROPOSAL_INSTRUCTIONS_TAB:
+                return LOCKED_TAB, self._door._spec(identity)
             return (REVIEW_TAB if self.title == REVIEW_TAB_TITLE else PROPOSAL_TAB), None
         if identity is None or identity.kind != CLASS_SHEET:
             return None, None

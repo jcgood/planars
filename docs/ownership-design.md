@@ -94,6 +94,10 @@ labelled since 5d) says what each should hold, built from the source.
 
 ### 3.2 One proposal sheet per language
 
+*(Renamed for annotators 2026-10-24, Jeff: on Drive it is "English
+[stan1293] planars and diagnostics", with an Instructions tab first. The
+design and the code keep "proposal sheet".)*
+
 Each language gets one **proposal sheet**, editable by name by that
 language's annotator and by the project's coordinators (Q2). It has two tabs, each filled with the current source plus
 one extra column, **What changed?**:

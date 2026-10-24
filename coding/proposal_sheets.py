@@ -2,14 +2,19 @@
 and kept filled from the sources.
 
 Phase 10 unit 11a (issue #271); design: docs/ownership-design.md § 3.2–3.4.
-A proposal sheet is where a language's annotator proposes changes to the
+A proposal sheet is where a language's annotator suggests changes to the
 planar and the diagnostics file, the two sources only the coordinator edits.
-Its tabs (``sheet_spec.proposal_sheet_spec``): **Last review** (the
-tooling's; what the last review accepted and rejected, and how to propose a
-change), then **Planar** and **Diagnostics**, each a copy of its source plus
-a **What changed?** column, every cell the annotator's. It sits in the
-language's folder; the annotator is a writer by name, and the coordinators
-are writers through the root folder (Q2).
+On Drive it is called "English [stan1293] planars and diagnostics"
+(``sheet_spec.proposal_sheet_title``; Jeff, 2026-10-24, because "proposal"
+told annotators nothing). Its tabs (``sheet_spec.proposal_sheet_spec``):
+**Instructions** (locked: the sheet is for editing, unlike the read-only
+planar and diagnostics Sheets, and how), **Last review** (the tooling's;
+what the last review accepted and rejected), then **Planar** and
+**Diagnostics**, each a copy of its source plus a **What changed?** column,
+every cell the annotator's. Every run brings an existing sheet's title,
+Instructions tab and tab order up to date (``_bring_up_to_date``). It sits
+in the language's folder; the annotator is a writer by name, and the
+coordinators are writers through the root folder (Q2).
 
 What it was last filled with is saved in planars-data as the language's
 **base** (``file_door.proposal_base``, archived and logged like any data
@@ -57,27 +62,77 @@ from . import drive_door, file_door
 from .drive import _load_drive_config, _save_drive_config, ensure_user_permission
 from .drive_doorway import get_doorway
 from .proposal_diff import compare, describe
-from .sheet_spec import (PROPOSAL_TABS, REVIEW_TAB_TITLE, WHAT_CHANGED_COLUMN,
-                         proposal_sheet_spec)
+from .sheet_spec import (PROPOSAL_INSTRUCTIONS_TAB, PROPOSAL_TABS, REVIEW_TAB_TITLE,
+                         WHAT_CHANGED_COLUMN, proposal_instructions_rows,
+                         proposal_sheet_spec, proposal_sheet_title)
 
 CODED_DATA = drive_door.CODED_DATA
 ID_KEY = "proposal_spreadsheet_id"
-LABEL = "proposal"      # schemas/issue_labels.yaml
+LABEL = "planars-and-diagnostics"      # schemas/issue_labels.yaml
 
-# What Last review says before any proposal has been reviewed. Moves into
-# the schema with the other sentences annotators read (unit 11d).
-# Short: an annotator reads it (Adam, #318).
-FIRST_REVIEW_TEXT = (
-    "No proposal reviewed yet.",
-    "",
-    "To propose a change, edit the Planar or Diagnostics tab and give a reason "
-    "in What changed?.",
-    "The coordinator's answer appears here.",
-)
+# What Last review says before any change has been reviewed (how to suggest
+# one is on the Instructions tab). Moves into the schema with the other
+# sentences annotators read (unit 11d).
+FIRST_REVIEW_TEXT = ("No changes reviewed yet.",)
 
 
 def sheet_name(lang_id: str) -> str:
-    return f"proposal_{lang_id}"
+    return proposal_sheet_title(lang_id)
+
+
+def _instructions_grid(lang_id: str) -> List[List[str]]:
+    return [list(r) for r in proposal_instructions_rows(lang_id)]
+
+
+def _bring_up_to_date(doorway, ss, lang_id: str, apply: bool) -> List[str]:
+    """The sheet's title, its Instructions tab (present, current, protected)
+    and its tab order, as the spec says; one line per change made (or that
+    would be, on a dry run). Sheets made before 2026-10-24 were titled
+    proposal_{lang_id} and had no Instructions tab."""
+    from .locked_tabs import protect
+    changes = []
+    title = sheet_name(lang_id)
+    if ss.title != title:
+        changes.append(f"retitle {ss.title!r} as {title!r}")
+        if apply:
+            doorway.update_file(ss.id, name=title)
+    existing = {ws.title: ws for ws in ss.worksheets()}
+    ws = existing.get(PROPOSAL_INSTRUCTIONS_TAB)
+    grid = _instructions_grid(lang_id)
+    if ws is None:
+        changes.append(f"add the {PROPOSAL_INSTRUCTIONS_TAB} tab")
+        if apply:
+            ws = ss.add_worksheet(title=PROPOSAL_INSTRUCTIONS_TAB, rows=len(grid) + 2, cols=1)
+            ws.update(grid, "A1")
+    elif [r[:1] for r in ws.get_all_values() if any(c.strip() for c in r)] != \
+            [r for r in grid if r[0].strip()]:
+        changes.append(f"refresh the {PROPOSAL_INSTRUCTIONS_TAB} tab")
+        if apply:
+            ws.clear()
+            ws.update(grid, "A1")
+    if ws is not None and protect(ss, ws, apply):
+        changes.append(f"protect the {PROPOSAL_INSTRUCTIONS_TAB} tab")
+    # Before any review, Last review holds only its first text, which is
+    # kept current; a review's record (accept-proposal's "Reviewed ..." line)
+    # is never touched.
+    review = existing.get(REVIEW_TAB_TITLE)
+    if review is not None:
+        now = [r[:1] for r in review.get_all_values() if any(c.strip() for c in r)]
+        if not any(r[0].startswith("Reviewed ") for r in now) and \
+                now != [r for r in _review_rows() if r[0].strip()]:
+            changes.append(f"refresh the {REVIEW_TAB_TITLE} tab (no review yet)")
+            if apply:
+                review.clear()
+                review.update(_review_rows(), "A1")
+    order = [PROPOSAL_INSTRUCTIONS_TAB, REVIEW_TAB_TITLE] + [t for t, _ in PROPOSAL_TABS]
+    tabs = {w.title: w for w in ss.worksheets()}
+    present = [t for t in tabs if t in order]
+    if present != [t for t in order if t in tabs] or (ws is None and not apply):
+        changes.append("put the tabs in order")
+        if apply:
+            ss.reorder_worksheets([tabs[t] for t in order if t in tabs]
+                                  + [w for t, w in tabs.items() if t not in order])
+    return changes
 
 
 def _grid_of(tab) -> List[List[str]]:
@@ -101,12 +156,16 @@ def _review_rows() -> List[List[str]]:
 
 def _create(doorway, lang_id: str, folder_id: str, fills: Dict[str, List[List[str]]]):
     """Make the sheet in the language's folder and fill it."""
+    from .locked_tabs import protect
     ss = doorway.create_spreadsheet(sheet_name(lang_id),
                                     identity=drive_door.lang_file(drive_door.PROPOSAL_SHEET,
                                                                   lang_id))
     doorway.move_file(ss.id, folder_id)
-    review = ss.sheet1
-    review.update_title(REVIEW_TAB_TITLE)
+    instructions = ss.sheet1
+    instructions.update_title(PROPOSAL_INSTRUCTIONS_TAB)
+    instructions.update(_instructions_grid(lang_id), "A1")
+    protect(ss, instructions)
+    review = ss.add_worksheet(title=REVIEW_TAB_TITLE, rows=50, cols=1)
     review.update(_review_rows(), "A1")
     for title, _ in PROPOSAL_TABS:
         grid = fills[title]
@@ -153,8 +212,9 @@ def _one_language(doorway, lang_id: str, config: Dict, apply: bool,
         if not apply:
             print(f"  [{lang_id}] would make {sheet_name(lang_id)} in its folder")
             return
+        quoted = sheet_name(lang_id).replace("\\", "\\\\").replace("'", "\\'")
         found = doorway.list_files(
-            q=(f"name='{sheet_name(lang_id)}' and '{folder_id}' in parents"
+            q=(f"name='{quoted}' and '{folder_id}' in parents"
                " and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false"),
             fields="files(id)")
         if found:
@@ -181,6 +241,8 @@ def _one_language(doorway, lang_id: str, config: Dict, apply: bool,
                         "changed can't be told; nothing was written to it")
         return
     ss = doorway.open_spreadsheet(sheet_id)
+    for line in _bring_up_to_date(doorway, ss, lang_id, apply):
+        print(f"  [{lang_id}] {'' if apply else 'would '}{line}")
     new_base = dict(base)
     found: Dict[str, Dict[str, List[str]]] = {}
     for title, _ in PROPOSAL_TABS:
@@ -221,15 +283,14 @@ def _what_it_proposes(merge) -> Dict[str, List[str]]:
 
 
 def issue_title(lang_id: str) -> str:
-    from planars.languages import get_display_name
-    return f"Proposal — {get_display_name(lang_id)}"
+    return f"Changes suggested — {sheet_name(lang_id)}"
 
 
 def _issue_body(lang_id: str, url: str, found: Dict[str, Dict[str, List[str]]]) -> str:
     from .people import annotator_name
     who = annotator_name(lang_id) or "The annotator"
     # Short: the annotator reads it too (Adam, #318).
-    lines = [f"{who} proposed changes in [{sheet_name(lang_id)}]({url}) "
+    lines = [f"{who} suggested changes in [{sheet_name(lang_id)}]({url}) "
              "(reasons in italics):", ""]
     for title, _ in PROPOSAL_TABS:
         if not (found[title]["changes"] or found[title]["conflicts"]):
@@ -263,8 +324,8 @@ def _report(lang_id: str, url: str, found: Dict[str, Dict[str, List[str]]],
         return
     number = issues.find_open(LABEL, title=title)
     if number is not None:
-        issues.close(number, "The proposal sheet holds no proposal now: every change "
-                             "is in the source or was undone on the sheet.")
+        issues.close(number, f"{sheet_name(lang_id)} holds no suggested change now: "
+                             "every change is in the source or was undone on the sheet.")
         print(f"  [{lang_id}] closed #{number}")
 
 

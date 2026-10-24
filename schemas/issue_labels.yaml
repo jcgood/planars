@@ -325,15 +325,16 @@ labels:
       sheets get new URLs. Annotators subscribe to it. Never closed.
     filed_by: restructure-sheets --apply
 
-  - name: proposal
+  - name: planars-and-diagnostics
     color: "bfd4f2"
-    description: "An annotator has proposed changes to a language's planar or diagnostics"
+    description: "An annotator has suggested changes to a language's planar or diagnostics"
     meaning: >-
-      One issue per language ("Proposal — {Name [glottocode]}"): the
-      annotator's proposal sheet differs from what it was filled with, and the
-      issue lists each change in plain words, and any row both they and the
-      coordinator changed (a conflict). Kept current by `proposal-sheets
-      --apply` in the daily refresh. Resolve: `accept-proposal --lang LANG_ID
-      --apply`, which closes it with the decisions; it also closes by itself
-      when the sheet holds no proposal.
+      One issue per language ("Changes suggested — {Name [glottocode]}
+      planars and diagnostics"): the annotator's planars and diagnostics
+      sheet differs from what it was filled with, and the issue lists each
+      change in plain words, and any row both they and the coordinator
+      changed (a conflict). Kept current by `proposal-sheets --apply` in the
+      daily refresh. Resolve: `accept-proposal --lang LANG_ID --apply`, which
+      closes it with the decisions; it also closes by itself when the sheet
+      holds no suggested change. (Called `proposal` until 2026-10-24.)
     filed_by: proposal-sheets --apply (data-refresh.yml)

@@ -507,7 +507,7 @@ def diagnostics_to_sheet(r: Refresh) -> None:
 def proposal_sheets(r: Refresh) -> None:
     """After both copies are pushed for the day (the planar Sheet, the
     diagnostics Sheet), so today's source changes reach each proposal sheet
-    and its `proposal` issue compares against them."""
+    and its `planars-and-diagnostics` issue compares against them."""
     r.unreported("proposal sheets", run("proposal-sheets", "--apply"))
 
 

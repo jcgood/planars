@@ -824,11 +824,19 @@ _PROPERTY_RE = re.compile(
 
 def _clauses(q: str) -> List[str]:
     """Split a query on its top-level ``and``s, not the one inside a
-    ``properties has { ... }`` clause."""
-    out, depth, start = [], 0, 0
-    for match in re.finditer(r"[{}]| and ", q):
+    ``properties has { ... }`` clause or a quoted value (a file name such as
+    "English [stan1293] planars and diagnostics"). A quote escaped with a
+    backslash does not end the value."""
+    out, depth, start, quoted = [], 0, 0, False
+    for match in re.finditer(r"\\.|'|[{}]| and ", q):
         token = match.group()
-        if token == "{":
+        if token.startswith("\\"):
+            continue
+        if token == "'":
+            quoted = not quoted
+        elif quoted:
+            continue
+        elif token == "{":
             depth += 1
         elif token == "}":
             depth -= 1
@@ -858,7 +866,8 @@ def _parse_query(q: str) -> Dict[str, Any]:
                              ("trashed", _TRASHED_RE), ("parent", _PARENT_RE)):
             match = pattern.match(clause)
             if match:
-                parsed[key] = match.group("v")
+                # A quoted value's \' and \\ stand for ' and \, as in Drive.
+                parsed[key] = re.sub(r"\\(.)", r"\1", match.group("v"))
                 break
         else:
             raise NotImplementedError(
