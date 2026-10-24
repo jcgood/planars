@@ -354,6 +354,10 @@ class DriveDoorway(Protocol):
     def move_file(self, file_id: str, new_parent_id: str) -> None:
         """Reparent a file (internally a get-parents then update)."""
 
+    def trash_file(self, file_id: str) -> None:
+        """Move a file to Drive's trash, where it stays restorable for 30
+        days; never a permanent delete."""
+
     def download_file_json(self, file_id: str) -> Dict: ...
 
     def get_or_create_folder(self, name: str, parent_id: Optional[str] = None) -> str:
@@ -507,6 +511,9 @@ class GspreadDoorway:
 
     def move_file(self, file_id: str, new_parent_id: str) -> None:
         _move_to_folder(self.drive, file_id, new_parent_id)
+
+    def trash_file(self, file_id: str) -> None:
+        self.drive.files().update(fileId=file_id, body={"trashed": True}).execute()
 
     def download_file_json(self, file_id: str) -> Dict:
         return _download_file_json(self.drive, file_id)

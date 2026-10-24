@@ -470,6 +470,20 @@ def test_a_file_is_moved_only_into_the_folder_its_spec_names(env):
             door.move_file(folder_id, fake.seed_folder("scratch"))
 
 
+def test_only_a_notebook_goes_to_the_trash(env):
+    from coding.sheet_spec import file_spec
+    fake, door, sheet_id, _ = env
+    identity = drive_door.notebook("domains", LANG)
+    spec = file_spec(identity)
+    notebook = fake.seed_file(spec.name, spec.mimetype, identity=identity)
+    with drive_door.running("migration test", may_write=True):
+        door.trash_file(notebook)
+        with pytest.raises(DoorViolation, match="only a notebook goes to the trash"):
+            door.trash_file(sheet_id)
+    assert fake.file(notebook).trashed
+    assert not fake.file(sheet_id).trashed
+
+
 def test_folders_hold_no_content_and_top_folders_sit_outside_the_project(env):
     fake, door, _, _ = env
     with drive_door.running("generate-status-sheet", APPLY):

@@ -125,7 +125,11 @@ def _capture_spreadsheet(gc, drive, spreadsheet_id: str, role: str) -> Dict:
     worksheets = _retry(ss.worksheets)
     meta = _retry(lambda: ss.fetch_sheet_metadata(params={
         "fields": "sheets(properties(sheetId),developerMetadata)"}))
-    tab_metadata = {s["properties"]["sheetId"]: s.get("developerMetadata", [])
+    # Sorted by key: Google returns a tab's labels in no fixed order, and an
+    # unsorted capture made every refreeze diff show them all as changed.
+    tab_metadata = {s["properties"]["sheetId"]: sorted(
+                        s.get("developerMetadata", []),
+                        key=lambda m: (m.get("metadataKey", ""), m.get("metadataId", 0)))
                     for s in meta.get("sheets", [])}
     properties = _retry(lambda: drive.files().get(
         fileId=spreadsheet_id, fields="properties").execute()).get("properties", {})

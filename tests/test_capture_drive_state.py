@@ -135,12 +135,14 @@ def test_capture_records_the_labels_and_the_fake_replays_them():
     """The sheet's identity label, its tabs' labels and its grants are
     recorded, and a recording seeded into the stand-in Drive is captured back
     unchanged, so the door in tests places recorded sheets by label, and
-    finds them shared, as it does live."""
+    finds them shared, as it does live. A tab's labels are recorded sorted
+    by key, so a refreeze doesn't show them as changed when Google returns
+    them in another order."""
     doorway = _seeded_doorway()
     data = _capture_spreadsheet(_GCFor(doorway), _DriveV3(doorway), "probe_sheet",
                                 role="stan1293:class:metrical")
     assert data["properties"] == _SHEET_LABELS
-    assert data["worksheets"][0]["developer_metadata"] == _TAB_LABELS
+    assert data["worksheets"][0]["developer_metadata"] == [_TAB_LABELS[1], _TAB_LABELS[0]]
     assert data["permissions"] == _GRANTS
     assert "@" not in json.dumps(data["permissions"])
 

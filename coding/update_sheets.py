@@ -21,9 +21,10 @@ changes (``coded_data_clean_tree``, enforced centrally by preconditions.py).
 
 Which columns of a tab hold criteria, how wide an added row should be, and
 what each dropdown allows come from the tab's own header plus the diagnostics
-YAML, via ``refresh_dropdowns._resolve_criterion_columns`` and
-``_fresh_param_values``, never from the manifest, which is bookkeeping and
-goes stale. When the two cannot be reconciled the tab is skipped with a
+YAML, via ``_resolve_criterion_columns`` and ``_fresh_param_values``
+(written for refresh-dropdowns, #272; moved here 2026-10-23 when that
+command began reading the sheet spec instead), never from the manifest,
+which is bookkeeping and goes stale. When the two cannot be reconciled the tab is skipped with a
 reason rather than written to (otherwise a new row could narrow the whole
 tab's dropdowns, or write ``NA`` into ``Source``/``Comments``).
 
@@ -37,7 +38,7 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -53,14 +54,7 @@ from .drive import (
     upload_manifest,
 )
 from .drive_doorway import WorksheetHandle, WorksheetNotFound, get_doorway
-# Which columns of a tab hold criteria, and what each one allows, is a rule
-# refresh_dropdowns already owns — it was rewritten there for issue #272. Two
-# commands answering the same question separately is how they came to disagree
-# in the first place, so this imports the answer rather than restating it.
-from .refresh_dropdowns import (
-    _fresh_param_values,
-    _resolve_criterion_columns,
-)
+from .schemas import criteria_for
 from .generate_sheets import (
     _add_constructions_to_existing_sheet,
     _build_criterion_notes,
@@ -83,8 +77,93 @@ _STRUCTURAL_COLS = set(ELEMENT_ROW_COLUMNS)
 
 
 # ---------------------------------------------------------------------------
-# API helpers
+# Which columns hold criteria, and what each allows (#272)
 # ---------------------------------------------------------------------------
+
+def _fresh_param_values(
+    class_name: str,
+    construction: str,
+    construction_criteria: Dict[str, List[str]],
+    lang_id: str = "",
+) -> Dict[str, List[str]]:
+    """Derive fresh param_values for ONE construction from the diagnostics YAML.
+
+    ``construction_criteria`` must be the criteria declared for this
+    construction specifically. Passing a whole class's criteria here was
+    issue #272: classes that declare per-construction criteria (``segmental``
+    has ``aspiration_prominence`` and ``flapping``; ``phrasal_accent`` has
+    ``prescreening`` and ``general``) had every construction resolved against
+    the *first* one's values, so the rest fell through to a generic ``[y, n]``.
+    That would have narrowed ``flapping`` from ``[y, n, both, na]`` and
+    ``joint_accent`` from ``[always, sometimes, never]`` — the latter offering
+    an annotator nothing but wrong answers.
+
+    Which criterion a construction owns, and its values, come from
+    ``coding.schemas.criteria_for`` — the one copy of that rule (until
+    2026-10-12 this function carried its own per-class blocks).
+    """
+    return criteria_for(class_name, construction, list(construction_criteria),
+                        construction_criteria, lang_id)[1]
+
+
+def _detect_col_start(header: List[str], param_names: List[str]) -> int:
+    """Return the 0-based column index where criterion columns begin."""
+    for i, col in enumerate(header):
+        if col in param_names:
+            return i
+    return 3  # fallback: standard element-row layout
+
+
+def _resolve_criterion_columns(
+    header: List[str],
+    fresh: Dict[str, List[str]],
+    class_criteria: Dict[str, List[str]],
+) -> Tuple[Optional[int], List[List[str]], Optional[str]]:
+    """Work out which columns get dropdowns, reading the SHEET, not the manifest.
+
+    Returns ``(col_start, per_column_values, error)``. On any doubt it returns
+    an error string and writes nothing, rather than guessing.
+
+    This is the second half of issue #272. The old code took the *count* of
+    dropdown columns from the manifest's ``param_names`` while taking their
+    *start* from the header. When those disagreed — as on synth0001's
+    coreference prescreening tab, whose manifest entry still listed the three
+    pair criteria while the sheet had a single ``referential`` column — it
+    wrote one dropdown per manifest entry starting at the header's offset, and
+    ran off the end of the criteria onto ``Source`` and ``Comments``: y/n
+    dropdowns on the two free-text columns an annotator writes prose in.
+
+    The sheet's own header is authoritative for which columns exist. The
+    diagnostics YAML is authoritative for what values each one allows. Neither
+    job belongs to the manifest, which is bookkeeping and can go stale.
+    """
+    trailing = [header.index(c) for c in _TRAILING_COLS if c in header]
+    end = min(trailing) if trailing else len(header)
+
+    known = set(fresh) | set(class_criteria)
+    col_start = _detect_col_start(header, known)
+    if col_start >= end:
+        return None, [], (
+            f"no criterion columns between column {col_start} and "
+            f"{_TRAILING_COLS[0] if trailing else 'end of header'}"
+        )
+
+    names = header[col_start:end]
+    per_col: List[List[str]] = []
+    for name in names:
+        # fresh first (this construction's own criteria), then the class's —
+        # a sibling construction's criterion column left behind on this tab is
+        # still a real criterion and should keep its real values.
+        values = fresh.get(name) or class_criteria.get(name)
+        if not values:
+            return None, [], (
+                f"column {header.index(name)} is {name!r}, which is not a "
+                f"criterion of this class — refusing to write a dropdown onto "
+                f"it. Known criteria: {sorted(known)}"
+            )
+        per_col.append(values)
+    return col_start, per_col, None
+
 
 # ---------------------------------------------------------------------------
 # Element index helpers

@@ -1696,10 +1696,11 @@ def _create_analysis_sheet(
     _create_status_tab(spreadsheet, tab_names)
     reorder_tabs(spreadsheet)
 
-    # Build per-construction param_values map for the manifest
+    # Each construction's criteria, for the manifest (the analysis notebooks
+    # read them). Their allowed values stay in the diagnostics YAML only.
     construction_params = {
-        construction: {"param_names": pn, "param_values": pv}
-        for construction, pn, pv in constructions
+        construction: {"param_names": pn}
+        for construction, pn, _ in constructions
     }
 
     return {
@@ -1958,10 +1959,7 @@ def _add_constructions_to_existing_sheet(
                              param_values, element_index, planar_path)
         print(f"    Tab: {construction} ({what})")
 
-        construction_params[construction] = {
-            "param_names": param_names,
-            "param_values": param_values,
-        }
+        construction_params[construction] = {"param_names": param_names}
 
     # Refresh the locked tabs and Status, then put every tab in its place.
     planar_path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"

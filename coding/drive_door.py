@@ -73,8 +73,9 @@ tests). Reads pass straight through. Every write is checked first:
   spec's name, folder, type and kind of content (the manifest's checked
   against ``manifest_contract``, a notebook's and a PDF's by their form); a
   notes Doc's text is never replaced, and only an acknowledgment line is
-  appended to it; and a file only one of which may exist (all but archive
-  folders) is not made a second time.
+  appended to it; a file only one of which may exist (all but archive
+  folders) is not made a second time; and only a notebook
+  (``TRASHABLE_KINDS``) is put in the trash, never deleted outright.
 
 Every call is retried on Google's "try again" answers (``_RETRYABLE``) and
 on a dropped connection, here and nowhere else. A call that creates something is retried only after
@@ -175,6 +176,9 @@ NOTES_DOC = "notes_doc"
 SHEET_KINDS: FrozenSet[str] = frozenset({CLASS_SHEET, *COPY_SHEETS, STATUS_SHEET,
                                          PROPOSAL_SHEET})
 FILE_KINDS: FrozenSet[str] = frozenset({NOTES_DOC, "report", "manifest", "notebook", "folder"})
+# The kinds of file that may be put in Drive's trash (rule 8): the tooling
+# writes every cell of them, so nobody's work is in one.
+TRASHABLE_KINDS: FrozenSet[str] = frozenset({"notebook"})
 
 # Every batch_update request type the tooling sends, each checked below.
 # A new one is added here, with its check, before any command can use it.
@@ -227,9 +231,11 @@ KINDS: Dict[str, Dict[str, Any]] = {
     NOTES_DOC:          {"lang": _LANG, "class": None, "name": None},
     "report":            {"lang": _LANG, "class": None, "name": None},
     "manifest":          {"lang": None, "class": None, "name": None},
-    # These two depend on the name: see Identity.__post_init__.
+    # These two depend on the name: see Identity.__post_init__. (A
+    # "validation" notebook was retired 2026-10-23,
+    # migrations/retire_validation_notebooks.py; the ones made are in the trash.)
     "notebook":          {"lang": _BY_NAME, "class": None,
-                          "name": {"domains", "validation", "report", "all_languages"}},
+                          "name": {"domains", "report", "all_languages"}},
     "folder":            {"lang": _BY_NAME, "class": None,
                           "name": {"root", "language", "archive", "status"}},
 }
@@ -1264,6 +1270,15 @@ class CheckedDoorway:
                     target=file_id)
         _retry(lambda: self._inner.move_file(file_id, new_parent_id))
         self._wrote_file(file_id, "", "move_file")
+
+    def trash_file(self, file_id: str) -> None:
+        identity = self._identify(file_id)
+        problems = [] if identity is not None and identity.kind in TRASHABLE_KINDS else [
+            f"only a {' or '.join(sorted(TRASHABLE_KINDS))} goes to the trash, not "
+            f"{identity.describe() if identity else 'a file with no label'}"]
+        self._check(f"trash file {file_id}", problems, target=file_id)
+        _retry(lambda: self._inner.trash_file(file_id))
+        self._wrote_file(file_id, "", "trash_file")
 
     def append_doc_text(self, doc_id: str, text: str) -> None:
         self._check(f"append to doc {doc_id}", self._appended_text_problems(doc_id, text),

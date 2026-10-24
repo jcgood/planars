@@ -1189,6 +1189,10 @@ class FakeDriveDoorway:
         self._record("move_file", file_id=file_id, from_parents=previous,
                      to_parent=new_parent_id)
 
+    def trash_file(self, file_id: str) -> None:
+        self._require_file(file_id).trashed = True
+        self._record("trash_file", file_id=file_id)
+
     def download_file_json(self, file_id: str) -> Any:
         f = self._require_file(file_id)
         if f.content is None:

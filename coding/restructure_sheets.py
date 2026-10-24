@@ -1290,10 +1290,7 @@ def _rename_class_for_language(
             new_ss, construction, param_names, param_values, rows, existing, {}, {}
         )
         tab_names.append(construction)
-        new_construction_params[construction] = {
-            "param_names": param_names,
-            "param_values": param_values,
-        }
+        new_construction_params[construction] = {"param_names": param_names}
         print(f"    [{construction}] wrote: carried {carried}, new blank {new_count}, dropped {dropped_count}")
 
     if default_ws.title not in tab_names:
@@ -1827,8 +1824,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                         ss, new_ss, construction, keyed, param_names, param_values,
                         rename_map, element_rename_map, split_element_map)
                     tab_names.append(construction)
-                    new_construction_params[construction] = {
-                        "param_names": param_names, "param_values": param_values}
+                    new_construction_params[construction] = {"param_names": param_names}
                     msg = f"    [{construction}] (keyed tab) copied {copied} rows, {changed} cell(s) renamed"
                     if flagged:
                         msg += f", {flagged} row(s) on a split element — NEEDS MANUAL REVIEW"
@@ -1846,10 +1842,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                         class_name=class_name,
                     )
                     tab_names.append(construction)
-                    new_construction_params[construction] = {
-                        "param_names": param_names,
-                        "param_values": param_values,
-                    }
+                    new_construction_params[construction] = {"param_names": param_names}
                     msg = f"    [{construction}] (pair tab) copied {rows_copied} rows, {cells_renamed} cell(s) renamed"
                     if rows_split:
                         msg += f", {rows_split} row(s) split (blank, old judgment quoted in a note)"
@@ -1869,10 +1862,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                     split_element_map=split_element_map,
                 )
                 tab_names.append(construction)
-                new_construction_params[construction] = {
-                    "param_names": param_names,
-                    "param_values": param_values,
-                }
+                new_construction_params[construction] = {"param_names": param_names}
                 print(f"    [{construction}] wrote: carried {carried}, new blank {new_count}, dropped {dropped_count}")
 
             if default_ws.title not in tab_names:

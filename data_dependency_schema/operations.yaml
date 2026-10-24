@@ -245,7 +245,7 @@
     YAML itself, then regenerate the diagnostics TSV from it.
   side_effects:
     - "inserts/deletes/renames criterion columns on live annotation tabs"
-    - "updates sheets_manifest.json's per-construction param_names and param_values"
+    - "updates sheets_manifest.json's per-construction param_names"
     - "--rename/--split/--merge: edits the named criteria in diagnostics_{lang_id}.yaml (the rest of the file, comments included, is kept) and regenerates diagnostics_{lang_id}.tsv from it"
   idempotent: true
   idempotency_note: >-
@@ -260,8 +260,7 @@
     checks "does the manifest's param_names match the YAML" (line ~679,
     "Sync param_names in manifest if needed"), so the next successful run
     catches the manifest up regardless of what a previous crash left
-    unfinished. param_values is only ever updated for the criteria a given
-    run actually touched (Finding 14's fix), not blindly overwritten. Not
+    unfinished. Not
     safe against a concurrent edit to the same tab by another actor while
     this command is running -- a different, non-retry hazard.
   apply_gate: "--apply"
@@ -272,26 +271,7 @@
   cascades_triggered:
     - "regenerate_notebooks() runs automatically after --apply"
     - "regenerates diagnostics_{lang_id}.tsv from the edited YAML (--rename/--split/--merge)"
-  modes:
-    - name: "--refresh-dropdowns"
-      description: >-
-        Pushes current YAML-derived allowed values to the live Sheet's
-        dropdown validation, independent of any column rename/split/merge.
-      side_effects:
-        - "pushes current YAML-derived allowed values to live dropdown validation"
-        - "updates sheets_manifest.json's param_values to match"
-      idempotent: true
-      idempotency_note: >-
-        Reads fresh from the tab's own header and the current diagnostics
-        YAML every run, never from the manifest -- a second run with nothing
-        changed reasserts the same dropdown rules (same mechanism as the
-        standalone refresh-dropdowns command, issue #272's fix).
-      apply_gate: "--apply --refresh-dropdowns"
-      preconditions: [coded_data_clean_tree]
-      writes_to_drive: true
-      writes_locally: false
-      facts_touched:
-        - {fact: manifest_dropdown_values, role: writes}
+  modes: []
 
 - id: sync_diagnostics_yaml
   cli_command: sync-diagnostics-yaml
@@ -641,7 +621,6 @@
   preconditions: []
   facts_touched:
     - {fact: manifest_class_registration, role: reads}
-    - {fact: manifest_dropdown_values, role: reads}
     - {fact: construction_criterion_columns, role: reads}
     - {fact: pair_row_position_numbers, role: reads}
     - {fact: dependent_construction_element_scope, role: reads}
@@ -875,7 +854,7 @@
     reading each sheet's real dropdowns, without touching annotation data.
     Daily, in the refresh.
   side_effects:
-    - "rewrites or removes the dropdown of each column whose live dropdown differs from the sheet spec; updates sheets_manifest.json's param_values"
+    - "rewrites or removes the dropdown of each column whose live dropdown differs from the sheet spec"
   idempotent: true
   idempotency_note: >-
     Compares the live dropdowns with the spec every run and writes only the
@@ -883,7 +862,7 @@
   apply_gate: "--apply"
   preconditions: []
   facts_touched:
-    - {fact: manifest_dropdown_values, role: writes}
+    - {fact: sheet_dropdown_values, role: writes}
   cascades_triggered: []
   modes: []
 

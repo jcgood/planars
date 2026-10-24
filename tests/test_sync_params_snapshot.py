@@ -6,11 +6,9 @@ criterion columns, which is the densest form of the question behind #272 and
 Finding 10 — whether a command derives a tab's criterion columns from the
 tab's own header (correct) or from the manifest's `construction_params`
 (wrong, because the manifest is bookkeeping and goes stale). Read closely for
-this migration, `_get_current_params`, `_insert_param_columns`, and
-`_build_dropdown_refresh_requests` all already derive columns from the tab's
-own header row — never from the manifest. The manifest is
-only ever a *record* of what was last pushed, read back to decide whether a
-dropdown refresh is stale. `assert_no_criterion_writes_onto_trailing_columns`
+this migration, `_get_current_params` and `_insert_param_columns` both
+already derive columns from the tab's own header row — never from the
+manifest. `assert_no_criterion_writes_onto_trailing_columns`
 below passes cleanly for every scenario, confirming this rather than assuming
 it.
 
@@ -24,9 +22,8 @@ carry all three pair criteria, while the diagnostics YAML narrows each
 construction to its own one); a new criterion added to the diagnostics YAML,
 dry run and apply; `--apply --remove` against that real coreference drift;
 `--rename` unscoped and scoped to one class; `--split`; `--merge`; both
-`--refresh-dropdowns` code paths (the "no structural change" branch and the
-branch that runs right after new columns are inserted in the same run); a
-class present in the manifest but absent from the diagnostics YAML; and a
+code paths of `--refresh-dropdowns` (removed 2026-10-23 with the manifest's
+copy of each criterion's values it relied on); a class present in the manifest but absent from the diagnostics YAML; and a
 plain apply/dry-run baseline confirming the manifest is only rewritten when
 something actually changed. stdout, the mutation log, and the rewritten
 `diagnostics_{lang_id}.tsv`/`.yaml` files in `coded_data/` all came back
@@ -114,14 +111,6 @@ class Env:
         """The ordinary case: a new criterion added to a class in the YAML."""
         self.edit_yaml(lang, lambda d: d["classes"][class_name]["criteria"]
                        .__setitem__(name, list(values)))
-
-    def widen_construction_criterion(self, lang: str, class_name: str,
-                                     construction: str, criterion: str,
-                                     values: List[str]) -> None:
-        """Change one construction's allowed values via construction_criteria."""
-        def edit(d):
-            d["classes"][class_name]["construction_criteria"][construction][criterion] = list(values)
-        self.edit_yaml(lang, edit)
 
     # -- reading the stand-in Drive back ----------------------------------
     def all_tab_values(self) -> Dict:
@@ -269,105 +258,6 @@ def test_apply_merge_transcript(env):
                 "widescope_right:widescope_left:widescope_either"]))
 
 
-def test_refresh_dropdowns_dry_run_no_change_transcript(env):
-    check_snapshot(
-        "refresh_dropdowns_dry_run.txt",
-        env.run(["sync-params", "--refresh-dropdowns"]))
-
-
-def test_refresh_dropdowns_apply_no_structural_change_transcript(env):
-    """One of the two nearly-identical dropdown-refresh blocks in main().
-
-    This one lives inside the "sheet columns already match diagnostics"
-    branch — no new_params, no removed_params, just a widened value list on
-    an existing column.
-    """
-    env.widen_construction_criterion(
-        "stan1293", "phrasal_accent", "prescreening", "accented",
-        ["y", "n", "both", "maybe"])
-    check_snapshot(
-        "refresh_dropdowns_apply_no_structural_change.txt",
-        env.run(["sync-params", "--apply", "--refresh-dropdowns"]))
-
-
-def test_refresh_dropdowns_apply_with_new_params_transcript(env):
-    """The second dropdown-refresh block: fires right after new columns land.
-
-    A new criterion (new_params non-empty) alongside a widened value on an
-    existing criterion of the same construction, in the same run.
-    """
-    env.add_criterion("synth0001", "ciscategorial", "PLACE-combines")
-    env.edit_yaml("synth0001", lambda d: d["classes"]["ciscategorial"]["criteria"]
-                 .__setitem__("V-combines", ["y", "n", "maybe"]))
-    check_snapshot(
-        "refresh_dropdowns_apply_with_new_params.txt",
-        env.run(["sync-params", "--apply", "--refresh-dropdowns"]))
-
-
-# ---------------------------------------------------------------------------
-# Bug found while taking this migration's pre/post baseline, fixed the same
-# day (docs/data-layer-progress.md's Findings section, 2026-08-04 entry):
-# adding a new column used to re-stamp the WHOLE construction's manifest
-# param_values with the fresh diagnostics values, including criteria whose
-# dropdown was never touched on the sheet. The next --refresh-dropdowns run
-# then compared the fresh YAML value against that same fresh value and always
-# reported "up to date" — a widened value could go stale on the sheet forever
-# without ever being reported, let alone pushed. Same shape as #272 and
-# Finding 9/10: the manifest was made to say something true of a column that
-# was never actually written.
-# ---------------------------------------------------------------------------
-
-def test_a_new_column_does_not_mask_a_sibling_criterions_stale_dropdown(env):
-    """Adding PLACE-combines must not hide that V-combines also widened."""
-    env.add_criterion("synth0001", "ciscategorial", "PLACE-combines")
-    env.edit_yaml("synth0001", lambda d: d["classes"]["ciscategorial"]["criteria"]
-                 .__setitem__("V-combines", ["y", "n", "maybe"]))
-
-    out = env.run(["sync-params", "--apply", "--refresh-dropdowns"])
-
-    assert "V-combines: ['y', 'n'] → ['y', 'n', 'maybe']" in out
-    ws = env.tab("synth0001", "ciscategorial", "general")
-    header = ws.row_values(1)
-    v_col = header.index("V-combines")
-    written = [
-        m for m in env.doorway.mutations
-        if m["op"] == "batch_request" and m["request_type"] == "setDataValidation"
-        and m["payload"]["range"]["sheetId"] == ws.id
-        and m["payload"]["range"]["startColumnIndex"] == v_col
-    ]
-    assert written, "V-combines' widened dropdown was never actually pushed to the sheet"
-    values = [v["userEnteredValue"]
-             for v in written[0]["payload"]["rule"]["condition"]["values"]]
-    assert values == ["y", "n", "maybe"]
-
-
-def test_removing_a_column_does_not_mask_a_sibling_criterions_stale_dropdown(env):
-    """Removing surplus columns must not hide that a kept one also widened."""
-    env.edit_yaml("synth0001", lambda d: d["classes"]["coreference"]["criteria"]
-                 .__setitem__("reflexive_allowed", ["y", "n", "untestable", "maybe"]))
-
-    out = env.run(["sync-params", "--apply", "--remove", "--refresh-dropdowns"])
-
-    assert ("reflexive_allowed: ['y', 'n', 'untestable'] → "
-            "['y', 'n', 'untestable', 'maybe']") in out
-    ws = env.tab("synth0001", "coreference", "reflexive_coreference")
-    header = ws.row_values(1)
-    assert header == ["Element_A", "Position_A", "Position_B", "Direction",
-                      "reflexive_allowed", "Example", "Source", "Comments"], (
-        "the removed columns should be gone and reflexive_allowed still present")
-    r_col = header.index("reflexive_allowed")
-    written = [
-        m for m in env.doorway.mutations
-        if m["op"] == "batch_request" and m["request_type"] == "setDataValidation"
-        and m["payload"]["range"]["sheetId"] == ws.id
-        and m["payload"]["range"]["startColumnIndex"] == r_col
-    ]
-    assert written, "reflexive_allowed's widened dropdown was never actually pushed"
-    values = [v["userEnteredValue"]
-             for v in written[0]["payload"]["rule"]["condition"]["values"]]
-    assert values == ["y", "n", "untestable", "maybe"]
-
-
 def test_a_class_not_in_diagnostics_is_named(env):
     env.edit_yaml("stan1293", lambda d: d["classes"].pop("proform"))
     out = env.run(["sync-params"])
@@ -398,7 +288,7 @@ def test_the_dry_run_changes_nothing_anywhere(env):
 # coded_data_clean_tree is enforced centrally at the python -m coding
 # dispatch chokepoint now, not inside sp.main() itself -- see
 # coding/preconditions.py and tests/test_preconditions.py, which cover this
-# command's gating (including the --refresh-dropdowns mode) directly
+# command's gating directly
 # against the real operations.yaml record.
 
 
@@ -512,19 +402,6 @@ def test_an_unchanged_apply_reads_each_spreadsheet_three_times(env, monkeypatch)
                      "values_batch_get": sheets}
 
 
-def test_a_second_identical_refresh_dropdowns_apply_is_a_no_op(env):
-    env.widen_construction_criterion(
-        "stan1293", "phrasal_accent", "prescreening", "accented",
-        ["y", "n", "both", "maybe"])
-    env.run(["sync-params", "--apply", "--refresh-dropdowns"])
-    env.doorway.clear_mutations()
-
-    out = env.run(["sync-params", "--apply", "--refresh-dropdowns"])
-
-    assert env.doorway.mutations == []
-    assert "up to date" in out
-
-
 def test_a_second_identical_remove_is_a_no_op(env):
     env.run(["sync-params", "--apply", "--remove"])
     env.doorway.clear_mutations()
@@ -629,7 +506,7 @@ def test_nothing_criterion_shaped_is_written_onto_source_or_comments(env):
     env.edit_yaml("synth0001", lambda d: d["classes"]["ciscategorial"]["criteria"]
                  .__setitem__("V-combines", ["y", "n", "maybe"]))
 
-    env.run(["sync-params", "--apply", "--refresh-dropdowns"])
+    env.run(["sync-params", "--apply"])
 
     assert_no_criterion_writes_onto_trailing_columns(env.doorway)
 

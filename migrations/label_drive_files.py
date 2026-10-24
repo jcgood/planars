@@ -13,7 +13,8 @@ deleted.
 What it labels, found from the places that record each file:
   - from drive_config.json: the root folder, the manifest, the all-languages
     notebook; per language its folder, planar and diagnostics sheets, notes
-    Doc, PDF report and three notebooks;
+    Doc, PDF report and three notebooks (two since the validation notebook
+    was retired, 2026-10-23);
   - from the manifest: each language's class sheets (live), and each class
     sheet's tabs;
   - each language folder's `_archived/` folder and the older `_archived/v{N}/`
@@ -78,7 +79,8 @@ _LANG_FILES = {
     "notes_doc_id": lambda lang: drive_door.lang_file("notes_doc", lang),
     "report_file_id": lambda lang: drive_door.lang_file("report", lang),
     "domains_notebook_file_id": lambda lang: drive_door.notebook("domains", lang),
-    "validation_notebook_file_id": lambda lang: drive_door.notebook("validation", lang),
+    # validation_notebook_file_id was here too; that notebook was retired
+    # 2026-10-23 (migrations/retire_validation_notebooks.py).
     "report_notebook_file_id": lambda lang: drive_door.notebook("report", lang),
 }
 

@@ -78,11 +78,12 @@ from .check_codebook import (
     needs_review_entries,
 )
 from planars.schema_values import (
-    ELEMENT_ROW_COLUMNS, PAIR_ROW_SHAPES, STATUS_READY, STATUS_TAB, TRAILING_COLUMNS,
+    ELEMENT_ROW_COLUMNS, PAIR_ROW_SHAPES, STATUS_READY, TRAILING_COLUMNS,
 )
 from .restructure_sheets import (
     _PAIR_POS_COLS, _get_keyed_row_constructions, _get_pair_row_constructions,
 )
+from .glottolog import is_synthetic
 import yaml as _yaml
 
 # ---------------------------------------------------------------------------
@@ -295,67 +296,6 @@ def _section_analysis(codebook: dict) -> Tuple[int, int]:
     return len(errs_req) + len(errs_keys), 0
 
 
-def _stale_manifest_param_values(
-    manifest: dict,
-    lang_ids: List[str],
-) -> List[Tuple[str, str, str, dict, dict]]:
-    """Return (lang_id, class_name, construction, stored, fresh) for param_values mismatches.
-
-    Compares the allowed-value lists stored in the Drive manifest against what
-    the current diagnostics YAML would produce.  No Sheet API calls.
-    """
-    from .refresh_dropdowns import _fresh_param_values
-    from .make_forms import _read_diagnostics_for_language
-
-    results = []
-    for lang_id in lang_ids:
-        sheets_info = manifest.get(lang_id, {}).get("sheets", {})
-        if not sheets_info:
-            continue
-
-        lang_setup_dir = CODED_DATA / lang_id / "lang_setup"
-        if not lang_setup_dir.exists():
-            continue
-
-        try:
-            diag_rows = _read_diagnostics_for_language(lang_id, lang_setup_dir)
-        except Exception:
-            continue
-
-        # Criteria are per (class, construction), not shared across a class --
-        # keying this by class alone and letting the first construction win
-        # was issue #272's Bug 1, independently reintroduced here. Mirrors
-        # refresh_dropdowns.py's criteria_by_construction exactly.
-        criteria_by_construction: dict = {}
-        for cls, con, _crit_names, crit_values in diag_rows:
-            criteria_by_construction[(cls, con)] = crit_values
-
-        for class_name, sheet_info in sheets_info.items():
-            cp_map = sheet_info.get("construction_params", {})
-
-            for construction in sheet_info.get("constructions", []):
-                if construction == STATUS_TAB:
-                    continue
-                cp = cp_map.get(construction, {})
-                param_names = cp.get("param_names", [])
-                if not param_names:
-                    continue
-
-                construction_criteria = criteria_by_construction.get(
-                    (class_name, construction), {})
-                if not construction_criteria:
-                    continue
-
-                fresh = _fresh_param_values(
-                    class_name, construction, construction_criteria, lang_id,
-                )
-                stored = cp.get("param_values", {})
-                if fresh != stored:
-                    results.append((lang_id, class_name, construction, stored, fresh))
-
-    return results
-
-
 def _stale_manifest_classes(manifest: dict, lang_ids: List[str]) -> List[Tuple[str, str]]:
     """Return (lang_id, class_name) pairs that are in the manifest but absent from diagnostics.
 
@@ -429,7 +369,9 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
         meta = lang_entry.get("meta", {})
         _KEY_META = tuple(_LANGUAGES.get("required_meta_fields", ["source", "author"]))
         missing_meta = [f for f in _KEY_META if not meta.get(f)]
-        if not lang_entry:
+        if is_synthetic(lang_id):
+            pass  # a synthetic test language has no languages.yaml entry, by design
+        elif not lang_entry:
             print(_warn(f"{lang}  —  not in schemas/languages.yaml "
                         f"(run python -m coding lookup-lang {lang} to add)"))
             total_w += 1
@@ -451,15 +393,6 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
         for _, stale_cls in _stale_manifest_classes(manifest, [lang_id]):
             print(_warn(f"{lang} · {stale_cls}  —  in manifest but not in diagnostics"))
             print(_sub(f"→ run: python -m coding prune-manifest --apply"))
-            total_w += 1
-
-        # Check for stale param_values (criterion allowed-value lists).
-        for _, stale_cls, stale_con, stored, fresh in _stale_manifest_param_values(manifest, [lang_id]):
-            print(_warn(f"{lang} · {stale_cls} · {stale_con}  —  param_values out of sync with YAML"))
-            for param in sorted(fresh):
-                if stored.get(param) != fresh[param]:
-                    print(_sub(f"{param}: stored={stored.get(param)!r}  →  fresh={fresh[param]!r}"))
-            print(_sub("→ run: python -m coding refresh-dropdowns --apply"))
             total_w += 1
 
         for class_name, sheet_info in sorted(sheets_info.items()):

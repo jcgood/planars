@@ -39,7 +39,7 @@ import pytest
 
 from coding import drive, drive_doorway, refresh_dropdowns
 from command_runner import run_command
-from fake_drive import (FIXTURE_DIR, FakeDriveDoorway, MANIFEST_FILE_ID, ROOT_FOLDER_ID,
+from fake_drive import (FIXTURE_DIR, FakeDriveDoorway, MANIFEST_FILE_ID,
                         use_frozen_coded_data)
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
@@ -62,11 +62,6 @@ def fake(monkeypatch, tmp_path):
     doorway = FakeDriveDoorway.from_fixtures()
     use_frozen_coded_data(monkeypatch, tmp_path)
     monkeypatch.setattr(drive, "_load_drive_config", FakeDriveDoorway.drive_config)
-    monkeypatch.setattr(refresh_dropdowns, "_load_drive_config",
-                        FakeDriveDoorway.drive_config)
-    # drive_config.json is never written by these tests — the real one holds
-    # live Drive IDs. Individual tests may re-patch this to capture into a dict.
-    monkeypatch.setattr(refresh_dropdowns, "_save_drive_config", lambda config: None)
     drive_doorway.set_doorway(doorway)
     try:
         yield doorway
@@ -190,97 +185,12 @@ def test_apply_leaves_annotation_content_byte_identical(fake, monkeypatch):
         assert fake.spreadsheet(ss_id).worksheet(title).get_all_values() == values
 
 
-def _make_manifest_stale(fake) -> None:
-    """Give synth0001's reflexive_coreference all three pair criteria in the
-    manifest, the stale entry the frozen data held until the daily
-    refresh-dropdowns (#322) cleared it on Drive, so the command has a
-    manifest change to upload."""
-    manifest = fake.download_file_json(MANIFEST_FILE_ID)
-    manifest["synth0001"]["sheets"]["coreference"]["construction_params"][
-        "reflexive_coreference"]["param_values"] = {
-            c: ["y", "n", "untestable"]
-            for c in ("reflexive_allowed", "pronoun_allowed", "np_allowed")}
-    fake.file(MANIFEST_FILE_ID).content = json.dumps(manifest).encode("utf-8")
-
-
-def test_apply_updates_the_manifest_in_place(fake, monkeypatch):
-    """Manifest write now goes through drive.upload_manifest, the same shared
-    writer generate_sheets.py, sync_params.py, update_sheets.py,
-    import_sheets.py, and restructure_sheets.py already use (issue #276). When
-    the ID is known, the behaviour a caller sees is the same as before: update
-    in place, no new file.
-    """
-    _make_manifest_stale(fake)
+def test_apply_never_writes_the_manifest(fake, monkeypatch):
+    """Dropdowns only. Until 2026-10-23 this command also kept a copy of each
+    criterion's values in the manifest, which went stale on its own."""
     run(["refresh-dropdowns", "--apply"], monkeypatch)
-    updates = fake.mutations_of("update_file")
-    assert [u["file_id"] for u in updates] == [MANIFEST_FILE_ID]
+    assert fake.mutations_of("update_file") == []
     assert fake.mutations_of("create_file") == []
-
-    manifest = fake.download_file_json(MANIFEST_FILE_ID)
-    stored = (manifest["synth0001"]["sheets"]["coreference"]
-              ["construction_params"]["reflexive_coreference"]["param_values"])
-    assert stored == {"reflexive_allowed": ["y", "n", "untestable"]}
-
-
-def test_apply_writes_the_manifest_through_the_shared_upload_manifest_helper(fake, monkeypatch):
-    """Confirms the mechanism, not just the output it happens to produce here.
-
-    refresh-dropdowns now calls drive.upload_manifest — the same writer
-    generate_sheets.py, sync_params.py, update_sheets.py, import_sheets.py,
-    and restructure_sheets.py already use (issue #276) — instead of its own
-    inline doorway.update_file call with no key reordering and no
-    create-if-missing fallback. The fixture's manifest entries already sort in
-    upload_manifest's key order (they were themselves captured from a manifest
-    written by it), so asserting on output bytes here would pass either way;
-    asserting the call itself is what actually distinguishes old from new.
-    """
-    calls = []
-    real_upload_manifest = refresh_dropdowns.upload_manifest
-
-    def spy(doorway, manifest, root_folder_id, existing_file_id=None):
-        calls.append((root_folder_id, existing_file_id))
-        return real_upload_manifest(doorway, manifest, root_folder_id, existing_file_id)
-
-    monkeypatch.setattr(refresh_dropdowns, "upload_manifest", spy)
-    _make_manifest_stale(fake)
-    run(["refresh-dropdowns", "--apply"], monkeypatch)
-    assert calls == [(ROOT_FOLDER_ID, MANIFEST_FILE_ID)]
-
-
-def test_manifest_upload_with_no_id_recorded_updates_the_one_drive_holds(fake, monkeypatch):
-    """Before #276: a lost _planars_config_file_id meant this command gave up
-    with a [WARNING], unlike every other manifest writer. Until 2026-10-19 the
-    writers then made a second manifest.json; now they find the one Drive
-    holds by its label, update it, and record its id again.
-    """
-    saved: dict = {}
-    monkeypatch.setattr(refresh_dropdowns, "_save_drive_config", saved.update)
-    without_id = {"_root_folder_id": ROOT_FOLDER_ID}
-    monkeypatch.setattr(refresh_dropdowns, "_load_drive_config", lambda: without_id)
-    _make_manifest_stale(fake)
-
-    out = run(["refresh-dropdowns", "--apply"], monkeypatch)
-
-    assert "[WARNING]" not in out
-    assert fake.mutations_of("create_file") == []
-    assert [u["file_id"] for u in fake.mutations_of("update_file")] == [MANIFEST_FILE_ID]
-    assert saved.get("_planars_config_file_id") == MANIFEST_FILE_ID
-
-
-def test_manifest_upload_creates_one_only_when_drive_holds_none(fake, monkeypatch):
-    saved: dict = {}
-    monkeypatch.setattr(refresh_dropdowns, "_save_drive_config", saved.update)
-    without_id = {"_root_folder_id": ROOT_FOLDER_ID}
-    monkeypatch.setattr(refresh_dropdowns, "_load_drive_config", lambda: without_id)
-    _make_manifest_stale(fake)
-    fake.file(MANIFEST_FILE_ID).trashed = True     # still downloadable, as a stand-in
-
-    run(["refresh-dropdowns", "--apply"], monkeypatch)
-
-    creates = fake.mutations_of("create_file")
-    assert [c["name"] for c in creates] == ["manifest.json"]
-    assert creates[0]["parents"] == [ROOT_FOLDER_ID]
-    assert saved.get("_planars_config_file_id") == creates[0]["file_id"]
 
 
 # ---------------------------------------------------------------------------
@@ -297,7 +207,7 @@ def test_per_construction_criteria_are_not_collapsed_to_the_first(fake, monkeypa
 
     Each tab now gets its own construction's values.
     """
-    from coding.refresh_dropdowns import _fresh_param_values
+    from coding.update_sheets import _fresh_param_values
 
     flapping = _fresh_param_values(
         "segmental", "flapping",
@@ -338,7 +248,7 @@ def test_an_unrecognised_criterion_column_is_skipped_not_guessed(fake, monkeypat
     doesn't know about, the safe move is to write nothing to that tab and say
     so — a guessed [y, n] is how bug 2 did its damage.
     """
-    from coding.refresh_dropdowns import _resolve_criterion_columns
+    from coding.update_sheets import _resolve_criterion_columns
 
     col_start, per_col, error = _resolve_criterion_columns(
         ["Element", "Position_Name", "Position_Number", "mystery", "Source", "Comments"],
@@ -349,7 +259,7 @@ def test_an_unrecognised_criterion_column_is_skipped_not_guessed(fake, monkeypat
 
 def test_criterion_columns_stop_at_the_trailing_columns(fake, monkeypatch):
     """The header, not the manifest, decides how many dropdown columns there are."""
-    from coding.refresh_dropdowns import _resolve_criterion_columns
+    from coding.update_sheets import _resolve_criterion_columns
 
     col_start, per_col, error = _resolve_criterion_columns(
         ["Element", "Position_Name", "Position_Number", "referential", "Source", "Comments"],
@@ -360,12 +270,11 @@ def test_criterion_columns_stop_at_the_trailing_columns(fake, monkeypatch):
 
 
 def test_apply_is_idempotent(fake, monkeypatch):
-    """A second run finds nothing to do — nothing is rewritten, no manifest upload."""
+    """A second run finds nothing to do — nothing is rewritten."""
     run(["refresh-dropdowns", "--apply"], monkeypatch)
     fake.clear_mutations()
-    out = run(["refresh-dropdowns", "--apply"], monkeypatch)
+    run(["refresh-dropdowns", "--apply"], monkeypatch)
     assert fake.mutations == []
-    assert "Manifest updated on Drive" not in out
 
 
 def test_dry_run_after_apply_reports_everything_up_to_date(fake, monkeypatch):
@@ -400,8 +309,8 @@ def test_an_old_narrow_dropdown_is_widened_and_a_wrong_one_removed(fake, monkeyp
     """What Adam met on the English sheets: the y/n list removed from the
     codebook 2026-10-12 was still on the sheets, so both, na and unclear
     weren't offered and a typed position number showed as invalid; and a
-    dropdown sat on Comments. The manifest's record was right all along,
-    so the old comparison saw nothing to do."""
+    dropdown sat on Comments. The manifest's copy of the values was right
+    all along, so the old comparison saw nothing to do."""
     run(["refresh-dropdowns", "--apply"], monkeypatch)
     ss = fake.spreadsheet(_sheet_id(fake, "stan1293", "free_occurrence"))
     ws = ss.worksheet("general")

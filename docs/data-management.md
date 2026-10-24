@@ -97,7 +97,7 @@ accented{y/n/both}, independence{y/n/na}, left-interaction{y/n}, right-interacti
 
 `coding/generate_sheets.py` applies per-column dropdown validation using these values. `coding/import-sheets` validates each cell against its allowed set (always also accepts `na` and `?`).
 
-`diagnostics_{lang_id}.tsv` is also the source of truth for notebook generation — `generate-notebooks` reads it to discover analysis classes and constructions. Adding a new class to `diagnostics_{lang_id}.tsv` and running `generate-notebooks --apply` will include it in the notebooks — but you must also add the class name to `_CLASS_DISPLAY_NAMES` in `coding/generate_notebooks.py` first (this dict controls the human-readable section headers).
+`diagnostics_{lang_id}.yaml` is also what notebook generation reads — `generate-notebooks` takes each language's analysis classes from it. Adding a class there and running `generate-notebooks --apply` includes it in the notebooks; its section header is the class's `display_name` in `schemas/diagnostic_classes.yaml`.
 
 ---
 
@@ -124,7 +124,7 @@ The Drive manifest (`manifest.json`) is stored on Drive and contains all languag
 - `_root_folder_id` — the `ConstituencyTypology` top-level Drive folder
 - `_planars_config_file_id` — the manifest file
 - `_all_languages_notebook_file_id` — the coordinator notebook
-- Per-language: `folder_id`, `domains_notebook_file_id`, `validation_notebook_file_id`, `planar_spreadsheet_id`, `diagnostics_spreadsheet_id`
+- Per-language: `folder_id`, `planar_spreadsheet_id`, `diagnostics_spreadsheet_id`, `proposal_spreadsheet_id` (with the Sheets' URLs), `notes_doc_id`, `domains_notebook_file_id`, `report_notebook_file_id`, `report_file_id`
 
 It contains no credentials, but its IDs point at unpublished data, so it belongs to planars-data, not the public planars repo (moved there 2026-10-12; earlier it was committed to planars, and this page wrongly called it gitignored). The daily refresh commits its changes along with the other planars-data files.
 

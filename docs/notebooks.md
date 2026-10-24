@@ -1,6 +1,6 @@
 # Notebooks guide
 
-planars uses Colab notebooks for browser-based access to results and validation. No local installation is required to use them — collaborators and coordinators open shared Drive links and choose **Runtime → Run all**.
+planars uses Colab notebooks for browser-based access to results. No local installation is required to use them — collaborators and coordinators open shared Drive links and choose **Runtime → Run all**.
 
 Notebooks are generated automatically by `python -m coding generate-notebooks` (which runs as part of `generate-sheets`, `sync-params --apply`, and `restructure-sheets --apply`) and uploaded directly to Google Drive. You do not manage notebook files manually.
 
@@ -59,35 +59,6 @@ The notebook loops over all languages automatically — no configuration needed.
 
 ---
 
-## Validation notebook
-
-**Filename:** `validation_{lang_id}.ipynb`
-**Audience:** Collaborators fixing errors, coordinators
-**Location:** Language Drive folder
-
-One notebook per language. Reads the current sheet values, runs the same validation as `import-sheets`, highlights any invalid cells pink in the Google Sheet, and prints an issue summary. Collaborators can run this themselves while fixing errors — they do not need to wait for a coordinator.
-
-### How to use
-
-1. Open the validation notebook link from your Drive folder
-2. Choose **Runtime → Run all**
-3. When prompted, sign in with your Google account and allow access
-4. Invalid cells are highlighted pink in the sheet; the summary appears at the bottom of the notebook
-
-The notebook is safe to run repeatedly — it clears all existing pink highlights and re-checks from scratch each time.
-
-### Reading the validation output
-
-The summary lists issues by construction tab, criterion column, and element. Common issue types:
-
-- **Unexpected value** — the cell contains a value not in the allowed list for that criterion (check for typos; use the dropdown)
-- **Blank cell** — the cell is empty; blank is treated as outside the span when spans are computed, and will appear as a warning on import
-- **Keystone modified** — the `NA` in a keystone row was changed; restore it to `NA`
-
-Fix the flagged cells in the Google Sheet, then re-run the notebook to confirm the pink highlights are gone.
-
----
-
 ## Report notebook
 
 **Filename:** `report_{lang_id}.ipynb`
@@ -117,7 +88,6 @@ Notebooks are built from templates in `notebooks/templates/`:
 |---|---|
 | `domains_boilerplate.ipynb` | Per-language contributor notebooks |
 | `all_languages_boilerplate.ipynb` | Coordinator notebook |
-| `validation_boilerplate.ipynb` | Per-language validation notebooks |
 | `report_boilerplate.ipynb` | Per-language report notebooks |
 
 To update the boilerplate (setup cell, chart cell, etc.), edit the template and re-run:
@@ -129,3 +99,5 @@ python -m coding generate-notebooks
 This uploads fresh notebooks to Drive for all languages. It also runs automatically at the end of `generate-sheets`, `sync-params --apply`, and `restructure-sheets --apply`. See the [Coordinator guide](coordinator-guide.md#regenerating-notebooks) for when to run this manually.
 
 The predecessor notebooks (`sync_colab.ipynb`, `span_results_colab.ipynb`) are archived in `notebooks/archive/` for reference.
+
+There was also a validation notebook per language (`validation_{lang_id}.ipynb`), retired 2026-10-23. Problem cells are now listed in the **Needs fixing** column of each sheet's Status tab by the daily refresh, and highlighted pink ([Collaborator guide](collaborator-guide.md)).

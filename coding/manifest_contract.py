@@ -82,7 +82,7 @@ class LanguageManifestEntry(BaseModel):
     are outputs of the research, not fixed inputs), so a strict
     model would go stale within weeks. `sheets`/`planar` stay untyped dicts
     rather than fully modeled -- their shape is deep and construction-
-    specific (`construction_params`, `param_values`, ...) in a way that
+    specific (`construction_params`, `param_names`, ...) in a way that
     would make this file the fourth place that shape is described, which is
     exactly the replication problem docs/data-layer-design.md diagnoses.
     """

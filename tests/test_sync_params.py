@@ -13,7 +13,6 @@ import pytest
 
 from coding.make_forms import _dump_diagnostics_yaml, _load_diagnostics_yaml_for_edit
 from coding.sync_params import (
-    _build_dropdown_refresh_requests,
     _get_current_params,
     _merge_in_yaml,
     _parse_merges,
@@ -272,38 +271,3 @@ class TestGetCurrentParams:
         params, comments_col = _get_current_params(ws.row_values(1))
         assert params == ["free"]
         assert comments_col == 4  # default: end of header
-
-
-# ---------------------------------------------------------------------------
-# _build_dropdown_refresh_requests
-# ---------------------------------------------------------------------------
-
-class TestBuildDropdownRefreshRequests:
-    def test_empty_stale_params_returns_no_requests(self):
-        ws = _FakeWorksheet(["Element", "free"])
-        assert _build_dropdown_refresh_requests(ws, ws.row_values(1), [], {}) == []
-
-    def test_builds_one_request_per_stale_param(self):
-        ws = _FakeWorksheet(["Element", "free", "obligatory"], row_count=10, sheet_id=42)
-        requests = _build_dropdown_refresh_requests(
-            ws, ws.row_values(1), ["free"], {"free": ["y", "n", "both"]},
-        )
-        assert len(requests) == 1
-        rule = requests[0]["setDataValidation"]
-        assert rule["range"]["sheetId"] == 42
-        assert rule["range"]["startColumnIndex"] == 1  # "free" is at index 1
-        assert rule["range"]["endRowIndex"] == 10
-        values = [v["userEnteredValue"] for v in rule["rule"]["condition"]["values"]]
-        assert values == ["y", "n", "both"]
-
-    def test_no_y_n_default_when_values_are_missing(self):
-        """A column with no values is an error, not a [y, n] dropdown (the
-        default was removed 2026-10-12; criteria_for always supplies values)."""
-        ws = _FakeWorksheet(["Element", "free"], row_count=5)
-        with pytest.raises(KeyError):
-            _build_dropdown_refresh_requests(ws, ws.row_values(1), ["free"], {})
-
-    def test_skips_param_not_in_header(self):
-        ws = _FakeWorksheet(["Element", "free"], row_count=5)
-        requests = _build_dropdown_refresh_requests(ws, ws.row_values(1), ["nonexistent"], {})
-        assert requests == []

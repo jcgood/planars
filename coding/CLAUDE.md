@@ -27,7 +27,8 @@ The coordinator tooling, run as `python -m coding <command>`.
   in `drive.py`, as `sheet_spec.sharing_spec` says.
 - **Which columns of a tab hold criteria comes from the tab's own header;
   what each allows comes from the diagnostics YAML** (via
-  `refresh_dropdowns._resolve_criterion_columns`/`_fresh_param_values`),
+  `update_sheets._resolve_criterion_columns`/`_fresh_param_values`; a
+  sheet's dropdowns, `sheet_spec.class_sheet_spec`),
   never from the manifest, which is bookkeeping and goes stale. Every
   dropdown request is built by `generate_sheets.dropdown_request`. No
   dropdown or criterion note goes on a trailing column

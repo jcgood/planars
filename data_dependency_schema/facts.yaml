@@ -327,40 +327,39 @@
       run in the default per-language section and daily via data-refresh.yml,
       filed as stale-manifest.
 
-- id: manifest_dropdown_values
+- id: sheet_dropdown_values
   description: >-
-    a construction's allowed dropdown values per criterion, as the manifest
-    believes they currently are vs. what the diagnostics YAML would produce
+    a construction's allowed dropdown values per criterion, as the sheet
+    offers them vs. what the diagnostics YAML says
   locations:
     - {entity: diagnostics_yaml, detail: "each criterion's current allowed-value list (e.g. y/n vs y/n/both)"}
-    - {entity: manifest, detail: "sheets_manifest.json's construction_params[construction].param_values -- a staleness reference, not a live copy of the Sheet's actual validation rule"}
     - {entity: annotation_sheet, detail: "each criterion column's live dropdown"}
   authoritative: diagnostics_yaml
   cascade:
     direction: automatic
     mechanism: >-
       refresh-dropdowns --apply, daily in the refresh (since 2026-10-23),
-      reads each sheet's live dropdowns, rewrites or removes any that differ
-      from the sheet spec (built from the YAML), and updates the manifest's
-      stored param_values. Until then nothing ran it, and it compared only
-      the manifest with the YAML: the English sheets kept the y/n default
-      list removed 2026-10-12 while the manifest said otherwise (#322).
+      reads each sheet's live dropdowns and rewrites or removes any that
+      differ from the sheet spec (built from the YAML). Until then nothing
+      ran it, and it compared only a copy of the values kept in the
+      manifest with the YAML: the English sheets kept the y/n default list
+      removed 2026-10-12 while the manifest said otherwise (#322). That
+      copy (construction_params[construction].param_values) went stale on
+      its own too, and was removed 2026-10-23 with the validation notebook,
+      its last reader; no command keeps one now.
   drift_risk:
     possible: true
     note: >-
       A dropdown edited in the Sheets window, or left by an older rule, is
       wrong for at most a day.
     caught_by: >-
-      refresh-dropdowns in the daily refresh (the sheet itself);
-      integrity-check's default per-language section
-      (_stale_manifest_param_values) for the manifest's record, surfaced as
-      a generic integrity-error.
+      refresh-dropdowns in the daily refresh, which reads the sheet itself.
 
 - id: construction_criterion_columns
   description: >-
     which criterion columns a construction's live tab has, vs. what
     diagnostics_{lang_id}.yaml declares for it -- column EXISTENCE, distinct
-    from manifest_dropdown_values (allowed VALUES per criterion, above)
+    from sheet_dropdown_values (allowed VALUES per criterion, above)
   locations:
     - {entity: diagnostics_yaml, detail: "each construction's criteria/construction_criteria entries"}
     - {entity: annotation_sheet, detail: "the tab's own header row -- one column per criterion, plus structural/trailing columns"}

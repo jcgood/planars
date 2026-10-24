@@ -9,8 +9,6 @@ Usage:
     python -m coding sync-params --apply --rename class:old:new          # rename in one class only
     python -m coding sync-params --apply --split old:new1:new2           # split one criterion into two
     python -m coding sync-params --apply --merge old1:old2:new           # merge two criteria into one
-    python -m coding sync-params --refresh-dropdowns                     # dry run: show stale dropdowns
-    python -m coding sync-params --refresh-dropdowns --apply             # push updated allowed values to sheets
 
 This script propagates diagnostic criterion changes across all downstream layers:
 
@@ -41,11 +39,10 @@ integrity-check --sheets warns on any _split_ or _merged_ prefixed column header
 (sheet_spec.PARKED_COLUMN_PREFIXES).
 
 The tab's own header, never the manifest, decides which columns are current,
-new or surplus. The manifest's ``param_values`` for a construction only gets
-the keys a run actually pushed to the sheet (columns just inserted; removed
-columns' keys are dropped), so a criterion whose dropdown was not touched
-keeps its old record and ``--refresh-dropdowns`` still sees it as stale.
-``coded_data_clean_tree`` is enforced centrally (preconditions.py) before
+new or surplus. An existing column's dropdown is refresh-dropdowns' job,
+which reads the sheet itself (this command's --refresh-dropdowns, which
+trusted the manifest's copy of each criterion's values, was removed
+2026-10-23 with that copy). ``coded_data_clean_tree`` is enforced centrally (preconditions.py) before
 ``--apply`` reads the diagnostics and planar files.
 
 Reads: one open, one tab list and one batch of header rows per spreadsheet
@@ -490,30 +487,6 @@ def _apply_merge_to_sheet(
 # Main
 # ---------------------------------------------------------------------------
 
-def _build_dropdown_refresh_requests(
-    ws: WorksheetHandle,
-    header: List[str],
-    stale_params: List[str],
-    exp_values: Dict[str, List[str]],
-) -> List[dict]:
-    """Build setDataValidation requests for params with stale allowed values.
-
-    ``header`` is the tab's current header row. Uses ws.row_count as the end
-    row so validation covers all current data rows.
-    """
-    if not stale_params:
-        return []
-    num_rows = ws.row_count
-    requests = []
-    for param in stale_params:
-        if param not in header:
-            continue
-        col_idx = header.index(param)  # 0-based
-        values = exp_values[param]  # criteria_for guarantees every column has values
-        requests.append(dropdown_request(ws.id, col_idx, num_rows, values))
-    return requests
-
-
 def _parse_renames() -> List[Tuple[Optional[str], str, str]]:
     """Parse --rename [class:]old:new pairs from sys.argv.
 
@@ -606,8 +579,6 @@ def build_parser() -> argparse.ArgumentParser:
                      help="apply changes to sheets (default: dry run)")
     ap.add_argument("--remove", action="store_true",
                      help="also remove stale columns")
-    ap.add_argument("--refresh-dropdowns", action="store_true",
-                     help="refresh allowed values on existing dropdowns instead of syncing columns")
     ap.add_argument("--rename", metavar="[CLASS:]OLD:NEW", action="append",
                      help="rename a criterion, in one class or all classes (repeatable)")
     ap.add_argument("--split", metavar="OLD:NEW1:NEW2", action="append",
@@ -632,7 +603,6 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     apply = "--apply" in sys.argv
     remove = "--remove" in sys.argv
-    refresh_dropdowns = "--refresh-dropdowns" in sys.argv
     renames = _parse_renames()
     splits  = _parse_splits()
     merges  = _parse_merges()
@@ -789,57 +759,21 @@ def main(args: argparse.Namespace | None = None) -> None:
                     if p not in expected_set
                     and not parked_operation(p)
                 ]
-                # Snapshot before either branch below overwrites it. Only the
-                # columns a branch actually inserts or deletes get their sheet
-                # dropdown touched, so the manifest's record for every other
-                # criterion of this construction must carry over unchanged —
-                # see the "manifest lied about param_values" fix below.
-                prior_values = dict(
-                    sheet_info.get("construction_params", {})
-                    .get(construction, {}).get("param_values", {})
-                )
-
                 if not new_params and not removed_params:
-                    # Sheet columns match diagnostics. Sync param_names in manifest if needed,
-                    # but do NOT update param_values here — only update param_values when dropdowns
-                    # are actually pushed to the sheet, so it remains a reliable staleness reference.
+                    # Sheet columns match diagnostics. Sync param_names in manifest if needed.
                     if apply:
                         cp = sheet_info.setdefault("construction_params", {})
                         existing_cp = cp.get(construction, {})
                         if existing_cp.get("param_names") != exp_params:
                             cp.setdefault(construction, {})["param_names"] = exp_params
                             manifest_changed = True
-                            if not refresh_dropdowns:
-                                print(f"  [{class_name}/{construction}] Manifest param_names updated")
+                            print(f"  [{class_name}/{construction}] Manifest param_names updated")
                         else:
-                            if not renames and not splits and not merges and not refresh_dropdowns:
+                            if not renames and not splits and not merges:
                                 print(f"  [{class_name}/{construction}] OK — no changes")
                     else:
-                        if not renames and not splits and not merges and not refresh_dropdowns:
+                        if not renames and not splits and not merges:
                             print(f"  [{class_name}/{construction}] OK — no changes")
-
-                    if refresh_dropdowns:
-                        existing_cp = sheet_info.get("construction_params", {}).get(construction, {})
-                        stored_values = existing_cp.get("param_values", {})
-                        stale = [p for p in exp_params if exp_values.get(p) != stored_values.get(p)]
-                        if stale:
-                            any_changes = True
-                            print(f"  [{class_name}/{construction}] Would update dropdowns:")
-                            for p in stale:
-                                old = stored_values.get(p, "?")
-                                print(f"    {p}: {old} → {exp_values.get(p)}")
-                            if apply:
-                                requests = _build_dropdown_refresh_requests(
-                                    ws, header, stale, exp_values)
-                                if requests:
-                                    ws.spreadsheet.batch_update({"requests": requests})
-                                    cp = sheet_info.setdefault("construction_params", {})
-                                    cp.setdefault(construction, {})["param_values"] = exp_values
-                                    manifest_changed = True
-                                    any_changes = True
-                                    print(f"    Done.")
-                        else:
-                            print(f"  [{class_name}/{construction}] OK — dropdowns up to date")
                     continue
 
                 any_changes = True
@@ -849,17 +783,8 @@ def main(args: argparse.Namespace | None = None) -> None:
                     if apply:
                         _insert_param_columns(ws, new_params, exp_values, exp_params)
                         # Update manifest construction_params so Colab reads the right params.
-                        # Only the columns just inserted got a dropdown written — a
-                        # pre-existing criterion's values are untouched by this call,
-                        # so recording exp_values for it here would tell the next
-                        # --refresh-dropdowns run "up to date" for a column that was
-                        # never actually pushed. Carry the rest forward from prior_values.
                         cp = sheet_info.setdefault("construction_params", {})
                         cp.setdefault(construction, {})["param_names"] = exp_params
-                        cp[construction]["param_values"] = {
-                            **prior_values,
-                            **{p: exp_values[p] for p in new_params if p in exp_values},
-                        }
                         manifest_changed = True
                         print(f"    Added: {new_params}")
 
@@ -888,17 +813,8 @@ def main(args: argparse.Namespace | None = None) -> None:
                                     }
                                 }]})
                                 header.pop(col_idx)
-                        # Update manifest construction_params. Deleting a column says
-                        # nothing about whether a DIFFERENT column's dropdown is
-                        # current, so drop only the removed keys rather than
-                        # re-stamping every criterion with exp_values (same fix as
-                        # the new_params branch above, same reason).
                         cp = sheet_info.setdefault("construction_params", {})
                         cp.setdefault(construction, {})["param_names"] = exp_params
-                        current_values = cp[construction].get("param_values", prior_values)
-                        cp[construction]["param_values"] = {
-                            p: v for p, v in current_values.items() if p not in removed_params
-                        }
                         manifest_changed = True
                         print(f"    Removed: {removed_params}")
                     else:
@@ -908,31 +824,6 @@ def main(args: argparse.Namespace | None = None) -> None:
                             f"diagnostics: {removed_params}\n    {marker}"
                         )
 
-                # For tabs with structural changes, also refresh dropdowns on existing columns
-                # if requested. (New columns already get correct validation from _insert_param_columns.)
-                if refresh_dropdowns:
-                    existing_cp2 = sheet_info.get("construction_params", {}).get(construction, {})
-                    stored_values2 = existing_cp2.get("param_values", {})
-                    stale2 = [
-                        p for p in exp_params
-                        if p not in new_params and exp_values.get(p) != stored_values2.get(p)
-                    ]
-                    if stale2:
-                        any_changes = True
-                        print(f"  [{class_name}/{construction}] Would update dropdowns on existing columns:")
-                        for p in stale2:
-                            old = stored_values2.get(p, "?")
-                            print(f"    {p}: {old} → {exp_values.get(p)}")
-                        if apply:
-                            # Columns were just inserted or deleted: read the header afresh.
-                            requests = _build_dropdown_refresh_requests(
-                                ws, ws.row_values(1), stale2, exp_values)
-                            if requests:
-                                ws.spreadsheet.batch_update({"requests": requests})
-                                cp = sheet_info.setdefault("construction_params", {})
-                                cp.setdefault(construction, {})["param_values"] = exp_values
-                                manifest_changed = True
-                                print(f"    Done.")
 
     # Update the merged manifest.json on Drive if anything changed.
     if apply and manifest_changed:

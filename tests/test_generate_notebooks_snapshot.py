@@ -66,13 +66,6 @@ _STUB_TEMPLATES = {
              "source": ["# __CLASS_CELLS_MARKER__\n"]},
         ],
     },
-    "validation_boilerplate.ipynb": {
-        "cells": [
-            {"cell_type": "markdown", "metadata": {}, "source": ["# validation {{LANG_DISPLAY}}"]},
-            {"cell_type": "code", "execution_count": None, "metadata": {}, "outputs": [],
-             "source": ["LANG_ID = '{{LANG_ID}}'\n", "CONFIG = '{{CONFIG_FILE_ID}}'"]},
-        ],
-    },
     "report_boilerplate.ipynb": {
         "cells": [
             {"cell_type": "markdown", "metadata": {}, "source": ["# report {{LANG_DISPLAY}}"]},
@@ -205,7 +198,7 @@ def test_apply_mutation_digest(env, monkeypatch):
     check_snapshot("apply_digest.txt", render(doorway.mutations))
 
 
-def test_apply_uploads_three_notebooks_per_language_and_one_coordinator_notebook(env, monkeypatch):
+def test_apply_uploads_two_notebooks_per_language_and_one_coordinator_notebook(env, monkeypatch):
     doorway, config, _ = env
     run(["generate-notebooks", "--apply"], monkeypatch)
     langs = sorted(lang for lang in config if not lang.startswith("_"))
@@ -213,7 +206,6 @@ def test_apply_uploads_three_notebooks_per_language_and_one_coordinator_notebook
     creates = doorway.mutations_of("create_file")
     assert [c["name"] for c in creates] == (
         [f"domains_{lang}.ipynb" for lang in langs]
-        + [f"validation_{lang}.ipynb" for lang in langs]
         + [f"report_{lang}.ipynb" for lang in langs]
         + ["all_languages.ipynb"]
     )
@@ -242,7 +234,6 @@ def test_apply_records_every_file_id_in_drive_config(env, monkeypatch):
     created = {c["name"]: c["file_id"] for c in doorway.mutations_of("create_file")}
     for lang in (lang for lang in config if not lang.startswith("_")):
         assert saved[lang]["domains_notebook_file_id"] == created[f"domains_{lang}.ipynb"]
-        assert saved[lang]["validation_notebook_file_id"] == created[f"validation_{lang}.ipynb"]
         assert saved[lang]["report_notebook_file_id"] == created[f"report_{lang}.ipynb"]
     assert saved["_all_languages_notebook_file_id"] == created["all_languages.ipynb"]
 
@@ -331,8 +322,7 @@ def test_a_second_run_updates_in_place_keeping_the_links_collaborators_hold(env,
     expected = {first["_all_languages_notebook_file_id"]} | {
         first[lang][key]
         for lang in first if not lang.startswith("_")
-        for key in ("domains_notebook_file_id", "validation_notebook_file_id",
-                    "report_notebook_file_id")
+        for key in ("domains_notebook_file_id", "report_notebook_file_id")
     }
     assert updated == expected
     # The update path renames as well as replacing content.

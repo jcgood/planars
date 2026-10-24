@@ -6,9 +6,6 @@ Using manifest.json (id: fake_manifest_file)
   [arao1248] Uploaded domains_arao1248.ipynb (viewer)
   [stan1293] Uploaded domains_stan1293.ipynb (viewer)
   [synth0001] Uploaded domains_synth0001.ipynb (viewer)
-  [arao1248] Uploaded validation_arao1248.ipynb (viewer)
-  [stan1293] Uploaded validation_stan1293.ipynb (viewer)
-  [synth0001] Uploaded validation_synth0001.ipynb (viewer)
   [arao1248] Uploaded report_arao1248.ipynb (viewer)
   [stan1293] Uploaded report_stan1293.ipynb (viewer)
   [synth0001] Uploaded report_synth0001.ipynb (viewer)
@@ -16,4 +13,4 @@ Using manifest.json (id: fake_manifest_file)
 Uploaded all_languages.ipynb (viewer)
 
 Done. drive_config.json updated.
-Drive door (enforce): checked 20 write(s) to 10 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 14 write(s) to 7 tab(s) or file(s); 0 broke a rule.

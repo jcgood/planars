@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate per-language contributor/validation/report notebooks and the all-languages coordinator notebook.
+"""Generate per-language contributor and report notebooks and the all-languages coordinator notebook.
 
 Run from the repo root:
     python -m coding generate-notebooks           # dry run — show what would be generated
@@ -13,27 +13,30 @@ What this does:
      reads its ID and does not write it)
   3. Generates domains_{lang_id}.ipynb for each language from the contributor template,
      with CONFIG_FILE_ID and LANG_ID baked in; uploads to each language's Drive folder
-  4. Generates validation_{lang_id}.ipynb for each language from the validation template;
-     uploads to each language's Drive folder
-  5. Generates report_{lang_id}.ipynb for each language from the report template,
+  4. Generates report_{lang_id}.ipynb for each language from the report template,
      with CONFIG_FILE_ID, LANG_ID, and FOLDER_ID baked in; uploads to each language's
      Drive folder. Running this notebook generates and uploads report_{lang_id}.html
      with a stable URL for sharing with non-technical collaborators.
-  6. Generates all_languages.ipynb from the coordinator template, with per-class cells
+  5. Generates all_languages.ipynb from the coordinator template, with per-class cells
      inserted from the union of all languages' diagnostics; uploads to Drive
-  7. Sets Viewer ("anyone with link") permissions on all uploaded notebooks
+  6. Sets Viewer ("anyone with link") permissions on all uploaded notebooks
      (every run, through drive.create_or_update_shared_file, which the PDF
      upload in generate_reports.py also uses; it adds the grant only if
      none exists, so repeat runs don't pile up duplicates)
-  8. Updates drive_config.json with notebook file IDs for future updates,
+  7. Updates drive_config.json with notebook file IDs for future updates,
      saved after each individual upload so a crash cannot lose the IDs of
      earlier uploads and make a retry create duplicate files
 
 Templates live in notebooks/templates/:
   domains_boilerplate.ipynb      — contributor template (substitution only)
-  validation_boilerplate.ipynb   — validation template (substitution only)
   report_boilerplate.ipynb       — report template (substitution only; generates HTML for John)
   all_languages_boilerplate.ipynb — coordinator template (substitution + cell generation)
+
+There was a validation notebook too (validation_{lang_id}.ipynb), retired
+2026-10-23: it checked cells against a copy of the allowed values kept in the
+manifest, which went stale, and against element-row rules on every tab. The
+daily refresh lists every cell that needs fixing on each sheet's Status tab
+instead (#309).
 
 Class cells are generated from the language's diagnostics file, not the templates, so adding a new
 analysis class automatically includes it the next time generate-notebooks is run.
@@ -306,9 +309,6 @@ def _run_generation(apply: bool) -> None:
         named = lambda name, lang=None: file_spec(drive_door.notebook(name, lang)).name
         for lang_id, classes in uploadable.items():
             print(f"  {named('domains', lang_id)} — {classes}")
-        print("\nValidation notebooks (one per language):")
-        for lang_id in uploadable:
-            print(f"  {named('validation', lang_id)}")
         print("\nReport notebooks (one per language — generates shareable HTML for collaborators):")
         for lang_id in uploadable:
             print(f"  {named('report', lang_id)}")
@@ -340,30 +340,9 @@ def _run_generation(apply: bool) -> None:
         )
         drive_config.setdefault(lang_id, {})["domains_notebook_file_id"] = file_id
         # Save after every upload, not once at the end -- a crash partway
-        # through the four loops below must not lose an already-successful
+        # through the loops below must not lose an already-successful
         # upload's new file ID, or a retry creates a duplicate file instead
         # of updating the existing one (issue #280).
-        _save_drive_config(drive_config)
-        print(f"  [{lang_id}] Uploaded {filename} (viewer)")
-
-    # Generate and upload validation notebook for each language
-    validation_template = _load_template("validation_boilerplate.ipynb")
-    for lang_id in uploadable:
-        folder_id = drive_config[lang_id]["folder_id"]
-        nb = _substitute_tokens(validation_template, {
-            "LANG_ID": lang_id,
-            "LANG_DISPLAY": _lang_display(lang_id),
-            "CONFIG_FILE_ID": config_file_id,
-        })
-        nb_bytes = json.dumps(nb, indent=1).encode()
-        identity = drive_door.notebook("validation", lang_id)
-        filename = file_spec(identity).name
-        file_id = create_or_update_shared_file(
-            doorway, nb_bytes, folder_id,
-            drive_config.get(lang_id, {}).get("validation_notebook_file_id"),
-            identity=identity,
-        )
-        drive_config.setdefault(lang_id, {})["validation_notebook_file_id"] = file_id
         _save_drive_config(drive_config)
         print(f"  [{lang_id}] Uploaded {filename} (viewer)")
 

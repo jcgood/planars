@@ -49,10 +49,7 @@ def test_generate_sheets_regen_construction_has_no_precondition():
 
 
 # ---------------------------------------------------------------------------
-# sync-params: base --apply requires coded_data_clean_tree; the
-# --refresh-dropdowns mode restates the same precondition under its own
-# fuller gate ("--apply --refresh-dropdowns") -- both being active at once
-# must dedupe to one entry, not two.
+# sync-params: --apply requires coded_data_clean_tree.
 # ---------------------------------------------------------------------------
 
 # Every command that writes local files commits them (the local-file door),
@@ -61,18 +58,13 @@ _WRITES = ["coded_data_clean_tree", "coded_data_git_identity_configured"]
 
 
 def test_sync_params_apply_requires_clean_tree():
-    args = _ns(apply=True, refresh_dropdowns=False)
+    args = _ns(apply=True)
     assert preconditions.active_preconditions("sync_params", args) == _WRITES
 
 
 def test_sync_params_dry_run_has_no_precondition():
-    args = _ns(apply=False, refresh_dropdowns=False)
+    args = _ns(apply=False)
     assert preconditions.active_preconditions("sync_params", args) == []
-
-
-def test_sync_params_apply_and_refresh_dropdowns_dedupes_to_one_entry():
-    args = _ns(apply=True, refresh_dropdowns=True)
-    assert preconditions.active_preconditions("sync_params", args) == _WRITES
 
 
 # ---------------------------------------------------------------------------

@@ -9,10 +9,6 @@ Contributor notebooks (one per language, includes per-class report sections):
   domains_stan1293.ipynb — ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent', 'biuniqueness_deviations']
   domains_synth0001.ipynb — ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent']
 
-Validation notebooks (one per language):
-  validation_stan1293.ipynb
-  validation_synth0001.ipynb
-
 Report notebooks (one per language — generates shareable HTML for collaborators):
   report_stan1293.ipynb
   report_synth0001.ipynb

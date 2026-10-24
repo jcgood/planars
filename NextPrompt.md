@@ -97,6 +97,11 @@ row); the spec, ground rules, units and order are the Phase 10 section of
 `docs/ownership-design.md` (both answered by Jeff in their § 7 — don't
 re-ask).
 
+**2026-10-23 (Jeff):** the validation notebook and the manifest's copy of
+each criterion's allowed values are retired (progress doc, Phase 10 row;
+don't re-litigate). Check the 2026-10-24 refresh: green, and
+refresh-dropdowns no longer uploads the manifest.
+
 **Where it stands:** class sheets are enforced live (2026-10-19, Jeff;
 `drive_door.LIVE_ENFORCED_KINDS`); every other kind now has its spec and is
 in watch (5f's last two steps, notes Docs and files, done 2026-10-19;

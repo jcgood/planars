@@ -41,20 +41,6 @@ migrated `bad_spreadsheet_id` scenario report the identical "could not open
 spreadsheet" line. The shim script is a scratch throwaway per the plan's
 convention, not committed.
 
-A pre-existing bug unrelated to this migration was found while taking the
-baseline, worked around in the harness only (not fixed) to get the baseline
-at all, and then fixed as its own follow-up commit right after the migration
-landed -- see Finding 12 in docs/data-layer-progress.md. `_stale_manifest_param_values`
-(~line 274) called `refresh_dropdowns._fresh_param_values` with 6 positional
-arguments; that function has taken 4 since `b399e32` (#272's fix,
-2026-08-02). Every `--sheets` run with any construction carrying
-`param_names` -- effectively every real run -- had been raising `TypeError`
-before reaching any Drive call at all since that commit, uncaught because
-nothing exercised `_section_sheets` before now. Neither function touches
-Drive, so the fix is orthogonal to this migration and lives in its own
-commit; `test_stale_param_values_reports_a_real_mismatch_without_crashing`
-below pins the fixed behaviour.
-
 Regenerate: PLANARS_UPDATE_SNAPSHOTS=1 pytest tests/test_integrity_check_snapshot.py
 """
 from __future__ import annotations
@@ -282,41 +268,6 @@ def test_stale_merged_column_uses_the_merge_wording(env):
     out, _ = run_main(["integrity-check", "--sheets", "--lang", "arao1248"])
     assert "stale merge column '_merged_" in out
     assert doorway.mutations == []
-
-
-# ---------------------------------------------------------------------------
-# --sheets: stale param_values are reported without crashing (Finding 12's
-# regression test -- _stale_manifest_param_values used to raise TypeError
-# before any of the Drive-touching code below it ever ran)
-# ---------------------------------------------------------------------------
-
-def test_stale_param_values_reports_a_real_mismatch_without_crashing(env):
-    """A manifest whose stored values for a criterion differ from the
-    diagnostics YAML's is reported, not a crash. The frozen data used to hold
-    a real instance (synth0001's coreference tabs); the daily refresh-dropdowns
-    (#322) cleared it on Drive, so the test now makes its own: a stale value
-    list for prescreening's referential."""
-    doorway, run_main = env
-
-    def stale(manifest):
-        params = manifest["synth0001"]["sheets"]["coreference"]["construction_params"]
-        params["prescreening"]["param_values"]["referential"] = ["y", "n", "stale"]
-    mutate_manifest(doorway, stale)
-    out, _ = run_main(["integrity-check", "--sheets", "--lang", "synth0001"])
-    assert "param_values out of sync with YAML" in out
-    assert "coreference · prescreening" in out
-    assert "referential: stored=" in out
-    assert "→ run: python -m coding refresh-dropdowns --apply" in out
-    # Not asserting main()'s overall exit code here: synth0001's fixture data
-    # also carries real, already-known DEPENDENT CONSTRUCTION STALENESS errors
-    # (coreference/prescreening -> its three pair constructions -- see
-    # docs/data-layer-progress.md's "Held until Phase 9" list) that force exit_code == 1
-    # regardless of this test's target. A param_values mismatch is a warning
-    # on its own within this section -- confirmed directly instead.
-    with redirect_stdout(io.StringIO()):
-        e, w = ic._section_sheets(["synth0001"])
-    assert e == 0
-    assert w >= 1  # at least the param_values warning above (how many varies by capture)
 
 
 # ---------------------------------------------------------------------------

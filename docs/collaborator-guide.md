@@ -69,18 +69,7 @@ The notebook shows a domain chart and a text report for each analysis class. See
 
 ---
 
-## Advanced: running the validation notebook yourself
-
-You do not have to wait for your coordinator to tell you about errors. The validation notebook for your language checks the same rules that `import-sheets` applies: it highlights any invalid cells pink directly in the Google Sheet and prints a summary of issues.
-
-1. Open the validation notebook link from your Drive folder (named `validation_{lang_id}.ipynb`)
-2. Choose **Runtime → Run all**
-3. Sign in with your Google account when prompted
-4. Invalid cells are highlighted pink in the sheet; the issue summary appears at the bottom of the notebook
-
-You can run this notebook as many times as you like while fixing errors — it clears previous pink highlights and re-checks from scratch each time.
-
-See the [Notebooks guide](notebooks.md#validation-notebook) for more detail on how to read the validation output.
+## Fixing values
 
 ### What to do when a cell turns pink
 
@@ -89,7 +78,7 @@ Pink means the value is not in the allowed list for that criterion. Common cause
 - A value that is valid in another column but not this one (e.g. `both` in a column that only accepts `y/n`)
 - A cell that was accidentally cleared
 
-Fix the cell using the dropdown, then re-run the validation notebook to confirm the pink is gone.
+Fix the cell using the dropdown. The pink goes within a day.
 
 ### Using the Example, Source and Comments columns
 
