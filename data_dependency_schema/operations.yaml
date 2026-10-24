@@ -254,8 +254,8 @@
     so a crash mid-run leaves already-updated tabs correctly matching the
     YAML, and a retry finds nothing left to do for them. The manifest
     upload (upload_manifest) is deferred to the end of the whole run like
-    import-sheets' pending_changes.json and prune-manifest's manifest write,
-    but unlike those two this is not a data-loss or reprocessing risk: the
+    prune-manifest's manifest write, but unlike that one this is not a
+    data-loss or reprocessing risk: the
     same code path that checks "does the sheet match the YAML" separately
     checks "does the manifest's param_names match the YAML" (line ~679,
     "Sync param_names in manifest if needed"), so the next successful run
@@ -278,9 +278,9 @@
   writes_to_drive: false
   writes_locally: true
   description: >-
-    Syncs diagnostics_{lang_id}.yaml (source of truth) to the derived TSV.
-    This record's top-level fields describe that default YAML->TSV
-    direction; --to-sheet and --from-tsv are different directions entirely,
+    Copies diagnostics_{lang_id}.yaml (the source) to the derived TSV. This
+    record's top-level fields describe that default YAML->TSV direction;
+    --to-sheet copies it to the read-only diagnostics Sheet instead,
     described under modes below.
   side_effects:
     - "overwrites diagnostics_{lang_id}.tsv from the YAML"
@@ -309,26 +309,6 @@
       preconditions: [coded_data_clean_tree]
       writes_to_drive: true
       writes_locally: false
-      facts_touched:
-        - {fact: diagnostics_scope, role: both}
-    - name: "--from-tsv"
-      description: >-
-        Diffs the TSV against the YAML; deterministic differences are
-        auto-applied to the YAML, ambiguous ones go to diagnostics_drift.json
-        for coordinator review.
-      side_effects:
-        - "--apply: writes deterministic TSV->YAML changes into the YAML"
-        - "always writes ambiguous changes to diagnostics_drift.json, regardless of --apply"
-      idempotent: true
-      idempotency_note: >-
-        Diffs current TSV against current YAML fresh each run; with nothing
-        changed on either side, produces no YAML changes and an empty drift
-        file.
-      apply_gate: "--from-tsv --apply"
-      preconditions: [coded_data_clean_tree, coded_data_git_identity_configured]
-      writes_to_drive: false
-      writes_locally: true
-      edits_sources: [diagnostics_yaml]
       facts_touched:
         - {fact: diagnostics_scope, role: both}
 
@@ -387,35 +367,21 @@
   cli_command: import-sheets
   writes_to_drive: true
   writes_locally: true
-  # The planar is downloaded from its Sheet until unit 11b retires that intake.
-  edits_sources: [planar]
   description: >-
-    Downloads filled annotation sheets to local TSVs; auto-applies safe
-    downstream commands; writes destructive changes to pending_changes.json
-    instead of applying them directly.
+    Downloads filled annotation sheets (the class sheets) to local TSVs. The
+    planar and diagnostics Sheets are read-only copies and are never read
+    back (unit 11b).
   side_effects:
     - "overwrites coded_data/{lang}/{class}/{construction}.tsv from the live sheet, incrementally per tab, through the local-file door (previous version archived, change-log line)"
-    - "downloads the planar and diagnostics Sheets to planar_{lang}.tsv and diagnostics_{lang}.tsv, through the local-file door"
-    - "writes pending_changes.json for ready-for-review tabs' destructive changes"
     - "paints pink highlighting on invalid cells (all tabs, any status)"
     - "with --apply, when it wrote any TSV, runs validate-coding's revalidation (pink cells and the Status tab's problems column)"
     - "commits and pushes the files it wrote in planars-data when it ends (the local-file door; until Phase 10 unit 6a it left them for the coordinator to commit)"
   idempotent: true
   idempotency_note: >-
     Re-running with nothing changed on the live sheets since the last run
-    produces no new TSV content and no new pending changes, which is safe.
-    Fixed 2026-08-11 (issue #280): pending_changes.json is now written per
-    language, immediately after that language's lang-setup pending entries
-    are computed, instead of once at the end of main() via a single
-    _append_pending_changes(all_pending) call. Previously, a crash after a
-    tab's TSV write but before that final write silently lost that
-    language's already-detected destructive-change record, since a retry
-    would find the (now-unchanged) tab already matching and never re-detect
-    the change. _append_pending_changes reads-then-appends, so calling it
-    once per language is equivalent in the no-failure case to the old single
-    call at the end. (--ignore-status changing what counts as
-    "ready-for-review" is a different-flags-different-output concern, not a
-    retry-safety one, and is unaffected by this fix.)
+    produces no new TSV content, which is safe. (--ignore-status changing
+    what counts as "ready-for-review" is a different-flags-different-output
+    concern, not a retry-safety one.)
   apply_gate: "--apply"
   preconditions: [coded_data_clean_tree, coded_data_git_identity_configured]
   facts_touched:
@@ -423,8 +389,7 @@
     - {fact: pair_row_position_numbers, role: reads}
     - {fact: diagnostics_scope, role: reads}
   cascades_triggered:
-    - "auto-applies safe downstream commands after a successful run"
-    - "revalidates sheets after auto-apply"
+    - "revalidates sheets after a run that wrote any TSV"
   modes: []
   always_on_writes: [highlighting]
 
@@ -513,12 +478,9 @@
       beforehand when a position/element is renamed or split, and this
       command's --rename-map/--rename-element/--split-element flags only
       supply the old->new mapping used to carry annotations forward under
-      the new names; it then pushes that (already-current) planar_tsv to the
-      live planar Sheet via import-planar --to-sheet, in case the local edit
-      was never pushed. Corrected 2026-08-11: no to_csv call in this file
-      targets a planar path (grepped and confirmed) -- the earlier claim
-      that this command edits planar_tsv directly was wrong, and the same
-      overstatement is also in facts.yaml's planar_sheet_structure record.
+      the new names; it then brings the read-only planar Sheet up to date
+      with it (sync-planar), which first renumbers position numbers typed in
+      the new sheets' answers.
     - "rewrites the class's annotation TSVs through the local-file door (previous versions archived, change-log lines)"
     - "--rename-class: moves the class's annotation TSVs to the new class's folder (file_door.move_class), updates the manifest"
     - "notifies the language's tracking issue via notify.py after sheets actually change"
@@ -558,8 +520,8 @@
   cascades_triggered:
     - "regenerate_notebooks() runs automatically after --apply"
     - >-
-      push_planars_to_sheets() (import-planar --to-sheet) runs automatically
-      after --apply so the master planar Sheet doesn't go stale
+      sync_planars() (sync-planar --apply) runs automatically after --apply,
+      so the planar Sheet shows the planar the new sheets were built from
     - "notify.py posts to (or creates) the language's 'Sheet updates -- {lang_id}' GitHub issue"
     - >-
       revalidate_sheets() (from validate_coding.py) runs automatically after
@@ -669,40 +631,6 @@
   preconditions: []
   facts_touched:
     - {fact: languages_metadata, role: writes}
-  cascades_triggered: []
-  modes: []
-
-- id: apply_pending
-  cli_command: apply-pending
-  writes_to_drive: false
-  # It rewrites pending_changes.json after every entry (through the
-  # local-file door, which commits it when the command ends).
-  writes_locally: true
-  description: >-
-    Interactive review and application of destructive changes recorded by
-    import-sheets in pending_changes.json (coded_data/.state/, so the daily
-    refresh's entries reach the coordinator through planars-data); closes the
-    pending-changes issue when cleared.
-  side_effects:
-    - "applies coordinator-approved destructive changes to coded_data/ and/or the manifest; clears entries from pending_changes.json"
-  idempotent: true
-  idempotency_note: >-
-    Fixed 2026-08-11 (issue #280): _save_pending(remaining + entries[i:]) is
-    now called after every entry's decision, not once after the whole loop.
-    Previously, an entry was only dropped from `remaining` after its
-    underlying command had already run and returned rc == 0, but the file
-    write reflecting that was deferred to the end -- a crash after entry 3
-    of 10 succeeded but before the loop finished left pending_changes.json
-    still listing entry 3, so a retry re-ran its command a second time. Now
-    the file is rewritten immediately after each entry is resolved, so a
-    crash at any point leaves the file accurately reflecting exactly what
-    has and hasn't run for real. (Whether re-running a *never-attempted*
-    entry's command is itself safe still depends on what that command is --
-    unrelated to this fix, which is about not re-attempting an
-    already-succeeded one.)
-  apply_gate: "interactive (per-entry approval, not a single --apply flag)"
-  preconditions: [coded_data_up_to_date, coded_data_git_identity_configured]
-  facts_touched: []
   cascades_triggered: []
   modes: []
 
@@ -866,58 +794,38 @@
   cascades_triggered: []
   modes: []
 
-- id: import_planar
-  cli_command: import-planar
-  # Only when the planar's numbers shift: the position numbers in the class
-  # sheets' answers are carried to the new numbering (inside replacing()).
+- id: sync_planar
+  cli_command: sync-planar
   writes_to_drive: true
+  # Only its renumbering record (a state file), while class sheets are renumbered.
   writes_locally: true
-  # The Sheet -> file intake, until unit 11b retires it.
-  edits_sources: [planar]
   description: >-
-    Syncs planar_{lang_id}.tsv against the Drive planar spreadsheet. This
-    record's top-level fields describe the default Sheet -> TSV (download)
-    direction; --to-sheet is the reverse direction, described under modes
-    below.
+    Brings each language's planar Sheet, a read-only copy, up to date with
+    planar_{lang_id}.tsv, its source; first renumbers the position numbers
+    typed in the class sheets' answers when the planar's numbers shifted.
+    Run daily with --apply by the data refresh, and by restructure-sheets.
   side_effects:
     - >-
-      overwrites planar_{lang_id}.tsv from the Sheet through the local-file
-      door (previous version archived, change-log line), writes
-      PLANAR_CHANGES_PATH for the planar-changed issue body
-    - >-
-      when positions moved, were removed or renamed: first rewrites the
-      position numbers in every class sheet's position cells
-      (coding.schemas.position_criteria) to the new numbering, one write per
-      spreadsheet, recording each sheet done in the renumbering state file;
-      if that fails, leaves the planar file alone and exits non-zero
-    - "commits and pushes the files it wrote in planars-data when it ends (the local-file door)"
+      when positions moved, were removed or renamed (the Sheet holds the
+      planar as last pushed): first rewrites the position numbers in every
+      class sheet's position cells (coding.schemas.position_criteria) to the
+      new numbering, one write per spreadsheet, recording each sheet done in
+      the renumbering state file; if that fails, leaves the planar Sheet as
+      it was and exits non-zero
+    - "rewrites the planar Sheet from the file where they differ, and writes PLANAR_CHANGES_PATH for the planar-changed issue body"
   idempotent: true
   idempotency_note: >-
-    Only writes when the content genuinely differs from what's on disk ("up
-    to date" short-circuits otherwise) -- a second run with nothing changed
-    performs no write. A run stopped partway through renumbering starts each
-    sheet from the numbering the renumbering state file records for it, so no
+    Only writes when the file and the Sheet differ ("up to date"
+    short-circuits otherwise) -- a second run with nothing changed performs
+    no write. A run stopped partway through renumbering starts each sheet
+    from the numbering the renumbering state file records for it, so no
     sheet is renumbered twice.
   apply_gate: "--apply"
   preconditions: [coded_data_git_identity_configured]
   facts_touched:
     - {fact: planar_sheet_structure, role: both}
   cascades_triggered: []
-  modes:
-    - name: "--to-sheet"
-      description: "Reverse direction: pushes local planar_{lang_id}.tsv content up to the live planar Sheet."
-      side_effects:
-        - "overwrites the live planar Sheet's content from the local TSV"
-      idempotent: true
-      idempotency_note: >-
-        Only writes when content genuinely differs from the Sheet's current
-        content -- a second run with nothing changed makes no write.
-      apply_gate: "--to-sheet --apply"
-      preconditions: []
-      writes_to_drive: true
-      writes_locally: false
-      facts_touched:
-        - {fact: planar_sheet_structure, role: both}
+  modes: []
 
 - id: generate_status_sheet
   cli_command: generate-status-sheet
@@ -1073,18 +981,18 @@
     the steps. Writes nothing to Drive itself; each command it runs is
     checked by the Drive door under its own record.
   side_effects:
-    - "runs import-planar, import-sheets, check-notes, check-comments, sync-diagnostics-yaml (both directions), proposal-sheets, sync-params, generate-sheets --regen-dependents, update-sheets and generate-status-sheet with --apply, each with its own side effects (proposal-sheets files and closes the proposal issues itself)"
-    - "files, updates or closes the daily issues (planar-changed, import-error, diagnostics-yaml-error, regen-dependents-error, dependent-stale, diagnostics-drift, codebook-error, stale-manifest, integrity-error, data-overwrite, sheet-drift, status-sheet-error) and comments on stale pending-changes issues"
+    - "runs sync-planar, import-sheets, check-notes, check-comments, sync-diagnostics-yaml (both directions), proposal-sheets, sync-params, generate-sheets --regen-dependents, update-sheets and generate-status-sheet with --apply, each with its own side effects (proposal-sheets files and closes the proposal issues itself)"
+    - "files, updates or closes the daily issues (planar-changed, import-error, diagnostics-yaml-error, regen-dependents-error, dependent-stale, codebook-error, stale-manifest, integrity-error, data-overwrite, sheet-drift, status-sheet-error)"
     - "files an audit issue when none is open and none has closed in 30 days"
     - "each command it runs commits and pushes what it wrote in coded_data/ (planars-data) when it ends, through the local-file door"
     - "regenerates tests/snapshots/ and commits and pushes it to planars"
-    - "deletes diagnostics_drift.json and /tmp/planar_changes.json before the steps that write them"
-  idempotent: false
+    - "deletes /tmp/planar_changes.json before the step that writes it"
+  idempotent: true
   idempotency_note: >-
     A second run with nothing changed in Drive imports nothing new, commits
     nothing and leaves each issue as it was (replaced with the same body, or
-    nothing open to close), but adds another reminder comment to a stale
-    pending-changes issue, as the workflow always did.
+    nothing open to close). (Until 2026-10-24 it also added a reminder
+    comment to a stale pending-changes issue each run; that issue is retired.)
   apply_gate: "--apply"
   preconditions: [coded_data_clean_tree]
   facts_touched: []

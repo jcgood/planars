@@ -64,10 +64,8 @@ def refresh_env(monkeypatch, tmp_path):
     coded = tmp_path / "coded_data"
     (coded / "stan1293" / "lang_setup").mkdir(parents=True)
     monkeypatch.setattr(dr, "CODED_DATA", coded)
-    import coding.import_planar as ip
-    import coding.import_sheets as is_
-    monkeypatch.setattr(ip, "PLANAR_CHANGES_PATH", tmp_path / "planar_changes.json")
-    monkeypatch.setattr(is_, "DRIFT_PATH", tmp_path / "diagnostics_drift.json")
+    import coding.sync_planar as sp
+    monkeypatch.setattr(sp, "PLANAR_CHANGES_PATH", tmp_path / "planar_changes.json")
     monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(tmp_path / "summary.md"))
     return results, calls, code, tmp_path
 
@@ -88,7 +86,7 @@ def test_a_clean_run_runs_every_command_in_order_and_closes_every_issue(refresh_
     assert r.halted is None and r.uncovered_failures == []
     assert calls == [
         "issue --sync-labels --apply",
-        "import-planar --apply",
+        "sync-planar --apply",
         "import-sheets --apply --ignore-status",
         "check-notes --apply",
         "check-comments --apply",
@@ -144,9 +142,9 @@ def test_a_step_that_breaks_stops_the_run_but_the_always_steps_still_run(
 
     def cannot_file(*a, **k):
         raise RuntimeError("GitHub refused")
-    monkeypatch.setattr(dr.issues, "remind_stale", cannot_file)
+    monkeypatch.setattr(dr.issues, "close_open", cannot_file)
     r = dr.refresh()
-    assert r.halted and "pending reminder" in r.halted
+    assert r.halted and "planar" in r.halted                  # its issue could not be closed
     assert "check-notes --apply" not in calls                 # skipped
     assert code.commits                                       # snapshots still committed
     outcomes = dict(r.outcomes)
@@ -167,46 +165,27 @@ def test_a_failing_step_with_no_issue_of_its_own_makes_the_run_fail(refresh_env,
 
 def test_planar_changes_file_planar_changed_with_the_command_to_run(refresh_env, github, monkeypatch):
     results, *_ = refresh_env
-    import coding.import_planar as ip
+    import coding.sync_planar as sp
 
-    def import_planar_writes_changes(cmd, *argv):
-        if cmd == "import-planar":
-            ip.PLANAR_CHANGES_PATH.write_text(json.dumps({"stan1293": {
+    def sync_planar_writes_changes(cmd, *argv):
+        if cmd == "sync-planar":
+            sp.PLANAR_CHANGES_PATH.write_text(json.dumps({"stan1293": {
                 "diff": {"added": {"31": "v:new"}}, "recommendation":
                 "python -m coding update-sheets --apply"}}), encoding="utf-8")
         return dr.Result(0, "")
-    monkeypatch.setattr(dr, "run", import_planar_writes_changes)
+    monkeypatch.setattr(dr, "run", sync_planar_writes_changes)
     dr.refresh()
     [issue] = _open(github, "planar-changed")
     assert "- `+` position 31 (`v:new`) — added" in issue["body"]
     assert "python -m coding update-sheets --apply" in issue["body"]
 
 
-def test_yesterdays_drift_and_planar_files_are_not_reported_again(refresh_env, github):
+def test_yesterdays_planar_changes_are_not_reported_again(refresh_env, github):
     *_, tmp = refresh_env
-    (tmp / "diagnostics_drift.json").write_text(json.dumps(
-        [{"lang_id": "stan1293", "ambiguous": [{"class_name": "x", "kind": "k"}]}]))
     (tmp / "planar_changes.json").write_text(json.dumps(
         {"stan1293": {"diff": {}, "recommendation": "r"}}))
-    github.seed_issue("old drift", "diagnostics-drift")
     dr.refresh()
-    assert _open(github, "diagnostics-drift") == []
     assert _open(github, "planar-changed") == []
-
-
-def test_drift_written_by_todays_import_files_a_table(refresh_env, github, monkeypatch):
-    import coding.import_sheets as is_
-
-    def import_writes_drift(cmd, *argv):
-        if cmd == "import-sheets":
-            is_.DRIFT_PATH.write_text(json.dumps([{"lang_id": "stan1293", "ambiguous": [
-                {"class_name": "ciscategorial", "kind": "unknown_criterion",
-                 "suggestions": ["V-combines"]}]}]), encoding="utf-8")
-        return dr.Result(0, "")
-    monkeypatch.setattr(dr, "run", import_writes_drift)
-    dr.refresh()
-    [issue] = _open(github, "diagnostics-drift")
-    assert "| stan1293 | ciscategorial | unknown_criterion | V-combines |" in issue["body"]
 
 
 def test_the_refresh_replacing_another_commands_change_files_data_overwrite(
@@ -371,12 +350,11 @@ def test_the_whole_refresh_runs_against_the_offline_drive(monkeypatch, tmp_path,
             monkeypatch.setattr(module, "_save_drive_config", saved_configs.append)
         if hasattr(module, "MANIFEST_PATH"):
             monkeypatch.setattr(module, "MANIFEST_PATH", tmp_path / "sheets_manifest.json")
-    from coding import generate_notebooks, glottolog, import_planar, import_sheets, state_files
+    from coding import generate_notebooks, glottolog, import_sheets, sync_planar
     from conftest import point_state_files_at
     monkeypatch.setattr(import_sheets, "ROOT", tmp_path)
     monkeypatch.setattr(import_sheets, "ERROR_DIR", tmp_path / "import_errors")
-    monkeypatch.setattr(import_sheets, "DRIFT_PATH", tmp_path / "diagnostics_drift.json")
-    monkeypatch.setattr(import_planar, "PLANAR_CHANGES_PATH", tmp_path / "planar_changes.json")
+    monkeypatch.setattr(sync_planar, "PLANAR_CHANGES_PATH", tmp_path / "planar_changes.json")
     monkeypatch.setattr(glottolog, "CACHE_PATH", tmp_path / "glottolog_cache.json")
     # The state files live in the scratch planars-data, as they do live, so
     # the test sees whether they reach its remote.
@@ -398,14 +376,11 @@ def test_the_whole_refresh_runs_against_the_offline_drive(monkeypatch, tmp_path,
     # command's clean-tree check to trip on.
     assert _status(coded) == ""
     # The state files reached GitHub's copy (unit 12): what the refresh wrote
-    # to Drive is logged there, and any pending changes are what a
-    # coordinator's apply-pending will read after a pull.
+    # to Drive is logged there.
     remote = tmp_path / "remote.git"
     on_remote = subprocess.run(["git", "-C", str(remote), "ls-tree", "-r", "--name-only", "main"],
                                capture_output=True, text=True, check=True).stdout.split()
     assert ".state/provenance_log.jsonl" in on_remote, report
-    if state_files.PENDING_PATH.exists():
-        assert ".state/pending_changes.json" in on_remote
     # Nothing outside the scratch copies changed.
     assert _status(ROOT) == repo_before
     assert _status(real_data) == data_before

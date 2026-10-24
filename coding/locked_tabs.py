@@ -16,7 +16,9 @@ generated. Before this (2026-10-12) the Planar Structure tab had been called
 "read-only" since 2026-05-01 without ever being locked, and only some
 commands refreshed it.
 
-`locked_tab_contents` is the build itself (Instructions from the class's
+`protect` is the one way a whole tab is protected; sync-planar and
+sync-diagnostics-yaml use it too, for the planar and diagnostics Sheets'
+one tab. `locked_tab_contents` is the build itself (Instructions from the class's
 schema entry, Planar Structure from the planar TSV), which `sheet_spec.py`
 also reads. A rebuild removes a tab the class no longer carries.
 `reorder_tabs` puts first-placed locked tabs first, then the constructions,
@@ -249,8 +251,11 @@ def _normalise(rows: List[List[str]]) -> List[List[str]]:
 
 
 def _is_ours(protection: Dict, sheet_id: int) -> bool:
+    # Google leaves a field out when it holds its default, so the range of a
+    # whole tab whose id is 0 (every one-tab Sheet's) comes back as {}
+    # (found live 2026-10-24: each run would have protected such a tab again).
     rng = protection.get("range", {})
-    whole_tab = set(rng) <= {"sheetId"} and rng.get("sheetId") == sheet_id
+    whole_tab = set(rng) <= {"sheetId"} and rng.get("sheetId", 0) == sheet_id
     return whole_tab and not protection.get("warningOnly") \
         and protection.get("description") == PROTECTION_DESCRIPTION
 
@@ -309,20 +314,25 @@ def rebuild_locked_tabs(
                 ws.clear()
                 _write(spreadsheet, ws, rows, build_format)
 
-        if ws is None:
-            changes.append(f"{title}: protect")  # dry run of a tab not yet created
-            continue
-        protections = spreadsheet.list_protected_ranges(ws.id)
-        if not any(_is_ours(p, ws.id) for p in protections):
+        if ws is None or protect(spreadsheet, ws, apply):
             changes.append(f"{title}: protect")
-            if apply:
-                spreadsheet.batch_update({"requests": [
-                    {"addProtectedRange": {"protectedRange": {
-                        "range": {"sheetId": ws.id},
-                        "description": PROTECTION_DESCRIPTION,
-                        "warningOnly": False,
-                    }}}]})
     return changes
+
+
+def protect(spreadsheet: SpreadsheetHandle, ws, apply: bool = True) -> bool:
+    """Protect a whole tab the tooling writes so only the sheet's owner can
+    edit it (a locked tab, or the one tab of a planar or diagnostics Sheet).
+    True if it was not protected yet (and, with ``apply``, now is)."""
+    if any(_is_ours(p, ws.id) for p in spreadsheet.list_protected_ranges(ws.id)):
+        return False
+    if apply:
+        spreadsheet.batch_update({"requests": [
+            {"addProtectedRange": {"protectedRange": {
+                "range": {"sheetId": ws.id},
+                "description": PROTECTION_DESCRIPTION,
+                "warningOnly": False,
+            }}}]})
+    return True
 
 
 def _write(spreadsheet: SpreadsheetHandle, ws, rows: List[List[str]], build_format) -> None:

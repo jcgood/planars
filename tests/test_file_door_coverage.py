@@ -44,14 +44,9 @@ NOT_THROUGH_THE_DOOR: Dict[Site, str] = {
     ("restructure_sheets.py", "main", "write_text"): _ROOT_MANIFEST,
     ("prune_manifest.py", "_archive_manifest", "write_text"):
         "not in planars-data: manifest_archives/ at the repo root (gitignored)",
-    ("import_planar.py", "import_planar", "write_text"):
+    ("sync_planar.py", "sync_planars", "write_text"):
         "not in planars-data: PLANAR_CHANGES_PATH in /tmp, for the daily refresh's issue",
-    ("daily_refresh.py", "import_planar", "unlink"): "not in planars-data: PLANAR_CHANGES_PATH",
-    ("import_sheets.py", "main", "write_text"):
-        "not in planars-data: diagnostics_drift.json at the repo root",
-    ("daily_refresh.py", "import_sheets", "unlink"): "not in planars-data: diagnostics_drift.json",
-    ("sync_diagnostics_yaml.py", "main", "write_text"):
-        "not in planars-data: diagnostics_drift.json at the repo root",
+    ("daily_refresh.py", "sync_planar", "unlink"): "not in planars-data: PLANAR_CHANGES_PATH",
     ("import_sheets.py", "_write_error_report", "write_text"):
         "not in planars-data: import_errors/ at the repo root",
     ("daily_refresh.py", "summary", "open"): "not in planars-data: the Actions run's summary page",

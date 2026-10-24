@@ -7,66 +7,42 @@ Usage:
     python -m coding sync-diagnostics-yaml --lang stan1293        # dry run (one language)
     python -m coding sync-diagnostics-yaml --apply                # write TSVs
 
-    # YAML → Google Sheet: push YAML changes back to the diagnostics Sheet
+    # YAML → Google Sheet: bring the diagnostics Sheet up to date
     python -m coding sync-diagnostics-yaml --to-sheet             # dry run (all languages)
     python -m coding sync-diagnostics-yaml --to-sheet --apply     # upload to Sheet
     python -m coding sync-diagnostics-yaml --to-sheet --lang stan1293
 
-    # TSV → YAML: propose changes from TSV back to YAML
-    python -m coding sync-diagnostics-yaml --from-tsv             # dry run (all languages)
-    python -m coding sync-diagnostics-yaml --from-tsv --apply     # write YAML updates
-    python -m coding sync-diagnostics-yaml --from-tsv --lang stan1293
-
-YAML is the authoritative source of truth; TSV is a derived artifact.
+The YAML is the diagnostics' one editable home; the TSV and the Sheet are
+copies made from it, and nothing is read back from either (Phase 10 unit 11b).
+The coordinator edits the YAML (by hand, or with ``accept-proposal`` from the
+language's proposal sheet).
 
 YAML → TSV (default):
     The TSV is always generated fresh from the YAML. Direct edits to the TSV
-    are overwritten. To change diagnostics, edit the YAML and run --apply.
+    are overwritten.
 
 YAML → Sheet (--to-sheet):
-    Reads the YAML, generates the TSV representation, and uploads it to the
-    diagnostics Google Sheet (overwriting stale content). Requires Drive access.
-    Run this after renaming classes or criteria in the YAML so the Sheet stays
-    in sync and import-sheets no longer detects false drift. The push replaces
-    the whole Sheet, including any edit the annotator made since the last
-    import, so it goes through the Drive door's ``replacing()``: the Sheet is
-    saved to ``state_files.SNAPSHOT_DIR`` first and the reason logged.
-
-TSV → YAML (--from-tsv):
-    Diffs the TSV against the YAML and categorises changes:
-    - Deterministic (auto-applied): class_added, construction_added/removed,
-      criterion_added/removed, criterion_values_changed — all against known
-      schema entries in diagnostic_classes.yaml / diagnostic_criteria.yaml.
-    - Ambiguous (flagged for review): unknown classes or criteria not in the
-      schema; class removals (may be intentional retirements).
-    Deterministic changes are applied to the YAML automatically when --apply
-    is given, to the file as loaded (make_forms._load_diagnostics_yaml_for_edit),
-    so its comments and layout are kept. Ambiguous changes are printed and written to
-    diagnostics_drift.json for coordinator review.
+    Renders the YAML as rows and writes them to the diagnostics Sheet, a
+    read-only copy for the annotator, if they differ (daily in the refresh).
 
 Each language must have a diagnostics_{lang_id}.yaml in its lang_setup/
 folder to participate. Languages without YAML are skipped.
 
-Exit status: the YAML → TSV and YAML → Sheet directions exit non-zero when
-any language has a blocking validation error (the daily refresh files a
-`diagnostics-yaml-error` issue on that). Only blocking errors stop a
-language, in either direction; a non-blocking one (e.g. a required class not
-yet drafted) does not withhold the sync. `--from-tsv` is different: its
-ambiguous differences have their own path (diagnostics_drift.json, the
-`diagnostics-drift` issue).
+Exit status: both directions exit non-zero when any language has a blocking
+validation error (the daily refresh files a `diagnostics-yaml-error` issue on
+that). Only blocking errors stop a language; a non-blocking one (e.g. a
+required class not yet drafted) does not withhold the sync.
 
 `coded_data_clean_tree` (for `.yaml` and `.tsv`) is enforced centrally by
-preconditions.py before any `--apply` direction reads or writes coded_data/.
+preconditions.py before an `--apply` run reads coded_data/.
 
-Both local directions write through the local-file door (coding/file_door.py),
-which keeps the previous version in archive/lang_setup/, logs the change in
-the language's changes.tsv, and commits it in planars-data when the command
-ends.
+The TSV is written through the local-file door (coding/file_door.py), which
+keeps the previous version in archive/lang_setup/, logs the change in the
+language's changes.tsv, and commits it in planars-data when the command ends.
 """
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -78,13 +54,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
 
-from .make_forms import (
-    _yaml_to_tsv_df,
-    _dump_diagnostics_yaml,
-    _load_diagnostics_yaml_for_edit,
-    _diff_diagnostics_tsv_yaml,
-    _apply_yaml_diff,
-)
+from .make_forms import _yaml_to_tsv_df
 from .validate_diagnostics import validate_diagnostics_yaml
 from . import file_door
 
@@ -149,60 +119,6 @@ def _sync_to_tsv(lang_id: str, apply: bool, error_langs: List[str]) -> bool:
     return True
 
 
-def _sync_from_tsv(lang_id: str, apply: bool, drift_entries: List[Dict]) -> bool:
-    """Sync TSV → YAML for one language. Returns True if the YAML was (or would be) changed.
-
-    Deterministic changes are auto-applied; ambiguous changes are appended to
-    drift_entries for the caller to write to diagnostics_drift.json.
-    """
-    yaml_path  = file_door.diagnostics_yaml(lang_id).path
-    tsv_path   = file_door.diagnostics_tsv(lang_id).path
-
-    if not yaml_path.exists():
-        print(f"  [{lang_id}] No YAML found — skipping (cannot propose to non-existent YAML)")
-        return False
-
-    if not tsv_path.exists():
-        print(f"  [{lang_id}] No TSV found — nothing to diff")
-        return False
-
-    with open(yaml_path, encoding="utf-8") as f:
-        yaml_data = yaml.safe_load(f)
-
-    tsv_df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
-
-    deterministic, ambiguous = _diff_diagnostics_tsv_yaml(tsv_df, yaml_data, lang_id)
-
-    if not deterministic and not ambiguous:
-        print(f"  [{lang_id}] No differences found")
-        return False
-
-    if deterministic:
-        kinds = [c["kind"] for c in deterministic]
-        print(f"  [{lang_id}] Deterministic changes ({len(deterministic)}): {', '.join(kinds)}")
-        if apply:
-            # Applied to the YAML as loaded for editing, so its comments
-            # and layout survive the write.
-            new_yaml = _apply_yaml_diff(_load_diagnostics_yaml_for_edit(yaml_path), deterministic)
-            file_door.write(file_door.diagnostics_yaml(lang_id), _dump_diagnostics_yaml(new_yaml),
-                            why=f"edits made on the diagnostics Sheet: {', '.join(kinds)}")
-            print(f"  [{lang_id}] YAML updated.")
-        else:
-            print(f"  [{lang_id}] (dry run — YAML not written)")
-
-    if ambiguous:
-        print(f"  [{lang_id}] Ambiguous changes ({len(ambiguous)}) — flagged for review:")
-        for change in ambiguous:
-            kind = change["kind"]
-            class_name = change["class_name"]
-            suggestions = change.get("suggestions", [])
-            hint = f" (suggestions: {suggestions})" if suggestions else ""
-            print(f"    {kind}: {class_name}{hint}")
-        drift_entries.append({"lang_id": lang_id, "ambiguous": ambiguous})
-
-    return bool(deterministic)
-
-
 def _describe_changes(current_df: pd.DataFrame, new_df: pd.DataFrame) -> List[str]:
     """Say what would move if the Sheet were overwritten from the YAML.
 
@@ -260,13 +176,9 @@ def _describe_changes(current_df: pd.DataFrame, new_df: pd.DataFrame) -> List[st
 def _sync_to_sheet(lang_id: str, manifest: dict, apply: bool, error_langs: List[str]) -> bool:
     """Sync YAML → Google Sheet for one language.
 
-    Reads the YAML, generates the TSV representation, compares it against the
-    live diagnostics Sheet, and optionally overwrites it. This is the upload
-    direction — the mirror of import-sheets downloading the diagnostics Sheet.
-
-    Use this when YAML class names or criteria have changed locally and the
-    Google Sheet is stale. Running this in data-refresh after sync-diagnostics-yaml
-    --apply keeps the Sheet in continuous sync with the YAML.
+    Renders the YAML as rows, compares them with the diagnostics Sheet, and
+    with ``apply`` rewrites the Sheet if they differ. The Sheet is the
+    tooling's (annotators read it), so nothing on it is lost.
 
     Returns True if changes were made (or would be). A language whose YAML
     fails validation is appended to error_langs — same reasoning as
@@ -319,6 +231,12 @@ def _sync_to_sheet(lang_id: str, manifest: dict, apply: bool, error_langs: List[
         print(f"  [{lang_id}] Could not read Sheet: {e}")
         return False
 
+    # Read-only for everyone but its owner, coordinators included (they are
+    # writers on the root folder); checked every run.
+    from .locked_tabs import protect
+    if protect(ss, ss.sheet1, apply):
+        print(f"  [{lang_id}] {'Protected' if apply else 'Would protect'} the diagnostics Sheet")
+
     if current_rows:
         current_df = pd.DataFrame(
             current_rows[1:], columns=current_rows[0], dtype=str
@@ -332,15 +250,10 @@ def _sync_to_sheet(lang_id: str, manifest: dict, apply: bool, error_langs: List[
         print(f"  [{lang_id}]   (sheet is empty — will populate from YAML)")
 
     if apply:
-        from . import drive_door
         new_rows = [list(new_df.columns)] + [list(row) for _, row in new_df.iterrows()]
         ws = ss.sheet1
-        # The Sheet is the annotator's to edit until unit 11 locks it, so this
-        # replaces whatever they changed since the last import too: the door
-        # saves the Sheet first (state_files.SNAPSHOT_DIR) and logs the reason.
-        with drive_door.replacing(ws, f"diagnostics_{lang_id}.yaml pushed to the diagnostics Sheet"):
-            ws.clear()
-            ws.update(new_rows, "A1")
+        ws.clear()
+        ws.update(new_rows, "A1")
         print(f"  [{lang_id}] Updated → diagnostics Sheet")
     else:
         print(f"  [{lang_id}] Would update → diagnostics Sheet")
@@ -348,7 +261,7 @@ def _sync_to_sheet(lang_id: str, manifest: dict, apply: bool, error_langs: List[
     return True
 
 
-def _apply_command(from_tsv: bool, to_sheet: bool, lang_filter: Optional[str]) -> str:
+def _apply_command(to_sheet: bool, lang_filter: Optional[str]) -> str:
     """This same run, with --apply — the exact line to copy after a dry run.
 
     Built from the flags actually passed rather than named as "--apply", so
@@ -357,8 +270,6 @@ def _apply_command(from_tsv: bool, to_sheet: bool, lang_filter: Optional[str]) -
     parts = ["python -m coding sync-diagnostics-yaml"]
     if to_sheet:
         parts.append("--to-sheet")
-    elif from_tsv:
-        parts.append("--from-tsv")
     if lang_filter:
         parts.append(f"--lang {lang_filter}")
     parts.append("--apply")
@@ -368,15 +279,11 @@ def _apply_command(from_tsv: bool, to_sheet: bool, lang_filter: Optional[str]) -
 def build_parser() -> argparse.ArgumentParser:
     """Build the argument parser for `python -m coding sync-diagnostics-yaml`."""
     ap = argparse.ArgumentParser(
-        description="Sync diagnostics YAML <-> TSV <-> Sheet."
+        description="Copy each diagnostics YAML to its TSV, or to its Sheet."
     )
     ap.add_argument(
         "--apply", action="store_true",
         help="write changes (default: dry run)",
-    )
-    ap.add_argument(
-        "--from-tsv", action="store_true",
-        help="diff TSV against YAML instead of regenerating TSV from YAML",
     )
     ap.add_argument(
         "--to-sheet", action="store_true",
@@ -393,18 +300,13 @@ def main(args: argparse.Namespace | None = None) -> None:
     if args is None:
         args = build_parser().parse_args()
     apply = args.apply
-    from_tsv = args.from_tsv
     to_sheet = args.to_sheet
     lang_filter: Optional[str] = args.lang
 
-    # coded_data_clean_tree (all three directions) is enforced centrally at
-    # the command dispatch chokepoint (coding/__main__.py) now -- see
-    # coding/preconditions.py -- not here. It still guards against exactly
-    # what it always has: a prior step's failed auto-commit leaving a
-    # stale/reverted YAML or TSV on disk for this command to read as ground
-    # truth (--to-sheet would then push it live; the default/--from-tsv
-    # directions would regenerate from it).
-    run_line = _apply_command(from_tsv, to_sheet, lang_filter)
+    # coded_data_clean_tree is enforced centrally at the command dispatch
+    # chokepoint (coding/preconditions.py), not here: a prior step's failed
+    # commit could leave a stale YAML on disk for this command to copy.
+    run_line = _apply_command(to_sheet, lang_filter)
     if not apply:
         print("Dry run — nothing is written.\n")
 
@@ -442,28 +344,14 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     changed = 0
     error_langs: List[str] = []
-    if from_tsv:
-        drift_entries: List[Dict] = []
-        for lang_id in languages:
-            changed += _sync_from_tsv(lang_id, apply, drift_entries)
-        if drift_entries:
-            drift_path = ROOT / "diagnostics_drift.json"
-            print(f"\nAmbiguous changes written to {drift_path.name} for coordinator review.")
-            if apply:
-                drift_path.write_text(
-                    json.dumps(drift_entries, indent=2, ensure_ascii=False),
-                    encoding="utf-8",
-                )
-    else:
-        for lang_id in languages:
-            changed += _sync_to_tsv(lang_id, apply, error_langs)
+    for lang_id in languages:
+        changed += _sync_to_tsv(lang_id, apply, error_langs)
 
     print()
-    direction = "YAML" if from_tsv else "TSV"
     if apply:
-        print(f"Done: {changed} {direction} file(s) updated.")
+        print(f"Done: {changed} TSV file(s) updated.")
     else:
-        print(f"Dry run complete: {changed} {direction} file(s) would be updated.")
+        print(f"Dry run complete: {changed} TSV file(s) would be updated.")
         if changed:
             print(f"  → run: {run_line}")
     if error_langs:

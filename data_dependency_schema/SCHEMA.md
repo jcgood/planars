@@ -68,12 +68,12 @@ inventing new terminology:
 
 | Entity | Description |
 |---|---|
-| `planar_sheet` | The live Drive spreadsheet defining one language's positions/elements (`planar_spreadsheet_id`). Can be authoritative — hand-edited by the coordinator, or (since #248) receiving an automated push from a locally-edited `planar_tsv`. |
-| `diagnostics_sheet` | The live Drive spreadsheet mirroring `diagnostics_{lang_id}.yaml`/`.tsv`. Always derived — never itself authoritative. |
+| `planar_sheet` | The Drive spreadsheet showing one language's positions/elements (`planar_spreadsheet_id`): a read-only copy of `planar_tsv`, rebuilt by `sync-planar`. Always derived since Phase 10 unit 11b (2026-10-24); until then it was a second editable copy, imported daily. |
+| `diagnostics_sheet` | The Drive spreadsheet mirroring `diagnostics_{lang_id}.yaml`: a read-only copy. Always derived — never itself authoritative. |
 | `annotation_sheet` | A live Drive spreadsheet for one analysis class (one tab per construction), where annotators enter judgments. The primary source for annotation data. |
 | `status_sheet` | Locked, read-only per-language completion-status spreadsheet. Always derived — never authoritative for anything. |
 | `collaborator_doc` | The per-language Google Doc for free-text collaborator notes; change-tracked via `notes_state.json` content hashes. |
-| `planar_tsv` | `coded_data/{lang}/lang_setup/planar_{lang_id}.tsv`. Normally downloaded from `planar_sheet` — but sometimes a direct edit point too (the one entity where the default cascade direction is genuinely ambiguous, not clean). |
+| `planar_tsv` | `coded_data/{lang}/lang_setup/planar_{lang_id}.tsv` — the source for a language's planar structure, edited by the coordinator (by hand or through `accept-proposal`). Until unit 11b it was also downloaded from `planar_sheet`, the one entity whose cascade direction was ambiguous. |
 | `diagnostics_yaml` | `coded_data/{lang}/lang_setup/diagnostics_{lang_id}.yaml` — the coordinator-facing source of truth for a language's diagnostics scope. |
 | `diagnostics_tsv` | `coded_data/{lang}/lang_setup/diagnostics_{lang_id}.tsv` — always regenerated from `diagnostics_yaml`; documented as never hand-edited. |
 | `construction_tsv` | `coded_data/{lang}/{class}/{construction}.tsv` — the local mirror of one construction's annotation data, imported from `annotation_sheet`. |
@@ -81,7 +81,7 @@ inventing new terminology:
 | `derived_artifact` | Any regenerated, don't-hand-edit output: notebooks, PDF reports, rendered codebook markdown, `tests/snapshots/` baselines. |
 | `manifest` | `sheets_manifest.json` / `drive_config.json` — the Drive-ID bookkeeping registry mapping languages/classes to spreadsheet/folder/doc IDs. |
 | `code_comment` | A fact encoded as a docstring or inline comment in a `planars/*.py` or `coding/*.py` module — e.g. a span rule's prose description, whose sync with the schema is checked via a hash sentinel. |
-| `github_issue` | A GitHub issue used as a durable coordination/state channel — per-language notification issues, `pending-changes` tracking, drift issues. The fact's truth value literally lives in the issue's open/closed state or comment history. |
+| `github_issue` | A GitHub issue used as a durable coordination/state channel — per-language notification issues, proposal issues, drift issues. The fact's truth value literally lives in the issue's open/closed state or comment history. |
 | `filename_convention` | A fact encoded implicitly in a naming pattern — e.g. a language ID inferred from `planar_{lang_id}.tsv`; an archive file's datestamp suffix encoding when it was superseded. |
 | `test_fixture` | A recorded copy of live state committed under `coded_data/.test_fixtures/` (in planars-data, private) for offline testing — e.g. `coded_data/.test_fixtures/drive_state/`, the raw capture of every annotation spreadsheet and the Drive manifest. Never authoritative: it is a snapshot, and its whole job is to be a faithful *stale* copy. Listed as an entity because a test asserting against a fixture that no longer resembles production is a silent failure of exactly the kind this registry exists to name. |
 
@@ -90,14 +90,15 @@ inventing new terminology:
 The four Sheet entities (`planar_sheet`, `diagnostics_sheet`,
 `annotation_sheet`, `status_sheet`) could have been one generic `drive_sheet`
 with a `detail` string distinguishing which. They aren't, because they differ
-in whether they can *ever* be authoritative — `planar_sheet`/`annotation_sheet`
-sometimes can be; `diagnostics_sheet`/`status_sheet` never can. Naming that
+in whether they can *ever* be authoritative — `annotation_sheet` is;
+`planar_sheet`/`diagnostics_sheet`/`status_sheet` never are (the planar Sheet
+was, sometimes, until unit 11b). Naming that
 directly in the entity means a reader sees "never authoritative" as a
 structural fact of the vocabulary, not something inferred from free text
 every time. The same logic splits the three local-TSV entities: `diagnostics_tsv`
 has a hard documented rule (never hand-edited), `construction_tsv` is
-normally download-only, and `planar_tsv` is the one that's genuinely
-ambiguous — which is exactly the distinction that mattered on 2026-07-29.
+download-only, and `planar_tsv` is a source a person edits — the
+distinction that mattered on 2026-07-29, when it was also a download.
 
 `manifest`, `code_comment`, and `github_issue` each get their own entity
 rather than folding into `derived_artifact`, because none of them are
@@ -114,16 +115,16 @@ elsewhere — they *are* the fact, for anything durably tracked via an issue.
 - id: planar_sheet_structure
   description: a language's positional/element structure (Position_Name/Elements columns)
   locations:
-    - {entity: planar_sheet, detail: "the live planar spreadsheet for the language"}
+    - {entity: planar_sheet, detail: "the planar spreadsheet for the language, a read-only copy"}
     - {entity: planar_tsv, detail: "coded_data/{lang}/lang_setup/planar_{lang_id}.tsv"}
-  authoritative: planar_sheet
+  authoritative: planar_tsv
   cascade:
-    direction: bidirectional
-    mechanism: import-planar (Sheet -> TSV) / import-planar --to-sheet (TSV -> Sheet), the latter auto-run by restructure-sheets --apply
+    direction: automatic
+    mechanism: sync-planar --apply rewrites planar_sheet from planar_tsv, daily and after restructure-sheets --apply
   drift_risk:
     possible: true
-    note: a local structural edit that skips restructure-sheets has no push path back to the Sheet
-    caught_by: nothing yet beyond a manual import-planar dry run
+    note: a coordinator editing planar_sheet by hand is overwritten at the next sync
+    caught_by: the daily sync-planar, which compares the two and files planar-changed
 ```
 
 Field by field — this shape and its semantics are unchanged from the
@@ -205,7 +206,7 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
   facts_touched:
     - {fact: planar_sheet_structure, role: writes}
   cascades_triggered:
-    - "push_planars_to_sheets() (import-planar --to-sheet) runs automatically after --apply"
+    - "sync_planars() (sync-planar --apply) runs automatically after --apply"
 ```
 
 - **`id`** — snake_case form of the CLI command name (`cli_command` with
@@ -223,10 +224,11 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
   wrong `true` produces recovery that corrupts rather than repairs. The note
   is required on every record, `true` or `false`, because an unreasoned
   `true` is the more dangerous of the two to get wrong silently.
-- **`apply_gate`** — what actually gates a live write: a flag name, a fuller
-  description when different modes of the same command are gated
-  differently (`generate-sheets`' `--regen-construction` is never gated by
-  `--apply` at all), or `null` for a command with no live-write concept.
+- **`apply_gate`** — what actually gates a live write: the flags that must
+  all be set (`"--apply"`, `"--to-sheet --apply"`), or `null` for a command
+  with no live-write concept (a mode with `null` is active whenever its own
+  flag is set: `generate-sheets`' `--regen-construction` is never gated by
+  `--apply` at all). Anything else is an error (`coding/gating.py`).
 - **`preconditions`** — ids from `preconditions.yaml` this command's apply
   path assumes hold. Reuses the existing registry rather than restating
   `enforced_by`/`failure_symptom` per command.
@@ -239,9 +241,8 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
   the gate that was actually satisfied, and the provenance log records the
   writes themselves. Several commands' Drive-write status
   genuinely diverges by mode the same way `apply_gate`/`preconditions` can —
-  `sync-diagnostics-yaml`'s default/`--from-tsv` directions touch only the
-  local YAML/TSV, `import-planar`'s default direction only the local TSV;
-  only `--to-sheet` reaches the live Sheet in both — so a mode restates it
+  `sync-diagnostics-yaml`'s default direction touches only the local TSV;
+  only `--to-sheet` reaches the live Sheet — so a mode restates it
   per the same "full override" rule as every other mode field. `false` for a
   command with no live-write concept at all (pure read-only) and for one
   whose writes are entirely local, never Drive itself.
@@ -253,9 +254,9 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
 - **`edits_sources`** (optional) — the sources (`file_door.SOURCES`: the
   planar, the diagnostics YAML — files a person edits) the command may
   write. The door refuses a write to any other source, and stops on a name
-  that is not a source. Only the two Sheet intakes (`import-planar`,
-  `import-sheets`, until unit 11b) and the commands that edit the YAML
-  (`sync-params`, `sync-diagnostics-yaml --from-tsv`) list any.
+  that is not a source. Only `accept-proposal` and the commands that edit the
+  YAML (`sync-params`, `rename-construction`) list any. (The Sheet intakes,
+  import-planar and import-sheets, did until unit 11b retired them.)
 - **`facts_touched`** — `{fact, role}` pairs, `fact` an id from `facts.yaml`
   and `role` one of `reads`/`writes`/`both`. Reuses the existing registry the
   same way `preconditions` does — a reader who wants to know "who's
@@ -275,8 +276,7 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
 - **`modes`** — some commands genuinely behave differently by flag:
   `generate-sheets`' `--regen-construction` has no `--apply` gate at all and
   touches different facts than the base command; `sync-diagnostics-yaml`'s
-  `--to-sheet` and `--from-tsv` are different directions with different
-  preconditions. Flattening these onto one set of top-level fields would
+  `--to-sheet` is a different direction with different preconditions. Flattening these onto one set of top-level fields would
   either overstate what the base command does or understate what the mode
   does. A `modes` entry is a **full, self-contained override** — it restates
   its own `side_effects`/`idempotent`/`idempotency_note`/`apply_gate`/

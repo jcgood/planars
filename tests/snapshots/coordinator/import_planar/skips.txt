@@ -1,7 +1,0 @@
-
-arao1248: no local planar TSV — skipping
-
-stan1293: no planar_spreadsheet_id in drive_config.json — skipping
-
-synth0001
-  planar sheet is empty — skipping

@@ -1,9 +1,6 @@
 Connecting to Google...
 
 Language: arao1248
-  [planar] New positions: ['x:newpos-test'] — queuing update-sheets
-  [planar] Downloaded → planar_arao1248.tsv
-  [diagnostics] No changes → diagnostics_arao1248.tsv
 
   ciscategorial
     [general] status: 'in-progress' — importing for backup
@@ -30,8 +27,6 @@ Language: arao1248
     [general] [backup] No changes → coded_data/arao1248/free_occurrence/general.tsv
 
 Language: stan1293
-  [planar] Downloaded → planar_stan1293.tsv
-  [diagnostics] No changes → diagnostics_stan1293.tsv
 
   ciscategorial
     [general] status: 'in-progress' — importing for backup
@@ -95,8 +90,6 @@ Language: stan1293
   Error report: import_errors/stan1293_20260804_120000.txt
 
 Language: synth0001
-  [planar] No changes → planar_synth0001.tsv
-  [diagnostics] No changes → diagnostics_synth0001.tsv
 
   ciscategorial
     [general] status: 'in-progress' — importing for backup
@@ -159,13 +152,6 @@ Language: synth0001
     [general] [backup] No changes → coded_data/synth0001/phrasal_accent/general.tsv
 
 Done. 0 file(s) written, 1 in-progress backup(s), 1 warning(s).
-manifest.json updated on Drive with languages.yaml metadata.
-
-⚠  1 destructive change(s) written to pending_changes.json
-   Review and apply with: python -m coding apply-pending
-
-Auto-applying 1 safe downstream command(s):
-  python -m coding update-sheets --apply
 
 --- Revalidating sheets ---
 
@@ -244,5 +230,5 @@ synth0001
 ──────────────────────────────────────────────────
 Validated 50 sheet(s).  Errors: 1
 Cell highlighting and each sheet's Status tab updated in Google Sheets.
-Drive door (enforce): checked 107 write(s) to 51 tab(s) or file(s); 0 broke a rule.
-Local-file door: changed 3 file(s), previous versions archived and logged.
+Drive door (enforce): checked 106 write(s) to 50 tab(s) or file(s); 0 broke a rule.
+Local-file door: changed 1 file(s), previous versions archived and logged.

@@ -1,11 +1,12 @@
-"""Tests for coding/sync_diagnostics_yaml.py — _sync_to_tsv and _sync_from_tsv."""
+"""Tests for coding/sync_diagnostics_yaml.py — _sync_to_tsv. (The Sheet
+direction is in test_sync_diagnostics_yaml_snapshot.py; --from-tsv was
+retired in Phase 10 unit 11b.)"""
 from __future__ import annotations
 
 import textwrap
 
 import pandas as pd
 import pytest
-import yaml
 
 import coding.sync_diagnostics_yaml as _sdy
 
@@ -26,18 +27,11 @@ YAML_CONTENT = textwrap.dedent("""\
         notes: "test notes"
 """)
 
-TSV_CONTENT = (
-    "Class\tLanguage\tConstructions\tCriteria\n"
-    "ciscategorial\tlang0001\tgeneral\tV-combines{y/n}, N-combines{y/n}\n"
-    "metrical\tlang0001\tstress_domain\taccented{y/n/both}, obligatory{y/n}\n"
-)
-
 # _sync_to_tsv gates on validate_diagnostics_yaml's errors, including check 9
 # (every collection_required: "y" class must be present) — YAML_CONTENT above
-# deliberately omits those classes to stay minimal for _sync_from_tsv tests,
-# which don't call validate_diagnostics_yaml at all. _sync_to_tsv tests need a
-# genuinely valid YAML instead, so they exercise the create/update/no-change
-# logic rather than the required-classes gate.
+# omits those classes, so it is used only for the validation-error test;
+# the other tests need a genuinely valid YAML, so they exercise the
+# create/update/no-change logic rather than the required-classes gate.
 YAML_CONTENT_ALL_REQUIRED = textwrap.dedent("""\
     language: lang0001
     classes:
@@ -144,73 +138,3 @@ def test_sync_to_tsv_skips_on_validation_error(lang_dir):
     # printed log -- error_langs is what lets main() turn it into a non-zero
     # exit code so the daily automation actually notices.
     assert error_langs == ["lang0001"]
-
-
-# ---------------------------------------------------------------------------
-# _sync_from_tsv
-# ---------------------------------------------------------------------------
-
-def test_sync_from_tsv_no_diff(lang_dir):
-    """Returns False when TSV and YAML are in sync."""
-    (lang_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT)
-    (lang_dir / "diagnostics_lang0001.tsv").write_text(TSV_CONTENT)
-    drift: list = []
-    changed = _sdy._sync_from_tsv("lang0001", apply=False, drift_entries=drift)
-    assert changed is False
-    assert drift == []
-
-
-def test_sync_from_tsv_detects_criterion_added(lang_dir):
-    """Detects and applies a new (known) criterion in the TSV."""
-    (lang_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT)
-    tsv_with_extra = TSV_CONTENT.replace(
-        "V-combines{y/n}, N-combines{y/n}", "V-combines{y/n}, N-combines{y/n}, A-combines{y/n}"
-    )
-    (lang_dir / "diagnostics_lang0001.tsv").write_text(tsv_with_extra)
-    drift: list = []
-    changed = _sdy._sync_from_tsv("lang0001", apply=True, drift_entries=drift)
-    assert changed is True
-    updated = yaml.safe_load((lang_dir / "diagnostics_lang0001.yaml").read_text())
-    assert "A-combines" in updated["classes"]["ciscategorial"]["criteria"]
-
-
-def test_sync_from_tsv_preserves_notes(lang_dir):
-    """Applying deterministic changes does not strip notes from the YAML."""
-    (lang_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT)
-    tsv_with_extra = TSV_CONTENT.replace(
-        "V-combines{y/n}, N-combines{y/n}", "V-combines{y/n}, N-combines{y/n}, A-combines{y/n}"
-    )
-    (lang_dir / "diagnostics_lang0001.tsv").write_text(tsv_with_extra)
-    _sdy._sync_from_tsv("lang0001", apply=True, drift_entries=[])
-    updated = yaml.safe_load((lang_dir / "diagnostics_lang0001.yaml").read_text())
-    assert updated["classes"]["metrical"].get("notes") == "test notes"
-
-
-def test_sync_from_tsv_ambiguous_goes_to_drift(lang_dir):
-    """An unknown criterion is flagged as ambiguous and appended to drift_entries."""
-    (lang_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT)
-    tsv_with_unknown = TSV_CONTENT.replace(
-        "V-combines{y/n}, N-combines{y/n}", "V-combines{y/n}, N-combines{y/n}, totally_made_up_zyx{y/n}"
-    )
-    (lang_dir / "diagnostics_lang0001.tsv").write_text(tsv_with_unknown)
-    drift: list = []
-    _sdy._sync_from_tsv("lang0001", apply=True, drift_entries=drift)
-    assert len(drift) == 1
-    assert drift[0]["lang_id"] == "lang0001"
-    assert any(c["kind"] == "unknown_criterion" for c in drift[0]["ambiguous"])
-
-
-def test_sync_from_tsv_skips_missing_yaml(lang_dir):
-    """Returns False when YAML does not exist."""
-    (lang_dir / "diagnostics_lang0001.tsv").write_text(TSV_CONTENT)
-    drift: list = []
-    changed = _sdy._sync_from_tsv("lang0001", apply=False, drift_entries=drift)
-    assert changed is False
-
-
-def test_sync_from_tsv_skips_missing_tsv(lang_dir):
-    """Returns False when TSV does not exist."""
-    (lang_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT)
-    drift: list = []
-    changed = _sdy._sync_from_tsv("lang0001", apply=False, drift_entries=drift)
-    assert changed is False

@@ -644,9 +644,9 @@ def _check_diagnostics_yaml_exists(root: Path = ROOT) -> List[str]:
             errors.append(
                 f"[{lang}] diagnostics_{lang}.tsv exists but diagnostics_{lang}.yaml "
                 f"does not — the TSV is a derived artifact with no source of truth "
-                f"backing it. Regenerate the YAML (or, if this TSV predates the "
-                f"YAML-first workflow, write one by hand and run "
-                f"sync-diagnostics-yaml --from-tsv to reconcile)."
+                f"backing it. Restore the YAML from planars-data's history "
+                f"(git -C coded_data log -- {lang}/lang_setup/), or write one by hand, "
+                f"then run: python -m coding sync-diagnostics-yaml --lang {lang} --apply"
             )
     return errors
 

@@ -96,11 +96,11 @@ name and removed from the old, whose last versions stay in archive/{old}/).
 
 After `--apply`, for each language whose sheets actually changed:
   - the planar Sheet is brought up to date with `planar_{lang_id}.tsv`
-    (`import_planar.push_planars_to_sheets`). This command only reads that file,
-    never writes it: the coordinator or Claude edits it first for a structural
-    change, and the flags above only supply the old -> new mapping used to carry
-    annotations forward. Without the push, the next import-planar run would
-    revert the local edit (#248).
+    (`sync_planar.sync_planars`), which first renumbers any position numbers
+    typed in the answers. This command only reads that file, never writes it:
+    the coordinator or Claude edits it first for a structural change, and the
+    flags above only supply the old -> new mapping used to carry annotations
+    forward.
   - a comment goes to the language's `sheet-updates` issue (`notify.py`),
     because terminal output reaches no annotator.
 
@@ -136,7 +136,6 @@ from planars.schema_values import (
     ELEMENT_ROW_COLUMNS,
     PAIR_ROW_SHAPES,
     TRAILING_COLUMNS as _TRAILING_COLS,
-    is_keystone as _is_keystone,
     row_columns, row_columns_of, row_key_of, row_type_of,
 )
 from .drive import (
@@ -1968,15 +1967,18 @@ def main(args: argparse.Namespace | None = None) -> None:
         # The TSVs written above are committed by the local-file door when the
         # command ends.
 
-        # restructure-sheets reads planar_{lang_id}.tsv as its source of truth but
-        # never writes it — so if it was edited locally (directly, or by a future
-        # tool) before this run, the master planar Sheet is now stale and the next
-        # scheduled import-planar --apply would silently revert it (issue #248,
-        # exactly what happened to the #236 pronoun split). Push it back in sync
-        # here so that can't happen again.
+        # restructure-sheets reads planar_{lang_id}.tsv but never writes it,
+        # so the planar Sheet still shows the planar as it was. Bring it up to
+        # date now rather than at the next daily refresh; this also renumbers
+        # position numbers typed in the new sheets' answers, which were
+        # carried over as typed (sync_planar._renumber_class_sheets). If that
+        # fails, the daily refresh tries again and says so in planar-changed.
         print("\n--- Syncing planar Sheet ---")
-        from .import_planar import push_planars_to_sheets
-        push_planars_to_sheets(lang_ids=sorted(set(processed_lang_ids)), apply=True)
+        from .sync_planar import sync_planars
+        try:
+            sync_planars(lang_ids=sorted(set(processed_lang_ids)), apply=True)
+        except SystemExit as exc:
+            print(f"  {exc}")
 
         if lang_folder_urls:
             print("\n--- Bookmark this instead ---")

@@ -53,12 +53,8 @@ Usage:
     python tests/make_synthetic_lang.py --clean        # remove synth0001 (dry run)
     python tests/make_synthetic_lang.py --clean --apply  # actually remove it
 
---apply (not --clean) also pushes the regenerated planar structure to the live
-Drive planar spreadsheet (requires Drive credentials -- same OAuth2 setup as
-generate_sheets.py), mirroring restructure_sheets.py's push since issue #248.
-Without this, the live Sheet is left stale and the next scheduled
-`import-planar --apply` silently reverts the regeneration -- exactly what
-happened on 2026-07-31 (see issue #256 and its cascade).
+Only local files are written. The planar Sheet is a read-only copy of the
+planar file, rebuilt by the daily refresh (`sync-planar --apply`).
 """
 
 from __future__ import annotations
@@ -535,20 +531,13 @@ def main() -> None:
     if not args.apply:
         print("\nRun with --apply to write files.")
         return
-
-    # This writes planar_{DST_LANG}.tsv locally with no other cascade to the
-    # live Drive planar spreadsheet -- unlike restructure_sheets.py, which has
-    # pushed automatically since issue #248. Without this, the live Sheet is
-    # left stale and the next scheduled `import-planar --apply` silently
-    # reverts this regeneration back to the old structure, exactly what
-    # happened on 2026-07-31 (see planars#256/#258/#259/#257 and the fix in
-    # planars-data commit 94fea13). Mirrors restructure_sheets.py's call.
-    print("\n--- Syncing planar Sheet ---")
-    from coding import drive_door
-    from coding.import_planar import push_planars_to_sheets
-    # Runs outside `python -m coding`, so it tells the Drive door itself.
-    with drive_door.running("make-synthetic-lang", may_write=True):
-        push_planars_to_sheets(lang_ids=[DST_LANG], apply=True)
+    # The planar Sheet is a read-only copy that the daily refresh's
+    # sync-planar rebuilds from planar_{DST_LANG}.tsv (unit 11b); until
+    # 2026-10-24 this pushed it here, because the next import from the Sheet
+    # would otherwise have reverted the regeneration (#256).
+    print(f"\nCommit planar_{DST_LANG}.tsv in planars-data; the daily refresh "
+          f"updates its planar Sheet (or run: python -m coding sync-planar "
+          f"--lang {DST_LANG} --apply).")
 
 
 if __name__ == "__main__":

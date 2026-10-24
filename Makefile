@@ -6,7 +6,7 @@
 # Use the -apply variant to execute: e.g. make update-sheets-apply
 
 .PHONY: help \
-        generate-sheets generate-sheets-apply import-sheets apply-pending validate-coding \
+        generate-sheets generate-sheets-apply import-sheets validate-coding \
         update-sheets update-sheets-apply \
         sync-params sync-params-apply \
         sync-diagnostics-yaml sync-diagnostics-yaml-apply \
@@ -24,7 +24,6 @@ help:
 	@echo "  generate-sheets-apply       Create annotation sheets for new classes"
 	@echo "  import-sheets               Dry run: show what would be imported"
 	@echo "  import-sheets-apply         Download filled sheets → TSVs"
-	@echo "  apply-pending               Review and apply pending destructive changes"
 	@echo "  validate-coding             Re-validate sheets and update pink highlights"
 	@echo ""
 	@echo "Sheet maintenance (bare target = dry run; -apply variant writes):"
@@ -68,9 +67,6 @@ import-sheets:
 
 import-sheets-apply:
 	python -m coding import-sheets --apply
-
-apply-pending:
-	python -m coding apply-pending
 
 validate-coding:
 	python -m coding validate-coding

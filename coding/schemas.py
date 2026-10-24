@@ -187,7 +187,7 @@ def position_criteria() -> set:
     """The criteria whose answers are positions: those whose declared values
     in diagnostic_criteria.yaml include a position placeholder
     (POSITION_PLACEHOLDER_KINDS). Their cells may hold position numbers, which
-    import-planar renumbers when the planar's numbers shift."""
+    sync-planar renumbers when the planar's numbers shift."""
     out = set()
     for analysis in load_diagnostic_criteria().get("analyses", []) or []:
         for crit in analysis.get("diagnostic_criteria", []) or []:

@@ -35,32 +35,22 @@ def test_update_sheets_dry_run_does_not_write_to_drive():
 
 
 def test_sync_diagnostics_yaml_default_direction_does_not_write_to_drive():
-    """The default (YAML -> TSV) and --from-tsv directions only touch local
-    files; only --to-sheet reaches the live Sheet."""
-    args = _ns(apply=True, to_sheet=False, from_tsv=False)
+    """The default (YAML -> TSV) direction only touches local files; only
+    --to-sheet reaches the live Sheet."""
+    args = _ns(apply=True, to_sheet=False)
     assert provenance.writes_to_drive("sync_diagnostics_yaml", args) is False
 
 
 def test_sync_diagnostics_yaml_to_sheet_writes_to_drive():
-    args = _ns(apply=True, to_sheet=True, from_tsv=False)
+    args = _ns(apply=True, to_sheet=True)
     assert provenance.writes_to_drive("sync_diagnostics_yaml", args) is True
 
 
-def test_sync_diagnostics_yaml_from_tsv_does_not_write_to_drive():
-    args = _ns(apply=True, to_sheet=False, from_tsv=True)
-    assert provenance.writes_to_drive("sync_diagnostics_yaml", args) is False
-
-
-def test_import_planar_default_direction_writes_to_drive_only_with_apply():
-    """With --apply it may renumber the class sheets' position cells when the
-    planar's numbers shift (2026-10-22); a dry run never writes."""
-    assert provenance.writes_to_drive("import_planar", _ns(apply=True, to_sheet=False)) is True
-    assert provenance.writes_to_drive("import_planar", _ns(apply=False, to_sheet=False)) is False
-
-
-def test_import_planar_to_sheet_writes_to_drive():
-    args = _ns(apply=True, to_sheet=True)
-    assert provenance.writes_to_drive("import_planar", args) is True
+def test_sync_planar_writes_to_drive_only_with_apply():
+    """With --apply it updates the planar Sheet (and may renumber the class
+    sheets' position cells first); a dry run never writes."""
+    assert provenance.writes_to_drive("sync_planar", _ns(apply=True)) is True
+    assert provenance.writes_to_drive("sync_planar", _ns(apply=False)) is False
 
 
 def test_generate_sheets_regen_dependents_writes_to_drive_even_without_apply():
@@ -73,12 +63,6 @@ def test_read_only_commands_never_write_to_drive():
     for op_id in ["capture_drive_state", "integrity_check", "check_codebook",
                   "registry", "lookup_lang", "validation_report"]:
         assert provenance.writes_to_drive(op_id, _ns(apply=True)) is False
-
-
-def test_apply_pending_never_writes_to_drive_itself():
-    """Its Drive-writing work is delegated to a subprocess call to another
-    python -m coding ... --apply, whose door logs its own writes."""
-    assert provenance.writes_to_drive("apply_pending", _ns(apply=True)) is False
 
 
 def test_unknown_op_id_does_not_write_to_drive():

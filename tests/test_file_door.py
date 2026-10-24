@@ -105,10 +105,10 @@ def test_every_part_that_writes_locally_needs_a_git_identity():
 
 def test_a_record_naming_an_unknown_source_stops_the_command(monkeypatch):
     ops = _load_operations()
-    ops["import_planar"] = dict(ops["import_planar"], edits_sources=["planr"])
+    ops["accept_proposal"] = dict(ops["accept_proposal"], edits_sources=["planr"])
     monkeypatch.setattr("coding.registry._load_operations", lambda: ops)
     with pytest.raises(ValueError, match="not sources"):
-        file_door.begin("import-planar")
+        file_door.begin("accept-proposal")
 
 
 # ---------------------------------------------------------------------------

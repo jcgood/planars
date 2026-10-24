@@ -1,56 +1,33 @@
-"""import-planar — sync the planar spreadsheet between Drive and local TSV.
+"""sync-planar — bring each language's planar Sheet up to date with its planar file.
 
 Run from the repo root:
-    # Sheet -> TSV (default direction): download and sync locally
-    python -m coding import-planar              # dry run: show what would change
-    python -m coding import-planar --apply      # write updated planar TSVs
-    python -m coding import-planar --lang LANG  # restrict to one language
+    python -m coding sync-planar                # dry run: show what would change
+    python -m coding sync-planar --apply        # update the Sheets
+    python -m coding sync-planar --lang LANG    # restrict to one language
 
-    # TSV -> Sheet: push local planar TSV changes up to the Drive spreadsheet
-    python -m coding import-planar --to-sheet             # dry run (all languages)
-    python -m coding import-planar --to-sheet --apply     # upload to Sheet
-    python -m coding import-planar --to-sheet --lang LANG
+``planar_{lang_id}.tsv`` in planars-data is the planar's one editable home.
+The coordinator edits it (by hand, or with ``accept-proposal`` from the
+language's proposal sheet); the planar Sheet is a read-only copy for the
+annotator (Phase 10 unit 11b, docs/ownership-design.md § 3.1), rebuilt from
+the file by this command: daily in the refresh, and at the end of
+``restructure-sheets --apply``. Nothing is ever read back from the Sheet.
 
-Sheet -> TSV (default):
-    Reads the planar spreadsheet for each language (identified by
-    planar_spreadsheet_id in drive_config.json), compares to the local
-    planar_{lang_id}.tsv, and writes updated TSVs when content has changed,
-    through the local-file door (coding/file_door.py): the old file is
-    archived, the change logged in the language's changes.tsv, and the file
-    committed and pushed in planars-data when the command ends.
+The Sheet still holds the planar as it was last pushed, so the difference
+between the two is what changed since. Positions are compared by name
+(``_diff_positions``), and with ``--apply`` the changes are written to
+``PLANAR_CHANGES_PATH``, which the daily refresh turns into the
+``planar-changed`` issue naming the command that carries them into the class
+sheets (``_recommend``).
 
-    The Sheet is the source of truth here, so a column added in the Sheet is
-    carried down into the TSV. A column the Sheet no longer has is the one
-    exception: that language is skipped rather than imported, because writing
-    would erase every value in it, and an absent column is far more likely to
-    be a mistake in the Sheet than an instruction to delete data.
-
-    When --apply is used and changes are found, writes PLANAR_CHANGES_PATH
-    with structured diff information used by the data-refresh workflow to build
-    the planar-changed issue body. Positions are compared by name
-    (_diff_positions).
-
-    Annotators may answer some criteria with position numbers
-    (planars/position_cells.py). When positions move, are removed or are
-    renamed, those numbers would silently point at other positions, so before
-    the planar file is written every class sheet's position cells are
-    rewritten to the new numbering (_renumber_class_sheets), and each change,
-    and each number whose position is gone, goes into the planar-changed
-    issue. If that fails the planar file is not written and the command exits
-    non-zero, so the next run tries again.
-
-TSV -> Sheet (--to-sheet):
-    The mirror direction, for when planar_{lang_id}.tsv is edited locally (e.g.
-    by restructure-sheets --split-element/--rename-map/--rename-class, which
-    read the local TSV as their source of truth). Uploads local content to the
-    Drive spreadsheet so it doesn't go stale and get silently reverted by the
-    next scheduled import-planar --apply (see issue #248 — that's exactly what
-    happened to the #236 pronoun split). restructure-sheets --apply calls this
-    automatically; run it by hand only if you edited the planar TSV some other
-    way. The push replaces the whole Sheet, including any edit the annotator
-    made since the last import, so it goes through the Drive door's
-    ``replacing()``: the Sheet is saved to ``state_files.SNAPSHOT_DIR`` first and the
-    reason logged.
+Annotators may answer some criteria with position numbers
+(planars/position_cells.py). When positions move, are removed or are renamed,
+those numbers would silently point at other positions, so before the Sheet is
+updated every class sheet's position cells are rewritten to the new numbering
+(``_renumber_class_sheets``), and each change, and each number whose position
+is gone, goes into the planar-changed issue. This covers every way the file
+changes, since every change reaches the Sheet here. If renumbering fails the
+Sheet is left as it was and the command exits non-zero, so the next run
+starts again from the same old numbering.
 """
 from __future__ import annotations
 
@@ -66,10 +43,10 @@ from . import file_door
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
-# Where --apply leaves the structured diff for the data-refresh workflow, which
-# reads this exact path to build the planar-changed issue body. Named rather
-# than written inline so a test can point it somewhere harmless — a test suite
-# that clobbers the real file would hand the workflow a diff nobody made.
+# Where --apply leaves the structured diff for the daily refresh, which reads
+# this exact path to build the planar-changed issue body. Named rather than
+# written inline so a test can point it somewhere harmless — a test suite that
+# clobbers the real file would hand the refresh a diff nobody made.
 PLANAR_CHANGES_PATH = Path("/tmp/planar_changes.json")
 
 
@@ -85,17 +62,9 @@ def _read_tsv(path: Path) -> pd.DataFrame:
 
 
 def _read_sheet_df(ws) -> pd.DataFrame:
-    """The planar sheet as a frame, with the columns the Sheet itself has.
-
-    It used to be reshaped here to whatever columns the local TSV already had,
-    which meant a column added in the Sheet never arrived and a column removed
-    from the Sheet came back as a frame full of blanks. Deciding the Sheet's
-    columns from the local copy is the same mistake as #248. The callers
-    compare the two column lists themselves and say what differs.
-
-    A column with a blank header is dropped: the used range can run past the
-    last named column, and an unnamed column is not a column.
-    """
+    """The planar Sheet as a frame, with the columns the Sheet itself has (the
+    planar as last pushed). A column with a blank header is dropped: the used
+    range can run past the last named column."""
     rows = ws.get_all_values()
     if not rows:
         return pd.DataFrame()
@@ -146,6 +115,7 @@ def _diff_positions(old_df: pd.DataFrame, new_df: pd.DataFrame) -> dict:
         "renamed": {str(k): list(v) for k, v in renamed.items()},
         "remaps": [[o, n] for o, n in remaps],
         "columns_added": [c for c in new_df.columns if c not in old_df.columns],
+        "columns_removed": [c for c in old_df.columns if c not in new_df.columns],
     }
 
 
@@ -174,10 +144,10 @@ def _recommend(diff: dict, lang_id: str) -> str:
         return cmd
     elif diff["added"]:
         return "python -m coding update-sheets --apply"
-    elif diff["columns_added"]:
+    elif diff["columns_added"] or diff.get("columns_removed"):
         # A planar column is not a criterion column: it feeds validation and
         # the forms built from the planar, not the annotation tabs themselves.
-        return "(new planar column — no sheet structural updates needed)"
+        return "(planar column added or removed — no sheet structural updates needed)"
     else:
         return "(content-only changes — no sheet structural updates needed)"
 
@@ -220,15 +190,15 @@ def _renumber_class_sheets(lang_id: str, old_df: pd.DataFrame, new_df: pd.DataFr
     {"changed": [...], "unresolved": [...]}, one line per cell, for the
     planar-changed issue.
 
-    Must finish before planar_{lang_id}.tsv is written: the old numbering is
-    read from that file. Each spreadsheet is rewritten in one write. The
+    Must finish before the planar Sheet is updated: the old numbering is
+    read from it. Each spreadsheet is rewritten in one write. The
     state file (file_door.renumbering) records, per sheet, the numbering its
     cells use once done, and, just before its write, the cells about to
     change; a later run finds out from the cells whether an interrupted write
     landed. So a run that stops anywhere starts each sheet from the numbering
     it really has and never renumbers one twice. Raises if a sheet cannot be
     read or written, or if an interrupted write's cells were edited since;
-    the caller then leaves the planar file alone, and the next run tries
+    the caller then leaves the planar Sheet alone, and the next run tries
     again.
     """
     from contextlib import ExitStack
@@ -366,8 +336,8 @@ def _pending_landed(ss, cells: list):
 
 
 def _finish_renumbering(lang_id: str) -> None:
-    """The planar file now holds the new numbering, so every sheet agrees
-    with it: the record of sheets done is no longer needed."""
+    """The planar Sheet now holds the new numbering, so every class sheet
+    agrees with it: the record of sheets done is no longer needed."""
     record = _load_renumbering()
     if record.pop(lang_id, None) is not None:
         _save_renumbering(record)
@@ -377,237 +347,118 @@ def _finish_renumbering(lang_id: str) -> None:
 # Main logic
 # ---------------------------------------------------------------------------
 
-def import_planar(lang_ids: list[str] | None = None, apply: bool = False) -> list[str]:
-    """Download planar spreadsheets from Drive and sync to local TSVs.
-
-    Returns list of language IDs whose planars changed.
-    """
-    from .drive import _load_drive_config
+def _sync_one(lang_id: str, sheet_id: str, apply: bool, all_changes: dict) -> bool:
+    """Bring one language's planar Sheet up to date with its planar file.
+    Returns False if the class sheets could not be renumbered (the Sheet is
+    then left as it was)."""
     from .drive_doorway import get_doorway
+    from .locked_tabs import protect
+
+    tsv_path = file_door.planar(lang_id).path
+    if not tsv_path.exists():
+        print(f"  no planar file (planar_{lang_id}.tsv) — skipping")
+        return True
+    new_df = _read_tsv(tsv_path)
+    try:
+        ss = get_doorway().open_spreadsheet(sheet_id)
+        ws = ss.sheet1
+        old_df = _read_sheet_df(ws)
+    except Exception as exc:
+        print(f"  ERROR reading the planar Sheet: {exc}")
+        return True
+
+    # Read-only for everyone but its owner, coordinators included (they are
+    # writers on the root folder); checked every run, so a Sheet made before
+    # unit 11b is protected by the next one.
+    if protect(ss, ws, apply):
+        print(f"  {'protected' if apply else 'would protect'} the planar Sheet")
+
+    if _normalize(old_df).equals(_normalize(new_df)):
+        print("  up to date")
+        return True
+
+    diff = _diff_positions(old_df, new_df)
+    rec = _recommend(diff, lang_id)
+    for n, name in diff["added"].items():
+        print(f"  + position {n} ({name})")
+    for n, name in diff["deleted"].items():
+        print(f"  - position {n} ({name})")
+    for n, (old_name, new_name) in diff["renamed"].items():
+        print(f"  ~ position {n}: {old_name} → {new_name}")
+    for o, n in diff["remaps"]:
+        print(f"  ↷ position {o} is now {n}")
+    for col in diff["columns_added"]:
+        print(f"  + column {col}")
+    for col in diff["columns_removed"]:
+        print(f"  - column {col}")
+    if not any([diff["added"], diff["deleted"], diff["renamed"], diff["remaps"],
+                diff["columns_added"], diff["columns_removed"]]):
+        print("  (content-only changes)")
+    print(f"  → {rec}")
+    all_changes[lang_id] = {"diff": diff, "recommendation": rec}
+
+    if _renumbering_needed(diff):
+        # Before the Sheet is updated: it holds the old numbering.
+        try:
+            cells = _renumber_class_sheets(lang_id, old_df, new_df, apply)
+        except Exception as exc:
+            print(f"  ERROR renumbering the position cells of the class sheets: {exc}")
+            print("  planar Sheet left as it was, so the next run tries again")
+            del all_changes[lang_id]
+            return False
+        all_changes[lang_id]["position_cells"] = cells
+        verb = "renumbered" if apply else "would renumber"
+        for line in cells["changed"]:
+            print(f"  {verb}: {line}")
+        for line in cells["unresolved"]:
+            print(f"  CHECK: {line}")
+
+    if apply:
+        # The Sheet is the tooling's (annotators read it), so nothing on it
+        # is lost by rewriting it whole.
+        ws.clear()
+        ws.update([list(new_df.columns)] + [list(row) for _, row in new_df.iterrows()], "A1")
+        print("  updated the planar Sheet")
+        _finish_renumbering(lang_id)
+    return True
+
+
+def sync_planars(lang_ids: list[str] | None = None, apply: bool = False) -> list[str]:
+    """Bring every (or each named) language's planar Sheet up to date with its
+    planar file. Returns the languages whose Sheet changed (or would)."""
+    from .drive import _load_drive_config
 
     cfg = _load_drive_config()
-
     all_changes: dict[str, dict] = {}
     failed: list[str] = []
-
     for lang_id, lang_cfg in cfg.items():
-        if lang_id.startswith("_"):
+        if lang_id.startswith("_") or (lang_ids and lang_id not in lang_ids):
             continue
-        if lang_ids and lang_id not in lang_ids:
-            continue
-
+        print(f"\n{lang_id}", flush=True)
         sheet_id = lang_cfg.get("planar_spreadsheet_id")
         if not sheet_id:
-            # Said out loud, not passed over in silence: a language that has
-            # dropped out of drive_config.json otherwise looks exactly like a
-            # language that was never in it.
-            print(f"\n{lang_id}: no planar_spreadsheet_id in drive_config.json"
-                  " — skipping")
+            # Said out loud: a language that has dropped out of
+            # drive_config.json otherwise looks like one never in it.
+            print("  no planar_spreadsheet_id in drive_config.json — skipping")
             continue
-
-        tsv_path = file_door.planar(lang_id).path
-        if not tsv_path.exists():
-            print(f"\n{lang_id}: no local planar TSV — skipping")
-            continue
-
-        print(f"\n{lang_id}", flush=True)
-
-        try:
-            ss = get_doorway().open_spreadsheet(sheet_id)
-            ws = ss.sheet1
-            old_df = _read_tsv(tsv_path)
-            new_df = _read_sheet_df(ws)
-        except Exception as exc:
-            print(f"  ERROR reading planar sheet: {exc}")
-            continue
-
-        if new_df.empty:
-            print("  planar sheet is empty — skipping")
-            continue
-
-        # A column the Sheet no longer has is never taken as an instruction to
-        # erase it locally — same reasoning as the empty sheet just above. The
-        # coordinator is told which it is and given both ways out.
-        missing = [c for c in old_df.columns if c not in new_df.columns]
-        if missing:
-            many = len(missing) > 1
-            print(f"  the planar Sheet has no {', '.join(missing)} "
-                  f"column{'s' if many else ''}, but planar_{lang_id}.tsv "
-                  f"does — skipping, since importing would erase "
-                  f"{'them' if many else 'it'}")
-            print(f"  → restore {'them' if many else 'it'} in the Sheet, or "
-                  f"delete {'them' if many else 'it'} from "
-                  f"planar_{lang_id}.tsv and run: python -m coding "
-                  f"import-planar --to-sheet --lang {lang_id} --apply")
-            continue
-
-        # Local column order is kept and anything new goes on the end, so a
-        # column reordered in the Sheet is not a change to the file.
-        new_df = new_df.reindex(
-            columns=list(old_df.columns)
-            + [c for c in new_df.columns if c not in old_df.columns])
-
-        if _normalize(old_df).equals(_normalize(new_df)):
-            print("  up to date")
-            continue
-
-        diff = _diff_positions(old_df, new_df)
-        rec = _recommend(diff, lang_id)
-
-        for n, name in diff["added"].items():
-            print(f"  + position {n} ({name})")
-        for n, name in diff["deleted"].items():
-            print(f"  - position {n} ({name})")
-        for n, (old_name, new_name) in diff["renamed"].items():
-            print(f"  ~ position {n}: {old_name} → {new_name}")
-        for o, n in diff["remaps"]:
-            print(f"  ↷ position {o} is now {n}")
-        for col in diff["columns_added"]:
-            print(f"  + column {col}")
-        if not any([diff["added"], diff["deleted"], diff["renamed"],
-                    diff["remaps"], diff["columns_added"]]):
-            print("  (content-only changes)")
-        print(f"  → {rec}")
-
-        all_changes[lang_id] = {"diff": diff, "recommendation": rec}
-
-        if _renumbering_needed(diff):
-            # Before the planar file is written: it holds the old numbering.
-            try:
-                cells = _renumber_class_sheets(lang_id, old_df, new_df, apply)
-            except Exception as exc:
-                print(f"  ERROR renumbering the position cells of the class sheets: {exc}")
-                print("  planar file left as it was, so the next run tries again")
-                failed.append(lang_id)
-                del all_changes[lang_id]
-                continue
-            all_changes[lang_id]["position_cells"] = cells
-            verb = "renumbered" if apply else "would renumber"
-            for line in cells["changed"]:
-                print(f"  {verb}: {line}")
-            for line in cells["unresolved"]:
-                print(f"  CHECK: {line}")
-
-        if apply:
-            # The door keeps the previous version in archive/lang_setup/,
-            # logs the change, and commits it when the command ends.
-            file_door.write(file_door.planar(lang_id), file_door.frame_text(new_df),
-                            why=f"imported from the planar Sheet; next: {rec}")
-            print(f"  wrote planar_{lang_id}.tsv")
-            _finish_renumbering(lang_id)
+        if not _sync_one(lang_id, sheet_id, apply, all_changes):
+            failed.append(lang_id)
 
     if apply and all_changes:
         PLANAR_CHANGES_PATH.write_text(json.dumps(all_changes, indent=2))
     elif not apply and all_changes:
-        print("\nDry run — rerun with --apply to write changes.")
-
+        print("\nDry run — rerun with --apply to update the Sheets.")
     if failed:
-        raise SystemExit(f"import-planar: could not renumber the class sheets of "
+        raise SystemExit(f"sync-planar: could not renumber the class sheets of "
                          f"{', '.join(failed)}; see ERROR above")
-    return list(all_changes.keys())
-
-
-# ---------------------------------------------------------------------------
-# TSV -> Sheet (push local planar changes up to Drive)
-# ---------------------------------------------------------------------------
-
-def push_planar_to_sheet(lang_id: str, cfg: dict, apply: bool) -> bool:
-    """Push local planar_{lang_id}.tsv to the Drive planar spreadsheet.
-
-    Mirror of the download direction in import_planar(): reads the local TSV,
-    diffs it against the live Sheet, and on apply clears+rewrites the Sheet to
-    match. Returns True if a change was made (or would be, in dry-run).
-    """
-    from .drive_doorway import get_doorway
-
-    lang_cfg = cfg.get(lang_id, {})
-    sheet_id = lang_cfg.get("planar_spreadsheet_id")
-    if not sheet_id:
-        print(f"  [{lang_id}] No planar_spreadsheet_id in drive_config.json — skipping")
-        return False
-
-    tsv_path = file_door.planar(lang_id).path
-    if not tsv_path.exists():
-        print(f"  [{lang_id}] No local planar TSV — skipping")
-        return False
-
-    local_df = _read_tsv(tsv_path)
-
-    try:
-        ss = get_doorway().open_spreadsheet(sheet_id)
-        ws = ss.sheet1
-        sheet_df = _read_sheet_df(ws)
-    except Exception as exc:
-        print(f"  [{lang_id}] ERROR reading planar sheet: {exc}")
-        return False
-
-    if _normalize(local_df).equals(_normalize(sheet_df)):
-        print(f"  [{lang_id}] Sheet already up to date")
-        return False
-
-    diff = _diff_positions(sheet_df, local_df)
-    dropped_cols = [c for c in sheet_df.columns if c not in local_df.columns]
-    for n, name in diff["added"].items():
-        print(f"  [{lang_id}]   + position {n} ({name})")
-    for n, name in diff["deleted"].items():
-        print(f"  [{lang_id}]   - position {n} ({name})")
-    for n, (old_name, new_name) in diff["renamed"].items():
-        print(f"  [{lang_id}]   ~ position {n}: {old_name} -> {new_name}")
-    for col in diff["columns_added"]:
-        print(f"  [{lang_id}]   + column {col}")
-    # This direction rewrites the Sheet from the TSV, so a column only the
-    # Sheet has goes. Named before it happens, not after.
-    for col in dropped_cols:
-        print(f"  [{lang_id}]   - column {col}")
-    if not any([diff["added"], diff["deleted"], diff["renamed"],
-                diff["columns_added"], dropped_cols]):
-        print(f"  [{lang_id}]   (content-only changes)")
-
-    if apply:
-        from . import drive_door
-        new_rows = [list(local_df.columns)] + [list(row) for _, row in local_df.iterrows()]
-        # The Sheet is the annotator's to edit until unit 11 locks it, so this
-        # replaces whatever they changed since the last import too: the door
-        # saves the Sheet first (state_files.SNAPSHOT_DIR) and logs the reason.
-        with drive_door.replacing(ws, f"planar_{lang_id}.tsv pushed to the planar Sheet"):
-            ws.clear()
-            ws.update(new_rows, "A1")
-        print(f"  [{lang_id}] Updated -> planar Sheet")
-    else:
-        print(f"  [{lang_id}] Would update -> planar Sheet (use --apply to write)")
-
-    return True
-
-
-def push_planars_to_sheets(lang_ids: list[str] | None = None, apply: bool = False) -> list[str]:
-    """Push local planar TSVs to their Drive spreadsheets for all (or selected) languages.
-
-    Returns list of language IDs whose Sheet changed (or would change).
-    """
-    from .drive import _load_drive_config
-
-    cfg = _load_drive_config()
-
-    changed = []
-    for lang_id in cfg:
-        if lang_id.startswith("_"):
-            continue
-        if lang_ids and lang_id not in lang_ids:
-            continue
-        print(f"\n{lang_id}", flush=True)
-        if push_planar_to_sheet(lang_id, cfg, apply):
-            changed.append(lang_id)
-
-    if not apply and changed:
-        print("\nDry run — rerun with --apply to write changes.")
-
-    return changed
+    return list(all_changes)
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the argument parser for `python -m coding import-planar`."""
+    """Build the argument parser for `python -m coding sync-planar`."""
     ap = argparse.ArgumentParser(
-        description="Sync the planar spreadsheet between Drive and local TSV."
+        description="Bring each planar Sheet up to date with its planar file "
+                    "(renumbering position answers in the class sheets first)."
     )
     ap.add_argument(
         "--lang", metavar="LANG_ID", action="append", dest="langs",
@@ -617,19 +468,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--apply", action="store_true",
         help="write changes (default: dry run)",
     )
-    ap.add_argument(
-        "--to-sheet", action="store_true",
-        help="push local planar TSV changes up to the Drive spreadsheet "
-             "(default direction is Sheet -> TSV)",
-    )
     return ap
 
 
 def main(args: argparse.Namespace | None = None) -> None:
     if args is None:
         args = build_parser().parse_args()
-    if args.to_sheet:
-        push_planars_to_sheets(lang_ids=args.langs, apply=args.apply)
-    else:
-        import_planar(lang_ids=args.langs, apply=args.apply)
+    sync_planars(lang_ids=args.langs, apply=args.apply)
     sys.exit(0)

@@ -137,24 +137,34 @@ def _capture_spreadsheet(gc, drive, spreadsheet_id: str, role: str) -> Dict:
         "role": role,
         "spreadsheet_id": spreadsheet_id,
         "title": ss.title,
-        # The sheet's identity label (Drive properties; coding/drive_door.py).
-        "properties": properties,
+        # The sheet's identity label (Drive properties; coding/drive_door.py),
+        # sorted for the same reason as the tab labels.
+        "properties": dict(sorted(properties.items())),
         "tab_order": [ws.title for ws in worksheets],
         "worksheets": [_capture_worksheet(ws, tab_metadata.get(ws.id, []))
                        for ws in worksheets],
         # Which tabs are locked (coding/locked_tabs.py), so the fake starts
-        # from the same protections the live sheet has.
-        "protected_ranges": [p for ws in worksheets
+        # from the same protections the live sheet has. Who may edit a
+        # protected range is left out: it is the owner, by address, and
+        # people are recorded by name or not at all.
+        "protected_ranges": [{k: v for k, v in p.items()
+                              if k not in ("editors", "requestingUserCanEdit")}
+                             for ws in worksheets
                              for p in _retry(lambda: ss.list_protected_ranges(ws.id))],
-        # Who the sheet itself is shared with (the owner and grants inherited
-        # from its folder left out), so the fake starts from the same sharing.
+        # Who the sheet is shared with (the owner left out; a grant inherited
+        # from its folder marked so), so the fake starts from the same sharing.
         "permissions": _own_grants(drive, spreadsheet_id),
     }
 
 
 def _own_grants(drive, file_id: str) -> List[Dict]:
-    """A file's own grants, each person recorded by the name people.yaml
-    gives them (None if it has none), never by address."""
+    """A file's grants, the owner's left out, each person recorded by the
+    name people.yaml gives them (None if it has none), never by address. A
+    grant the file only inherits from its folder is marked ``inherited``:
+    the sharing check counts it as access but not as the file's own
+    (sheet_spec.sharing_differences). Until 2026-10-24 inherited grants were
+    left out, so the stand-in Drive saw no access for a coordinator whose own
+    grant Drive had dropped as redundant with the folder's."""
     from .people import name_for_email
     from .sheet_spec import is_own_grant
     perms = _retry(lambda: drive.permissions().list(
@@ -162,11 +172,13 @@ def _own_grants(drive, file_id: str) -> List[Dict]:
         fields="permissions(id,type,role,emailAddress,permissionDetails)").execute())
     grants = []
     for p in perms.get("permissions", []):
-        if not is_own_grant(p):
+        if p.get("role") == "owner":
             continue
         grant = {"id": p["id"], "type": p["type"], "role": p["role"]}
         if p["type"] == "user":
             grant["person"] = name_for_email(p.get("emailAddress"))
+        if not is_own_grant(p):
+            grant["inherited"] = True
         grants.append(grant)
     return grants
 

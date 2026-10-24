@@ -68,17 +68,16 @@ def test_sync_params_dry_run_has_no_precondition():
 
 
 # ---------------------------------------------------------------------------
-# sync-diagnostics-yaml: all three directions (base, --to-sheet, --from-tsv)
-# require coded_data_clean_tree -- this is the command whose enforcement
-# call needs the (".yaml", ".tsv") extensions exception, checked via enforce()
-# below rather than active_preconditions() (which only reports ids, not
+# sync-diagnostics-yaml: both directions (base, --to-sheet) require
+# coded_data_clean_tree -- this is the command whose enforcement call needs
+# the (".yaml", ".tsv") extensions exception, checked via enforce() below
+# rather than active_preconditions() (which only reports ids, not
 # enforcement parameters).
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("kwargs", [
-    dict(apply=True, to_sheet=False, from_tsv=False),
-    dict(apply=True, to_sheet=True, from_tsv=False),
-    dict(apply=True, to_sheet=False, from_tsv=True),
+    dict(apply=True, to_sheet=False),
+    dict(apply=True, to_sheet=True),
 ])
 def test_sync_diagnostics_yaml_every_direction_requires_clean_tree(kwargs):
     # --to-sheet --apply also meets the base record's --apply gate.
@@ -86,7 +85,7 @@ def test_sync_diagnostics_yaml_every_direction_requires_clean_tree(kwargs):
 
 
 def test_sync_diagnostics_yaml_dry_run_has_no_precondition():
-    args = _ns(apply=False, to_sheet=False, from_tsv=False)
+    args = _ns(apply=False, to_sheet=False)
     assert preconditions.active_preconditions("sync_diagnostics_yaml", args) == []
 
 
@@ -125,14 +124,14 @@ def test_restructure_sheets_apply_requires_clean_tree_git_identity_and_an_up_to_
 # because no enforcer is registered.
 # ---------------------------------------------------------------------------
 
-def test_import_planar_git_identity_precondition_is_reported_but_not_enforced_here(monkeypatch):
+def test_sync_planar_git_identity_precondition_is_reported_but_not_enforced_here(monkeypatch):
     calls = []
     monkeypatch.setattr(preconditions, "_check_coded_data_clean", lambda **kw: calls.append(kw))
-    args = _ns(apply=True, to_sheet=False)
-    assert preconditions.active_preconditions("import_planar", args) == [
+    args = _ns(apply=True)
+    assert preconditions.active_preconditions("sync_planar", args) == [
         "coded_data_git_identity_configured"
     ]
-    preconditions.enforce("import_planar", args)  # must not raise
+    preconditions.enforce("sync_planar", args)  # must not raise
     assert calls == []
 
 
@@ -171,7 +170,7 @@ def test_enforce_calls_check_coded_data_clean_with_tsv_only_by_default(monkeypat
 def test_enforce_calls_check_coded_data_clean_with_yaml_and_tsv_for_sync_diagnostics_yaml(monkeypatch):
     calls = []
     monkeypatch.setattr(preconditions, "_check_coded_data_clean", lambda **kw: calls.append(kw))
-    preconditions.enforce("sync_diagnostics_yaml", _ns(apply=True, to_sheet=False, from_tsv=False))
+    preconditions.enforce("sync_diagnostics_yaml", _ns(apply=True, to_sheet=False))
     assert calls == [{"extensions": (".yaml", ".tsv")}]
 
 

@@ -77,4 +77,4 @@ Local manifest written to: sheets_manifest.json
 drive_config.json written.
 
 Each language's folder and sheets are shared with the annotator named in people.yaml; for a language with none listed, add one there and re-run with --apply.
-Drive door (enforce): checked 120 write(s) to 39 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 122 write(s) to 39 tab(s) or file(s); 0 broke a rule.

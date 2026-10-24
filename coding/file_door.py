@@ -55,8 +55,8 @@ test's own temporary folder.
    ``remove`` drops a whole file on purpose: it needs only its reason.
 
 **The tooling's own files** (unit 6b; ``STATE_KINDS``): the state files in
-``.state/`` (pending changes, the provenance log, regen snapshots, the
-restructure journal, check-notes' notes state) and the ID file,
+``.state/`` (the provenance log, regen snapshots, the restructure journal,
+check-notes' and check-comments' state, sync-planar's renumbering record) and the ID file,
 ``drive_config.json``. Where each lives is ``coding/state_files.py``'s. They
 are written with ``write_state``, ``append_state`` (the provenance log) and
 ``remove_state``, which check rule 1 (a dry run writes none, except the
@@ -231,7 +231,6 @@ def change_log(lang_id: str) -> Path:
 # The tooling's own files (unit 6b): state files and the ID file
 # ---------------------------------------------------------------------------
 
-PENDING_CHANGES = "pending_changes"
 PROVENANCE_LOG = "provenance_log"
 REGEN_SNAPSHOT = "regen_snapshot"
 RESTRUCTURE_JOURNAL = "restructure_journal"
@@ -243,9 +242,7 @@ ID_FILE = "id_file"
 # Where each lives is coding/state_files.py's (read at call time: tests move
 # them). A regen snapshot is one file per tab, named by ``name``.
 STATE_KINDS: Dict[str, Dict[str, object]] = {
-    PENDING_CHANGES:     {"path": lambda f: state_files.PENDING_PATH,
-                          "what": "destructive changes waiting for apply-pending"},
-    PROVENANCE_LOG:      {"path": lambda f: state_files.PROVENANCE_LOG,
+    PROVENANCE_LOG:     {"path": lambda f: state_files.PROVENANCE_LOG,
                           "what": "the log of what each command wrote to Drive"},
     REGEN_SNAPSHOT:      {"path": lambda f: state_files.SNAPSHOT_DIR / f"{f.name}.json",
                           "what": "a tab as it was before its answers were replaced"},
@@ -256,7 +253,7 @@ STATE_KINDS: Dict[str, Dict[str, object]] = {
     COMMENTS_STATE:      {"path": lambda f: state_files.COMMENTS_STATE_PATH,
                           "what": "what check-comments last saw in each Comments cell"},
     RENUMBERING:         {"path": lambda f: state_files.RENUMBERING_PATH,
-                          "what": "import-planar's record of class sheets renumbered "
+                          "what": "sync-planar's record of class sheets renumbered "
                                   "ahead of a new planar"},
     ID_FILE:            {"path": lambda f: state_files.ID_FILE,
                           "what": "the Drive IDs of the files the tooling made"},
@@ -290,15 +287,11 @@ class StateFile:
 
     @property
     def relpath(self) -> str:
-        """Within planars-data: ``.state/pending_changes.json``."""
+        """Within planars-data: ``.state/notes_state.json``."""
         try:
             return str(self.path.relative_to(state_files.CODED_DATA))
         except ValueError:
             return self.path.name
-
-
-def pending_changes() -> StateFile:
-    return StateFile(PENDING_CHANGES)
 
 
 def provenance_log() -> StateFile:

@@ -19,7 +19,7 @@ things live here, used by everything that reads or rewrites such a cell:
   current planar. What the tooling builds from a cell (a morpheme label, a
   span) uses names, which no renumbering changes.
 - ``renumber``: a cell rewritten from one numbering to another, matched by
-  position name. import-planar runs it on every class sheet when the planar's
+  position name. sync-planar runs it on every class sheet when the planar's
   numbers shift, so a typed ``31`` becomes ``32`` when a position is inserted
   before it. A number whose position is gone is left as typed and reported.
 

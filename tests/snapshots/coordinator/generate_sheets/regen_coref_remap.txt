@@ -5,5 +5,5 @@ synth0001/coreference/reflexive_coreference
     [prescreening] 56 element(s) excluded
     [prescreening] 4055 → 1176 pairs after filtering
     reflexive_coreference: 569 retained, 607 added, 38 removed
-    Removed pairs will surface via import-sheets --apply → apply-pending.
+    The next import-sheets --apply drops the removed pairs from the local TSV (its previous version is archived).
 Drive door (enforce): checked 4 write(s) to 1 tab(s) or file(s); 0 broke a rule.

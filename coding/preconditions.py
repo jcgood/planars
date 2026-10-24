@@ -43,10 +43,8 @@ from .gating import active_parts
 from .registry import _load_operations
 
 # coded_data_clean_tree defaults to checking only *.tsv (preconditions.yaml's
-# documented default). The exceptions: sync_diagnostics_yaml reads AND
-# writes coded_data/*.yaml as well as *.tsv across all three of its
-# directions (the same tuple its own manual call passed before
-# centralization); proposal_sheets and accept_proposal read and write the
+# documented default). The exceptions: sync_diagnostics_yaml reads
+# coded_data/*.yaml as well as writing *.tsv; proposal_sheets and accept_proposal read and write the
 # diagnostics YAML, the planar and the proposal base (*.json, unit 11a).
 # operations.yaml's preconditions field is a plain list of ids with no
 # per-command parameters (see operation_record.schema.json); three
@@ -76,8 +74,8 @@ def _check_coded_data_up_to_date(op_id: str) -> None:
     if behind:
         raise SystemExit(
             f"ERROR: coded_data/ is {behind} commit(s) behind GitHub, which may "
-            f"hold the daily refresh's pending changes or another machine's "
-            f"state. Run:\n\n    git -C coded_data pull\n\nthen re-run {command}.")
+            f"hold the daily refresh's work or another machine's state. Run:"
+            f"\n\n    git -C coded_data pull\n\nthen re-run {command}.")
 
 
 _ENFORCERS = {
@@ -95,10 +93,9 @@ def active_preconditions(op_id: str, args: argparse.Namespace) -> List[str]:
     satisfied) with every mode's preconditions whose own apply_gate/flag is
     satisfied. Modes are self-contained overrides of the base record (see
     operation_record.schema.json), but more than one can be active in the
-    same real invocation — e.g. `sync-params --apply --refresh-dropdowns`
-    satisfies both the base record's "--apply" gate and the
-    "--refresh-dropdowns" mode's "--apply --refresh-dropdowns" gate — so
-    this collects the union rather than picking one.
+    same real invocation (a mode gated on "--apply --some-flag" is active
+    alongside the base record's "--apply" gate), so this collects the union
+    rather than picking one.
     """
     record = _load_operations().get(op_id)
     if record is None:

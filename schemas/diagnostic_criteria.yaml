@@ -647,7 +647,7 @@ value_placeholders:
     meaning: anything, kept exactly as typed
   # Spelled "names" for history: it also takes numbers (2026-10-22). Renaming
   # the spelling would change every language's diagnostics file and manifest.
-  # import-planar renumbers the numbers in these cells, and in
+  # sync-planar renumbers the numbers in these cells, and in
   # <position_number> cells, when the planar's numbers shift
   # (planars/position_cells.py).
   position_names:

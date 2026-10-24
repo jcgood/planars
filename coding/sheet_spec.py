@@ -49,14 +49,12 @@ The planar Sheet is one tab holding exactly ``planar_{lang_id}.tsv``, the
 source: its header, then its rows. The diagnostics Sheet is one tab holding
 exactly what ``diagnostics_{lang_id}.yaml``, its source, renders to
 (``make_forms._yaml_to_tsv_df``, which also writes the TSV copy and is what
-``sync-diagnostics-yaml --to-sheet`` pushes). Until unit 11 locks them
-(docs/ownership-design.md § 3.1), the annotator edits both, and the daily
-import carries their edits down (``import-planar`` into the planar file;
-``import-sheets`` into the diagnostics TSV, whose differences from the YAML
-go to pending changes or the drift issue), so every cell is the
-annotator's: no tooling columns, no dropdowns, no protection. A push up to
-either Sheet therefore replaces whatever is there, including an edit not
-yet imported, and says so through the door.
+``sync-diagnostics-yaml --to-sheet`` pushes). Both are read-only copies
+(Phase 10 unit 11b, docs/ownership-design.md § 3.1): every cell is the
+tooling's, the annotator is a reader by sharing, the tab is protected (the
+coordinators are writers on the root folder, which every file inherits), no
+cell has a dropdown, and nothing is read back from them (sync-planar and
+sync-diagnostics-yaml rebuild them daily).
 
 A class sheet is its locked tabs, one tab per construction in the language's
 diagnostics file, and Status, in the order `locked_tabs.reorder_tabs` puts
@@ -329,7 +327,7 @@ def class_sheet_spec(lang_id: str, class_name: str, data_dir: Path) -> ClassShee
 @dataclass(frozen=True)
 class CopySheetSpec:
     """One tab, ``tab``: the file's header as its columns (every one the
-    annotator's, none with a dropdown) and its rows, stripped, in order.
+    tooling's, none with a dropdown) and its rows, stripped, in order.
     ``kind`` is the Sheet's (planar_sheet or diagnostics_sheet)."""
     kind: str
     lang_id: str
@@ -351,10 +349,10 @@ def copy_sheet_spec(kind: str, lang_id: str, data_dir: Path) -> CopySheetSpec:
             df = _yaml_to_tsv_df(yaml.safe_load(f), lang_id)
     else:
         raise ValueError(f"a {kind} is not a copy of one file")
-    columns = tuple(ColumnSpec(str(c), ANNOTATOR, None) for c in df.columns)
+    columns = tuple(ColumnSpec(str(c), TOOLING, None) for c in df.columns)
     rows = tuple(tuple(str(v).strip() for v in row) for row in df.itertuples(index=False))
     title = f"{kind.removesuffix('_sheet')}_{lang_id}"
-    return CopySheetSpec(kind, lang_id, TabSpec(title, COPY, columns, rows=rows))
+    return CopySheetSpec(kind, lang_id, TabSpec(title, COPY, columns, rows=rows, protected=True))
 
 
 # ---------------------------------------------------------------------------
@@ -401,7 +399,8 @@ def proposal_sheet_spec(lang_id: str, data_dir: Path) -> ProposalSheetSpec:
     tabs = [TabSpec(REVIEW_TAB_TITLE, REVIEW, (ColumnSpec(REVIEW_TAB_TITLE, TOOLING, None),))]
     for title, kind in PROPOSAL_TABS:
         copy = copy_sheet_spec(kind, lang_id, data_dir).tab
-        columns = copy.columns + (ColumnSpec(WHAT_CHANGED_COLUMN, ANNOTATOR, None),)
+        columns = tuple(ColumnSpec(c.name, ANNOTATOR, None) for c in copy.columns) \
+            + (ColumnSpec(WHAT_CHANGED_COLUMN, ANNOTATOR, None),)
         rows = tuple(row + ("",) for row in copy.rows or ())
         tabs.append(TabSpec(title, PROPOSAL, columns, rows=rows))
     return ProposalSheetSpec(lang_id, tuple(tabs))
@@ -568,8 +567,10 @@ _ANNOTATOR, _ALL_ANNOTATORS, _COORDINATORS, _NOBODY = (
     "annotator", "all_annotators", "coordinators", "nobody")
 _SHARING: Dict[str, Dict[str, Optional[str]]] = {
     "class_sheet":       {"who": _ANNOTATOR, "role": WRITER, "link": None},
-    "planar_sheet":      {"who": _ANNOTATOR, "role": WRITER, "link": None},
-    "diagnostics_sheet": {"who": _ANNOTATOR, "role": WRITER, "link": None},
+    # Read-only copies of the planar and the diagnostics file (unit 11b);
+    # changes to either are proposed on the proposal sheet.
+    "planar_sheet":      {"who": _ANNOTATOR, "role": READER, "link": None},
+    "diagnostics_sheet": {"who": _ANNOTATOR, "role": READER, "link": None},
     # Built by the tooling, read by the annotator (generate-status-sheet).
     "status_sheet":      {"who": _ANNOTATOR, "role": READER, "link": None},
     # Where the annotator proposes changes to the sources (unit 11a). The

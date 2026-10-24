@@ -29,7 +29,8 @@ Two steps, run with the ordinary commands between them:
 
 Run: 2026-10-13, in this order:
     python migrations/move_biuniqueness_to_stan1293.py backfill --apply
-    python -m coding import-planar --to-sheet --lang stan1293 --apply
+    import-planar --to-sheet --lang stan1293 --apply
+        (since 2026-10-24: python -m coding sync-planar --lang stan1293 --apply)
     (add the class to diagnostics_stan1293.yaml)
     python -m coding sync-diagnostics-yaml --lang stan1293 --apply
     python -m coding sync-diagnostics-yaml --to-sheet --lang stan1293 --apply

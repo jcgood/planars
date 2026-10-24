@@ -59,6 +59,8 @@ _GRANTS = [
     {"id": "g1", "type": "user", "role": "writer", "person": "Adam Tallman"},
     {"id": "g2", "type": "user", "role": "reader", "person": None},
     {"id": "g3", "type": "anyone", "role": "reader"},
+    # Inherited from the folder: recorded, and marked so.
+    {"id": "g4", "type": "user", "role": "writer", "person": None, "inherited": True},
 ]
 
 
@@ -151,6 +153,20 @@ def test_capture_records_the_labels_and_the_fake_replays_them():
     again = _capture_spreadsheet(_GCFor(replayed), _DriveV3(replayed), "probe_sheet",
                                  role="stan1293:class:metrical")
     assert again == data
+
+
+def test_a_protection_is_recorded_without_who_may_edit_it():
+    """Google lists the owner's address as a protected range's editor; the
+    recording names people by name or not at all."""
+    doorway = _seeded_doorway()
+    ss = doorway.spreadsheet("probe_sheet")
+    ss._protected_ranges.append({"protectedRangeId": 7, "range": {},
+                                 "description": "d", "requestingUserCanEdit": True,
+                                 "editors": {"users": ["owner@example.org"]}})
+    data = _capture_spreadsheet(_GCFor(doorway), _DriveV3(doorway), "probe_sheet",
+                                role="stan1293:class:metrical")
+    assert data["protected_ranges"] == [{"protectedRangeId": 7, "range": {}, "description": "d"}]
+    assert "@" not in json.dumps(data["protected_ranges"])
 
 
 # ---------------------------------------------------------------------------

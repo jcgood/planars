@@ -118,7 +118,8 @@ diagnostics_{lang_id}.yaml  (per-language, lives in coded_data/{lang_id}/lang_se
         to regenerate the TSV.  Direct TSV edits are overwritten on the next run.
       - When the criterion columns change, ``sync-params --apply`` carries
         the change to existing sheets.
-      - import-sheets diffs a changed diagnostics Sheet against this file;
-        what it can't apply by itself goes to a ``diagnostics-drift`` issue.
+      - The diagnostics Sheet is a read-only copy of this file (the daily
+        refresh rebuilds it); an annotator proposes a change on the
+        language's proposal sheet, and ``accept-proposal`` writes it here.
     Validated by ``coding/validate_diagnostics.py:validate_diagnostics_yaml()``.
 """

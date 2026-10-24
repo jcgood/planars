@@ -13,10 +13,11 @@ falls back to the TSV only for a language that has no YAML yet. Every
 criterion lists its values (``free{y/n}`` in the TSV); one written without
 values is an error, never a default. A class using ``construction_criteria``
 gives one row per construction, so each tab shows only its own criteria.
-``_yaml_to_tsv_df`` / ``_diff_diagnostics_tsv_yaml`` / ``_apply_yaml_diff``
-are the conversions ``sync-diagnostics-yaml`` uses. Nothing rebuilds the
-YAML from the TSV (``--from-tsv`` applies the differences it finds to the
-YAML as loaded): a command that changes the YAML loads it with
+``_yaml_to_tsv_df`` renders the YAML as rows (the TSV, the diagnostics
+Sheet and the proposal sheet's Diagnostics tab); ``_diff_diagnostics_tsv_yaml``
+/ ``_apply_yaml_diff`` turn rows edited on the proposal sheet back into YAML
+edits (accept-proposal). Nothing rebuilds the YAML from rows: a command that
+changes the YAML loads it with
 ``_load_diagnostics_yaml_for_edit``, edits it and writes it back with
 ``_dump_diagnostics_yaml``, which keep its comments and layout.
 

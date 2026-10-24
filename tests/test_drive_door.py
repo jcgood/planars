@@ -246,8 +246,8 @@ def _labelled_file(fake, identity):
 
 
 @pytest.mark.parametrize("identity, role", [
-    (drive_door.lang_file("planar_sheet", LANG), "writer"),
-    (drive_door.lang_file("diagnostics_sheet", LANG), "writer"),
+    (drive_door.lang_file("planar_sheet", LANG), "reader"),       # read-only copies (11b)
+    (drive_door.lang_file("diagnostics_sheet", LANG), "reader"),
     (drive_door.lang_file("notes_doc", LANG), "writer"),
     (drive_door.lang_file("status_sheet", LANG), "reader"),
     (drive_door.folder("language", LANG), "reader"),
@@ -1038,7 +1038,7 @@ def test_many_requests_to_one_tab_read_its_tab_list_once(env, monkeypatch):
 
 # -- the planar Sheet (5f) ------------------------------------------------------------
 
-TO_SHEET = argparse.Namespace(apply=True, to_sheet=True, langs=[LANG])
+TO_SHEET = argparse.Namespace(apply=True, langs=[LANG])
 
 
 def _planar_id(door):
@@ -1069,66 +1069,65 @@ def test_the_recorded_planar_sheet_matches_its_spec(env):
     assert drive_door._copy_tab_mismatches("the planar file", spec.tab, rows) == set()
 
 
-def test_overwriting_or_clearing_the_planar_sheet_says_so(env):
-    # Until unit 11 locks it, the annotator edits the planar Sheet; a write
-    # that replaces their cells must go through replacing(), which saves them.
+def test_the_planar_sheet_is_the_toolings_to_rewrite(env):
+    # A read-only copy since unit 11b: no cell on it is an annotator's, so
+    # rewriting it needs no replacing().
     _, door, _, _ = env
-    with drive_door.running("import-planar", TO_SHEET):
+    with drive_door.running("sync-planar", TO_SHEET):
         ws = _planar(door).sheet1
-        with pytest.raises(DoorViolation, match="filled annotation"):
-            ws.update_cell(2, 1, "changed")
-        with pytest.raises(DoorViolation, match="would clear"):
-            ws.clear()
+        rows = ws.get_all_values()
+        ws.clear()
+        ws.update(rows, "A1")
 
 
-def test_no_dropdowns_or_protection_on_the_planar_sheet(env):
-    _, door, _, _ = env
-    with drive_door.running("import-planar", TO_SHEET):
+def test_the_planar_sheet_takes_protection_but_no_dropdowns(env):
+    from coding.locked_tabs import protect
+    fake, door, _, _ = env
+    fake.spreadsheet(_planar_id(door))._protected_ranges.clear()   # as before 11b
+    with drive_door.running("sync-planar", TO_SHEET):
         ss = _planar(door)
         ws = ss.sheet1
         with pytest.raises(DoorViolation, match="no dropdowns on the planar Sheet"):
             ss.batch_update(_dropdown(ws, 0, ["a", "b"]))
-        with pytest.raises(DoorViolation, match="only locked tabs"):
-            ss.batch_update({"requests": [{"addProtectedRange": {"protectedRange": {
-                "range": {"sheetId": ws.id}, "warningOnly": False}}}]})
+        assert protect(ss, ws)
 
 
-def test_pushing_the_planar_file_saves_the_sheet_and_leaves_it_equal(env):
-    from coding import import_planar
+def test_syncing_the_planar_file_leaves_the_sheet_equal_and_protected(env):
+    from coding import sync_planar
+    from coding.locked_tabs import _is_ours
     fake, door, _, coded = env
     notes = _edit_planar_file(coded, "Notes", "a note added in the file")
-    with drive_door.running("import-planar", TO_SHEET):
-        assert import_planar.push_planar_to_sheet(LANG, drive_module.load_manifest(door), True)
-    assert fake.spreadsheet(_planar_id(door)).sheet1.get_all_values()[1][notes] == "a note added in the file"
-    [saved] = state_files.SNAPSHOT_DIR.glob(f"{LANG}_planar_sheet_*.json")
-    assert json.loads(saved.read_text())["rows"][1][notes] != "a note added in the file"
+    with drive_door.running("sync-planar", TO_SHEET):
+        assert sync_planar._sync_one(LANG, _planar_id(door), True, {})
+    raw = fake.spreadsheet(_planar_id(door))
+    assert raw.sheet1.get_all_values()[1][notes] == "a note added in the file"
+    assert any(_is_ours(p, raw.sheet1.id) for p in raw.list_protected_ranges(raw.sheet1.id))
 
 
 def test_a_planar_sheet_left_unlike_the_file_is_reported(env):
     _, door, _, _ = env
     with pytest.raises(DoorViolation, match="row of the planar file missing"):
-        with drive_door.running("import-planar", TO_SHEET):
+        with drive_door.running("sync-planar", TO_SHEET):
             ws = _planar(door).sheet1
             rows = ws.get_all_values()
-            with drive_door.replacing(ws, "a test that drops a row"):
-                ws.clear()
-                ws.update(rows[:-1], "A1")
+            ws.clear()
+            ws.update(rows[:-1], "A1")
 
 
 def test_a_literal_na_in_the_planar_file_is_pushed_as_written(env):
     # pandas reads NA, null and None as missing unless told not to; the push
     # used to write them to the Sheet as blanks.
-    from coding import import_planar
+    from coding import sync_planar
     fake, door, _, coded = env
     notes = _edit_planar_file(coded, "Notes", "NA")
-    with drive_door.running("import-planar", TO_SHEET):
-        import_planar.push_planar_to_sheet(LANG, drive_module.load_manifest(door), True)
+    with drive_door.running("sync-planar", TO_SHEET):
+        sync_planar._sync_one(LANG, _planar_id(door), True, {})
     assert fake.spreadsheet(_planar_id(door)).sheet1.get_all_values()[1][notes] == "NA"
 
 
 # -- the diagnostics Sheet (5f) -------------------------------------------------------
 
-DIAG_TO_SHEET = argparse.Namespace(apply=True, to_sheet=True, from_tsv=False, lang=LANG)
+DIAG_TO_SHEET = argparse.Namespace(apply=True, to_sheet=True, lang=LANG)
 
 
 def _diagnostics_id(door):
@@ -1147,33 +1146,32 @@ def test_the_recorded_diagnostics_sheet_matches_its_spec(env):
     assert drive_door._copy_tab_mismatches("the diagnostics file", spec.tab, rows) == set()
 
 
-def test_overwriting_the_diagnostics_sheet_or_adding_a_dropdown_says_so(env):
+def test_the_diagnostics_sheet_is_rewritten_freely_but_takes_no_dropdown(env):
     _, door, _, _ = env
     with drive_door.running("sync-diagnostics-yaml", DIAG_TO_SHEET):
         ss = _diagnostics(door)
         ws = ss.sheet1
-        with pytest.raises(DoorViolation, match="filled annotation"):
-            ws.update_cell(2, 4, "changed")
-        with pytest.raises(DoorViolation, match="would clear"):
-            ws.clear()
+        rows = ws.get_all_values()
+        ws.clear()
+        ws.update(rows, "A1")
         with pytest.raises(DoorViolation, match="no dropdowns on the diagnostics Sheet"):
             ss.batch_update(_dropdown(ws, 0, ["a", "b"]))
 
 
-def test_pushing_the_yaml_saves_the_annotators_edit_and_leaves_the_sheet_equal(env):
-    # An edit an annotator made on the Sheet since the last import is replaced
-    # by the push, but saved first.
+def test_pushing_the_yaml_replaces_a_hand_edit_and_protects_the_sheet(env):
+    # Nothing is read back from the Sheet, so a hand edit (only a coordinator
+    # could make one) is simply replaced; the push protects the tab.
     from coding import sync_diagnostics_yaml
+    from coding.locked_tabs import _is_ours
     fake, door, _, _ = env
-    raw = fake.spreadsheet(_diagnostics_id(door)).sheet1
-    before = raw.get_all_values()
-    raw.update_cell(2, 4, "an annotator's edit")
+    raw = fake.spreadsheet(_diagnostics_id(door))
+    before = raw.sheet1.get_all_values()
+    raw.sheet1.update_cell(2, 4, "a hand edit")
     with drive_door.running("sync-diagnostics-yaml", DIAG_TO_SHEET):
         assert sync_diagnostics_yaml._sync_to_sheet(
             LANG, drive_module.load_manifest(door), True, [])
-    assert raw.get_all_values() == before
-    [saved] = state_files.SNAPSHOT_DIR.glob(f"{LANG}_diagnostics_sheet_*.json")
-    assert json.loads(saved.read_text())["rows"][1][3] == "an annotator's edit"
+    assert raw.sheet1.get_all_values() == before
+    assert any(_is_ours(p, raw.sheet1.id) for p in raw.list_protected_ranges(raw.sheet1.id))
 
 
 def test_a_diagnostics_sheet_left_unlike_the_yaml_is_reported(env):
@@ -1182,6 +1180,5 @@ def test_a_diagnostics_sheet_left_unlike_the_yaml_is_reported(env):
         with drive_door.running("sync-diagnostics-yaml", DIAG_TO_SHEET):
             ws = _diagnostics(door).sheet1
             rows = ws.get_all_values()
-            with drive_door.replacing(ws, "a test that drops a row"):
-                ws.clear()
-                ws.update(rows[:-1], "A1")
+            ws.clear()
+            ws.update(rows[:-1], "A1")

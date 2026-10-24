@@ -19,6 +19,9 @@
 #   meaning      the fuller explanation shown in CLAUDE.md's table (Markdown)
 #   filed_by     who puts the label on an issue: "by hand", or the command or
 #                workflow that files it automatically
+#   retired      (optional) when and why it stopped being used. The label stays
+#                on GitHub for the closed issues that carry it, but nothing can
+#                be filed under it, and CLAUDE.md's table leaves it out.
 
 labels:
 
@@ -135,6 +138,10 @@ labels:
       `apply-pending`, which closes the issue once every change is handled.
       A reminder is added daily once the issue is a week old.
     filed_by: import-sheets
+    retired: >-
+      2026-10-24: its changes came from edits to the planar and diagnostics
+      Sheets, which became read-only copies (Phase 10 unit 11b); apply-pending
+      was retired with it
 
   - name: diagnostics-drift
     color: "fbca04"
@@ -143,6 +150,9 @@ labels:
       `import-sheets` found ambiguous TSV→YAML differences. Resolve: edit
       the YAML, run `sync-diagnostics-yaml --apply`. Auto-closed when clear.
     filed_by: data-refresh.yml
+    retired: >-
+      2026-10-24: the diagnostics Sheet became a read-only copy of the YAML
+      (Phase 10 unit 11b), so nothing is read back from it to differ
 
   - name: diagnostics-yaml-error
     color: "d73a4a"
@@ -150,8 +160,7 @@ labels:
     meaning: >-
       `sync-diagnostics-yaml` (either direction) found a blocking
       `diagnostics_{lang_id}.yaml` validation error — a malformed YAML, not
-      ambiguous drift (that's `diagnostics-drift`) or schema inconsistency
-      (`codebook-error`). A non-blocking error (e.g. a required class not yet
+      schema inconsistency (`codebook-error`). A non-blocking error (e.g. a required class not yet
       drafted) does not trigger this. Resolve: fix the YAML, run
       `sync-diagnostics-yaml --apply` (and `--to-sheet --apply` if the Sheet
       needs it too). Auto-closed when clean.
@@ -187,13 +196,15 @@ labels:
 
   - name: planar-changed
     color: "E4E669"
-    description: "Planar structure changed in Sheet. Resolve: update-sheets or restructure-sheets."
+    description: "A planar file changed. Resolve: update-sheets or restructure-sheets, as the issue says."
     meaning: >-
-      A language's planar spreadsheet differs from the local TSV. Resolve:
-      run the command in the issue body (`update-sheets --apply` for
-      additions, `restructure-sheets --pos-remap ... --apply` for
-      renumbering). Auto-closed when a later run finds no planar changes.
-    filed_by: data-refresh.yml
+      A language's planar file changed since its planar Sheet was last
+      updated (`sync-planar`, which also renumbers position numbers typed in
+      answers). Resolve: run the command in the issue body (`update-sheets
+      --apply` for additions, `restructure-sheets ... --apply` for moved,
+      renamed or removed positions). Auto-closed when a later run finds no
+      planar changes.
+    filed_by: sync-planar (data-refresh.yml)
 
   - name: stale-manifest
     color: "E4E669"

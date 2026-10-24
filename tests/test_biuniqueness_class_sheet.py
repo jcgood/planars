@@ -214,8 +214,6 @@ def test_the_daily_import_brings_the_keyed_tabs_down_intact(created, monkeypatch
         monkeypatch.setitem(sys.modules, name, SimpleNamespace(main=lambda: None))
     monkeypatch.setattr(is_, "ROOT", tmp)
     monkeypatch.setattr(is_, "ERROR_DIR", tmp / "import_errors")
-    monkeypatch.setattr(is_, "DRIFT_PATH", tmp / "diagnostics_drift.json")
-    monkeypatch.setattr(is_, "_notify_pending_changes", lambda *a: None)
     monkeypatch.setattr(is_, "_notify_collaborator_check", lambda *a: None)
     monkeypatch.setattr(is_, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(is_, "_save_drive_config", lambda cfg: None)
@@ -285,8 +283,8 @@ def test_restructure_carries_keyed_answers_across_an_element_rename(created, mon
 
     from coding import drive as drive_module
     from coding import generate_notebooks as gn
-    from coding import import_planar as ip
     from coding import restructure_sheets as rs
+    from coding import sync_planar as sp
     from coding import validate_coding as vc
     from fake_drive import FakeDriveDoorway
 
@@ -311,7 +309,7 @@ def test_restructure_carries_keyed_answers_across_an_element_rename(created, mon
     monkeypatch.setattr(rs, "_save_drive_config", lambda cfg: None)
     monkeypatch.setattr(gn, "regenerate_notebooks", lambda: None)
     monkeypatch.setattr(vc, "revalidate_sheets", lambda lang_ids=None: 0)
-    monkeypatch.setattr(ip, "push_planars_to_sheets", lambda lang_ids=None, apply=False: [])
+    monkeypatch.setattr(sp, "sync_planars", lambda lang_ids=None, apply=False: [])
     monkeypatch.setattr(rs, "ensure_notification_issue", lambda lang_id, manifest: (999, False))
     monkeypatch.setattr(rs, "post_notification_comment", lambda *a, **kw: None)
     monkeypatch.setattr(sys, "argv", ["restructure-sheets", "--lang", LANG,

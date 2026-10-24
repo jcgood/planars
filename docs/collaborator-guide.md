@@ -46,7 +46,7 @@ Your language's read-only status page (`status_{lang_id}`, in the "Annotation St
 
 ### Proposing a change to the planar structure or the diagnostics
 
-Your language's folder has one more sheet, `proposal_{lang_id}`, where you propose changes to the planar structure (the positions and their elements) or to the diagnostics (which classes, constructions and criteria apply). It has three tabs:
+The `planar_{lang_id}` and `diagnostics_{lang_id}` sheets in your language's folder are read-only: they show the current planar structure and diagnostics. Your language's folder has one more sheet, `proposal_{lang_id}`, where you propose changes to the planar structure (the positions and their elements) or to the diagnostics (which classes, constructions and criteria apply). It has three tabs:
 
 - **Planar** and **Diagnostics**: copies of the two, with a **What changed?** column at the end.
 - **Last review**: the outcome of the last time the coordinator reviewed a proposal.

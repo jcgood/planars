@@ -73,10 +73,13 @@ def test_every_fact_authoritative_entity_is_among_its_own_locations():
         assert record["authoritative"] in location_entities, record["id"]
 
 
-def test_planar_sheet_structure_fact_is_bidirectional():
+def test_the_planar_has_one_editable_home():
+    """Bidirectional until Phase 10 unit 11b (2026-10-24): the planar file is
+    the source, and the Sheet a copy rebuilt from it."""
     records = _load_yaml(FACTS_PATH)
     record = next(r for r in records if r["id"] == "planar_sheet_structure")
-    assert record["cascade"]["direction"] == "bidirectional"
+    assert record["authoritative"] == "planar_tsv"
+    assert record["cascade"]["direction"] == "automatic"
     assert record["drift_risk"]["possible"] is True
     assert record["drift_risk"]["caught_by"]
 

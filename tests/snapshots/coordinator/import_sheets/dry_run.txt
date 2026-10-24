@@ -3,8 +3,6 @@ DRY RUN — pass --apply to write TSVs.
 Connecting to Google...
 
 Language: arao1248
-  [planar] No changes → planar_arao1248.tsv
-  [diagnostics] No changes → diagnostics_arao1248.tsv
 
   ciscategorial
     [general] status: 'in-progress' — importing for backup
@@ -31,8 +29,6 @@ Language: arao1248
     [general] [backup] No changes → coded_data/arao1248/free_occurrence/general.tsv
 
 Language: stan1293
-  [planar] No changes → planar_stan1293.tsv
-  [diagnostics] No changes → diagnostics_stan1293.tsv
 
   ciscategorial
     [general] status: 'in-progress' — importing for backup
@@ -96,8 +92,6 @@ Language: stan1293
   Error report: import_errors/stan1293_20260804_120000.txt
 
 Language: synth0001
-  [planar] No changes → planar_synth0001.tsv
-  [diagnostics] No changes → diagnostics_synth0001.tsv
 
   ciscategorial
     [general] status: 'in-progress' — importing for backup

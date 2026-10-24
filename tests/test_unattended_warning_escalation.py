@@ -112,20 +112,6 @@ def _all_warning_sites() -> Set[Site]:
 # Every warning-shaped print() known to exist, as of issue #283's sweep
 # (2026-08-17), in a module an unattended workflow command reaches.
 _KNOWN_SITES: Dict[Site, str] = {
-    ("import_sheets.py", 'print(f"  [planar] WARNING: {i}")', 1):
-        "advisory-only ([planar] validation issue -- e.g. "
-        "'consider type open instead of list', a Class_Type style nudge); reaches "
-        "$GITHUB_STEP_SUMMARY only, never affects exit code. Deliberately left "
-        "this way (issue #283, decided 2026-08-19 after reading the actual "
-        "message content): these are genuine style suggestions, nothing is "
-        "wrong, and filing an issue for 'consider a different Class_Type' risks "
-        "the exact warning-fatigue failure mode #260 already taught this "
-        "project to avoid (a routine, non-actionable warning holding an issue "
-        "open for days).",
-    ("import_sheets.py", 'print(f"  [diagnostics] WARNING: {i}")', 1):
-        "advisory-only ([diagnostics] validation issue -- e.g. a "
-        "Glottolog-verification reminder); same reasoning and same 2026-08-19 "
-        "decision as the [planar] warning above.",
     ("import_sheets.py", 'print(f"    WARNING: could not highlight cells: {e}")', 1):
         "the one warning in this group NOT accumulated into "
         "lang_warning_lines/total_warnings at all (a failed pink-highlight "
@@ -182,9 +168,6 @@ _KNOWN_SITES: Dict[Site, str] = {
     ("update_sheets.py", 'print(f"    [{construction}] WARNING: planar structure has changed:")', 1):
         "correctly escalated: sets any_drift, which drives exit 1, which the "
         "sheet-drift issue mechanism dumps in full -- not a gap",
-    ("__main__.py", 'print("WARNING: Pending destructive changes require coordinator approval.")', 1):
-        "redundant with the pending-changes issue import-sheets already files "
-        "for the same underlying fact",
     ("drive.py", 'print(f"  WARNING: could not update manifest.json {existing_file_id} ({e}); "', 1):
         "self-healing -- upload_manifest() then updates the manifest Drive "
         "holds (found by its label), and every caller saves the id it returns "

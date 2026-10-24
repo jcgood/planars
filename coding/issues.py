@@ -18,8 +18,8 @@ misspelt one would quietly create a new label on GitHub.
 What lives here:
 
 - **The label registry**, `schemas/issue_labels.yaml`, is read on every call.
-  Every function that takes a label refuses one not listed there
-  (`UnknownLabel`), and `create` makes a registered label GitHub doesn't
+  Every function that takes a label refuses one not listed there, or listed
+  as `retired` (`UnknownLabel`), and `create` makes a registered label GitHub doesn't
   have yet (`ensure_label`). `--sync-labels --apply` brings GitHub's own labels into
   line with it (the daily refresh's first step), and `--write-label-table`
   rewrites the Labels table in CLAUDE.md from it (run by the pre-commit hook
@@ -95,9 +95,16 @@ def load_labels(path: Path = LABELS_PATH) -> List[Dict]:
 
 
 def check_label(label: str) -> str:
-    """Return `label` if the registry lists it; otherwise raise UnknownLabel."""
-    names = [entry["name"] for entry in load_labels()]
+    """Return `label` if the registry lists it and it is not retired;
+    otherwise raise UnknownLabel. A retired label stays registered so the
+    closed issues that carry it keep it, but nothing new goes under it."""
+    labels = load_labels()
+    names = [entry["name"] for entry in labels if not entry.get("retired")]
     if label not in names:
+        retired = next((e["retired"] for e in labels
+                        if e["name"] == label and e.get("retired")), None)
+        if retired:
+            raise UnknownLabel(f"GitHub label {label!r} is retired ({retired}).")
         raise UnknownLabel(
             f"GitHub label {label!r} is not in schemas/issue_labels.yaml. "
             f"Add it there (and commit) before filing issues under it. "
@@ -106,10 +113,12 @@ def check_label(label: str) -> str:
 
 
 def label_table(labels: Optional[List[Dict]] = None) -> str:
-    """CLAUDE.md's Labels table, built from the registry."""
+    """CLAUDE.md's Labels table, built from the registry (retired labels left out)."""
     labels = load_labels() if labels is None else labels
     rows = ["| Label | Filed by | Meaning |", "|-------|----------|---------|"]
     for entry in labels:
+        if entry.get("retired"):
+            continue
         meaning = " ".join(str(entry["meaning"]).split()).replace("|", "\\|")
         rows.append(f"| `{entry['name']}` | {entry['filed_by']} | {meaning} |")
     return "\n".join(rows)

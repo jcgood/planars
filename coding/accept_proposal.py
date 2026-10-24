@@ -20,7 +20,7 @@ With ``--apply`` it asks about each one:
    per-construction criteria is not applied: it is listed for the
    coordinator to make by hand;
 3. names what carries the change into the class sheets: for the planar,
-   what ``import-planar`` recommends (a restructure is given as a dry run,
+   what ``sync-planar`` recommends (a restructure is given as a dry run,
    to be checked before its live run, Q4); additions the daily refresh
    carries in (update-sheets, sync-params); a new class needs
    ``generate-sheets``;
@@ -178,7 +178,7 @@ def _new_diagnostics(lang_id: str, rows: List[Row], header: List[str],
 
 def _next_steps(lang_id: str, old_planar: Optional[pd.DataFrame],
                 new_planar: Optional[pd.DataFrame], diag_changes: List[Dict]) -> List[str]:
-    from .import_planar import _diff_positions, _recommend
+    from .sync_planar import _diff_positions, _recommend
     steps = []
     if new_planar is not None and old_planar is not None:
         rec = _recommend(_diff_positions(old_planar, new_planar), lang_id)

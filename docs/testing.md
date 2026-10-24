@@ -28,6 +28,6 @@ python tests/make_synthetic_lang.py --full-copy --apply    # regenerate with no 
 python tests/make_synthetic_lang.py --clean --apply        # remove synth0001
 ```
 
-`--apply` (not `--clean`) also pushes the regenerated planar structure to the live Drive planar spreadsheet — without this, the next scheduled `import-planar --apply` would silently revert the regeneration back to the old structure (issue #256's 2026-07-31 incident: this push was missing, and the live Sheet stayed stale long enough for a downstream cascade to overwrite local changes before it was caught).
+It writes only local files; commit them in planars-data, and the daily refresh brings the planar Sheet up to date (`python -m coding sync-planar --lang synth0001 --apply` to do it now).
 
 `synth0001` is committed to `coded_data/` (in the `planars-data` repo). Regenerate it only if the `stan1293` planar structure changes substantially and the multi-language tests need to be re-baselined.

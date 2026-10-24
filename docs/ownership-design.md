@@ -165,6 +165,10 @@ In the same units, nothing left half-moved:
 - `sync-diagnostics-yaml --from-tsv` and `diagnostics_drift.json`.
 - The `planar-changed` and `diagnostics-drift` labels, and pending-changes
   entries of the planar and diagnostics kinds. `proposal` replaces them.
+  *(As built, 2026-10-24: `planar-changed` stays, filed by `sync-planar`,
+  since the coordinator's own edits to the planar still need the class
+  sheets carried along; every pending-changes entry was of those two kinds,
+  so `apply-pending` went too. § 6 step 6.)*
 - `diagnostics_{lang}.tsv` (Q5): its readers read the YAML through one
   function instead.
 
@@ -380,6 +384,27 @@ the same commit.
    no longer shows it. The edit survives only in planars-data's history and
    `regen_snapshots/`. No annotator has edited a diagnostics Sheet so far
    (its history shows none), so 11b is the fix, not an interim one.
+   *Built 2026-10-24, first part (the diagnostics TSV's deletion is the
+   second).* Jeff dropped the wait for Adam to use a proposal sheet (he and
+   Adam talk directly; the proposal sheet is for future annotators), and Q8's
+   issue to Adam was not filed. As built: the Sheets are read-only by sharing
+   (annotator reader) **and** their tab is protected, because the
+   coordinators are writers on the root folder, which every file inherits;
+   `locked_tabs.protect` is the one protection, and both syncs apply it
+   every run. `import-planar` became `sync-planar`, the file → Sheet
+   direction only. Renumbering the position numbers typed in answers moved
+   with it: the Sheet still holds the planar as last pushed, so the
+   difference between the two is what changed, however the file was edited
+   (by hand, `accept-proposal`, a script), and restructure-sheets gets it by
+   calling `sync-planar` at its end (until now a hand edit followed by a
+   restructure left those numbers unrenumbered). `planar-changed` therefore
+   stays, filed from `sync-planar` (§ 3.5 had it retired, on the assumption
+   that every change would come through a proposal). Retired:
+   import-sheets' set-up download and change detection, its auto-run
+   commands, `sync-diagnostics-yaml --from-tsv`, `diagnostics_drift.json`,
+   `apply-pending` and `pending_changes.json` (every entry came from the two
+   Sheets), and the `pending-changes` and `diagnostics-drift` labels (kept
+   registered as `retired` for their closed issues).
 7. **11c — Colab by labels, the manifest deleted, notebooks rebuilt daily**
    (needs 5f's sharing test for notebooks, and Q7's label test).
 8. **11d — the Instructions sentences into the schema.**
@@ -425,4 +450,6 @@ doesn't fall back to a manifest.
 **Q8. The switch for annotators: Jeff tells Adam himself, and an issue
 mentioning him** says what changes and when (filed through `coding/issues.py`
 when 11a is ready). The old Sheet intake keeps running until Adam has used a
-proposal sheet once, then 11b locks the Sheets.
+proposal sheet once, then 11b locks the Sheets. *Changed 2026-10-24 (Jeff):*
+11b goes ahead without that wait, and without the issue: Jeff and Adam talk
+directly, and the proposal sheet is for annotators who come later.

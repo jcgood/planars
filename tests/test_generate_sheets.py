@@ -1121,7 +1121,9 @@ class TestPlanLanguageCreation:
         assert plan["new_constructions"] == {"coreference": ["reflexive_coreference"]}
         assert plan["anything"]
 
-    def test_force_requires_planar_and_diagnostics_sheet_even_if_present(self):
+    def test_force_leaves_existing_planar_and_diagnostics_sheets_alone(self):
+        """They are read-only copies kept current by sync-planar and
+        sync-diagnostics-yaml (unit 11b); --force once rewrote them."""
         existing_lang_data = {
             "folder_id": "f1", "notes_doc_id": "n1",
             "planar_spreadsheet_id": "p1", "diagnostics_spreadsheet_id": "d1",
@@ -1131,9 +1133,8 @@ class TestPlanLanguageCreation:
             },
         }
         plan = _plan_language_creation(self._ALL_CLASSES, existing_lang_data, force=True)
-        assert plan["needs_planar_sheet"]
-        assert plan["needs_diagnostics_sheet"]
-        assert plan["anything"]
+        assert not plan["needs_planar_sheet"]
+        assert not plan["needs_diagnostics_sheet"]
         # force doesn't fabricate new classes/constructions that don't exist
         assert plan["new_classes"] == []
         assert plan["new_constructions"] == {}

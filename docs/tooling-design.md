@@ -8,7 +8,7 @@ The coordinator is a scientist doing work that a well-funded project would distr
 
 ## The coordinator UX checklist
 
-**Before proposing or implementing any fix to a coordinator-facing workflow, apply this checklist.** "Coordinator-facing" means: error messages, GitHub issue bodies, `apply-pending` prompts, `integrity-check` output, generated Claude prompts, script dry-run output, and documentation steps.
+**Before proposing or implementing any fix to a coordinator-facing workflow, apply this checklist.** "Coordinator-facing" means: error messages, GitHub issue bodies, `accept-proposal` prompts, `integrity-check` output, generated Claude prompts, script dry-run output, and documentation steps.
 
 1. **What does the coordinator see at each step, and does it need to reach anyone else?** Trace the workflow from the outside — not what the code does, but what actually gets read, by whom. CLI output aimed at Claude (dry-run stats, error diagnostics that inform the next command) is exactly the right design — the tools are necessary and this is their normal, correct use. But terminal/stdout output is only visible to whichever Claude session ran the command, and it doesn't persist — it is not a channel that reaches a collaborator like Adam, and it does not save anyone a manual step (something still has to notice it and copy it somewhere durable). If a step's output needs to reach a collaborator, it belongs in a channel both sides actually check — a GitHub issue/comment, a Sheet's `Comments` cell or `Instructions` tab, the Notes Google Doc — not a print statement. Ask "who reads this, and how does it get to them" before treating stdout as a fix for a collaborator-facing gap.
 
@@ -26,11 +26,11 @@ The coordinator is a scientist doing work that a well-funded project would distr
 
 **The GitHub issue IS the instruction.** When a workflow files an issue, the issue body should contain everything the coordinator needs to resolve it: what happened, why it matters, and the exact sequence of commands to run. The coordinator should not need to consult the guide for a routine issue.
 
-**Pending entries stay open until verified.** A pending change in `apply-pending` should not be marked resolved until there is evidence of completion — not just coordinator confirmation. For changes that cannot be automated (e.g., manually adding a Sheet tab), check the actual artifact (Sheet, file, manifest) before closing.
+**Issues stay open until verified.** An issue the tooling files should not close until there is evidence the problem is gone — a later run that finds it clean — not just coordinator confirmation. For changes that cannot be automated (e.g., manually adding a Sheet tab), check the actual artifact (Sheet, file, manifest) before closing.
 
 **Dry-run by default; explicit opt-in for destructive actions.** Any command that archives, overwrites, or deletes should require an explicit flag (`--apply`, `--force`) and should describe the consequences in the dry-run output before the coordinator opts in.
 
-**Full commands everywhere.** This applies to: error messages, issue bodies, `apply-pending` prompts, `integrity-check` next-step lines, generated Claude prompts, and all documentation steps. Use `python -m coding generate-sheets --force --apply`, not "generate-sheets --force" or "run the generate-sheets command with force."
+**Full commands everywhere.** This applies to: error messages, issue bodies, `accept-proposal` prompts, `integrity-check` next-step lines, generated Claude prompts, and all documentation steps. Use `python -m coding generate-sheets --force --apply`, not "generate-sheets --force" or "run the generate-sheets command with force."
 
 ## What Claude's role is in this workflow
 

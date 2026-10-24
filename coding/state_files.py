@@ -2,14 +2,13 @@
 
 A command's record of its own work used to stay on the machine that ran it,
 at the repo root and gitignored. The daily refresh runs on a GitHub machine
-that is thrown away afterwards, so its pending changes never reached a
-coordinator's ``apply-pending``, and its provenance log and snapshots were
-lost every day. They now live in ``coded_data/.state/`` (hidden, like
-``.test_fixtures/``, so nothing takes it for a language folder):
+that is thrown away afterwards, so its records never reached a coordinator,
+and its provenance log and snapshots were lost every day. They now live in
+``coded_data/.state/`` (hidden, like ``.test_fixtures/``, so nothing takes it
+for a language folder). (A ``pending_changes.json`` of destructive changes
+from the planar and diagnostics Sheets was here too, read by apply-pending;
+both went when those Sheets became read-only copies, unit 11b, 2026-10-24.)
 
-- ``PENDING_PATH``: destructive changes waiting for review. import-sheets
-  writes it, apply-pending reads and rewrites it, the dispatcher warns when
-  it is non-empty.
 - ``PROVENANCE_LOG``: one line per tab or Drive file a command wrote (the
   Drive door, ``provenance.append_writes``). Append-only; planars-data's
   ``.gitattributes`` merges it with ``merge=union``, so two machines'
@@ -23,10 +22,10 @@ lost every day. They now live in ``coded_data/.state/`` (hidden, like
   6b).
 - ``COMMENTS_STATE_PATH``: what check-comments last saw in each Comments
   cell, and each language's open comments issue.
-- ``RENUMBERING_PATH``: import-planar's record, while a new planar's
+- ``RENUMBERING_PATH``: sync-planar's record, while a new planar's
   numbers are being carried into the class sheets, of the numbering each
   sheet's position cells already use, so a run that stops partway never
-  renumbers a sheet twice (``import_planar._renumber_class_sheets``).
+  renumbers a sheet twice (``sync_planar._renumber_class_sheets``).
 
 and, at planars-data's top level, ``ID_FILE`` (``drive_config.json``): the
 Drive IDs of the files the tooling made.
@@ -37,8 +36,8 @@ names at call time (tests point them at a temporary folder,
 (``file_door.write_state`` and its kinds, ``file_door.STATE_KINDS``), which
 commits and pushes what a command wrote when it ends. ``behind_remote`` is
 the ``coded_data_up_to_date`` precondition: a command that acts on another
-machine's state (apply-pending, restructure-sheets) refuses to run on a copy
-of planars-data older than GitHub's.
+machine's state (restructure-sheets) refuses to run on a copy of planars-data
+older than GitHub's.
 """
 from __future__ import annotations
 
@@ -50,7 +49,6 @@ ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 STATE_DIR = CODED_DATA / ".state"
 
-PENDING_PATH = STATE_DIR / "pending_changes.json"
 PROVENANCE_LOG = STATE_DIR / "provenance_log.jsonl"
 SNAPSHOT_DIR = STATE_DIR / "regen_snapshots"
 JOURNAL_PATH = STATE_DIR / "restructure_journal.json"

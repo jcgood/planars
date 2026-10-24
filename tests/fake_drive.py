@@ -482,7 +482,7 @@ class FakeSpreadsheet:
         self._worksheets = [ws for ws in self._worksheets if ws.id != worksheet.id]
         # A tab's protections and labels go with it, as they do live.
         self._protected_ranges = [p for p in self._protected_ranges
-                                  if p["range"].get("sheetId") != worksheet.id]
+                                  if p["range"].get("sheetId", 0) != worksheet.id]
         self._developer_metadata = [m for m in self._developer_metadata
                                     if m["location"].get("sheetId") != worksheet.id]
         self._record("del_worksheet", worksheet=worksheet.title)
@@ -497,7 +497,7 @@ class FakeSpreadsheet:
 
     def list_protected_ranges(self, sheetid: int) -> List[Dict[str, Any]]:
         self._worksheet_by_sheet_id(sheetid)
-        return [dict(p) for p in self._protected_ranges if p["range"].get("sheetId") == sheetid]
+        return [dict(p) for p in self._protected_ranges if p["range"].get("sheetId", 0) == sheetid]
 
     def fetch_sheet_metadata(self, params: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
         """Each tab's properties, developer metadata and protected ranges; and,
@@ -513,7 +513,7 @@ class FakeSpreadsheet:
                 "developerMetadata": [dict(m) for m in self._developer_metadata
                                       if m["location"].get("sheetId") == ws.id]}
             protected = [dict(p) for p in self._protected_ranges
-                         if p["range"].get("sheetId") == ws.id]
+                         if p["range"].get("sheetId", 0) == ws.id]
             if protected:
                 sheet["protectedRanges"] = protected
             if "dataValidation" in fields:
@@ -746,7 +746,11 @@ class FakeSpreadsheet:
         """The API assigns the id; protecting a tab twice makes two
         protections (it does not merge), so callers must check first."""
         protection = dict(payload["protectedRange"])
-        self._worksheet_by_sheet_id(protection["range"]["sheetId"])
+        self._worksheet_by_sheet_id(protection["range"].get("sheetId", 0))
+        # Like Google, a field holding its default is left out: a range on the
+        # tab with id 0 comes back as {} (locked_tabs._is_ours, 2026-10-24).
+        protection["range"] = {k: v for k, v in protection["range"].items()
+                               if not (k == "sheetId" and v == 0)}
         protection["protectedRangeId"] = 1 + max(
             (p.get("protectedRangeId", 0) for p in self._protected_ranges), default=0)
         self._protected_ranges.append(protection)
@@ -969,15 +973,19 @@ class FakeDriveDoorway:
         self._spreadsheets[ss.id] = ss
         self._files[ss.id] = _DriveFile(ss.id, ss.title, _SPREADSHEET_MIME,
                                         properties=dict(data.get("properties", {})))
-        # The sheet's own grants, recorded by person name (addresses stay out
+        # The sheet's grants, recorded by person name (addresses stay out
         # of the recording), given the address people.yaml has for that name —
-        # in tests, the placeholder. Recordings before 2026-10-19 have none.
+        # in tests, the placeholder. One inherited from the folder is listed
+        # as Drive lists it (permissionDetails, inherited). Recordings before
+        # 2026-10-19 have none, and before 2026-10-24 no inherited ones.
         for grant in data.get("permissions", []):
             perm = {"id": grant["id"], "type": grant["type"], "role": grant["role"]}
             if grant["type"] == "user":
                 from coding.people import email_for
                 perm["emailAddress"] = (email_for(grant["person"]) if grant.get("person")
                                         else "someone-not-in-people-yaml@example.invalid")
+            if grant.get("inherited"):
+                perm["permissionDetails"] = [{"role": grant["role"], "inherited": True}]
             self._permissions.setdefault(ss.id, []).append(perm)
         return ss
 

@@ -66,7 +66,7 @@
         },
         "writes_to_drive": {
           "type": "boolean",
-          "description": "Same meaning as the parent record's writes_to_drive field, restated for this mode specifically -- see that field's description. Several commands' Drive-write status genuinely diverges by mode (sync-diagnostics-yaml's default/--from-tsv directions touch only the local YAML/TSV; only --to-sheet writes the live Sheet -- import-planar's default/--to-sheet split the same way), which is exactly why this is a mode field and not only a parent-record one."
+          "description": "Same meaning as the parent record's writes_to_drive field, restated for this mode specifically -- see that field's description. A command's Drive-write status can diverge by mode (sync-diagnostics-yaml's default direction touches only the local TSV; only --to-sheet writes the live Sheet), which is exactly why this is a mode field and not only a parent-record one."
         },
         "writes_locally": {
           "type": "boolean",
@@ -156,7 +156,7 @@
         },
         "writes_to_drive": {
           "type": "boolean",
-          "description": "Whether this command's default invocation actually writes to Drive/Sheets/Docs (create, update, share, delete -- not merely read) when its apply_gate is satisfied. Added for Phase 5 unit E (issue #271). Read by coding/drive_door.py (through coding/provenance.py's writes_to_drive): the door refuses every write on a run where this is false for the gate that was actually satisfied; the provenance log records the writes themselves. A command whose Drive-write status is uniform across its whole invocation states it here; a command where it genuinely diverges by mode (sync-diagnostics-yaml, import-planar) restates it per-mode instead -- see the mode $def's own writes_to_drive field. false for a command with no live-write concept at all (pure read-only, e.g. capture-drive-state, integrity-check) and for one whose writes are entirely local (coded_data/ or a local YAML/JSON file, never Drive itself, e.g. sync-diagnostics-yaml's default direction, sync-span-rule-hashes)."
+          "description": "Whether this command's default invocation actually writes to Drive/Sheets/Docs (create, update, share, delete -- not merely read) when its apply_gate is satisfied. Added for Phase 5 unit E (issue #271). Read by coding/drive_door.py (through coding/provenance.py's writes_to_drive): the door refuses every write on a run where this is false for the gate that was actually satisfied; the provenance log records the writes themselves. A command whose Drive-write status is uniform across its whole invocation states it here; a command where it genuinely diverges by mode (sync-diagnostics-yaml) restates it per-mode instead -- see the mode $def's own writes_to_drive field. false for a command with no live-write concept at all (pure read-only, e.g. capture-drive-state, integrity-check) and for one whose writes are entirely local (coded_data/ or a local YAML/JSON file, never Drive itself, e.g. sync-diagnostics-yaml's default direction, sync-span-rule-hashes)."
         },
         "writes_locally": {
           "type": "boolean",
@@ -168,7 +168,7 @@
     "editsSources": {
       "type": "array",
       "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
-      "description": "The sources (file_door.SOURCES: files a person edits) this command may write: the local-file door refuses a write to a source not listed here, and a name that is not in SOURCES stops the command (the door reads the names from SOURCES, so they are not listed again here). Omitted (or empty) for a command that writes no source -- every command but the Sheet intakes (import-planar, import-sheets, until unit 11b retires them) and the commands that edit the diagnostics YAML (sync-params' rename/split/merge, sync-diagnostics-yaml --from-tsv)."
+      "description": "The sources (file_door.SOURCES: files a person edits) this command may write: the local-file door refuses a write to a source not listed here, and a name that is not in SOURCES stops the command (the door reads the names from SOURCES, so they are not listed again here). Omitted (or empty) for a command that writes no source -- every command but accept-proposal and the commands that edit the diagnostics YAML (sync-params' rename/split/merge, rename-construction)."
     }
   }
 }

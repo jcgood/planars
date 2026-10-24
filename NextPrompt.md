@@ -97,10 +97,17 @@ row); the spec, ground rules, units and order are the Phase 10 section of
 `docs/ownership-design.md` (both answered by Jeff in their § 7 — don't
 re-ask).
 
-**2026-10-23 (Jeff):** the validation notebook and the manifest's copy of
-each criterion's allowed values are retired (progress doc, Phase 10 row;
-don't re-litigate). Check the 2026-10-24 refresh: green, and
-refresh-dropdowns no longer uploads the manifest.
+**2026-10-24 (Jeff): 11b's first part is done and live** (progress doc,
+Phase 10 row; ownership-design § 6 step 6): the planar and diagnostics
+Sheets are read-only, protected copies; `import-planar` is now
+`sync-planar`; apply-pending, `--from-tsv` and their issues are retired.
+Jeff dropped the wait for Adam to use a proposal sheet and the issue to
+him — don't re-ask. Check the 2026-10-25 refresh: green, its `planar`
+step says "up to date" for all three languages, and no step protects a
+Sheet again. **Next:** 11b's second part, deleting the diagnostics TSV
+(its readers — check-codebook, integrity-check, validate-coding,
+`planars/reports.py`, prune-manifest, make_forms' fallback — read the YAML
+instead; sync-diagnostics-yaml then has one job, the Sheet).
 
 **Where it stands:** class sheets are enforced live (2026-10-19, Jeff;
 `drive_door.LIVE_ENFORCED_KINDS`); every other kind now has its spec and is
@@ -116,22 +123,19 @@ the `overwrite` step now says how many changes it checked) and enforce
 each kind in watch once it has had a clean real write (below). The
 2026-10-23 refresh was the first with the proposal step and the local-file
 door enforcing: both clean. Unit 9 is done (2026-10-23). After that the
-order is the proposal sheets' remaining steps, 11b–d, then 16–18.
+order is 11b's second part, 11c–d, then 16–18.
 
 **Waits on watching:** enforce for each kind still in watch (planar
 Sheet, notes Docs, notebooks, reports, manifest, folders: its own first
 clean real write, then added to `LIVE_ENFORCED_KINDS`; class sheets,
 status sheets and the diagnostics Sheet are enforced), and refusing
 unlabelled targets (last). **11a is live** (2026-10-22: the three
-proposal sheets, the refresh step, the collaborator guide section, the
-issue to Adam); 11b (locking the planar/diagnostics Sheets) waits until
-Adam has used his proposal sheet once. Then 11b–d, 16–18.
+proposal sheets, the refresh step, the collaborator guide section); 11b's
+first part is live (2026-10-24). Then the rest of 11b, 11c–d, 16–18.
 
 **Live steps — name each to Jeff for approval first:** 5f's one-notebook
 sharing test and Q7's Colab label-search test (both need an annotator's
-account, so Adam takes part; they can run together); later, locking the
-planar/diagnostics Sheets (11b), with Jeff telling Adam and an issue
-mentioning him (Q8).
+account, so Adam takes part; they can run together).
 
 Check for an open `door-violation` issue first: each line is a command bug
 or a spec gap to fix.
@@ -163,7 +167,7 @@ elements marked ready-for-review for him by
 `migrations/mark_biuniqueness_elements_ready_stan1293.py`) and marking it
 ready-for-review; the daily refresh then fills morphs by itself — check it
 did. Adam was told on #318 (2026-10-22). Positions may be typed as numbers since 2026-10-22
-(`planars/position_cells.py`; import-planar renumbers them when the
+(`planars/position_cells.py`; sync-planar renumbers them when the
 planar's numbers shift); (3) #298 (what `-n` at
 `v:frontedauxiliaryinflection` is — fronted *won't* waits on it).
 

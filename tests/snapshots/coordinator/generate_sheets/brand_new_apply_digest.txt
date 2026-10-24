@@ -1,6 +1,6 @@
 SUMMARY
     21  add_worksheet
-   168  batch_request
+   170  batch_request
      1  create_file
      9  create_permission
      8  create_spreadsheet
@@ -9,7 +9,7 @@ SUMMARY
      6  reorder_worksheets
     23  update
     10  update_file
-     7    └─ addProtectedRange
+     9    └─ addProtectedRange
     42    └─ createDeveloperMetadata
     70    └─ repeatCell
     26    └─ setDataValidation
@@ -21,10 +21,10 @@ DRIVE OPERATIONS
   create_permission: file_id='fake_file_0001', type='user', role='writer', email='annotator@example.org', notify=False
   update_file: file_id='fake_ss_0003', properties={'planars_kind': 'planar_sheet', 'planars_lang': 'arao1248'}
   move_file: file_id='fake_ss_0003', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
-  create_permission: file_id='fake_ss_0003', type='user', role='writer', email='annotator@example.org', notify=False
+  create_permission: file_id='fake_ss_0003', type='user', role='reader', email='annotator@example.org', notify=False
   update_file: file_id='fake_ss_0005', properties={'planars_kind': 'diagnostics_sheet', 'planars_lang': 'arao1248'}
   move_file: file_id='fake_ss_0005', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
-  create_permission: file_id='fake_ss_0005', type='user', role='writer', email='annotator@example.org', notify=False
+  create_permission: file_id='fake_ss_0005', type='user', role='reader', email='annotator@example.org', notify=False
   update_file: file_id='fake_ss_0007', properties={'planars_kind': 'class_sheet', 'planars_lang': 'arao1248', 'planars_class': 'ciscategorial'}
   move_file: file_id='fake_ss_0007', from_parents=[], to_parent='1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU'
   create_permission: file_id='fake_ss_0007', type='user', role='writer', email='annotator@example.org', notify=False
@@ -59,6 +59,7 @@ SHEET OPERATIONS
       | ...
 
   fake_ss_0003  tab=sheetId=0
+    addProtectedRange: {"protectedRange": {"range": {"sheetId": 0}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
 
@@ -73,6 +74,7 @@ SHEET OPERATIONS
       | ...
 
   fake_ss_0005  tab=sheetId=0
+    addProtectedRange: {"protectedRange": {"range": {"sheetId": 0}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
 

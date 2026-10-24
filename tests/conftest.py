@@ -5,8 +5,8 @@ read by `coding/people.py`). Tests run against a placeholder address instead,
 so sharing behaviour is still exercised and no real address is written into
 the saved test outputs, which are in this public repo.
 
-The tooling's state files (pending changes, provenance log, tab snapshots,
-restructure journal) go to each test's tmp_path, and so does everything the
+The tooling's state files (provenance log, tab snapshots, restructure
+journal) go to each test's tmp_path, and so does everything the
 local-file door writes; the door enforces its rules in every test.
 
 Every test also gets an in-memory GitHub (`tests/fake_github.py`) in place of
@@ -28,9 +28,9 @@ def _placeholder_people(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _state_files_stay_in_tmp(monkeypatch, tmp_path):
-    """The tooling's own files (coding/state_files.py: pending changes, the
-    provenance log, tab snapshots, the restructure journal, the notes state
-    and the ID file) go to the test's tmp_path, never planars-data.
+    """The tooling's own files (coding/state_files.py: the provenance log,
+    tab snapshots, the restructure journal, the notes state and the ID file)
+    go to the test's tmp_path, never planars-data.
     planars-data itself is pointed there too, so no test fetches from GitHub
     (coded_data_up_to_date): tmp_path is no git repository."""
     point_state_files_at(monkeypatch, tmp_path)
@@ -42,7 +42,6 @@ def point_state_files_at(monkeypatch, coded) -> None:
     state = coded / ".state"
     monkeypatch.setattr(state_files, "CODED_DATA", coded)
     monkeypatch.setattr(state_files, "STATE_DIR", state)
-    monkeypatch.setattr(state_files, "PENDING_PATH", state / "pending_changes.json")
     monkeypatch.setattr(state_files, "PROVENANCE_LOG", state / "provenance_log.jsonl")
     monkeypatch.setattr(state_files, "SNAPSHOT_DIR", state / "regen_snapshots")
     monkeypatch.setattr(state_files, "JOURNAL_PATH", state / "restructure_journal.json")

@@ -32,15 +32,10 @@ def gate_satisfied(apply_gate: Optional[str], mode_name: Optional[str],
     flag itself is set", since that mode's code path runs independent of
     --apply entirely.
 
-    A handful of records describe their gate in prose instead of real flag
-    syntax -- apply_pending's is "interactive (per-entry approval, not a
-    single --apply flag)", since which entries get applied is decided by
-    runtime input() prompts, not by anything present in args. That can't be
-    derived from args alone, so such a gate is treated as always active
-    rather than silently parsed into nonsense dests that never match --
-    the safer failure mode for writes_to_drive, where "always active" lets
-    the Drive door's other rules judge a real write rather than refusing
-    every write the command makes.
+    A gate that is not flags raises: it can't be matched against args, and
+    taking it as always or never active would be a guess. (apply-pending's
+    gate was prose, "interactive", and was taken as always active until the
+    command was retired, 2026-10-24.)
     """
     if apply_gate is None:
         if mode_name is None:
@@ -48,16 +43,17 @@ def gate_satisfied(apply_gate: Optional[str], mode_name: Optional[str],
         return bool(getattr(args, flag_dest(mode_name), False))
     flags = apply_gate.split()
     if not all(f.startswith("--") for f in flags):
-        return True
+        raise ValueError(f"apply_gate {apply_gate!r} is not a list of flags "
+                         "(data_dependency_schema/operations.yaml)")
     return all(getattr(args, flag_dest(f), False) for f in flags)
 
 
 def active_parts(record: dict, args: argparse.Namespace) -> List[dict]:
     """The parts of an operations.yaml record this invocation runs: the
     record itself if its own apply_gate is satisfied, and every mode whose
-    gate is. More than one can be active at once (`sync-params --apply
-    --refresh-dropdowns` satisfies the base gate and the mode's), so callers
-    take the union of what the parts declare."""
+    gate is. More than one can be active at once (a mode gated on
+    "--apply --some-flag" alongside the base "--apply"), so callers take the
+    union of what the parts declare."""
     parts = [record] if gate_satisfied(record["apply_gate"], None, args) else []
     return parts + [m for m in record.get("modes", [])
                     if gate_satisfied(m["apply_gate"], m["name"], args)]

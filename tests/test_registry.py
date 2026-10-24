@@ -35,7 +35,7 @@ def test_every_command_has_an_operations_yaml_record():
 
 
 @pytest.mark.parametrize("cli_command", [
-    "import-planar",      # already used argparse before Phase 5 unit A
+    "sync-planar",        # repeatable --lang (action="append")
     "generate-sheets",    # largest file, plain argparse.Namespace throughout
     "restructure-sheets", # hand-rolled colon/comma parsers under argparse
     "check-codebook",     # no flags at all

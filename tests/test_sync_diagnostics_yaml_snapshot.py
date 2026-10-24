@@ -13,7 +13,8 @@ hold is that the copy only ever moves toward the YAML:
   a longer previous version;
 - a YAML with errors in it never reaches the sheet, so a broken edit cannot
   wipe the live copy;
-- one unreachable sheet does not stop the other languages.
+- one unreachable sheet does not stop the other languages;
+- the Sheet's tab is protected (a read-only copy since unit 11b), once.
 
 Before migrating, the old code was driven from this same stand-in Drive through
 shims, across fifteen scenarios covering both directions of the command.
@@ -39,6 +40,7 @@ import yaml
 from coding import drive as drive_module
 from coding import drive_doorway
 from coding import sync_diagnostics_yaml as sdy
+from coding.locked_tabs import PROTECTION_DESCRIPTION, protect
 from coding.make_forms import _yaml_to_tsv_df
 from command_runner import run_command
 from fake_drive import (MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway,
@@ -68,6 +70,12 @@ def env(monkeypatch, tmp_path):
               "_root_folder_id": ROOT_FOLDER_ID}
     monkeypatch.setattr(drive_module, "_load_drive_config",
                         lambda: json.loads(json.dumps(config)))
+    # The recorded Sheets predate their protection (unit 11b); protected here,
+    # straight on the stand-in Drive, so each test sees only its content
+    # writes. test_an_unprotected_sheet_is_protected_once checks the rest.
+    for lang in DIAG_ID:
+        protect(doorway.spreadsheet(DIAG_ID[lang]), sheet(doorway, lang))
+    doorway.clear_mutations()
     drive_doorway.set_doorway(doorway)
 
     def run(argv: List[str]) -> str:
@@ -387,12 +395,28 @@ def test_one_unreachable_sheet_does_not_stop_the_others(env):
     assert "Done: 2 Sheet(s) updated." in out
 
 
+def test_an_unprotected_sheet_is_protected_once(env):
+    """A Sheet made before unit 11b is protected by the next push, even when
+    its content is already current, and only once."""
+    doorway, run = env
+    ss = doorway.spreadsheet(DIAG_ID[LANG])
+    ws = ss.sheet1
+    ss._protected_ranges.clear()      # as recorded, before unit 11b
+
+    out = run(["sdy", "--to-sheet", "--lang", LANG, "--apply"])
+    assert f"[{LANG}] Protected the diagnostics Sheet" in out
+    assert any(p.get("description") == PROTECTION_DESCRIPTION
+               for p in ss.list_protected_ranges(ws.id))
+    doorway.clear_mutations()
+    run(["sdy", "--to-sheet", "--lang", LANG, "--apply"])
+    assert doorway.mutations == []
+
+
 # ---------------------------------------------------------------------------
-# The other two directions do not go near Drive
+# The other direction does not go near Drive
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("argv", [["sdy"], ["sdy", "--from-tsv"]])
-def test_the_local_directions_touch_no_sheet(env, argv):
+def test_the_local_direction_touches_no_sheet(env):
     doorway, run = env
-    run(argv)
+    run(["sdy"])
     assert doorway.mutations == []

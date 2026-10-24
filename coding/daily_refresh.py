@@ -27,8 +27,8 @@ each command's output also goes to the run's summary page
 
 Moved here from the workflow file on 2026-10-17 (Phase 10 unit 8, issue
 #271): the steps, their order, and every issue body are unchanged from it,
-apart from three fixes noted where they apply (stale drift and
-planar-change files from an earlier run are deleted first; a door
+apart from three fixes noted where they apply (a stale planar-change
+file from an earlier run is deleted first; a door
 violation is no longer reported twice; the overwrite check's issue is
 filed even when an earlier step broke). Since Phase 10 unit 6c
 (2026-10-22) the overwrite check and its issue read each language's change
@@ -193,17 +193,17 @@ def _details(summary: str, text: str) -> str:
 def planar_changed_body(changes: dict, failure: Optional[str] = None) -> str:
     lines = [
         "## Planar structure changed\n\n",
-        "One or more language planars were updated from Google Sheets. "
-        "Annotation sheets need to be updated to match.\n",
+        "One or more languages' planar files changed since their planar Sheets "
+        "were last updated. Annotation sheets need to be updated to match.\n",
     ]
     if failure is not None:
         lines.append(
-            "\n**A planar could not be taken in.** Its positions moved, and the "
-            "position numbers in its class sheets could not all be carried over "
-            "to the new numbering, so its planar file was left as it was. The "
-            "next refresh tries again; if this persists, run "
-            "`python -m coding import-planar` to see why.\n\n")
-        lines.append(_details("import-planar output", failure.strip()[-6000:]))
+            "\n**A planar Sheet could not be updated.** Its positions moved, and "
+            "the position numbers in its class sheets could not all be carried "
+            "over to the new numbering, so its planar Sheet was left as it was. "
+            "The next refresh tries again; if this persists, run "
+            "`python -m coding sync-planar` to see why.\n\n")
+        lines.append(_details("sync-planar output", failure.strip()[-6000:]))
     for lang_id, info in changes.items():
         lines.append(f"\n### {lang_id}\n\n")
         diff = info["diff"]
@@ -217,8 +217,11 @@ def planar_changed_body(changes: dict, failure: Optional[str] = None) -> str:
             lines.append(f"- `↷` position {old} is now position {new}\n")
         for col in diff.get("columns_added", []):
             lines.append(f"- `+` column `{col}` — added\n")
+        for col in diff.get("columns_removed", []):
+            lines.append(f"- `-` column `{col}` — removed\n")
         if not any([diff.get("added"), diff.get("deleted"), diff.get("renamed"),
-                    diff.get("remaps"), diff.get("columns_added")]):
+                    diff.get("remaps"), diff.get("columns_added"),
+                    diff.get("columns_removed")]):
             lines.append("- (content-only changes — elements, examples, or notes)\n")
         cells = info.get("position_cells") or {}
         if cells.get("changed"):
@@ -336,31 +339,9 @@ def dependent_stale_body(text: str) -> str:
                "python -m coding integrity-check --check-dependents   # shows the command per tab\n")
     out.append("```\n\n")
     out.append("Then run `python -m coding import-sheets --apply` to import the "
-               "updated sheet. Any removed rows will appear in `apply-pending` "
-               "for review before the TSV is updated.\n\n")
+               "updated sheet (or wait for the next daily refresh).\n\n")
     out.append("The issue closes automatically when the generated tabs are back in sync.\n")
     out.append("\n## Full log\n\n" + _details("Show full check output", text))
-    return "".join(out)
-
-
-def drift_body(drift: list) -> str:
-    out = [
-        f"## Diagnostics YAML drift detected — {today()}\n\n",
-        "The daily data refresh found ambiguous differences between a diagnostics TSV\n"
-        "(downloaded from Google Sheets) and the corresponding YAML source of truth.\n\n",
-        "**Ambiguous changes require coordinator review** before they can be applied.\n\n",
-        "To resolve:\n",
-        "1. Pull latest `coded_data/` and run `python -m coding sync-diagnostics-yaml --from-tsv` (dry run)\n",
-        "2. Review the output and edit the YAML directly for any ambiguous items\n",
-        "3. Run `python -m coding sync-diagnostics-yaml --apply` to regenerate the TSV from the corrected YAML\n\n",
-        "### Drift details\n\n",
-        "| Language | Class | Change type | Suggestions |\n",
-        "|---|---|---|---|\n",
-    ]
-    for entry in drift:
-        for item in entry.get("ambiguous", []):
-            suggestions = ", ".join(item.get("suggestions") or []) or "—"
-            out.append(f"| {entry['lang_id']} | {item['class_name']} | {item['kind']} | {suggestions} |\n")
     return "".join(out)
 
 
@@ -476,16 +457,16 @@ def sync_labels(r: Refresh) -> None:
     r.unreported("labels", run("issue", "--sync-labels", "--apply"))
 
 
-def import_planar(r: Refresh) -> None:
-    from .import_planar import PLANAR_CHANGES_PATH
+def sync_planar(r: Refresh) -> None:
+    from .sync_planar import PLANAR_CHANGES_PATH
     PLANAR_CHANGES_PATH.unlink(missing_ok=True)   # only today's changes count
-    result = run("import-planar", "--apply")
+    result = run("sync-planar", "--apply")
     changes = (json.loads(PLANAR_CHANGES_PATH.read_text(encoding="utf-8"))
                if PLANAR_CHANGES_PATH.exists() else {})
     if changes or not result.ok:
-        # A failed run is a changed planar that could not be taken in (its
-        # class sheets could not be renumbered): the file is left as it was,
-        # so the next run tries again, and the issue says why.
+        # A failed run is a changed planar whose class sheets could not be
+        # renumbered: its Sheet is left as it was, so the next run tries
+        # again, and the issue says why.
         r.report("planar-changed", True,
                  "Planar structure changed — annotation sheets need updating",
                  lambda: planar_changed_body(
@@ -495,19 +476,10 @@ def import_planar(r: Refresh) -> None:
 
 
 def import_sheets(r: Refresh) -> None:
-    from .import_sheets import DRIFT_PATH
-    DRIFT_PATH.unlink(missing_ok=True)            # only today's drift counts
     result = run("import-sheets", "--apply", "--ignore-status")
     r.summary("Import", result.output or "(import did not produce output)")
     r.report("import-error", not result.ok, "Import error in data refresh",
              lambda: import_error_body(result.output), "Import succeeded")
-
-
-def remind_pending(r: Refresh) -> None:
-    issues.remind_stale(
-        "pending-changes", 7,
-        f"Reminder: this pending-changes issue has been open for more than 7 days as of "
-        f"{today()}. Run `python -m coding apply-pending` to review and apply each change.")
 
 
 def check_notes(r: Refresh) -> None:
@@ -533,9 +505,9 @@ def diagnostics_to_sheet(r: Refresh) -> None:
 
 
 def proposal_sheets(r: Refresh) -> None:
-    """After both sources are final for the day (the planar import, the
-    diagnostics Sheet push), so today's source changes reach each proposal
-    sheet and its `proposal` issue compares against them."""
+    """After both copies are pushed for the day (the planar Sheet, the
+    diagnostics Sheet), so today's source changes reach each proposal sheet
+    and its `proposal` issue compares against them."""
     r.unreported("proposal sheets", run("proposal-sheets", "--apply"))
 
 
@@ -555,13 +527,6 @@ def check_dependents(r: Refresh) -> None:
     r.report("dependent-stale", not result.ok,
              "Dependent construction stale — regeneration needed",
              lambda: dependent_stale_body(result.output), "Dependent constructions in sync")
-
-
-def diagnostics_drift(r: Refresh) -> None:
-    from .import_sheets import DRIFT_PATH
-    drift = json.loads(DRIFT_PATH.read_text(encoding="utf-8")) if DRIFT_PATH.exists() else []
-    r.report("diagnostics-drift", bool(drift), "Diagnostics YAML drift detected",
-             lambda: drift_body(drift), "Diagnostics YAML drift resolved")
 
 
 def codebook(r: Refresh) -> None:
@@ -693,9 +658,8 @@ STEPS: List[Step] = [
     Step("before", "note when the run began (the overwrite check reads the log from then)",
          record_before),
     Step("labels", "issue --sync-labels --apply (labels exist before anything files)", sync_labels),
-    Step("planar", "import-planar --apply → planar-changed", import_planar),
+    Step("planar", "sync-planar --apply → planar-changed", sync_planar),
     Step("import", "import-sheets --apply --ignore-status → import-error", import_sheets),
-    Step("pending reminder", "remind on a pending-changes issue open over 7 days", remind_pending),
     Step("notes", "check-notes --apply (files its own collaborator-notes issues)", check_notes),
     Step("comments", "check-comments --apply (files its own collaborator-comments issues)",
          check_comments),
@@ -708,7 +672,6 @@ STEPS: List[Step] = [
     Step("regen dependents", "generate-sheets --regen-dependents → regen-dependents-error",
          regen_dependents),
     Step("dependents", "integrity-check --check-dependents → dependent-stale", check_dependents),
-    Step("drift", "diagnostics_drift.json from the import → diagnostics-drift", diagnostics_drift),
     Step("codebook", "check-codebook (+ generate-rule-update-prompt) → codebook-error", codebook),
     Step("manifest", "integrity-check --check-manifest → stale-manifest", stale_manifest),
     Step("integrity", "integrity-check → integrity-error", integrity),

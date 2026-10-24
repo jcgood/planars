@@ -95,6 +95,11 @@ private tree in every test below, so the revalidation pass sees exactly what
 annotation state (which would make these snapshots drift for reasons having
 nothing to do with this file).
 
+Since Phase 10 unit 11b (2026-10-24) the command no longer downloads the
+planar and diagnostics Sheets, so the planar-change, pending-changes,
+auto-apply and YAML-drift scenarios above are gone; one test checks that
+edits to those Sheets never reach the sources.
+
 Regenerate: PLANARS_UPDATE_SNAPSHOTS=1 pytest tests/test_import_sheets_snapshot.py
 """
 from __future__ import annotations
@@ -107,7 +112,6 @@ import sys
 from contextlib import redirect_stdout
 from datetime import datetime, timezone
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Callable, Dict, List, Optional, Tuple
 
 import pandas as pd
@@ -116,7 +120,6 @@ import pytest
 from coding import drive as drive_module
 from coding import drive_doorway, file_door
 from coding import import_sheets as is_
-from coding import state_files
 from command_runner import run_command
 from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, point_coded_data_at
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
@@ -126,7 +129,6 @@ SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "import_sheets"
 UPDATING = os.environ.get("PLANARS_UPDATE_SNAPSHOTS") == "1"
 
 LANGS = ["arao1248", "stan1293", "synth0001"]
-AUTO_APPLY_MODULES = ["coding.update_sheets", "coding.sync_params", "coding.generate_sheets"]
 
 # The archive filename and the change log embed the time the local-file door
 # wrote -- frozen so two runs a second apart don't disagree on nothing else.
@@ -151,14 +153,10 @@ class Env:
     """One stand-in Drive, one private copy of coded_data/, one command."""
 
     def __init__(self, doorway: FakeDriveDoorway, coded: Path,
-                 auto_apply_calls: List[Tuple[str, List[str]]],
-                 notified_pending: List[List[Dict]],
                  notified_collaborator: List[List[Dict]],
                  run: Callable[[List[str]], Tuple[str, Optional[int]]]) -> None:
         self.doorway = doorway
         self.coded = coded
-        self.auto_apply_calls = auto_apply_calls
-        self.notified_pending = notified_pending
         self.notified_collaborator = notified_collaborator
         self.run = run
 
@@ -226,32 +224,18 @@ def env(monkeypatch, tmp_path):
     schemas_dir.mkdir(parents=True)
     (schemas_dir / "languages.yaml").write_text("{}\n", encoding="utf-8")
 
-    auto_apply_calls: List[Tuple[str, List[str]]] = []
-
-    def make_stub(name):
-        def _main():
-            auto_apply_calls.append((name, list(sys.argv)))
-        return SimpleNamespace(main=_main)
-
     # revalidate_sheets() reads local TSVs from validate_coding's own
     # CODED_DATA constant, not this file's ROOT; the Drive door reads its
-    # own too. Every module's is pointed at the private tree -- before the
-    # stand-ins below go in, since pointing imports every coding module and
-    # some import from the modules the stand-ins replace.
+    # own too. Every module's is pointed at the private tree.
     point_coded_data_at(monkeypatch, coded)
-    for name in AUTO_APPLY_MODULES:
-        monkeypatch.setitem(sys.modules, name, make_stub(name))
 
-    notified_pending: List[List[Dict]] = []
     notified_collaborator: List[List[Dict]] = []
     saved_config: List[Dict] = []
 
     monkeypatch.setattr(is_, "ROOT", tmp_path)
     monkeypatch.setattr(is_, "ERROR_DIR", tmp_path / "import_errors")
-    monkeypatch.setattr(is_, "DRIFT_PATH", tmp_path / "diagnostics_drift.json")
     # Archive names and change-log times are the local-file door's.
     monkeypatch.setattr(file_door, "datetime", _FrozenDatetime)
-    monkeypatch.setattr(is_, "_notify_pending_changes", notified_pending.append)
     monkeypatch.setattr(is_, "_notify_collaborator_check", notified_collaborator.append)
     monkeypatch.setattr(is_, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(is_, "_save_drive_config", saved_config.append)
@@ -273,8 +257,7 @@ def env(monkeypatch, tmp_path):
         return buf.getvalue(), exit_code
 
     try:
-        yield Env(doorway, coded, auto_apply_calls, notified_pending,
-                  notified_collaborator, run)
+        yield Env(doorway, coded, notified_collaborator, run)
     finally:
         drive_doorway.reset_doorway()
 
@@ -336,8 +319,8 @@ def test_verify_aborts_transcript(env):
 
 
 def test_apply_multiple_kinds_of_change_transcript(env):
-    """One safe planar addition, one destructive planar deletion, one content
-    change -- each on a different language, in the same run."""
+    """A content change on one language's class sheet, and edits to two
+    planar Sheets, which are read-only copies and never read back (11b)."""
     env.edit_sheet_rows(env.planar_sheet("arao1248"), add_planar_position)
     env.edit_sheet_rows(env.planar_sheet("stan1293"), drop_last_planar_position)
     env.tab("synth0001", "ciscategorial", "general")._cell(1, 3).value = "y"
@@ -413,99 +396,28 @@ def test_content_change_archives_before_overwriting(env):
 
 
 # ---------------------------------------------------------------------------
-# Planar structural changes: safe addition vs. destructive deletion/reorder
+# The planar and diagnostics Sheets are never read back (unit 11b)
 # ---------------------------------------------------------------------------
 
-def test_planar_pure_addition_queues_update_sheets_and_auto_applies_it(env):
-    # synth0001, not arao1248: since issue #283's fix, arao1248's diagnostics
-    # Sheet (genuinely stale in this fixture -- missing free_occurrence/
-    # nonpermutability, issue #279's already-tracked gap) now downloads
-    # instead of being silently skipped, and correctly produces its own,
-    # unrelated diagnostics_class_removed pending entry. That's real,
-    # intentional behavior (see test_an_unrecognised_criterion_is_ambiguous_
-    # drift_not_a_crash's comment for the same reasoning) -- just not what
-    # this test is about, so it uses a language without that quirk.
-    env.edit_sheet_rows(env.planar_sheet("synth0001"), add_planar_position)
-    out, _ = env.run(["import-sheets", "--lang", "synth0001", "--apply"])
-    assert "queuing update-sheets" in out
-    assert ("coding.update_sheets", ["update-sheets", "--apply"]) in env.auto_apply_calls
-    assert not state_files.PENDING_PATH.exists()
+def test_edits_to_the_planar_and_diagnostics_sheets_never_reach_the_sources(env):
+    """Both Sheets are read-only copies; until 2026-10-24 this command
+    downloaded them into planar_{lang}.tsv and diagnostics_{lang}.tsv."""
+    setup = env.coded / "stan1293" / "lang_setup"
+    archive = env.coded / "stan1293" / "archive" / "lang_setup"
 
+    def snapshot():
+        files = {p.name: p.read_bytes() for p in setup.iterdir() if p.is_file()}
+        return files, sorted(p.name for p in archive.glob("*")) if archive.exists() else []
 
-def test_planar_deletion_produces_a_pending_entry_not_an_auto_apply(env):
+    before = snapshot()
     env.edit_sheet_rows(env.planar_sheet("stan1293"), drop_last_planar_position)
-    out, _ = env.run(["import-sheets", "--apply"])
-    assert state_files.PENDING_PATH.exists()
-    entries = json.loads(state_files.PENDING_PATH.read_text())
-    assert any(e["change_type"] == "planar_deletion_or_reorder"
-              and e["lang_id"] == "stan1293" for e in entries)
-    assert env.auto_apply_calls == []
-    assert env.notified_pending  # _notify_pending_changes was called
+    env.edit_sheet_rows(env.diagnostics_sheet("stan1293"), lambda rows: rows[:-1])
 
+    out, exit_code = env.run(["import-sheets", "--lang", "stan1293", "--apply"])
 
-def test_planar_reorder_is_also_destructive(env):
-    def reorder(rows):
-        # Swap which position occupies slots 1 and 2, keeping the Position
-        # numbers themselves sequential (1, 2, 3, ...) -- swapping whole rows
-        # instead would leave Position reading 2, 1, 3, ... and get caught
-        # upstream by planar structural validation ("not sequential 1..N")
-        # before change-detection is ever reached.
-        header = rows[0]
-        pos_idx = header.index("Position")
-        out = [list(r) for r in rows]
-        row1, row2 = list(out[1]), list(out[2])
-        for i in range(len(header)):
-            if i == pos_idx:
-                continue
-            row1[i], row2[i] = row2[i], row1[i]
-        out[1], out[2] = row1, row2
-        return out
-    env.edit_sheet_rows(env.planar_sheet("synth0001"), reorder)
-    out, _ = env.run(["import-sheets", "--apply"])
-    entries = json.loads(state_files.PENDING_PATH.read_text())
-    assert any(e["change_type"] == "planar_deletion_or_reorder"
-              and e["lang_id"] == "synth0001" for e in entries)
-    # entries[0] isn't necessarily this test's entry -- since issue #283's
-    # fix, arao1248 also contributes its own, unrelated diagnostics_class_
-    # removed entry in every full run (see test_planar_pure_addition_...'s
-    # comment above), so pick the one this test actually cares about.
-    synth_entry = next(e for e in entries
-                       if e["change_type"] == "planar_deletion_or_reorder"
-                       and e["lang_id"] == "synth0001")
-    assert "Position order changed" in synth_entry["diff_summary"]
-
-
-# ---------------------------------------------------------------------------
-# Diagnostics YAML drift
-# ---------------------------------------------------------------------------
-
-def test_an_unrecognised_criterion_is_ambiguous_drift_not_a_crash(env):
-    # stan1293, not arao1248: arao1248's diagnostics_arao1248.yaml is missing
-    # some collection_required: "y" classes (Finding 19, issue #279's
-    # already-tracked missing proform class). That's a non-blocking gap
-    # (issue #283 fixed this download from being silently skipped over it
-    # entirely), but it still produces its own unrelated
-    # diagnostics_class_removed pending entry every run in this fixture --
-    # stan1293 declares every required class and has no such quirk, so it
-    # keeps this test's assertions focused on the drift scenario alone.
-    def add_unknown(rows):
-        header = rows[0]
-        class_idx, crit_idx = header.index("Class"), header.index("Criteria")
-        out = [list(r) for r in rows]
-        for r in out[1:]:
-            if len(r) > class_idx and r[class_idx] == "ciscategorial":
-                r[crit_idx] += ", totally_made_up_zyx{y/n}"
-                break
-        return out
-    env.edit_sheet_rows(env.diagnostics_sheet("stan1293"), add_unknown)
-
-    out, _ = env.run(["import-sheets", "--apply"])
-
-    assert "ambiguous YAML drift" in out
-    assert is_.DRIFT_PATH.exists()
-    drift = json.loads(is_.DRIFT_PATH.read_text())
-    entry = next(d for d in drift if d["lang_id"] == "stan1293")
-    assert entry["ambiguous"][0]["criterion"] == "totally_made_up_zyx"
+    assert_finished(out, exit_code)
+    assert snapshot() == before
+    assert "[planar]" not in out and "[diagnostics]" not in out
 
 
 # ---------------------------------------------------------------------------
@@ -583,10 +495,10 @@ def test_an_invalid_cell_is_pink_highlighted(env):
 
 
 # ---------------------------------------------------------------------------
-# A missing local row on an in-progress tab: collaborator-check, not pending
+# A missing local row on an in-progress tab: a collaborator-check issue
 # ---------------------------------------------------------------------------
 
-def test_a_missing_row_on_an_in_progress_tab_is_a_collaborator_check_not_pending(env):
+def test_a_missing_row_on_an_in_progress_tab_is_a_collaborator_check(env):
     env.run(["import-sheets", "--lang", "arao1248", "--apply"])  # materialize
 
     def drop_first_data_row(rows):
@@ -596,16 +508,6 @@ def test_a_missing_row_on_an_in_progress_tab_is_a_collaborator_check_not_pending
     out, _ = env.run(["import-sheets", "--lang", "arao1248", "--apply"])
 
     assert "ANOMALY: Missing rows" in out
-    # Not "not PENDING_PATH.exists()": since issue #283's fix, arao1248's
-    # diagnostics Sheet (genuinely stale in this fixture -- issue #279's
-    # already-tracked missing proform class) now downloads instead of being
-    # silently skipped, and correctly produces its own, unrelated
-    # diagnostics_class_removed pending entry every run. What this test
-    # actually checks is that the missing-row anomaly itself never becomes
-    # a pending entry -- it's a collaborator-check instead.
-    if state_files.PENDING_PATH.exists():
-        entries = json.loads(state_files.PENDING_PATH.read_text())
-        assert all(e["change_type"].startswith("diagnostics_") for e in entries)
     assert env.notified_collaborator
     assert env.notified_collaborator[0][0]["class_name"] == "ciscategorial"
 

@@ -15,7 +15,7 @@
     - "generate_sheets.py (--regen-dependents)"
     - "restructure_sheets.py (restructure-sheets --apply)"
     - "prune_manifest.py (prune-manifest --apply)"
-    - "sync_diagnostics_yaml.py (sync-diagnostics-yaml --apply, all three directions)"
+    - "sync_diagnostics_yaml.py (sync-diagnostics-yaml --apply, both directions)"
     - "daily_refresh.py (daily-refresh --apply, before its first step)"
   enforced_by: >-
     drive._check_coded_data_clean() -- called at the top of each apply path
@@ -124,11 +124,11 @@
 - id: coded_data_up_to_date
   description: >-
     coded_data/ has every commit GitHub's planars-data has, before a command
-    acts on state another machine may have written: the daily refresh's
-    pending changes (written on GitHub's machine), or a restructure journal
-    left by an interrupted run elsewhere (coding/state_files.py).
+    acts on state another machine may have written: a restructure journal
+    left by an interrupted run elsewhere (coding/state_files.py). (The daily
+    refresh's pending changes were the other such state until unit 11b
+    retired them with apply-pending, 2026-10-24.)
   required_by:
-    - "apply_pending.py (apply-pending)"
     - "restructure_sheets.py (restructure-sheets --apply)"
   enforced_by: >-
     preconditions.py, from each command's operations.yaml record:
@@ -137,9 +137,7 @@
     tell (no network, no upstream branch) it stops too, and says why. Skipped
     when coded_data/ is not a git repository.
   failure_symptom: >-
-    apply-pending reports "no pending changes" while the pending-changes
-    issue says there are some; or restructure-sheets starts new work over an
-    interrupted run it can't see.
+    restructure-sheets starts new work over an interrupted run it can't see.
   established: >-
     2026-10-20, Phase 10 unit 12, when the state files moved from the repo
     root of whichever machine ran the command into planars-data.

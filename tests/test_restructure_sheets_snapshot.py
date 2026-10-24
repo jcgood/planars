@@ -26,8 +26,8 @@ fixture before a rename-map apply that restructures every class in that
 language); `--lang` restricting to one language while two others are seeded;
 and a class absent from the manifest. The commit of coded_data/ (then
 `_autocommit_data`, since Phase 10 unit 6a the local-file door's `_commit`), `generate_notebooks.
-regenerate_notebooks`, `validate_coding.revalidate_sheets`, and `import_planar.
-push_planars_to_sheets` were stubbed identically on both sides (file 15's
+regenerate_notebooks`, `validate_coding.revalidate_sheets`, and the planar
+Sheet push (now `sync_planar.sync_planars`) were stubbed identically on both sides (file 15's
 precedent -- what this harness diffs is restructure_sheets.py's own Drive
 interaction, not theirs). stdout, the mutation log, `sheets_manifest.json`
 writes, and every `coded_data/` TSV written all came back byte-identical
@@ -60,7 +60,7 @@ import pytest
 from coding import drive as drive_module
 from coding import drive_door, drive_doorway, file_door
 from coding import generate_notebooks as gn
-from coding import import_planar as ip
+from coding import sync_planar as sp
 from coding import restructure_journal as rj
 from coding import restructure_sheets as rs
 from coding import validate_coding as vc
@@ -248,7 +248,7 @@ def env(monkeypatch, tmp_path):
     monkeypatch.setattr(vc, "revalidate_sheets",
                         lambda lang_ids=None: revalidate_calls.append(
                             {"lang_ids": lang_ids}))
-    monkeypatch.setattr(ip, "push_planars_to_sheets",
+    monkeypatch.setattr(sp, "sync_planars",
                         lambda lang_ids=None, apply=False: push_planar_calls.append(
                             {"lang_ids": lang_ids, "apply": apply}) or [])
     # notify.* is imported by name at module load time in restructure_sheets.py,
@@ -1119,7 +1119,7 @@ def test_a_transient_429_during_archiving_is_retried_not_a_crash(env, monkeypatc
     `fail_after` fires exactly once by design (see fake_drive.py), so this
     is a real "one 429, then the retry succeeds" case, not a permanent
     failure -- time.sleep is mocked so the real ~15s backoff wait doesn't
-    slow the suite down (same convention as test_apply_pending_snapshot.py).
+    slow the suite down.
     """
     monkeypatch.setattr("coding.drive_door.time.sleep", lambda *a, **kw: None)
 

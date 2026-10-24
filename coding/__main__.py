@@ -51,13 +51,12 @@ _COMMANDS = {
     "integrity-check":             "coding.integrity_check",
     "setup-root-folder":           "coding.setup_root_folder",
     "lookup-lang":                 "coding.glottolog",
-    "apply-pending":               "coding.apply_pending",
     "prune-manifest":              "coding.prune_manifest",
     "rename-construction":         "coding.rename_construction",
     "check-notes":                 "coding.check_notes",
     "check-comments":              "coding.check_comments",
     "refresh-dropdowns":           "coding.refresh_dropdowns",
-    "import-planar":               "coding.import_planar",
+    "sync-planar":                 "coding.sync_planar",
     "generate-status-sheet":       "coding.generate_status_sheet",
     "proposal-sheets":             "coding.proposal_sheets",
     "accept-proposal":             "coding.accept_proposal",
@@ -67,20 +66,10 @@ _COMMANDS = {
 }
 
 
-def _warn_pending() -> None:
-    """Print a reminder if pending_changes.json has unreviewed destructive changes."""
-    from coding.apply_pending import _load_pending
-    if _load_pending():
-        print("WARNING: Pending destructive changes require coordinator approval.")
-        print("         Run: python -m coding apply-pending\n")
-
-
 def main() -> None:
     if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
         print(__doc__)
         sys.exit(0)
-
-    _warn_pending()
 
     cmd = sys.argv[1]
     if cmd not in _COMMANDS:

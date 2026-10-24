@@ -110,10 +110,20 @@ def test_close_open_closes_every_open_issue_under_the_label(github):
 
 
 def test_remind_comments_only_on_issues_older_than_the_limit(github):
-    old = github.seed_issue("old", "pending-changes", created_at="2026-10-01T00:00:00Z")
-    github.seed_issue("new", "pending-changes", created_at="2026-10-12T00:00:00Z")
+    old = github.seed_issue("old", "sheet-drift", created_at="2026-10-01T00:00:00Z")
+    github.seed_issue("new", "sheet-drift", created_at="2026-10-12T00:00:00Z")
     now = datetime(2026, 10, 13, tzinfo=timezone.utc)
-    assert issues.remind_stale("pending-changes", 7, "nudge", now=now) == [old]
+    assert issues.remind_stale("sheet-drift", 7, "nudge", now=now) == [old]
+
+
+def test_a_retired_label_stays_registered_but_takes_no_new_issue(github):
+    """Its closed issues keep it (no label-drift), nothing new goes under it,
+    and CLAUDE.md's table leaves it out."""
+    retired = [e for e in issues.load_labels() if e.get("retired")]
+    assert {e["name"] for e in retired} >= {"pending-changes", "diagnostics-drift"}
+    with pytest.raises(issues.UnknownLabel, match="retired"):
+        issues.file_issue("pending-changes", "t", "b")
+    assert "`pending-changes`" not in issues.label_table()
 
 
 # ---------------------------------------------------------------------------

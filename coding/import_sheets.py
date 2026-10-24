@@ -26,32 +26,21 @@ end of an --apply that wrote anything, and daily by sheet-validation.yml),
 which lists them in each sheet's Status tab.
 
 What happens depends on each tab's Status:
-  ready-for-review  imported in full; problems printed; destructive changes
-                    go to pending_changes.json (and a pending-changes issue)
-                    for apply-pending, not straight into the TSV.
+  ready-for-review  imported in full; problems printed.
   in-progress       imported as a backup with warnings suppressed; missing
                     rows or columns, or a large drop in filled cells, file a
                     collaborator-check issue instead. --ignore-status treats
                     every tab as ready-for-review.
 
-pending_changes.json is written for each language right after that
-language's changes are detected, not once at the end, so a crash while a later
-language is processed keeps the earlier record.
+Only the class sheets are imported. The planar and diagnostics Sheets are
+read-only copies of their sources in planars-data and are never read back
+(Phase 10 unit 11b, 2026-10-24); a change to either source is proposed on
+the language's proposal sheet (proposal-sheets, accept-proposal).
 
 Which constructions have pair rows comes from diagnostic_classes.yaml
 (`_get_pair_row_constructions`, the same source validate-coding uses), never
 from a list in this file (data_dependency_schema/facts.yaml,
 `pair_row_construction_set`).
-
-The planar and diagnostics Sheet downloads print their validation notes
-(style nudges, a Glottolog reminder) to the run's output only, on purpose:
-nothing is wrong, and an issue for each would breed warning fatigue (#283).
-A diagnostics Sheet is downloaded only when it has no blocking error.
-
-A changed diagnostics TSV is diffed against the language's YAML
-(sync_diagnostics_yaml's --from-tsv logic); ambiguous differences go to
-diagnostics_drift.json, which the daily refresh turns into a
-diagnostics-drift issue.
 
 Side effect: invalid cells are highlighted pink in the Google Sheet during
 import (same behaviour as validate-coding), on every tab whatever its Status.
@@ -63,10 +52,9 @@ Authentication: same OAuth2 setup as generate_sheets.py (see drive.py).
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -82,17 +70,13 @@ from .restructure_sheets import _get_keyed_row_constructions, _get_pair_row_cons
 from . import file_door, issues
 from . import validate_coding as _val
 from .validate import ValidationIssue
-from .validate_planar import validate_planar_df as _validate_planar_df
-from .validate_diagnostics import validate_diagnostics_df as _validate_diagnostics_df
 from .make_forms import (
-    _diff_diagnostics_tsv_yaml,
     resolve_keystone_active,
     resolve_keystone_na_criteria,
     planar_to_manifest_dict,
 )
 
 ERROR_DIR    = ROOT / "import_errors"
-from .apply_pending import _load_pending, _save_pending  # noqa: E402
 
 # The share of an in-progress tab's filled cells (in rows present before and
 # after) that may disappear in one import before it files a collaborator-check
@@ -228,280 +212,6 @@ def _write_error_report(lang_id: str, lines: List[str], timestamp: str) -> Path:
     report_path = ERROR_DIR / f"{lang_id}_{timestamp}.txt"
     report_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return report_path
-
-
-# ---------------------------------------------------------------------------
-# Planar / diagnostics Sheet download and change detection
-# ---------------------------------------------------------------------------
-
-def _read_sheet_as_df(doorway, spreadsheet_id: str) -> Optional[pd.DataFrame]:
-    """Download sheet1 of a Google Sheet and return as a DataFrame, or None if empty."""
-    ss = doorway.open_spreadsheet(spreadsheet_id)
-    rows = ss.sheet1.get_all_values()
-    if not rows:
-        return None
-    return pd.DataFrame(rows[1:], columns=rows[0], dtype=str).fillna("")
-
-
-def _position_list(df: pd.DataFrame) -> List[Tuple[str, str]]:
-    """Return [(position_number, position_name), ...] from a planar DataFrame."""
-    return list(zip(df.get("Position", pd.Series(dtype=str)).astype(str),
-                    df.get("Position_Name", pd.Series(dtype=str)).astype(str)))
-
-
-def _parse_criteria_names(criteria_str: str) -> List[str]:
-    """Extract criterion names (stripping brace-syntax values) from a criteria cell."""
-    return [s.split("{")[0].strip() for s in criteria_str.split(",") if s.strip()]
-
-
-def _detect_planar_changes(
-    old_df: pd.DataFrame,
-    new_df: pd.DataFrame,
-    lang_id: str,
-) -> Tuple[Set[str], List[Dict]]:
-    """Compare old and new planar DataFrames for structural changes.
-
-    Returns (safe_commands, pending_entries).
-    safe_commands: set of CLI command strings that can be auto-applied.
-    pending_entries: list of dicts for pending_changes.json (destructive changes).
-    """
-    safe_cmds: Set[str] = set()
-    pending: List[Dict] = []
-
-    old_positions = _position_list(old_df)
-    new_positions = _position_list(new_df)
-
-    if old_positions == new_positions:
-        return safe_cmds, pending  # no structural change; overwrite freely
-
-    old_names = [p[1] for p in old_positions]
-    new_names = [p[1] for p in new_positions]
-    added_names   = set(new_names) - set(old_names)
-    removed_names = set(old_names) - set(new_names)
-
-    if added_names and not removed_names:
-        # Check old positions appear in same relative order within new list
-        it = iter(old_names)
-        cur = next(it, None)
-        for name in new_names:
-            if cur and name == cur:
-                cur = next(it, None)
-        in_order = cur is None
-        if in_order:
-            print(f"  [planar] New positions: {sorted(added_names)} — queuing update-sheets")
-            safe_cmds.add("python -m coding update-sheets --apply")
-            return safe_cmds, pending
-
-    # Deletions or reordering — destructive
-    diff_parts: List[str] = []
-    if removed_names:
-        diff_parts.append(f"Removed positions: {sorted(removed_names)}")
-    if added_names:
-        diff_parts.append(f"Added positions (alongside removals/reorder): {sorted(added_names)}")
-    if not removed_names and not added_names:
-        diff_parts.append("Position order changed")
-    diff_parts.append(f"Old order: {' | '.join(old_names)}")
-    diff_parts.append(f"New order: {' | '.join(new_names)}")
-
-    pending.append({
-        "lang_id": lang_id,
-        "change_type": "planar_deletion_or_reorder",
-        "description": "Planar structure has deleted or reordered positions — restructure-sheets required",
-        "diff_summary": "\n".join(diff_parts),
-        "command": "python -m coding restructure-sheets --apply",
-    })
-    return safe_cmds, pending
-
-
-def _detect_diagnostics_changes(
-    old_df: pd.DataFrame,
-    new_df: pd.DataFrame,
-    lang_id: str,
-    sheets_data: Optional[Dict] = None,
-) -> Tuple[Set[str], List[Dict]]:
-    """Compare old and new diagnostics DataFrames for changes to criteria and constructions.
-
-    Returns (safe_commands, pending_entries).
-    sheets_data: mapping of class_name → sheet info dict (from manifest) used to record
-    spreadsheet IDs in new-construction pending entries for later Drive verification.
-    """
-    safe_cmds: Set[str] = set()
-    pending: List[Dict] = []
-
-    def _parse_row(row) -> Tuple[Set[str], Set[str]]:
-        criteria = set(_parse_criteria_names(str(row.get("Criteria", ""))))
-        constructions = {c.strip() for c in str(row.get("Constructions", "")).split(",") if c.strip()}
-        return criteria, constructions
-
-    old_by_class: Dict[str, Tuple[Set, Set]] = {}
-    for _, row in old_df.iterrows():
-        cls = str(row.get("Class", "")).strip()
-        if cls:
-            old_by_class[cls] = _parse_row(row)
-
-    new_by_class: Dict[str, Tuple[Set, Set]] = {}
-    for _, row in new_df.iterrows():
-        cls = str(row.get("Class", "")).strip()
-        if cls:
-            new_by_class[cls] = _parse_row(row)
-
-    all_classes = set(old_by_class) | set(new_by_class)
-    for cls in sorted(all_classes):
-        if cls not in old_by_class:
-            print(f"  [diagnostics] New class '{cls}' — queuing generate-sheets")
-            safe_cmds.add("python -m coding generate-sheets --apply")
-            continue
-        if cls not in new_by_class:
-            pending.append({
-                "lang_id": lang_id,
-                "change_type": "diagnostics_class_removed",
-                "class_name": cls,
-                "description": f"Analysis class '{cls}' removed from diagnostics_{lang_id}.tsv — requires YAML update and manifest cleanup",
-                "diff_summary": (
-                    f"Class '{cls}' was present in the old diagnostics but not in the new download.\n"
-                    f"Steps to resolve:\n"
-                    f"  1. Remove '{cls}' from coded_data/{lang_id}/lang_setup/diagnostics_{lang_id}.yaml\n"
-                    f"  2. python -m coding sync-diagnostics-yaml --apply --lang {lang_id}\n"
-                    f"  3. python -m coding prune-manifest --apply\n"
-                    f"     (archives local TSVs for '{cls}' and removes stale manifest entry;\n"
-                    f"     skipping this causes import-sheets to keep re-importing the old sheet)"
-                ),
-                "command": "python -m coding prune-manifest --apply",
-            })
-            continue
-
-        old_criteria, old_constructions = old_by_class[cls]
-        new_criteria, new_constructions = new_by_class[cls]
-
-        added_criteria   = new_criteria   - old_criteria
-        removed_criteria = old_criteria   - new_criteria
-        added_cons       = new_constructions - old_constructions
-        removed_cons     = old_constructions - new_constructions
-
-        if added_criteria:
-            print(f"  [diagnostics/{cls}] New criteria: {sorted(added_criteria)} — queuing sync-params")
-            safe_cmds.add("python -m coding sync-params --apply")
-
-        if removed_criteria:
-            diff = (
-                f"Class '{cls}': criteria removed: {sorted(removed_criteria)}\n"
-                f"If renamed: python -m coding sync-params --rename old:new --apply\n"
-                f"If removed: python -m coding sync-params --remove --apply"
-            )
-            pending.append({
-                "lang_id": lang_id,
-                "change_type": "diagnostics_criteria_removed",
-                "description": f"Criteria removed from class '{cls}' — rename or removal required",
-                "diff_summary": diff,
-                "command": "python -m coding sync-params --remove --apply",
-            })
-
-        if added_cons:
-            sheet_id = (sheets_data or {}).get(cls, {}).get("spreadsheet_id", "")
-            cons_list = sorted(added_cons)
-            diff = (
-                f"Class '{cls}': new construction(s): {cons_list}\n"
-                f"A new tab must be added to the existing Google Sheet for this class.\n"
-                f"This cannot be automated without archiving existing annotations.\n"
-                f"Options:\n"
-                f"  1. Open the Google Sheet for '{cls}' / '{lang_id}' and add the tab(s)\n"
-                f"     manually, then set each to 'ready-for-review'.\n"
-                f"  2. Or run: python -m coding generate-sheets --force --apply\n"
-                f"     WARNING: --force archives ALL existing annotations for '{cls}'\n"
-                f"     and recreates the sheet from scratch.\n"
-                f"This entry will remain open until the tab(s) are verified in the Sheet."
-            )
-            pending.append({
-                "lang_id": lang_id,
-                "change_type": "diagnostics_new_construction",
-                "class_name": cls,
-                "new_constructions": cons_list,
-                "spreadsheet_id": sheet_id,
-                "instructions_shown": False,
-                "description": f"New construction(s) in class '{cls}' — new sheet tab required: {cons_list}",
-                "diff_summary": diff,
-                "command": "",
-            })
-
-        if removed_cons:
-            pending.append({
-                "lang_id": lang_id,
-                "change_type": "diagnostics_construction_removed",
-                "description": f"Construction(s) removed from class '{cls}'",
-                "diff_summary": f"Class '{cls}': removed: {sorted(removed_cons)}",
-                "command": "python -m coding sync-params --apply",
-            })
-
-    return safe_cmds, pending
-
-
-DRIFT_PATH = ROOT / "diagnostics_drift.json"
-
-
-def _check_yaml_drift(lang_id: str, tsv_df: pd.DataFrame) -> List[Dict]:
-    """Diff a diagnostics TSV against the language's YAML and return ambiguous entries.
-
-    Returns a list of ambiguous change dicts (unknown classes/criteria, class removals)
-    that require coordinator review. Deterministic changes are intentionally not returned
-    here — they are handled by ``sync-diagnostics-yaml --from-tsv --apply``.
-
-    Returns an empty list if no YAML exists for this language or no ambiguous drift found.
-    """
-    import yaml as _yaml
-    yaml_path = file_door.diagnostics_yaml(lang_id).path
-    if not yaml_path.exists():
-        return []
-    with open(yaml_path, encoding="utf-8") as f:
-        yaml_data = _yaml.safe_load(f)
-    _det, ambiguous = _diff_diagnostics_tsv_yaml(tsv_df, yaml_data, lang_id)
-    return ambiguous
-
-
-def _append_pending_changes(new_entries: List[Dict]) -> None:
-    """Append new_entries to pending_changes.json, preserving existing entries.
-
-    A file that can't be read stops the import rather than being written
-    over: until 2026-10-20 it was silently replaced, losing every entry
-    waiting for review."""
-    if not new_entries:
-        return
-    _save_pending(_load_pending() + new_entries)
-
-
-def _notify_pending_changes(entries: List[Dict]) -> None:
-    """Create or update a GitHub issue when pending_changes.json has new entries.
-
-    Skips quietly if GitHub can't be reached — the warning printed to stdout
-    is always the primary notification.
-    """
-    if not issues.available():
-        return
-
-    # Build issue body
-    lines = [
-        f"{len(entries)} destructive change(s) detected by `import-sheets` and written "
-        f"to `pending_changes.json`. Run `python -m coding apply-pending` to review "
-        f"and apply each change.\n"
-    ]
-    for e in entries:
-        lines.append(f"### {e.get('lang_id', '?')} — {e.get('description', '')}")
-        diff = e.get("diff_summary", "").strip()
-        if diff:
-            lines.append(f"```\n{diff}\n```")
-        cmd = e.get("command", "")
-        if cmd:
-            lines.append(f"Command: `{cmd}`")
-        lines.append("")
-
-    try:
-        number, created = issues.file_issue(
-            "pending-changes",
-            "Pending destructive changes require coordinator approval",
-            "\n".join(lines))
-        print(f"   GitHub issue #{number} "
-              f"{'created' if created else 'updated with new pending changes'}.")
-    except Exception as exc:
-        print(f"   (Could not create GitHub issue: {exc})")
 
 
 def _detect_collaborator_anomalies(
@@ -640,123 +350,6 @@ def _notify_collaborator_check(entries: List[Dict]) -> None:
         print(f"   (Could not create GitHub issue: {exc})")
 
 
-def _download_lang_setup_sheets(
-    doorway,
-    lang_id: str,
-    lang_data: Dict,
-    apply: bool = True,
-) -> Tuple[Set[str], List[Dict], List[Dict]]:
-    """Download planar and diagnostics Sheets for one language to local TSVs.
-
-    Validates the downloaded data before writing. Detects structural changes
-    and classifies them as safe (auto-applicable) or destructive (pending).
-    Writes go through the local-file door, which keeps the previous version.
-
-    Returns (safe_commands, pending_entries, drift_entries).
-    drift_entries contains ambiguous TSV→YAML differences for coordinator review.
-    """
-    safe_cmds: Set[str] = set()
-    pending: List[Dict] = []
-    drift_entries: List[Dict] = []
-
-    # --- Planar sheet ---
-    planar_id = lang_data.get("planar_spreadsheet_id")
-    if planar_id:
-        new_df = _read_sheet_as_df(doorway, planar_id)
-        if new_df is not None:
-            issues = _validate_planar_df(new_df)
-            errors = [i for i in issues if i.level == "error"]
-            if errors:
-                print(f"  [planar] Validation errors — skipping download:")
-                for i in errors:
-                    print(f"    {i}")
-            else:
-                for i in issues:
-                    print(f"  [planar] WARNING: {i}")
-
-                target = file_door.planar(lang_id)
-                out_path = target.path
-                if out_path.exists():
-                    old_df = pd.read_csv(out_path, sep="\t", dtype=str, keep_default_na=False)
-                    s, p = _detect_planar_changes(old_df, new_df, lang_id)
-                    safe_cmds |= s
-                    pending   += p
-                    content_changed = not old_df.reset_index(drop=True).equals(
-                        new_df.reset_index(drop=True)
-                    )
-                else:
-                    content_changed = True
-                if not content_changed:
-                    print(f"  [planar] No changes → {out_path.name}")
-                elif apply:
-                    file_door.write(target, file_door.frame_text(new_df),
-                                    why="downloaded from the planar Sheet")
-                    print(f"  [planar] Downloaded → {out_path.name}")
-                else:
-                    action = "Would overwrite (changed)" if out_path.exists() else "Would create"
-                    print(f"  [planar] {action} → {out_path.name}")
-
-    # --- Diagnostics sheet ---
-    diag_id = lang_data.get("diagnostics_spreadsheet_id")
-    if diag_id:
-        new_df = _read_sheet_as_df(doorway, diag_id)
-        if new_df is not None:
-            issues = _validate_diagnostics_df(new_df, lang_id)
-            errors = [i for i in issues if i.level == "error"]
-            # Gate on blocking errors only (issue #283) -- this used to gate
-            # on every level=="error" issue regardless of .blocking, which
-            # meant a non-blocking one (a required class not yet drafted,
-            # blocking=False by design -- see ValidationIssue's docstring)
-            # silently skipped the whole diagnostics Sheet download, every
-            # run, for as long as the gap stayed open. Confirmed actually
-            # happening to arao1248 (issue #279's already-tracked missing
-            # proform class) before this fix.
-            blocking_errors = [e for e in errors if e.blocking]
-            if blocking_errors:
-                print(f"  [diagnostics] Validation errors — skipping download:")
-                for i in blocking_errors:
-                    print(f"    {i}")
-            else:
-                for i in issues:
-                    if i.level == "error":
-                        print(f"  [diagnostics] ERROR (non-blocking): {i}")
-                    else:
-                        print(f"  [diagnostics] WARNING: {i}")
-
-                target = file_door.diagnostics_tsv(lang_id)
-                diag_path = target.path
-                if diag_path.exists():
-                    old_df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
-                    s, p = _detect_diagnostics_changes(old_df, new_df, lang_id, lang_data.get("sheets", {}))
-                    safe_cmds |= s
-                    pending   += p
-                    content_changed = not old_df.reset_index(drop=True).equals(
-                        new_df.reset_index(drop=True)
-                    )
-                else:
-                    content_changed = True
-                if not content_changed:
-                    print(f"  [diagnostics] No changes → {diag_path.name}")
-                elif apply:
-                    file_door.write(target, file_door.frame_text(new_df),
-                                    why="downloaded from the diagnostics Sheet")
-                    print(f"  [diagnostics] Downloaded → {diag_path.name}")
-                else:
-                    action = "Would overwrite (changed)" if diag_path.exists() else "Would create"
-                    print(f"  [diagnostics] {action} → {diag_path.name}")
-
-                # --- YAML drift check ---
-                # Compare the freshly-downloaded TSV against the YAML (if one exists).
-                # Only ambiguous changes are returned; deterministic ones are handled by
-                # sync-diagnostics-yaml --from-tsv --apply.
-                ambiguous = _check_yaml_drift(lang_id, new_df)
-                if ambiguous:
-                    print(f"  [diagnostics] {len(ambiguous)} ambiguous YAML drift item(s) — see diagnostics_drift.json")
-                    drift_entries.append({"lang_id": lang_id, "ambiguous": ambiguous})
-
-    return safe_cmds, pending, drift_entries
-
-
 def _verify_manifest_sheet_ids(doorway, manifest: Dict) -> None:
     """Abort if any annotation spreadsheet ID in the manifest is inaccessible.
 
@@ -857,9 +450,6 @@ def main(args: argparse.Namespace | None = None) -> None:
     # are not counted here since #309: validate-coding reports them, to the
     # annotator (the sheet's Status tab) and in a sheet-validation issue.
     total_import_errors = 0
-    all_safe_cmds: Set[str] = set()
-    all_pending: List[Dict] = []
-    all_drift: List[Dict] = []
     all_collaborator_check: List[Dict] = []
     pair_row_constructions = _get_pair_row_constructions()
     keyed_row_constructions = _get_keyed_row_constructions()
@@ -870,20 +460,6 @@ def main(args: argparse.Namespace | None = None) -> None:
         print(f"\nLanguage: {lang_id}")
         lang_warning_lines: List[str] = []
         lang_param_map = _val._load_param_map(lang_id)
-
-        # Download planar and diagnostics Sheets to local TSVs; detect changes.
-        s, p, d = _download_lang_setup_sheets(doorway, lang_id, lang_data, apply)
-        all_safe_cmds |= s
-        all_pending   += p
-        all_drift     += d
-        if apply and p:
-            # Write this language's destructive changes immediately rather than
-            # accumulating in all_pending for a single end-of-run write -- a
-            # crash while a later language is still being processed must not
-            # lose an earlier language's already-detected changes (issue #280).
-            # _append_pending_changes reads-then-writes, so calling it once per
-            # language is equivalent to one call at the end when nothing fails.
-            _append_pending_changes(p)
 
         for class_name, sheet_info in lang_data["sheets"].items():
             print(f"\n  {class_name}")
@@ -912,8 +488,8 @@ def main(args: argparse.Namespace | None = None) -> None:
 
                 # Determine tab status. In-progress sheets are imported for backup
                 # and validation (pink highlighting), but pipeline warnings are
-                # suppressed and anomalies are raised as collaborator-check rather
-                # than pending-changes. --ignore-status treats all tabs as ready.
+                # suppressed and anomalies are raised as collaborator-check.
+                # --ignore-status treats all tabs as ready.
                 tab_status = STATUS_READY
                 if not ignore_status and status_map:
                     tab_status = status_map.get(construction, STATUS_IN_PROGRESS)
@@ -1100,19 +676,6 @@ def main(args: argparse.Namespace | None = None) -> None:
     elif manifest_changed:
         print("(manifest.json has pending metadata changes — re-run with --apply to write)")
 
-    # Destructive changes were already written to pending_changes.json
-    # incrementally, per language, above (issue #280) -- this is summary/
-    # notification only, not a write.
-    if all_pending:
-        if apply:
-            print(f"\n⚠  {len(all_pending)} destructive change(s) written to pending_changes.json")
-            print("   Review and apply with: python -m coding apply-pending")
-            _notify_pending_changes(all_pending)
-        else:
-            print(f"\n⚠  {len(all_pending)} destructive change(s) detected (dry run — pass --apply to write pending_changes.json):")
-            for e in all_pending:
-                print(f"   {e.get('lang_id', '?')}: {e.get('description', '')}")
-
     # Raise collaborator-check issue if any in-progress anomalies were detected.
     if all_collaborator_check:
         if apply:
@@ -1124,37 +687,6 @@ def main(args: argparse.Namespace | None = None) -> None:
                 print(f"   {e['lang_id']}/{e['class_name']}/{e['construction']}: "
                       f"{len(e['anomalies'])} anomaly(s)")
 
-    # Write ambiguous YAML drift entries for coordinator review.
-    if all_drift:
-        print(f"\n⚠  {len(all_drift)} language(s) have ambiguous YAML drift — see diagnostics_drift.json")
-        print("   Resolve with: python -m coding sync-diagnostics-yaml --from-tsv --apply")
-        if apply:
-            DRIFT_PATH.write_text(
-                json.dumps(all_drift, indent=2, ensure_ascii=False),
-                encoding="utf-8",
-            )
-        else:
-            print("   (dry run — pass --apply to write diagnostics_drift.json)")
-
-    # Auto-apply safe downstream commands (new elements → update-sheets, etc.)
-    if all_safe_cmds:
-        if apply:
-            print(f"\nAuto-applying {len(all_safe_cmds)} safe downstream command(s):")
-            import importlib
-            for cmd in sorted(all_safe_cmds):
-                print(f"  {cmd}")
-                parts = cmd.split()
-                # parts: ["python", "-m", "coding", "<command>", ...]
-                mod_name = "coding." + parts[3].replace("-", "_")
-                extra_args = parts[4:]
-                sys.argv = [parts[3]] + extra_args
-                mod = importlib.import_module(mod_name)
-                mod.main()
-        else:
-            print(f"\nSafe downstream commands detected (dry run — pass --apply to auto-apply):")
-            for cmd in sorted(all_safe_cmds):
-                print(f"  {cmd}")
-
     if apply and (total_files > 0 or in_progress_files > 0):
         print("\n--- Revalidating sheets ---")
         from .validate_coding import revalidate_sheets
@@ -1165,8 +697,8 @@ def main(args: argparse.Namespace | None = None) -> None:
         # Issue #283: these used to never affect the exit code, so the daily
         # refresh's import-error issue never fired for them -- only a hard
         # crash did. Checked last, after every other step above, so one
-        # unreadable sheet doesn't cut short pending-changes/notification/
-        # revalidation work this run should still do regardless.
+        # unreadable sheet doesn't cut short notification/revalidation work
+        # this run should still do regardless.
         print(f"\n{total_import_errors} sheet(s) or tab(s) could not be read — see ERROR lines above.")
         sys.exit(1)
 

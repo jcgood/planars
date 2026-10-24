@@ -178,7 +178,7 @@ own hand edits (to the YAML or the planar) still need committing by hand.
    ```bash
    python -m coding generate-sheets --apply
    ```
-   This creates one Google Sheets file per analysis class, uploads contributor and coordinator Colab notebooks to Drive, creates editable Google Sheets for the planar structure and diagnostics files, and updates the Drive manifest. On re-runs, only classes not yet in the manifest are created. Omit `--apply` first to see a dry-run report of what would be created.
+   This creates one Google Sheets file per analysis class, uploads contributor and coordinator Colab notebooks to Drive, creates read-only Google Sheets copying the planar structure and diagnostics files, and updates the Drive manifest. On re-runs, only classes not yet in the manifest are created. Omit `--apply` first to see a dry-run report of what would be created.
 
 4. If this is the first language in the project, run `setup-root-folder` once after `generate-sheets` — see [Drive folder structure](#drive-folder-structure) below.
 
@@ -187,7 +187,6 @@ own hand edits (to the YAML or the planar) still need committing by hand.
 6. After collaborators have filled in sheets, import and verify:
    ```bash
    python -m coding import-sheets
-   python -m coding apply-pending        # if any destructive changes were detected
    python -m coding integrity-check --lang {lang_id}
    ```
 
@@ -262,21 +261,9 @@ python -m coding import-sheets --apply --ignore-status       # import all constr
 python -m coding import-sheets --apply --overwrite-existing  # also rewrite TSVs whose cells match but whose text differs
 ```
 
-Dry-run by default — pass `--apply` to write any TSVs. A TSV whose cells match the sheet is skipped; a changed one is rewritten, its previous version kept in `coded_data/{lang_id}/archive/{class}/` and the change logged in `coded_data/{lang_id}/changes.tsv` (the local-file door, below). On each run, `import-sheets` also:
+Dry-run by default — pass `--apply` to write any TSVs. A TSV whose cells match the sheet is skipped; a changed one is rewritten, its previous version kept in `coded_data/{lang_id}/archive/{class}/` and the change logged in `coded_data/{lang_id}/changes.tsv` (the local-file door, below).
 
-- **Downloads and validates** the planar structure and diagnostics Sheets for each language, writing them to `coded_data/{lang_id}/lang_setup/`.
-- **Auto-applies safe downstream commands** (`update-sheets --apply`, `sync-params --apply`, `generate-sheets --apply`) when additive changes are detected (new positions, new criteria, new construction tabs).
-- **Writes destructive changes** (planar deletions/reorders, criterion renames/removals, new constructions within existing classes) to `coded_data/.state/pending_changes.json` for coordinator review rather than applying them immediately. It is in planars-data, so the daily refresh's pending changes reach your machine with a pull; `apply-pending` refuses to run on a copy older than GitHub's and says to pull.
-
-After import, review and apply any pending changes:
-
-```bash
-git -C coded_data pull                   # the daily refresh's changes
-python -m coding apply-pending           # prompt for each change
-python -m coding apply-pending --all     # apply all without prompting
-```
-
-When destructive changes are detected, `import-sheets` automatically opens a GitHub issue labeled `pending-changes` (or comments on an existing open one) with a summary of each change. When `apply-pending` clears all entries, it closes the issue. This requires `gh` to be installed and authenticated; if it isn't, the terminal warning is the only notification.
+Only the class sheets are imported. The planar and diagnostics Sheets are read-only copies of `planar_{lang_id}.tsv` and `diagnostics_{lang_id}.yaml`, rebuilt daily and never read back; see [Changing the planar or the diagnostics](#changing-the-planar-or-the-diagnostics).
 
 If any annotation warnings are found, they are written to `import_errors/{lang}_{timestamp}.txt` as well as printed to the terminal. Invalid cells are highlighted pink in the Google Sheet regardless of `--overwrite-existing`.
 
@@ -408,19 +395,19 @@ When the diagnostic model changes — a new analysis class, a class renamed or r
 ```bash
 python -m coding sync-diagnostics-yaml --lang {lang_id}                  # dry run: show what would change
 python -m coding sync-diagnostics-yaml --apply --lang {lang_id}          # regenerate TSV from YAML
-python -m coding sync-diagnostics-yaml --to-sheet --apply --lang {lang_id} # push YAML back to diagnostics Sheet
+python -m coding sync-diagnostics-yaml --to-sheet --apply --lang {lang_id} # copy the YAML to the diagnostics Sheet
 ```
 
-The `--to-sheet` direction is run automatically by `data-refresh.yml` after every import, so the diagnostics Google Sheet stays in sync with the YAML. Run it manually after renaming a class or criterion locally if you want the Sheet updated before the next daily refresh.
+The daily refresh runs both, so the TSV and the diagnostics Google Sheet follow the YAML within a day. Run them by hand only if you want the Sheet updated sooner.
 
-When `import-sheets` downloads a diagnostics TSV from Google Sheets that differs from the YAML, it diffs them automatically:
-- **Deterministic changes** (known classes/criteria added or removed) are applied to the YAML by running `sync-diagnostics-yaml --from-tsv --apply`.
-- **Ambiguous changes** (unknown class/criterion names, class removals) are written to `diagnostics_drift.json` and surface as a `diagnostics-drift` GitHub issue.
+#### Changing the planar or the diagnostics
 
-To resolve a `diagnostics-drift` issue:
-1. Pull the latest data and run `python -m coding sync-diagnostics-yaml --from-tsv` (dry run) to see the diff.
-2. Edit the YAML directly for any ambiguous items.
-3. Run `python -m coding sync-diagnostics-yaml --apply` to regenerate the TSV from the corrected YAML.
+`planar_{lang_id}.tsv` and `diagnostics_{lang_id}.yaml` in planars-data are the only places to change a language's planar structure or diagnostics. The planar and diagnostics Google Sheets are read-only copies for the annotator (Phase 10 unit 11b, 2026-10-24): nothing is ever read back from them, and the daily refresh rebuilds them (`sync-planar --apply`, `sync-diagnostics-yaml --to-sheet --apply`).
+
+- **You** edit the file, commit it in planars-data, and let the daily refresh carry it to the Sheets (or run the command now).
+- **An annotator** proposes a change on the language's proposal sheet; you review it with `accept-proposal`, which writes the accepted parts to the file. See [the collaborator guide](collaborator-guide.md#proposing-a-change-to-the-planar-structure-or-the-diagnostics).
+
+When the planar's positions changed, `sync-planar` first renumbers any position numbers typed in the class sheets' answers, then updates the Sheet, and files a `planar-changed` issue naming the command that carries the change into the class sheets (`update-sheets` for added positions, `restructure-sheets` for moved, renamed or removed ones).
 
 #### Adding a new analysis class
 
@@ -465,7 +452,7 @@ Each pair sheet uses its own criterion column: `reflexive_allowed` (Principle A)
 
 `data-refresh` fills a dependent construction by itself when it has no rows: when the dependent TSV does not yet exist locally, or when it exists but is empty and its source tab has been marked `ready-for-review` in the Status tab. So an annotator who finishes a prescreening tab and marks it gets the next tab the following day, with no command to remember. Once the dependent has rows (even with blank values), it is never regenerated automatically; the `dependent-stale` issue body tells you which manual command to run.
 
-**`--regen-construction` refuses to silently drop annotated pairs.** If regenerating would remove a pair-row that has a real (non-blank) criterion value, it aborts instead of writing, listing exactly what would be lost (element, value, Source, Comments) rather than letting it vanish from the Sheet with the only trace being a later `import-sheets` → `apply-pending` diff. Two ways this comes up:
+**`--regen-construction` refuses to silently drop annotated pairs.** If regenerating would remove a pair-row that has a real (non-blank) criterion value, it aborts instead of writing, listing exactly what would be lost (element, value, Source, Comments) rather than letting it vanish from the Sheet. Two ways this comes up:
 
 - **The element was renamed or split** — run `restructure-sheets --rename-element`/`--split-element` first (see below); that carries the judgment forward and the guard then passes cleanly, since the old rows are already gone by the time `--regen-construction` runs.
 - **The position numbers shifted** (a position was inserted or deleted elsewhere in the planar structure) — the annotation is for a still-valid element, just filed under a stale position number. `integrity-check`'s DEPENDENT CONSTRUCTION STALENESS section detects this proactively (not just when you happen to hit the guard) and prints the exact `--pos-remap` flags to use — no need to compare old and new planar TSVs by hand:
@@ -553,15 +540,13 @@ For changes to the planar structure itself — positions added, dropped, or rena
 
 #### Adding elements to the planar structure
 
-Either add the elements in the language's planar Google Sheet (the daily refresh imports them and adds the rows), or, if you add them to `lang_setup/planar_{lang_id}.tsv` directly, push the file to the Sheet first. Otherwise the next daily `import-planar --apply` copies the Sheet back over your edit:
+Add them to `lang_setup/planar_{lang_id}.tsv` and commit and push it inside `coded_data/` (the daily refresh runs from what is on GitHub). The daily refresh updates the planar Sheet and adds the rows. To do it now:
 
 ```bash
-python -m coding import-planar --to-sheet --lang LANG_ID --apply   # local edit → planar Sheet
+python -m coding sync-planar --lang LANG_ID --apply   # the planar Sheet
 python -m coding update-sheets           # dry run — show what would change
 python -m coding update-sheets --apply   # add missing rows to existing sheets
 ```
-
-Commit and push the planar TSV inside `coded_data/` straight away (the daily refresh runs from what is on GitHub).
 
 If you see `(quota exceeded — waiting Xs before retry)` messages, the command is handling Google Sheets API rate limits automatically — just let it run.
 
@@ -579,9 +564,9 @@ python -m coding restructure-sheets --split-element "PRON{P,T}:me,you,him,her,it
 
 Only classes with actual changes are archived; unchanged classes are left untouched. Automatically regenerates and uploads notebooks afterward.
 
-A position that only changed number needs no flag: answers are carried over by position name. **Position numbers written inside answers** (co_exponents, conditioned_by, dependent-on-left/right — annotators may write positions as numbers or names) are renumbered earlier, by the daily refresh's `import-planar --apply`, before it takes in the new planar. The `planar-changed` issue lists every cell it renumbered, and under "Check these answers" any number whose position is gone, left as typed for the annotator to settle. If that renumbering fails, the planar file is not taken in and the issue says why; the next refresh tries again.
+A position that only changed number needs no flag: answers are carried over by position name. **Position numbers written inside answers** (co_exponents, conditioned_by, dependent-on-left/right — annotators may write positions as numbers or names) are renumbered by `sync-planar` before it updates the planar Sheet: at the end of `restructure-sheets --apply`, or by the daily refresh, whichever comes first. The `planar-changed` issue lists every cell it renumbered, and under "Check these answers" any number whose position is gone, left as typed for the annotator to settle. If that renumbering fails, the planar Sheet is left as it was and the issue says why; the next refresh tries again.
 
-**`--apply` also pushes `planar_{lang_id}.tsv` back to the master planar Google Sheet.** `restructure-sheets` reads the local planar TSV as its source of truth but never writes it, so if you edited it directly (by hand, or the TSV was updated some other way) before running this command, the master Sheet is now stale — and the next scheduled `import-planar --apply` would otherwise silently revert your edit. `--apply` runs `import-planar --to-sheet --apply` automatically at the end so this can't happen. If you ever edit `planar_{lang_id}.tsv` *without* going through `restructure-sheets` afterward, run `python -m coding import-planar --to-sheet --apply` yourself to keep the Sheet in sync.
+`restructure-sheets` reads `planar_{lang_id}.tsv` but never writes it: edit the file first, then run it.
 
 `--split-element old:new1,new2,...` retires one element in favor of several finer-grained replacements within the same position (e.g. a generic placeholder like `PRON{P,T}` replaced by specific pronoun forms). There's no principled way to carry a generic annotation over 1:1 to several specific new elements, so the new rows are left blank as usual — but if the old element had existing annotations, each new row's first answer cell gets a note (the small corner triangle) quoting them, so re-annotators see the prior judgment instead of having to remember it or hunt through Drive. The tooling never writes into `Comments`, which is the annotator's channel to you. Requires at least 2 comma-separated replacement elements; an element cannot appear in both `--rename-element` and `--split-element`.
 
@@ -830,7 +815,7 @@ The Drive manifest (`manifest.json`) is stored on Drive and contains all languag
 
 `drive_config.json` is created and updated automatically — you never need to edit it by hand. `generate-sheets` writes per-language IDs as it creates Drive folders and files; `setup-root-folder` adds the top-level `_root_folder_id`.
 
-Each `generate-sheets` run also creates an editable Google Sheet for `planar_*.tsv` in the language's Drive folder so collaborators can view (and coordinators can edit) the planar structure alongside their annotation sheets. The `diagnostics_{lang_id}.tsv` Sheet is a read-only view — a derived artifact. To change diagnostics, edit `diagnostics_{lang_id}.yaml` locally and run `sync-diagnostics-yaml --apply`. `import-sheets` reads the planar Sheet back to local TSVs and detects any changes.
+For a new language, `generate-sheets` also creates the planar and diagnostics Sheets in its Drive folder: read-only copies of `planar_{lang_id}.tsv` and `diagnostics_{lang_id}.yaml`, so collaborators can see them beside their annotation sheets. To change either, see [Changing the planar or the diagnostics](#changing-the-planar-or-the-diagnostics).
 
 #### First-time project setup
 

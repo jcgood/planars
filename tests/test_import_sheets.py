@@ -1,9 +1,10 @@
 """Tests for coding/import_sheets.py — data-protection helpers.
 
 Covers _verify_manifest_sheet_ids (aborts when any manifest sheet ID is
-inaccessible), the YAML drift check and the change detection. Archiving a
-TSV before it is overwritten is the local-file door's since Phase 10 unit
-6a: tests/test_file_door.py.
+inaccessible) and _tsv_content_changed. Archiving a TSV before it is
+overwritten is the local-file door's since Phase 10 unit 6a:
+tests/test_file_door.py. (The planar and diagnostics Sheet downloads, with
+their change detection and YAML drift check, were retired in unit 11b.)
 
 _check_coded_data_clean now lives in coding/drive.py (shared by import-sheets,
 update-sheets, sync-params, and generate-sheets --regen-dependents) — its
@@ -15,17 +16,9 @@ from pathlib import Path
 
 import pytest
 
-import textwrap
-
-import pandas as pd
-
-from coding import file_door
 from coding.import_sheets import (
-    _detect_diagnostics_changes,
-    _detect_planar_changes,
     _tsv_content_changed,
     _verify_manifest_sheet_ids,
-    _check_yaml_drift,
 )
 
 
@@ -94,57 +87,6 @@ class TestVerifyManifestSheetIds:
     def test_skips_non_dict_lang_data(self):
         manifest = {"_root_folder_id": "some_folder_id"}
         _verify_manifest_sheet_ids(_DoorwayStub(), manifest)  # no error
-
-
-# ---------------------------------------------------------------------------
-# _check_yaml_drift
-# ---------------------------------------------------------------------------
-
-_YAML_CONTENT = textwrap.dedent("""\
-    language: lang0001
-    classes:
-      ciscategorial:
-        constructions: [general]
-        criteria:
-          V-combines: [y, n]
-          N-combines: [y, n]
-""")
-
-
-class TestCheckYamlDrift:
-    def _tsv_df(self, criteria="V-combines{y/n}, N-combines{y/n}"):
-        return pd.DataFrame(
-            [{"Class": "ciscategorial", "Language": "lang0001",
-              "Constructions": "general", "Criteria": criteria}],
-            columns=["Class", "Language", "Constructions", "Criteria"],
-        )
-
-    def test_returns_empty_when_no_yaml(self, tmp_path, monkeypatch):
-        """No YAML → no drift."""
-        monkeypatch.setattr(file_door, "CODED_DATA", tmp_path / "coded_data")
-        tsv_df = self._tsv_df()
-        result = _check_yaml_drift("lang0001", tsv_df)
-        assert result == []
-
-    def test_returns_empty_when_in_sync(self, tmp_path, monkeypatch):
-        """TSV matches YAML → no ambiguous drift."""
-        monkeypatch.setattr(file_door, "CODED_DATA", tmp_path / "coded_data")
-        yaml_dir = tmp_path / "coded_data" / "lang0001" / "lang_setup"
-        yaml_dir.mkdir(parents=True)
-        (yaml_dir / "diagnostics_lang0001.yaml").write_text(_YAML_CONTENT)
-        result = _check_yaml_drift("lang0001", self._tsv_df())
-        assert result == []
-
-    def test_returns_ambiguous_for_unknown_criterion(self, tmp_path, monkeypatch):
-        """Unknown criterion in TSV surfaces as ambiguous drift entry."""
-        monkeypatch.setattr(file_door, "CODED_DATA", tmp_path / "coded_data")
-        yaml_dir = tmp_path / "coded_data" / "lang0001" / "lang_setup"
-        yaml_dir.mkdir(parents=True)
-        (yaml_dir / "diagnostics_lang0001.yaml").write_text(_YAML_CONTENT)
-        tsv_df = self._tsv_df("V-combines{y/n}, N-combines{y/n}, totally_made_up_zyx{y/n}")
-        result = _check_yaml_drift("lang0001", tsv_df)
-        assert len(result) == 1
-        assert result[0]["kind"] == "unknown_criterion"
 
 
 # ---------------------------------------------------------------------------
@@ -217,121 +159,6 @@ class TestTsvContentChanged:
         p = tmp_path / "general.tsv"
         _write_tsv_file(p, header, [])
         assert _tsv_content_changed(p, header, []) is False
-
-
-# ---------------------------------------------------------------------------
-# _detect_planar_changes
-# ---------------------------------------------------------------------------
-
-def _planar_df(positions: list[tuple[str, str]]) -> "pd.DataFrame":
-    import pandas as pd
-    nums, names = zip(*positions) if positions else ([], [])
-    return pd.DataFrame({"Position": list(nums), "Position_Name": list(names)})
-
-
-class TestDetectPlanarChanges:
-    def test_no_change_returns_empty(self):
-        df = _planar_df([("1", "p1"), ("2", "p2")])
-        safe, pending = _detect_planar_changes(df, df, "lang0001")
-        assert safe == set()
-        assert pending == []
-
-    def test_pure_addition_at_end_queues_update_sheets(self):
-        old = _planar_df([("1", "p1"), ("2", "p2")])
-        new = _planar_df([("1", "p1"), ("2", "p2"), ("3", "p3")])
-        safe, pending = _detect_planar_changes(old, new, "lang0001")
-        assert any("update-sheets" in cmd for cmd in safe)
-        assert pending == []
-
-    def test_pure_addition_inserted_in_middle_queues_update_sheets(self):
-        # New position inserted between existing ones — old positions still in order.
-        old = _planar_df([("1", "p1"), ("3", "p3")])
-        new = _planar_df([("1", "p1"), ("2", "p2"), ("3", "p3")])
-        safe, pending = _detect_planar_changes(old, new, "lang0001")
-        assert any("update-sheets" in cmd for cmd in safe)
-        assert pending == []
-
-    def test_deletion_produces_pending(self):
-        old = _planar_df([("1", "p1"), ("2", "p2")])
-        new = _planar_df([("1", "p1")])
-        safe, pending = _detect_planar_changes(old, new, "lang0001")
-        assert len(pending) == 1
-        assert pending[0]["change_type"] == "planar_deletion_or_reorder"
-
-    def test_reorder_produces_pending(self):
-        old = _planar_df([("1", "p1"), ("2", "p2")])
-        new = _planar_df([("2", "p2"), ("1", "p1")])
-        safe, pending = _detect_planar_changes(old, new, "lang0001")
-        assert len(pending) == 1
-        assert pending[0]["change_type"] == "planar_deletion_or_reorder"
-
-    def test_addition_with_removal_produces_pending(self):
-        # Adding p3 while removing p2 is not a safe-add — it goes to pending.
-        old = _planar_df([("1", "p1"), ("2", "p2")])
-        new = _planar_df([("1", "p1"), ("3", "p3")])
-        safe, pending = _detect_planar_changes(old, new, "lang0001")
-        assert len(pending) == 1
-
-
-# ---------------------------------------------------------------------------
-# _detect_diagnostics_changes
-# ---------------------------------------------------------------------------
-
-def _diag_df(rows: list[dict]) -> "pd.DataFrame":
-    import pandas as pd
-    cols = ["Class", "Language", "Constructions", "Criteria"]
-    return pd.DataFrame(rows, columns=cols)
-
-
-def _row_diag(cls: str, constructions: str = "general", criteria: str = "V-combines") -> dict:
-    return {"Class": cls, "Language": "lang0001",
-            "Constructions": constructions, "Criteria": criteria}
-
-
-class TestDetectDiagnosticsChanges:
-    def test_no_change_returns_empty(self):
-        df = _diag_df([_row_diag("ciscategorial")])
-        safe, pending = _detect_diagnostics_changes(df, df, "lang0001")
-        assert safe == set()
-        assert pending == []
-
-    def test_new_class_queues_generate_sheets(self):
-        old = _diag_df([_row_diag("ciscategorial")])
-        new = _diag_df([_row_diag("ciscategorial"), _row_diag("noninterruption")])
-        safe, pending = _detect_diagnostics_changes(old, new, "lang0001")
-        assert any("generate-sheets" in cmd for cmd in safe)
-
-    def test_removed_class_produces_pending(self):
-        old = _diag_df([_row_diag("ciscategorial"), _row_diag("noninterruption")])
-        new = _diag_df([_row_diag("ciscategorial")])
-        safe, pending = _detect_diagnostics_changes(old, new, "lang0001")
-        assert any(p["change_type"] == "diagnostics_class_removed" for p in pending)
-
-    def test_new_construction_produces_pending(self):
-        old = _diag_df([_row_diag("nonpermutability", constructions="element_prescreening")])
-        new = _diag_df([_row_diag("nonpermutability",
-                                  constructions="element_prescreening, general")])
-        safe, pending = _detect_diagnostics_changes(old, new, "lang0001")
-        assert any(p["change_type"] == "diagnostics_new_construction" for p in pending)
-
-    def test_removed_construction_produces_pending(self):
-        old = _diag_df([_row_diag("nonpermutability",
-                                  constructions="element_prescreening, general")])
-        new = _diag_df([_row_diag("nonpermutability", constructions="element_prescreening")])
-        safe, pending = _detect_diagnostics_changes(old, new, "lang0001")
-        assert any(p["change_type"] == "diagnostics_construction_removed" for p in pending)
-
-    def test_added_criterion_queues_sync_params(self):
-        old = _diag_df([_row_diag("ciscategorial", criteria="V-combines")])
-        new = _diag_df([_row_diag("ciscategorial", criteria="V-combines, N-combines")])
-        safe, pending = _detect_diagnostics_changes(old, new, "lang0001")
-        assert any("sync-params" in cmd for cmd in safe)
-
-    def test_removed_criterion_produces_pending(self):
-        old = _diag_df([_row_diag("ciscategorial", criteria="V-combines, N-combines")])
-        new = _diag_df([_row_diag("ciscategorial", criteria="V-combines")])
-        safe, pending = _detect_diagnostics_changes(old, new, "lang0001")
-        assert any(p["change_type"] == "diagnostics_criteria_removed" for p in pending)
 
 
 # ---------------------------------------------------------------------------

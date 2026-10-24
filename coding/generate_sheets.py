@@ -93,6 +93,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set,
 ROOT = Path(__file__).resolve().parent.parent
 
 import pandas as pd
+import yaml
 from gspread.utils import rowcol_to_a1
 
 from . import validate_planar as _val_planar
@@ -161,43 +162,32 @@ _STATUS_TAB = STATUS_TAB
 _STATUS_VALUES = STATUS_VALUES
 
 
-def _create_or_update_tsv_sheet(
-    doorway,
-    folder_id: str,
-    name: str,
-    tsv_path: Path,
-    lang_id: str,
-    kind: str,
-    existing_id: str = None,
-) -> Tuple[str, str]:
-    """Create or overwrite a Google Sheet with the contents of a TSV file.
-
-    If existing_id is given, clears and rewrites that sheet; otherwise creates a new one
-    (labelled ``kind``: ``planar_sheet`` or ``diagnostics_sheet``),
-    moves it to folder_id, and shares it with the language's annotator (if
-    languages.yaml names one; see coding/people.py) as a named editor.
+def _create_copy_sheet(doorway, folder_id: str, lang_id: str, kind: str) -> Tuple[str, str]:
+    """Create a language's planar or diagnostics Sheet (``kind``), filled from
+    its source as ``sheet_spec.copy_sheet_spec`` renders it, in ``folder_id``,
+    and shared with the language's annotator (if people.yaml names one) as
+    ``sheet_spec.sharing_spec`` says: a reader, since the Sheet is a copy.
+    Keeping it current afterwards is sync-planar's and
+    sync-diagnostics-yaml's job.
 
     Returns (spreadsheet_id, url).
     """
-    df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
-    all_rows = [list(df.columns)] + [list(row) for _, row in df.iterrows()]
+    from .sheet_spec import copy_sheet_spec, sharing_spec
 
-    if existing_id:
-        ss = doorway.open_spreadsheet(existing_id)
-        ws = ss.sheet1
-        # --force: the annotator may have edited the Sheet since its last
-        # import, so the door saves it first and logs the reason.
-        with drive_door.replacing(ws, f"{tsv_path.name} rewritten onto its Sheet (--force)"):
-            ws.clear()
-            ws.update(all_rows, "A1")
-    else:
-        ss = doorway.create_spreadsheet(name, identity=drive_door.lang_file(kind, lang_id))
-        doorway.move_file(ss.id, folder_id)
-        email = _annotator_email(lang_id)
-        if email:
-            doorway.create_permission(ss.id, type="user", role="writer", email=email)
-        ws = ss.sheet1
-        ws.update(all_rows, "A1")
+    tab = copy_sheet_spec(kind, lang_id, CODED_DATA).tab
+    all_rows = [tab.header] + [list(r) for r in tab.rows or ()]
+    identity = drive_door.lang_file(kind, lang_id)
+    ss = doorway.create_spreadsheet(f"{kind.removesuffix('_sheet')}_{lang_id}",
+                                    identity=identity)
+    doorway.move_file(ss.id, folder_id)
+    email = _annotator_email(lang_id)
+    role = sharing_spec(identity).role_for(email)
+    if email and role:
+        doorway.create_permission(ss.id, type="user", role=role, email=email)
+    ws = ss.sheet1
+    ws.update(all_rows, "A1")
+    from .locked_tabs import protect
+    protect(ss, ws)
 
     # Bold and freeze the header row.
     ss.batch_update({"requests": [
@@ -228,66 +218,33 @@ def _upload_lang_setup_as_sheets(
     lang_id: str,
     folder_id: str,
     existing_lang_data: Dict,
-    force: bool = False,
 ) -> Dict:
-    """Upload planar_*.tsv and diagnostics_{lang_id}.tsv as editable Google Sheets.
+    """Create a language's planar and diagnostics Sheets if it has none yet.
 
-    The planar Sheet is the source of truth for planar structure (import-planar copies it
-    down to the local TSV). The diagnostics Sheet is a copy of diagnostics_{lang_id}.yaml,
-    which is the source (sync-diagnostics-yaml keeps the two in line). This function pushes
-    the current local TSV state to Sheets on initial setup, or on --force to propagate
-    intentional edits.
-
-    Skips a file if its sheet ID is already in existing_lang_data and force=False.
+    Each is a read-only copy of its source in planars-data
+    (``planar_{lang_id}.tsv``, ``diagnostics_{lang_id}.yaml``; Phase 10 unit
+    11b). An existing one is left alone: sync-planar and sync-diagnostics-yaml
+    keep it current, daily.
 
     Returns a dict with planar_spreadsheet_id/url and diagnostics_spreadsheet_id/url
-    for any sheets that were created or updated (only keys present if the file exists).
+    (only keys present if the source exists).
     """
     result: Dict = {}
-
-    planar_files = sorted(planar_dir.glob("planar_*.tsv"))
-    if planar_files:
-        planar_path = planar_files[-1]   # most recent
-        existing_id = existing_lang_data.get("planar_spreadsheet_id")
-        if existing_id and not force:
-            print(f"  Planar sheet exists — skipping (use --force to overwrite)")
-            result["planar_spreadsheet_id"]  = existing_id
-            result["planar_spreadsheet_url"] = existing_lang_data.get("planar_spreadsheet_url", "")
-        else:
-            sheet_id, url = _create_or_update_tsv_sheet(
-                doorway, folder_id,
-                name=f"planar_{lang_id}",
-                tsv_path=planar_path,
-                lang_id=lang_id,
-                kind="planar_sheet",
-                existing_id=existing_id,
-            )
-            result["planar_spreadsheet_id"]  = sheet_id
-            result["planar_spreadsheet_url"] = url
-            action = "Updated" if existing_id else "Created"
-            print(f"  {action} planar sheet: {url}")
-
-    diag_path = planar_dir / f"diagnostics_{lang_id}.tsv"
-    if diag_path.exists():
-        existing_id = existing_lang_data.get("diagnostics_spreadsheet_id")
-        if existing_id and not force:
-            print(f"  Diagnostics sheet exists — skipping (use --force to overwrite)")
-            result["diagnostics_spreadsheet_id"]  = existing_id
-            result["diagnostics_spreadsheet_url"] = existing_lang_data.get("diagnostics_spreadsheet_url", "")
-        else:
-            sheet_id, url = _create_or_update_tsv_sheet(
-                doorway, folder_id,
-                name=f"diagnostics_{lang_id}",
-                tsv_path=diag_path,
-                lang_id=lang_id,
-                kind="diagnostics_sheet",
-                existing_id=existing_id,
-            )
-            result["diagnostics_spreadsheet_id"]  = sheet_id
-            result["diagnostics_spreadsheet_url"] = url
-            action = "Updated" if existing_id else "Created"
-            print(f"  {action} diagnostics sheet: {url}")
-
+    sources = (("planar", "planar_sheet", planar_dir / f"planar_{lang_id}.tsv"),
+               ("diagnostics", "diagnostics_sheet",
+                planar_dir / f"diagnostics_{lang_id}.yaml"))
+    for name, kind, source in sources:
+        if not source.exists():
+            continue
+        id_key, url_key = f"{name}_spreadsheet_id", f"{name}_spreadsheet_url"
+        existing_id = existing_lang_data.get(id_key)
+        if existing_id:
+            result[id_key] = existing_id
+            result[url_key] = existing_lang_data.get(url_key, "")
+            continue
+        sheet_id, url = _create_copy_sheet(doorway, folder_id, lang_id, kind)
+        result[id_key], result[url_key] = sheet_id, url
+        print(f"  Created {name} sheet: {url}")
     return result
 
 
@@ -1926,7 +1883,8 @@ def _regen_construction(
     print(f"    {construction_name}: {len(retained)} retained, {len(added)} added, "
           f"{len(removed)} removed")
     if removed:
-        print(f"    Removed pairs will surface via import-sheets --apply → apply-pending.")
+        print("    The next import-sheets --apply drops the removed pairs from the "
+              "local TSV (its previous version is archived).")
 
 
 def _add_constructions_to_existing_sheet(
@@ -2090,10 +2048,10 @@ def _plan_language_creation(
 
     Returns a dict:
         needs_folder / needs_notes_doc / needs_planar_sheet / needs_diagnostics_sheet: bool
-            (the latter two are True whenever force=True, matching
-            _upload_lang_setup_as_sheets' own "existing_id and not force: skip" logic --
-            caller further ANDs needs_diagnostics_sheet with whether a diagnostics TSV
-            exists locally, since that's a local-file fact this function doesn't have)
+            (the latter two only when the language has no such Sheet yet, as in
+            _upload_lang_setup_as_sheets -- caller further ANDs
+            needs_diagnostics_sheet with whether a diagnostics YAML exists
+            locally, since that's a local-file fact this function doesn't have)
         new_classes: sorted list of class names with no existing sheet at all
         new_constructions: {class_name: [construction, ...]} for constructions newly
             added to an EXISTING class's sheet (not counted again under new_classes)
@@ -2113,8 +2071,8 @@ def _plan_language_creation(
 
     needs_folder             = not bool(existing_lang_data.get("folder_id"))
     needs_notes_doc           = not bool(existing_lang_data.get("notes_doc_id"))
-    needs_planar_sheet        = force or not bool(existing_lang_data.get("planar_spreadsheet_id"))
-    needs_diagnostics_sheet   = force or not bool(existing_lang_data.get("diagnostics_spreadsheet_id"))
+    needs_planar_sheet        = not bool(existing_lang_data.get("planar_spreadsheet_id"))
+    needs_diagnostics_sheet   = not bool(existing_lang_data.get("diagnostics_spreadsheet_id"))
 
     anything = (
         needs_folder or needs_notes_doc or needs_planar_sheet or needs_diagnostics_sheet
@@ -2213,9 +2171,9 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     With --apply, iterates over all planar_*.tsv files in coded_data/*/lang_setup/
     and for each language:
-    - Creates planar_*.tsv and diagnostics_{lang_id}.tsv as editable Google Sheets (the planar
-      Sheet is the source for planar structure; the diagnostics Sheet copies the YAML).
-      Skips files whose sheet IDs are already in the manifest unless --force.
+    - Creates the planar and diagnostics Sheets, read-only copies of
+      planar_{lang_id}.tsv and diagnostics_{lang_id}.yaml, if the language has
+      none yet (sync-planar and sync-diagnostics-yaml keep them current).
     - Creates one annotation Google Sheet per analysis class (skipping existing ones unless
       --force). Each sheet has one tab per construction with dropdown validation.
     - Uploads the merged manifest.json manifest to Drive after each language.
@@ -2372,7 +2330,7 @@ def main(args: argparse.Namespace | None = None) -> None:
 
         element_index = build_element_index(planar_file.name, planar_dir)
 
-        # Validate the planar and diagnostics_{lang_id}.tsv. Warnings and
+        # Validate the planar and diagnostics_{lang_id}.yaml. Warnings and
         # non-blocking errors (a required class not drafted yet) are printed
         # and generation goes on; a blocking error skips the language, since
         # a sheet built from a file the schema rejects (a construction the
@@ -2386,10 +2344,10 @@ def main(args: argparse.Namespace | None = None) -> None:
                 print(f"    {issue}")
 
         diag_issues = []
-        diag_path = planar_dir / f"diagnostics_{lang_id}.tsv"
+        diag_path = planar_dir / f"diagnostics_{lang_id}.yaml"
         if diag_path.exists():
-            diag_df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
-            diag_issues = _val_diag.validate_diagnostics_df(diag_df, lang_id)
+            with open(diag_path, encoding="utf-8") as f:
+                diag_issues = _val_diag.validate_diagnostics_yaml(yaml.safe_load(f), lang_id)
             if diag_issues:
                 print(f"  Diagnostics validation ({len(diag_issues)} issue(s)):")
                 for issue in diag_issues:
@@ -2430,11 +2388,9 @@ def main(args: argparse.Namespace | None = None) -> None:
             if plan["needs_notes_doc"]:
                 print(f"    Collaborator notes doc")
             if plan["needs_planar_sheet"]:
-                action = "Overwrite" if existing_lang_data.get("planar_spreadsheet_id") else "Create"
-                print(f"    {action} planar sheet")
+                print("    Create planar sheet")
             if plan["needs_diagnostics_sheet"] and diag_path_exists:
-                action = "Overwrite" if existing_lang_data.get("diagnostics_spreadsheet_id") else "Create"
-                print(f"    {action} diagnostics sheet")
+                print("    Create diagnostics sheet")
             if plan["new_classes"]:
                 print(f"    New class sheet(s): {plan['new_classes']}")
             if plan["new_constructions"]:
@@ -2561,11 +2517,10 @@ def main(args: argparse.Namespace | None = None) -> None:
                         "longitude": glotto["longitude"],
                     }
 
-        # Upload planar and diagnostics as editable Google Sheets (see
-        # _upload_lang_setup_as_sheets for which is the source).
-        # Skips files whose sheet IDs are already in the manifest unless --force.
+        # The planar and diagnostics Sheets: read-only copies of their
+        # sources, made here only if the language has none yet.
         input_sheet_info = _upload_lang_setup_as_sheets(
-            doorway, planar_dir, lang_id, folder_id, existing_lang_data, force=force
+            doorway, planar_dir, lang_id, folder_id, existing_lang_data
         )
 
         if not force and existing_lang_data:

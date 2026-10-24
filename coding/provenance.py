@@ -19,10 +19,6 @@ See coding/gating.py's gate_satisfied() for how a record's or mode's gate
 is matched against real args. A write a command makes on every run, a dry
 run included, is declared in its record's `always_on_writes` (import-sheets'
 pink highlighting; design Q5), and the door allows and logs it.
-``apply_pending`` never writes to Drive itself: its writes are made by a
-subprocess call to another ``python -m coding ... --apply``, whose own door
-logs them. A record whose gate is stated in prose (apply-pending's) counts as
-always active (gating.py).
 
 Retention: append-forever (Jeff's decision on the unit E open question) --
 no rotation logic. The log is ``state_files.PROVENANCE_LOG`` (planars-data's

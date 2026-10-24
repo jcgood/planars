@@ -1,11 +1,10 @@
 SUMMARY
      6  append_rows
-   147  batch_request
-     3  clear
-     3  update
-   120    └─ repeatCell
+   125  batch_request
+     1  clear
+     1  update
+   100    └─ repeatCell
     18    └─ setDataValidation
-     2    └─ updateDimensionProperties
      7    └─ updateSheetProperties
 
 SHEET OPERATIONS
@@ -149,25 +148,6 @@ SHEET OPERATIONS
   stan1293/class:coreference  tab=prescreening
     repeatCell: col 3 (referential) rows 0-1
 
-  stan1293/class:coreference  tab=Instructions
-    clear: 
-    update: anchor A1 raw=True 36x1
-      | ['COREFERENCE — ANNOTATION INSTRUCTIONS']
-      | ['']
-      | ['WHAT THIS TESTS']
-      | ...
-    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 0-1
-    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 2-3
-    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 5-6
-    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 10-11
-    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 14-15
-    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 18-19
-    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 22-23
-    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 24-25
-    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 28-29
-    repeatCell: (whole sheet)
-    updateDimensionProperties: (whole sheet)
-
   stan1293/class:proform  tab=do_so_substitution
     repeatCell: col 3 (shareable_proform_replace) rows 0-1
 
@@ -238,25 +218,6 @@ SHEET OPERATIONS
 
   synth0001/class:coreference  tab=prescreening
     repeatCell: col 3 (referential) rows 0-1
-
-  synth0001/class:coreference  tab=Instructions
-    clear: 
-    update: anchor A1 raw=True 36x1
-      | ['COREFERENCE — ANNOTATION INSTRUCTIONS']
-      | ['']
-      | ['WHAT THIS TESTS']
-      | ...
-    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 0-1
-    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 2-3
-    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 5-6
-    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 10-11
-    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 14-15
-    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 18-19
-    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 22-23
-    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 24-25
-    repeatCell: col 0 (COREFERENCE — ANNOTATION INSTRUCTIONS) rows 28-29
-    repeatCell: (whole sheet)
-    updateDimensionProperties: (whole sheet)
 
   synth0001/class:proform  tab=do_so_substitution
     repeatCell: col 3 (shareable_proform_replace) rows 0-1

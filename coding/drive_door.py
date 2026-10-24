@@ -28,7 +28,8 @@ tests). Reads pass straight through. Every write is checked first:
   2. a locked tab only ever receives its builder's content;
   3. dropdowns only on criterion columns (and Status), with exactly the
      spec's values;
-  4. protection only on locked tabs;
+  4. protection only on locked tabs (and the one tab of a planar or
+     diagnostics Sheet);
   5. (every kind of file, not only class sheets) a grant is made, changed or
      removed only as the file's sharing spec says (``sheet_spec.sharing_spec``):
      named people at their role (a class sheet's annotator is a writer while
@@ -52,10 +53,11 @@ tests). Reads pass straight through. Every write is checked first:
      (issue #309: how an annotator without GitHub hears about problems).
 - **The rules for the planar and diagnostics Sheets** (design § 8, "5f"),
   each a one-tab copy of one file (``COPY_SHEETS``; ``sheet_spec.copy_sheet_spec``):
-  every cell is the annotator's until unit 11 locks the Sheet, so rule 1
-  holds for all of them (a push of the file goes through ``replacing()``,
-  which saves the Sheet first); no dropdowns; no protection; and rule 6
-  checks that the Sheet has one tab holding exactly the file.
+  every cell is the tooling's, since unit 11b made them read-only copies, so
+  rule 1 has nothing to look after; no dropdowns; the tab is protected
+  (annotators are readers by sharing, but coordinators are writers on the
+  root folder, which every file inherits); and rule 6 checks that the Sheet
+  has one protected tab holding exactly the file.
 - **The rules for a status sheet** (design § 8, "5f"; ``sheet_spec.status_sheet_spec``):
   every cell is the tooling's, so rule 1 has nothing to look after; no
   dropdowns; no protection (annotators are readers by sharing); and rule 6
@@ -260,9 +262,9 @@ LOCKED_TAB = "locked"
 STATUS_TAB_KIND = "status"
 CONSTRUCTION_TAB = "construction"
 TAB_KINDS = (LOCKED_TAB, CONSTRUCTION_TAB, STATUS_TAB_KIND)
-# The one tab of a planar or diagnostics Sheet: every cell the annotator's
-# until unit 11 locks it (sheet_spec.copy_sheet_spec). Not a label: the
-# Sheet has only one tab.
+# The one tab of a planar or diagnostics Sheet: every cell the tooling's, a
+# copy of its source that annotators read (sheet_spec.copy_sheet_spec; Phase
+# 10 unit 11b). Not a label: the Sheet has only one tab.
 COPY_TAB = "copy"
 # The one tab of a language's status sheet: every cell the tooling's, rebuilt
 # on every run (sheet_spec.status_sheet_spec). Not a label either.
@@ -273,7 +275,7 @@ STATUS_PAGE_TAB = "status page"
 REVIEW_TAB = "review"
 PROPOSAL_TAB = "proposal"
 # The tabs whose filled cells are annotators' answers (rule 1).
-_ANSWER_TABS = (CONSTRUCTION_TAB, STATUS_TAB_KIND, COPY_TAB, PROPOSAL_TAB)
+_ANSWER_TABS = (CONSTRUCTION_TAB, STATUS_TAB_KIND, PROPOSAL_TAB)
 
 
 @dataclass(frozen=True)
@@ -1556,11 +1558,12 @@ def _header_of(grid: List[List[Any]]) -> List[str]:
 
 
 def _copy_layout_mismatches(sheet: str, layout: List[Dict[str, Any]]) -> set:
-    """A planar or diagnostics Sheet (``sheet`` names it) has one tab, and
-    nothing on it is protected (until unit 11 locks it)."""
+    """A planar or diagnostics Sheet (``sheet`` names it) has one tab, and it
+    is protected (a read-only copy: coordinators, writers on the root folder,
+    would otherwise be able to edit it)."""
     out = {(f"tab {sheet} does not have", t["title"], "") for t in layout[1:]}
-    out |= {(f"protected, but {sheet} is not locked yet", t["title"], "")
-            for t in layout if t["protected"]}
+    out |= {(f"not protected, but {sheet} is a read-only copy", t["title"], "")
+            for t in layout[:1] if not t["protected"]}
     return out
 
 
@@ -1957,8 +1960,8 @@ class CheckedWorksheet:
         """Columns of this tab that the tooling owns (by header name)."""
         identity = self._ss.identity
         kind, _ = self._kind()
-        if kind in (COPY_TAB, PROPOSAL_TAB):
-            return set()     # every column the annotator's (a copy: until unit 11)
+        if kind == PROPOSAL_TAB:
+            return set()     # every column the annotator's
         if kind == STATUS_TAB_KIND:
             from planars.schema_values import STATUS_TOOLING_COLUMNS
             return set(STATUS_TOOLING_COLUMNS)
@@ -2178,9 +2181,9 @@ class CheckedWorksheet:
     # -- rule 4: protection only on locked tabs --------------------------------
     def _protection_problems(self) -> List[str]:
         kind, _ = self._kind()
-        if kind is None or kind == LOCKED_TAB:
+        if kind is None or kind in (LOCKED_TAB, COPY_TAB):
             return []
-        return [f"only locked tabs are protected; {self.title!r} is not one"]
+        return [f"only locked tabs and copies are protected; {self.title!r} is neither"]
 
     # -- applying a write to the door's view -----------------------------------
     def _apply(self, changes: Dict[Tuple[int, int], str]) -> None:

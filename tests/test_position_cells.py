@@ -1,6 +1,6 @@
 """Position cells: answers written as position numbers or names
-(planars/position_cells.py), and their renumbering by import-planar when the
-planar's numbers shift (coding/import_planar.py, _renumber_class_sheets)."""
+(planars/position_cells.py), and their renumbering by sync-planar when the
+planar's numbers shift (coding/sync_planar.py, _renumber_class_sheets)."""
 from __future__ import annotations
 
 import io
@@ -14,7 +14,7 @@ import pytest
 
 from coding import drive as drive_module
 from coding import drive_doorway, file_door
-from coding import import_planar as ip
+from coding import sync_planar as sp
 from coding.biuniqueness_rows import morpheme_rows
 from coding.schemas import position_criteria
 from command_runner import run_command
@@ -75,7 +75,7 @@ def test_co_exponent_labels_use_names_for_typed_numbers():
 
 
 # ---------------------------------------------------------------------------
-# import-planar renumbers the class sheets before taking in a new planar
+# sync-planar renumbers the class sheets before the planar Sheet takes a new planar
 # ---------------------------------------------------------------------------
 
 LANG = "stan1293"
@@ -92,7 +92,7 @@ def env(monkeypatch, tmp_path):
     coded = use_frozen_coded_data(monkeypatch, tmp_path)
     config = dict(FakeDriveDoorway.drive_config(),
                   **{LANG: {"planar_spreadsheet_id": PLANAR_ID}})
-    monkeypatch.setattr(ip, "PLANAR_CHANGES_PATH", tmp_path / "planar_changes.json")
+    monkeypatch.setattr(sp, "PLANAR_CHANGES_PATH", tmp_path / "planar_changes.json")
     monkeypatch.setattr(drive_module, "_load_drive_config", lambda: json.loads(json.dumps(config)))
     monkeypatch.setattr(file_door, "_commit", lambda run: None)
     drive_doorway.set_doorway(doorway)
@@ -108,7 +108,7 @@ def _run(monkeypatch, argv):
     code = 0
     try:
         with redirect_stdout(buf):
-            run_command(ip, "import-planar")
+            run_command(sp, "sync-planar")
     except SystemExit as exc:
         code = exc.code or 0
     return code, buf.getvalue()
@@ -126,19 +126,30 @@ def _set(ws, column: str, row_index: int, value: str) -> None:
     ws.update([[value]], rowcol_to_a1(row_index + 1, c))
 
 
-def _insert_position_at_2(doorway) -> None:
-    """The planar Sheet gains a position at number 2; every later one shifts."""
-    ws = doorway.spreadsheet(PLANAR_ID).sheet1
-    rows = ws.get_all_values()
+def _planar_path(coded) -> Path:
+    return coded / LANG / "lang_setup" / f"planar_{LANG}.tsv"
+
+
+def _write_planar(coded, rows) -> None:
+    pd.DataFrame(rows[1:], columns=rows[0]).to_csv(_planar_path(coded), sep="\t", index=False)
+
+
+def _planar_rows(coded):
+    df = pd.read_csv(_planar_path(coded), sep="\t", dtype=str, keep_default_na=False)
+    return [list(df.columns)] + [[str(v) for v in r] for _, r in df.iterrows()]
+
+
+def _insert_position_at_2(coded) -> None:
+    """The planar file gains a position at number 2; every later one shifts.
+    The planar Sheet still holds the old numbering."""
+    rows = _planar_rows(coded)
     header, data = rows[0], rows[1:]
     pos, name = header.index("Position"), header.index("Position_Name")
     new_row = list(data[1])
     new_row[pos], new_row[name] = "2", "v:inserted"
     for r in data[1:]:
         r[pos] = str(int(r[pos]) + 1)
-    ws.clear()
-    ws.update([header, data[0], new_row] + data[1:], "A1")
-    doorway.clear_mutations()
+    _write_planar(coded, [header, data[0], new_row] + data[1:])
 
 
 def _seed_answers(doorway) -> None:
@@ -151,9 +162,9 @@ def _seed_answers(doorway) -> None:
 def test_insertion_renumbers_typed_numbers_in_every_class_sheet(env, monkeypatch):
     doorway, coded, changes_path = env
     _seed_answers(doorway)
-    _insert_position_at_2(doorway)
+    _insert_position_at_2(coded)
 
-    code, out = _run(monkeypatch, ["import-planar", "--apply"])
+    code, out = _run(monkeypatch, ["sync-planar", "--apply"])
 
     assert code == 0, out
     elements = doorway.spreadsheet(BIUNIQ).worksheet("elements")
@@ -161,15 +172,14 @@ def test_insertion_renumbers_typed_numbers_in_every_class_sheet(env, monkeypatch
     assert _cell_at(elements, "co_exponents", 2) == "v:verbinflection"
     assert _cell_at(doorway.spreadsheet(FREE_OCC).worksheet("general"),
                     "dependent-on-left", 1) == "31"
-    planar = pd.read_csv(coded / LANG / "lang_setup" / f"planar_{LANG}.tsv", sep="\t", dtype=str)
-    assert "v:inserted" in set(planar["Position_Name"])
+    assert doorway.spreadsheet(PLANAR_ID).sheet1.get_all_values() == _planar_rows(coded)
     cells = json.loads(changes_path.read_text())[LANG]["position_cells"]
     assert any("3, 31 → 4, 32" in line for line in cells["changed"])
     assert not file_door.renumbering().path.exists()
 
     # Nothing left to do: a second run changes nothing.
     doorway.clear_mutations()
-    code, out = _run(monkeypatch, ["import-planar", "--apply"])
+    code, out = _run(monkeypatch, ["sync-planar", "--apply"])
     assert code == 0 and "up to date" in out
     assert _cell_at(elements, "co_exponents", 1) == "4, 32"
 
@@ -177,8 +187,8 @@ def test_insertion_renumbers_typed_numbers_in_every_class_sheet(env, monkeypatch
 def test_dry_run_reports_but_writes_nothing(env, monkeypatch):
     doorway, coded, _ = env
     _seed_answers(doorway)
-    _insert_position_at_2(doorway)
-    code, out = _run(monkeypatch, ["import-planar"])
+    _insert_position_at_2(coded)
+    code, out = _run(monkeypatch, ["sync-planar"])
     assert code == 0
     assert "would renumber: biuniqueness_deviations / elements" in out
     assert _cell_at(doorway.spreadsheet(BIUNIQ).worksheet("elements"), "co_exponents", 1) == "3, 31"
@@ -188,22 +198,22 @@ def test_dry_run_reports_but_writes_nothing(env, monkeypatch):
 def test_a_run_stopped_partway_never_renumbers_a_sheet_twice(env, monkeypatch):
     doorway, coded, _ = env
     _seed_answers(doorway)
-    _insert_position_at_2(doorway)
-    planar_path = coded / LANG / "lang_setup" / f"planar_{LANG}.tsv"
-    before = planar_path.read_text()
+    planar_sheet = doorway.spreadsheet(PLANAR_ID).sheet1
+    before = planar_sheet.get_all_values()
+    _insert_position_at_2(coded)
 
     # biuniqueness_deviations is renumbered first (sheets go in name order).
     # Its write lands, then the run dies before recording it as done.
     doorway.fail_after("values_batch_update", 1, RuntimeError("connection lost"))
-    code, out = _run(monkeypatch, ["import-planar", "--apply"])
+    code, out = _run(monkeypatch, ["sync-planar", "--apply"])
     assert code != 0
-    assert planar_path.read_text() == before, "planar file must wait for the sheets"
+    assert planar_sheet.get_all_values() == before, "planar Sheet must wait for the sheets"
     elements = doorway.spreadsheet(BIUNIQ).worksheet("elements")
     assert _cell_at(elements, "co_exponents", 1) == "4, 32"
     assert "pending" in json.loads(file_door.renumbering().path.read_text())[LANG][BIUNIQ]
 
     doorway.clear_faults()
-    code, out = _run(monkeypatch, ["import-planar", "--apply"])
+    code, out = _run(monkeypatch, ["sync-planar", "--apply"])
     assert code == 0, out
     assert _cell_at(elements, "co_exponents", 1) == "4, 32"   # not 5, 33
     assert _cell_at(doorway.spreadsheet(FREE_OCC).worksheet("general"),
@@ -214,13 +224,10 @@ def test_a_run_stopped_partway_never_renumbers_a_sheet_twice(env, monkeypatch):
 def test_a_number_whose_position_is_gone_is_left_and_listed(env, monkeypatch):
     doorway, coded, changes_path = env
     _set(doorway.spreadsheet(BIUNIQ).worksheet("elements"), "co_exponents", 1, "38")
-    ws = doorway.spreadsheet(PLANAR_ID).sheet1
-    rows = ws.get_all_values()
-    ws.clear()
-    ws.update(rows[:-1], "A1")   # the last position (38, v:rightedge) removed
     doorway.clear_mutations()
+    _write_planar(coded, _planar_rows(coded)[:-1])   # the last position (38, v:rightedge) removed
 
-    code, out = _run(monkeypatch, ["import-planar", "--apply"])
+    code, out = _run(monkeypatch, ["sync-planar", "--apply"])
     assert code == 0, out
     assert _cell_at(doorway.spreadsheet(BIUNIQ).worksheet("elements"), "co_exponents", 1) == "38"
     unresolved = json.loads(changes_path.read_text())[LANG]["position_cells"]["unresolved"]
@@ -236,7 +243,7 @@ def test_the_planar_changed_issue_lists_renumbered_and_unresolved_cells():
                 "position_cells": {"changed": ["biuniqueness_deviations / elements, row 2: 3 → 4"],
                                    "unresolved": ["free_occurrence / general, row 5: 38 — gone"]}}},
         failure="Traceback ... Drive is down")
-    assert "could not be taken in" in body and "Drive is down" in body
+    assert "could not be updated" in body and "Drive is down" in body
     assert "position 2 is now position 3" in body
     assert "row 2: 3 → 4" in body
     assert "Check these answers" in body and "38 — gone" in body
