@@ -40,10 +40,10 @@ from laminar_analysis import (  # noqa: E402
     select_representative_families,
     span_to_newick,
 )
-from planars_groupings import GROUPINGS  # noqa: E402
+from planars_groupings import GROUPINGS, observed_groups, permutation_groups  # noqa: E402
+from datasets import planar_position_count  # noqa: E402
 from laminar_tree_counts import (  # noqa: E402
     CLASS_COLORS,
-    CLASS_ORDER,
     collect_bundle_counts,
     collect_counts,
 )
@@ -231,23 +231,17 @@ def export_tree_counts(domain_file: Path, domains_dir: Path, data_dir: Path, bun
 
     Calls laminar_tree_counts.collect_counts() and collect_bundle_counts()
     unchanged (docs/PLAN_planarsviz_library.md section 4.3), so the four
-    count columns equal that script's nyan1308_tree_counts.tsv. Types are
-    counted in its CLASS_ORDER, then any other observed type alphabetically;
-    types and bundles with no tests in this dataset are left out. Added
+    count columns equal that script's <dataset>_tree_counts.tsv. Types and
+    bundles are planars_groupings.observed_groups()'s, as everywhere. Added
     columns: kind (all / class / bundle), label (the bar label: the type
     title-cased as that script does, or the bundle's display name) and colour
     (the type's colour from DOMAIN_TYPE_STYLE or the fallback grey, or the
     bundle's colour); empty for the all-tests rows, whose bar colours are a
     chart choice.
 
-    `bundles` is the dataset's chosen grouping set (--groupings); only its
-    entries with an observed type are counted, same as for classes.
+    `bundles` is the dataset's chosen grouping set (--groupings).
     """
-    observed = set(
-        pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
-    )
-    classes = [c for c in CLASS_ORDER if c in observed] + sorted(observed - set(CLASS_ORDER))
-    bundles = [b for b in bundles if set(b[1]) & observed]
+    classes, bundles = observed_groups(domain_file, bundles)
     palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
     bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
 
@@ -289,14 +283,10 @@ def export_fragmentation_test(domain_file: Path, domains_dir: Path, data_dir: Pa
     the 1.6 seconds the rest of the export costs, so it sits behind
     --fragmentation-permutations rather than on the default path.
     """
-    observed = set(
-        pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
-    )
-    classes = [c for c in CLASS_ORDER if c in observed] + sorted(observed - set(CLASS_ORDER))
-    bundles = [b for b in bundles if set(b[1]) & observed]
+    _classes, bundles = observed_groups(domain_file, bundles)
     palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
 
-    groups = [(c, [c]) for c in classes] + [(name, list(types)) for name, types, _c, _d in bundles]
+    groups = permutation_groups(domain_file, bundles, pooled=False)
     summary, null_counts = run_fragmentation_test(
         domain_file.name, domains_dir, groups=groups,
         n_permutations=n_permutations, seed=seed, n_positions=n_positions,
@@ -339,11 +329,12 @@ def export_span_placement_test(domain_file: Path, domains_dir: Path, data_dir: P
     the same span *lengths* placed at random would?
 
     Calls span_placement_test.run_test() unchanged, so the numbers equal that
-    script's own committed nyan1308_span_placement_test.tsv. Groups and their
-    label/colour follow export_boundary_strength_test()'s convention, which
-    means the same group order that script's own GROUPS uses -- "all" first,
-    then the domain types in CLASS_ORDER, then the bundles (`bundles` is the
-    dataset's chosen grouping set, --groupings). The order is load-bearing,
+    script's own <dataset>_span_placement_test.tsv. Groups come from
+    planars_groupings.permutation_groups(), as they do when that script runs
+    on its own -- "all" first, then the domain types, then the bundles
+    (`bundles` is the dataset's chosen grouping set, --groupings) -- and
+    their label/colour follow export_boundary_strength_test()'s convention.
+    The order is load-bearing,
     not cosmetic: run_test() advances one shared random stream across the
     groups in the order given, so a different order would give different
     (still valid, but no longer comparable) null draws.
@@ -359,15 +350,11 @@ def export_span_placement_test(domain_file: Path, domains_dir: Path, data_dir: P
     Not run unless asked, for the same reason as --fragmentation-permutations:
     one family enumeration per replicate costs minutes.
     """
-    observed = set(
-        pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
-    )
-    classes = [c for c in CLASS_ORDER if c in observed] + sorted(observed - set(CLASS_ORDER))
-    bundles = [b for b in bundles if set(b[1]) & observed]
+    _classes, bundles = observed_groups(domain_file, bundles)
     palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
     bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
 
-    groups = [("all", None)] + [(c, [c]) for c in classes] + [(name, list(types)) for name, types, _c, _d in bundles]
+    groups = permutation_groups(domain_file, bundles, pooled=True)
     summary, null_tallies = run_span_placement_test(
         domain_file.name, domains_dir, groups=groups,
         n_permutations=n_permutations, seed=seed, n_positions=n_positions,
@@ -421,15 +408,11 @@ def export_arbitrary_layers_test(domain_file: Path, domains_dir: Path, data_dir:
 
     Not run unless asked, for the same reason as --fragmentation-permutations.
     """
-    observed = set(
-        pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
-    )
-    classes = [c for c in CLASS_ORDER if c in observed] + sorted(observed - set(CLASS_ORDER))
-    bundles = [b for b in bundles if set(b[1]) & observed]
+    _classes, bundles = observed_groups(domain_file, bundles)
     palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
     bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
 
-    groups = [("all", None)] + [(c, [c]) for c in classes] + [(name, list(types)) for name, types, _c, _d in bundles]
+    groups = permutation_groups(domain_file, bundles, pooled=True)
     summary, null_tallies = run_arbitrary_layers_test(
         domain_file.name, domains_dir, groups=groups,
         n_permutations=n_permutations, seed=seed, n_positions=n_positions,
@@ -471,7 +454,7 @@ def export_boundary_strength_test(domain_file: Path, domains_dir: Path, data_dir
     same-length-profile random arrangement would produce?
 
     Calls boundary_strength_test.run_test() unchanged, so the numbers equal
-    that script's own committed nyan1308_boundary_strength_test.tsv. Groups
+    that script's own <dataset>_boundary_strength_test.tsv. Groups
     and their label/colour follow export_fragmentation_test()'s convention
     exactly (only domain types the data actually has, only entries of
     `bundles` -- the dataset's chosen grouping set, --groupings -- with a
@@ -482,15 +465,11 @@ def export_boundary_strength_test(domain_file: Path, domains_dir: Path, data_dir
     enumeration per replicate, same as span_placement_test.py) costs
     minutes, not the ~2 seconds the rest of the export takes.
     """
-    observed = set(
-        pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
-    )
-    classes = [c for c in CLASS_ORDER if c in observed] + sorted(observed - set(CLASS_ORDER))
-    bundles = [b for b in bundles if set(b[1]) & observed]
+    _classes, bundles = observed_groups(domain_file, bundles)
     palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
     bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
 
-    groups = [("all", None)] + [(c, [c]) for c in classes] + [(name, list(types)) for name, types, _c, _d in bundles]
+    groups = permutation_groups(domain_file, bundles, pooled=True)
     rows = run_boundary_strength_test(
         domain_file.name, domains_dir, groups=groups,
         n_permutations=n_permutations, seed=seed, n_positions=n_positions,
@@ -878,18 +857,6 @@ def with_synthetic_root(spans: list[Span], n_positions: int) -> tuple[list[Span]
     root = Span(1, n_positions, labels=("(root)",),
                 domain_types=frozenset(["(synthetic)"]), convergence=0)
     return spans + [root], True
-
-
-def planar_position_count(planar_file: Path | None) -> int | None:
-    """Number of positions in the planar table, or None without one.
-
-    The table's rows are its positions; load_position_labels() separately
-    checks they run 1..N with no gaps.
-    """
-    if planar_file is None or not planar_file.exists():
-        return None
-    with planar_file.open(encoding="utf-8", newline="") as handle:
-        return sum(1 for _ in csv.DictReader(handle, delimiter="\t"))
 
 
 def load_root_position(planar_file: Path | None, root_element: str) -> int | None:

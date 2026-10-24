@@ -5,7 +5,8 @@ nyan1308_tree_count_by_class.pdf shows very different family counts per
 domain type (morphosyntactic 3, phonological 6, tonosegmental 9,
 intonational 1, length 3), and nyan1308_tree_count_bundles.pdf the same for
 the three pooled bundles (phonologylike, syntaxlike, syntaxlike_notono --
-see BUNDLES in planars_groupings.py, reused here rather than redefined).
+nyan1308's "chichewa" grouping in planars_groupings.py; a dataset's groups
+come from permutation_groups() there).
 But every one of these groups also has a different number of underlying
 tests, and a group with more tests has more chances to produce conflicting
 spans -- so a bigger family count could just be a test-count artifact
@@ -48,10 +49,10 @@ project (the overlay charts, collect_counts() in laminar_tree_counts.py)
 conflict with each other, so this choice doesn't bias the null distribution,
 it just keeps every replicate's synthetic root consistent.
 
-Outputs (under results/nyan1308/counts-and-chance/ by default):
-  nyan1308_class_fragmentation_test.tsv    -- the 5 singleton domain types
-  nyan1308_bundle_fragmentation_test.tsv   -- the 3 pooled bundles
-  nyan1308_fragmentation_null_draws.tsv    -- every individual permutation's
+Outputs (under results/<dataset>/counts-and-chance/ by default):
+  <dataset>_class_fragmentation_test.tsv    -- the singleton domain types
+  <dataset>_bundle_fragmentation_test.tsv   -- the grouping's bundles
+  <dataset>_fragmentation_null_draws.tsv    -- every individual permutation's
                                                family count, long format
                                                (group, kind, family_count) --
                                                the full null distributions
@@ -63,9 +64,10 @@ Outputs (under results/nyan1308/counts-and-chance/ by default):
                                                rather than needing R to
                                                re-run the permutation itself.
 
-Usage:
+Usage (from NonCollaborative/; the dataset, its groupings and its planar
+table follow from --domain-file, see datasets.py):
   python scripts/analysis/class_fragmentation_test.py
-  python scripts/analysis/class_fragmentation_test.py --n-permutations 2000
+  python scripts/analysis/class_fragmentation_test.py --domain-file domains_chac1251_verbal.tsv
 
 The plain command reproduces the committed results/nyan1308/counts-and-chance/
 files exactly (5000 draws, seed 0). Both summary TSVs record the draw count and
@@ -82,7 +84,6 @@ from pathlib import Path
 import numpy as np
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_DIR = SCRIPT_DIR.parents[1]
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from laminar_analysis import (  # noqa: E402
@@ -92,22 +93,17 @@ from laminar_analysis import (  # noqa: E402
     find_conflicts,
     enumerate_maximal_laminar_families,
 )
-from planars_groupings import BUNDLES  # noqa: E402  (single source of truth for bundle definitions)
+from planars_groupings import GROUPINGS, permutation_groups  # noqa: E402
 from laminar_tree_counts import CLASS_COLORS  # noqa: E402  (single source of truth for class colors)
+from datasets import add_dataset_arguments, resolve_dataset_arguments  # noqa: E402
 
-CLASS_ORDER = ["morphosyntactic", "phonological", "tonosegmental", "intonational", "length"]
-
-# (group_name, domain_types) -- singleton classes as one-element lists, plus
-# every bundle from planars_groupings.py's BUNDLES (name, subset, color,
-# display label -- only name and subset are needed here).
-CLASS_GROUPS: list[tuple[str, list[str]]] = [(cls, [cls]) for cls in CLASS_ORDER]
-BUNDLE_GROUPS: list[tuple[str, list[str]]] = [(name, subset) for name, subset, _color, _display in BUNDLES]
-
-# group name -> house-style color, so the R plot doesn't need its own copy
-# of either palette.
+# group name -> house-style color, every class and every grouping's bundles,
+# so the R plot doesn't need its own copy of either palette.
 GROUP_COLORS: dict[str, str] = {
     **CLASS_COLORS,
-    **{name: color for name, _subset, color, _display in BUNDLES},
+    **{name: color
+       for grouping in GROUPINGS.values()
+       for name, _subset, color, _display in grouping["bundles"]},
 }
 
 
@@ -213,22 +209,20 @@ def write_null_draws(
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--domain-file", default="domains_nyan1308.tsv")
-    parser.add_argument("--domains-dir", type=Path, default=REPO_DIR / "domains")
-    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results" / "nyan1308" / "counts-and-chance")
+    add_dataset_arguments(parser, "counts-and-chance")
     # 5000 is what produced the committed results/nyan1308/counts-and-chance/
     # files, so the plain command reproduces them.
     parser.add_argument("--n-permutations", type=int, default=5000)
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
+    run = resolve_dataset_arguments(args, "counts-and-chance")
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
     # One shared pass over both singleton classes and bundles -- see module
     # docstring for why they can safely share the same permutation draws.
     all_rows, null_counts = run_test(
         args.domain_file, args.domains_dir,
-        groups=CLASS_GROUPS + BUNDLE_GROUPS,
-        n_permutations=args.n_permutations, seed=args.seed,
+        groups=permutation_groups(run.domain_path, run.bundles, pooled=False),
+        n_permutations=args.n_permutations, seed=args.seed, n_positions=run.n_positions,
     )
     # Carry what produced these numbers in the files themselves. A p-value from
     # 2000 draws and one from 5000 look identical in a TSV, and the run's own
@@ -238,13 +232,14 @@ def main():
         row["n_permutations"] = args.n_permutations
         row["seed"] = args.seed
 
-    bundle_names = {name for name, _types in BUNDLE_GROUPS}
+    bundle_names = {name for name, _types, _colour, _display in run.bundles}
     class_rows = [r for r in all_rows if r["group"] not in bundle_names]
     bundle_rows = [r for r in all_rows if r["group"] in bundle_names]
 
-    write_tsv(class_rows, args.output_dir / "nyan1308_class_fragmentation_test.tsv")
-    write_tsv(bundle_rows, args.output_dir / "nyan1308_bundle_fragmentation_test.tsv")
-    write_null_draws(null_counts, bundle_names, args.output_dir / "nyan1308_fragmentation_null_draws.tsv")
+    write_tsv(class_rows, run.output_dir / f"{run.dataset}_class_fragmentation_test.tsv")
+    write_tsv(bundle_rows, run.output_dir / f"{run.dataset}_bundle_fragmentation_test.tsv")
+    write_null_draws(null_counts, bundle_names,
+                     run.output_dir / f"{run.dataset}_fragmentation_null_draws.tsv")
 
     def show(title, rows):
         print(f"\n{title}")

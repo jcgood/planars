@@ -1,4 +1,5 @@
-"""Per-position boundary ("juncture") strength for nyan1308.
+"""Per-position boundary ("juncture") strength for one dataset (the figures
+below are nyan1308's).
 
 This is a deliberate shift in unit of analysis: everywhere else in this
 project's laminar-family work, the object being measured is a DOMAIN (a
@@ -44,8 +45,9 @@ counting logic on a randomly-repositioned replicate's spans/families
 without re-deriving it. compute_boundary_strength() is a thin wrapper
 that adds the load-from-disk step and the position range.
 
-Output (under results/nyan1308/boundaries/ by default):
-  nyan1308_boundary_strength.tsv
+Output (under results/<dataset>/boundaries/ by default; the dataset is named
+after --domain-file):
+  <dataset>_boundary_strength.tsv (with --subset, <dataset>_boundary_strength_<types>.tsv)
 
 The charts these numbers feed -- the per-side boundary chart and the density
 overlay -- are drawn by the planarsviz package from the bundle
@@ -66,7 +68,6 @@ from pathlib import Path
 from collections import defaultdict
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_DIR = SCRIPT_DIR.parents[1]
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from laminar_analysis import (  # noqa: E402
@@ -74,6 +75,7 @@ from laminar_analysis import (  # noqa: E402
     find_conflicts,
     enumerate_maximal_laminar_families,
 )
+from datasets import add_dataset_arguments, resolve_dataset_arguments  # noqa: E402
 
 
 def strength_from_families(
@@ -165,8 +167,7 @@ def compute_boundary_strength(
     return rows, len(families)
 
 
-def write_tsv(rows: list[dict], output_dir: Path, tag: str = ""):
-    path = output_dir / f"nyan1308_boundary_strength{tag}.tsv"
+def write_tsv(rows: list[dict], path: Path):
     with path.open("w", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=list(rows[0]), delimiter="\t")
         writer.writeheader()
@@ -175,9 +176,7 @@ def write_tsv(rows: list[dict], output_dir: Path, tag: str = ""):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--domain-file", default="domains_nyan1308.tsv")
-    parser.add_argument("--domains-dir", type=Path, default=REPO_DIR / "domains")
-    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results" / "nyan1308" / "boundaries")
+    add_dataset_arguments(parser, "boundaries", groupings=False)
     parser.add_argument(
         "--subset", default=None,
         help="Comma-separated Domain_Type values (e.g. morphosyntactic,length) "
@@ -185,12 +184,17 @@ def main():
              "get a _<subset> tag so a subset run never overwrites the pooled one.",
     )
     args = parser.parse_args()
+    run = resolve_dataset_arguments(args, "boundaries")
     subset = args.subset.split(",") if args.subset else None
     tag = f"_{'_'.join(subset)}" if subset else ""
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    rows, n_families = compute_boundary_strength(args.domain_file, args.domains_dir, subset=subset)
-    write_tsv(rows, args.output_dir, tag=tag)
+    # As the exporter does: the pooled analysis runs over the planar
+    # structure's positions, a subset analysis up to its own last one.
+    rows, n_families = compute_boundary_strength(
+        args.domain_file, args.domains_dir, subset=subset,
+        n_positions=None if subset else run.n_positions,
+    )
+    write_tsv(rows, run.output_dir / f"{run.dataset}_boundary_strength{tag}.tsv")
 
     print(f"{n_families} maximal laminar families" + (f" ({args.subset})" if args.subset else " (all domain types pooled)"))
     print(f"{'pos':>3} {'left_summed':>11} {'left_capped':>11} {'right_summed':>12} {'right_capped':>12}")

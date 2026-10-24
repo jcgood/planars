@@ -832,7 +832,7 @@ def main(domain_file: str = "domains_nyan1308.tsv",
 
     if truncated:
         print(f"           WARNING: enumeration halted at {MAX_FAMILIES} families.")
-        print(f"           The conflict structure may be more complex than expected.")
+        print("           The conflict structure may be more complex than expected.")
     elif n_families == 1:
         print(f"           Found {n_families} maximal family.")
         print("           → Tree hypothesis: FULLY SUPPORTED (data is perfectly laminar)")
@@ -860,27 +860,30 @@ def main(domain_file: str = "domains_nyan1308.tsv",
 
 
 if __name__ == "__main__":
-    # Print the report for nyan1308 (the language most carefully checked
-    # against the earlier treeTraversal.py algorithm), pooled and then one
-    # domain type at a time.
+    # Print the report for one dataset (default nyan1308, the language most
+    # carefully checked against the earlier treeTraversal.py algorithm):
+    # pooled, then one domain type at a time, then each of its grouping's
+    # bundles (planars_groupings.py; for nyan1308 a crude two-way
+    # morphosyntax/phonology split -- see the "Morphosyntax/phonology divide
+    # hypothesis" in this module's docstring -- plus syntax-like without
+    # tonosegmental). Only the types and bundles the dataset has.
     #
     # This used to write the R scripts for every chart as well. The charts now
     # come from the planarsviz package, which draws from the bundle
     # export_planarsviz_data.py writes -- run that, then scripts/
     # render_planarsviz.R, to redraw them.
-    main()
-    for subset_types, _colour, short_id in OVERLAY_GROUPS:
-        main(subset=subset_types)
+    import argparse
+    from datasets import add_dataset_arguments, dataset_name, dataset_groupings
+    from planars_groupings import GROUPINGS, observed_groups
 
-    # Two-bundle approximation of a morphosyntax/phonology split -- crude on
-    # purpose (this project's own diagnostic classes don't map cleanly onto
-    # that binary; see the "Morphosyntax/phonology divide hypothesis" in this
-    # module's own docstring), grouping phonological+intonational into one
-    # pooled analysis and morphosyntactic+tonosegmental+length into the other,
-    # plus the syntax-like bundle with tonosegmental dropped, to see how much
-    # of its structure that domain type alone was contributing. Defined once
-    # in planars_groupings.py (also read by laminar_tree_counts.py and the
-    # planarsviz exporter).
-    from planars_groupings import BUNDLES
-    for _name, _subset, _colour, _display in BUNDLES:
-        main(subset=_subset)
+    parser = argparse.ArgumentParser(description="Print the laminar family report for one dataset.")
+    add_dataset_arguments(parser, None)
+    args = parser.parse_args()
+    bundles = GROUPINGS[args.groupings or dataset_groupings(dataset_name(args.domain_file))]["bundles"]
+    classes, bundles = observed_groups(args.domains_dir / args.domain_file, bundles)
+
+    main(args.domain_file, str(args.domains_dir))
+    for domain_type in classes:
+        main(args.domain_file, str(args.domains_dir), subset=[domain_type])
+    for _name, subset, _colour, _display in bundles:
+        main(args.domain_file, str(args.domains_dir), subset=subset)

@@ -10,24 +10,9 @@ from the dataset name, prints the two commands in full, and with
 adds no setting the two scripts don't already have (plan
 ``docs/PLAN_ccdb_planarsviz.md`` step 3a).
 
-Where each setting comes from, first match wins:
-
-1. ``planar_tables/chart_settings_<dataset>.json``, if present: optional keys
-   ``language_name``, ``groupings``, ``root_position``, ``planar_type``,
-   ``forest_axis``.
-   For a language set up by hand (nyan1308 has one, for its display name).
-2. ``planar_tables/ccdb_<dataset>.json``, written by
-   ``scripts/analysis/import_ccdb.py`` for every CCDB structure: its root
-   position, and its language name and planar type, shown as e.g.
-   "Chácobo (verbal)"; the planar type also goes into axis titles
-   ("Positions on the nominal planar structure"). A CCDB structure always
-   uses the ``ccdb`` groupings and draws its per-type forests over the whole
-   planar structure (``--forest-axis planar``). These are CCDB's facts, so they are read
-   from the import's file rather than copied anywhere else.
-3. The exporter's own defaults: root from the planar table's ``root``
-   element, ``chichewa`` groupings, titles showing the dataset id, axis
-   titles saying "verbal", per-type forests stopping at their own last
-   position.
+Where each setting comes from (a dataset's own settings file, its CCDB
+import file, or the exporter's defaults) is ``scripts/analysis/datasets.py``'s
+dataset_settings(), which the standalone analysis scripts read too.
 
 The domains file, planar table, display labels, highlights and conflict
 groups are found by the exporter itself from the dataset name
@@ -49,7 +34,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import json
 import shlex
 import shutil
 import subprocess
@@ -58,6 +42,9 @@ import time
 from pathlib import Path
 
 NC = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(NC / "scripts" / "analysis"))
+
+from datasets import dataset_settings  # noqa: E402
 
 # The four permutation tests, each switched on by its own exporter flag. A
 # re-export without one of them drops that test's tables from the bundle, so
@@ -75,43 +62,6 @@ PERMUTATION_TABLES = [
     "span_placement_test.tsv",
     "arbitrary_layers_test.tsv",
 ]
-
-
-def read_json(path: Path) -> dict:
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def dataset_settings(dataset: str) -> dict[str, tuple[object, str]]:
-    """Each setting as (value, where it came from). None means the exporter's
-    own default applies."""
-    settings_file = NC / "planar_tables" / f"chart_settings_{dataset}.json"
-    ccdb_file = NC / "planar_tables" / f"ccdb_{dataset}.json"
-    settings = {
-        "language_name": (None, "exporter default (titles show the dataset id)"),
-        "groupings": (None, "exporter default (chichewa)"),
-        "root_position": (None, "exporter default (the planar table's root element)"),
-        "planar_type": (None, "exporter default (axis titles say verbal)"),
-        "forest_axis": (None, "exporter default (subset)"),
-    }
-    if ccdb_file.exists():
-        ccdb = read_json(ccdb_file)
-        source = str(ccdb_file.relative_to(NC))
-        settings["language_name"] = (f"{ccdb['language_name']} ({ccdb['planar_type']})", source)
-        settings["groupings"] = ("ccdb", source)
-        settings["planar_type"] = (ccdb["planar_type"], source)
-        settings["forest_axis"] = ("planar", source)
-        if ccdb.get("root_position") is not None:
-            settings["root_position"] = (int(ccdb["root_position"]), source)
-    if settings_file.exists():
-        own = read_json(settings_file)
-        unknown = sorted(set(own) - set(settings))
-        if unknown:
-            sys.exit(f"{settings_file.relative_to(NC)}: unknown key(s) {', '.join(unknown)}; "
-                     f"known keys are {', '.join(settings)}.")
-        source = str(settings_file.relative_to(NC))
-        for key, value in own.items():
-            settings[key] = (value, source)
-    return settings
 
 
 def export_command(dataset: str, settings: dict, permutations: int) -> list[str]:

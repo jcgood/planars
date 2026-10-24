@@ -1,4 +1,4 @@
-"""Count maximal laminar families for nyan1308, pooled, per class and per bundle.
+"""Count maximal laminar families for one dataset, pooled, per class and per bundle.
 
 The project calls a maximal laminar family a tree: it is a maximal set of
 observed spans that are mutually nested or disjoint.  Counts here therefore
@@ -8,8 +8,9 @@ The existing laminar_analysis.load_spans() function deduplicates diagnostics
 with the same positional span and excludes size-1 spans.  This script uses
 that same convention.  "Adjacent" means a span of size 2, i.e. [i, i+1].
 
-Output (under results/nyan1308/counts-and-chance/ by default):
-  nyan1308_tree_counts.tsv  -- includes both per-class and bundle rows
+Output (under results/<dataset>/counts-and-chance/ by default):
+  <dataset>_tree_counts.tsv  -- includes both per-class and bundle rows, for
+  the domain types and bundles the dataset has (planars_groupings.observed_groups())
 
 The bar charts these counts feed are drawn by the planarsviz package
 (plot_tree_counts()) from the bundle export_planarsviz_data.py writes, which
@@ -17,7 +18,7 @@ reads collect_counts()/collect_bundle_counts() here.
 
 Usage:
   python scripts/analysis/laminar_tree_counts.py
-  python scripts/analysis/laminar_tree_counts.py --domain-file domains_other.tsv
+  python scripts/analysis/laminar_tree_counts.py --domain-file domains_chac1251_verbal.tsv
 """
 
 from __future__ import annotations
@@ -28,7 +29,6 @@ import sys
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_DIR = SCRIPT_DIR.parents[1]
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from laminar_analysis import (  # noqa: E402
@@ -38,21 +38,13 @@ from laminar_analysis import (  # noqa: E402
 )
 # Pooled multi-class bundles come from planars_groupings.py, the one place
 # they are defined; their colours match each bundle's own forest chart.
-from planars_groupings import BUNDLES  # noqa: E402
-
-
-CLASS_ORDER = [
-    "morphosyntactic",
-    "phonological",
-    "tonosegmental",
-    "intonational",
-    "length",
-]
+from planars_groupings import BUNDLES, CLASS_ORDER, observed_groups  # noqa: E402
+from datasets import add_dataset_arguments, resolve_dataset_arguments  # noqa: E402
 
 # Exact pooled-plot colors. Read by class_fragmentation_test.py and by
 # export_planarsviz_data.py's DOMAIN_TYPE_STYLE, which is where R gets them.
 # `indeterminate` is CCDB's third domain type (absent from nyan1308); it is
-# not in CLASS_ORDER above, so it never displaces the five nyan1308 classes --
+# not in CLASS_ORDER, so it never displaces the five nyan1308 classes --
 # it only supplies a colour for datasets (CCDB's) that observe it.
 CLASS_COLORS = {
     "morphosyntactic": "#BC3C29",
@@ -149,8 +141,7 @@ def collect_bundle_counts(domain_file: str, domains_dir: Path,
     return rows
 
 
-def write_tsv(rows: list[dict], output_dir: Path):
-    path = output_dir / "nyan1308_tree_counts.tsv"
+def write_tsv(rows: list[dict], path: Path):
     with path.open("w", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=list(rows[0]), delimiter="\t")
         writer.writeheader()
@@ -159,15 +150,14 @@ def write_tsv(rows: list[dict], output_dir: Path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--domain-file", default="domains_nyan1308.tsv")
-    parser.add_argument("--domains-dir", type=Path, default=REPO_DIR / "domains")
-    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results" / "nyan1308" / "counts-and-chance")
+    add_dataset_arguments(parser, "counts-and-chance")
     args = parser.parse_args()
+    run = resolve_dataset_arguments(args, "counts-and-chance")
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    rows = collect_counts(args.domain_file, args.domains_dir)
-    bundle_rows = collect_bundle_counts(args.domain_file, args.domains_dir)
-    write_tsv(rows + bundle_rows, args.output_dir)
+    classes, bundles = observed_groups(run.domain_path, run.bundles)
+    rows = collect_counts(args.domain_file, args.domains_dir, classes)
+    bundle_rows = collect_bundle_counts(args.domain_file, args.domains_dir, bundles)
+    write_tsv(rows + bundle_rows, run.output_dir / f"{run.dataset}_tree_counts.tsv")
 
     for row in rows + bundle_rows:
         print(

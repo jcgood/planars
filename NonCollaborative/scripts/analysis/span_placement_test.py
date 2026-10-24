@@ -17,15 +17,16 @@ disjointness over crossing, so any tendency toward nesting in the real data
 has to come from the real positions themselves, not from anything already
 built into the null.
 
-A "group" is the pooled dataset ("all", every domain type), one of the 5
-single domain types, or one of the 3 bundles from planars_groupings.py's
-BUNDLES -- same GROUPS list shape as class_fragmentation_test.py's
-CLASS_GROUPS + BUNDLE_GROUPS, with "all" (subset=None) added as its own
-group here (that script didn't need an "all" row; this one does, since the
-single-group version of this test WAS the "all" analysis).
+A "group" is the pooled dataset ("all", every domain type), one of the
+dataset's domain types, or one of its grouping's bundles --
+planars_groupings.permutation_groups(), the same groups as
+class_fragmentation_test.py's plus the "all" row (that script didn't need
+one; this one does, since the single-group version of this test WAS the
+"all" analysis).
 
 Every group's random re-placement draws over the FULL dataset's
-n_positions (22 for nyan1308), not that group's own observed range -- e.g.
+n_positions (the planar table's position count, 22 for nyan1308), not that
+group's own observed range -- e.g.
 tonosegmental's real spans happen to stay within [5-17], but its null
 placements can land anywhere on the full structure. This matches the
 project-wide convention (run_domain_overlay(), compute_boundary_strength())
@@ -65,18 +66,19 @@ fragmentation test's own null-draws table (see
 docs/PLANARSVIZ_LIBRARY_PROGRESS.md's "Chart 19" section): 5000 raw draws
 collapsed to at most a few hundred distinct integers, per group.
 
-Outputs (under results/nyan1308/counts-and-chance/ by default):
-  nyan1308_span_placement_test.tsv        -- one row per group: n_spans,
+Outputs (under results/<dataset>/counts-and-chance/ by default):
+  <dataset>_span_placement_test.tsv        -- one row per group: n_spans,
                                               observed count, null summary
                                               stats, p-value, plus
                                               n_permutations/seed
-  nyan1308_span_placement_null_tally.tsv  -- (group, family_count, n) tally
+  <dataset>_span_placement_null_tally.tsv  -- (group, family_count, n) tally
                                               of every group's null
                                               distribution
 
-Usage:
+Usage (from NonCollaborative/; the dataset, its groupings and its planar
+table follow from --domain-file, see datasets.py):
   python scripts/analysis/span_placement_test.py
-  python scripts/analysis/span_placement_test.py --n-permutations 5000
+  python scripts/analysis/span_placement_test.py --domain-file domains_chac1251_verbal.tsv
 """
 
 from __future__ import annotations
@@ -90,7 +92,6 @@ from pathlib import Path
 import numpy as np
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_DIR = SCRIPT_DIR.parents[1]
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from laminar_analysis import (  # noqa: E402
@@ -99,18 +100,8 @@ from laminar_analysis import (  # noqa: E402
     find_conflicts,
     enumerate_maximal_laminar_families,
 )
-from planars_groupings import BUNDLES  # noqa: E402  (single source of truth for bundle definitions)
-
-CLASS_ORDER = ["morphosyntactic", "phonological", "tonosegmental", "intonational", "length"]
-
-# (group_name, domain_types) -- "all" (subset=None) first, then the 5 single
-# domain types, then the 3 bundles. Same shape as class_fragmentation_test.py's
-# CLASS_GROUPS + BUNDLE_GROUPS, plus the "all" row this test also needs.
-GROUPS: list[tuple[str, list[str] | None]] = (
-    [("all", None)]
-    + [(cls, [cls]) for cls in CLASS_ORDER]
-    + [(name, subset) for name, subset, _color, _display in BUNDLES]
-)
+from planars_groupings import permutation_groups  # noqa: E402
+from datasets import add_dataset_arguments, resolve_dataset_arguments  # noqa: E402
 
 
 def random_replicate(sizes: list[int], n_positions: int, rng: np.random.Generator) -> list[Span]:
@@ -232,20 +223,19 @@ def write_tally(null_tallies: dict[str, dict[int, int]], path: Path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--domain-file", default="domains_nyan1308.tsv")
-    parser.add_argument("--domains-dir", type=Path, default=REPO_DIR / "domains")
-    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results" / "nyan1308" / "counts-and-chance")
+    add_dataset_arguments(parser, "counts-and-chance")
     parser.add_argument("--n-permutations", type=int, default=5000)
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
+    run = resolve_dataset_arguments(args, "counts-and-chance")
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
     rows, null_tallies = run_test(
-        args.domain_file, args.domains_dir, groups=GROUPS,
-        n_permutations=args.n_permutations, seed=args.seed,
+        args.domain_file, args.domains_dir,
+        groups=permutation_groups(run.domain_path, run.bundles, pooled=True),
+        n_permutations=args.n_permutations, seed=args.seed, n_positions=run.n_positions,
     )
-    write_summary(rows, args.output_dir / "nyan1308_span_placement_test.tsv")
-    write_tally(null_tallies, args.output_dir / "nyan1308_span_placement_null_tally.tsv")
+    write_summary(rows, run.output_dir / f"{run.dataset}_span_placement_test.tsv")
+    write_tally(null_tallies, run.output_dir / f"{run.dataset}_span_placement_null_tally.tsv")
 
     print(f"{args.n_permutations} permutations, seed={args.seed}")
     print(f"{'group':20} {'n_spans':>7} {'observed':>8} {'null_mean':>9} {'null_p05-p95':>13} {'p(<=obs)':>9}")

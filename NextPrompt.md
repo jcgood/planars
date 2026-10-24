@@ -25,11 +25,11 @@ Six live threads. Read whichever matches what you're picking up.
 The Chichewa/CCDB analysis and charts move out of `NonCollaborative/` into
 the main repo and run on any planars language, English first. **Plan and
 Jeff's decisions: `docs/laminar-analysis-plan.md`** (don't re-ask them);
-**state: `docs/laminar-analysis-progress.md`**. **Next action:** Phase 1,
-taking the Chichewa assumptions out of the standalone analysis scripts in
-place, checked by all 22 bundles re-exporting byte-identical. Jeff's cuts
-to the cross-language charts (CCDB thread below) go before Phase 2 or
-after it, not during.
+**state: `docs/laminar-analysis-progress.md`**. Phase 1 done
+(2026-10-24). **Next action:** Phase 2, moving the code into `laminar/`
+and `planarsviz/` to the repo root. Jeff's cuts to the cross-language
+charts (CCDB thread below) go before Phase 2 or after it, not during: ask
+him which before starting.
 
 ### Thread: reviewing the span rules with Adam (Jeff told Adam, 2026-10-22)
 

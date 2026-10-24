@@ -54,11 +54,12 @@ both refined into some common tree T (fully resolved or not), all of their
 spans together would have to be pairwise compatible, contradicting
 maximality unless the two families were the same to begin with.
 
-Outputs (under results/nyan1308/laminar-families/ by default):
-  nyan1308_refinement_counts.tsv       -- one row per family: n_spans,
+Outputs (under results/<dataset>/laminar-families/ by default; the dataset
+is named after --domain-file):
+  <dataset>_refinement_counts.tsv       -- one row per family: n_spans,
                                            n_polytomies, max_arity,
                                            schroder_total, catalan_total
-  nyan1308_refinement_polytomies.tsv   -- one row per DISTINCT (span, arity)
+  <dataset>_refinement_polytomies.tsv   -- one row per DISTINCT (span, arity)
                                            polytomy seen anywhere across the
                                            families, with how many families
                                            it appears in -- the list to
@@ -77,11 +78,9 @@ import argparse
 import csv
 import math
 import sys
-from collections import defaultdict
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_DIR = SCRIPT_DIR.parents[1]
 EXPLORATORY_DIR = SCRIPT_DIR.parent / "exploratory"
 sys.path.insert(0, str(SCRIPT_DIR))
 sys.path.insert(0, str(EXPLORATORY_DIR))
@@ -95,6 +94,7 @@ from laminar_analysis import (  # noqa: E402
     get_children,
 )
 from catalan import all_trees_new  # noqa: E402  (little Schroder numbers, A001003)
+from datasets import add_dataset_arguments, resolve_dataset_arguments  # noqa: E402
 
 
 def catalan_number(n_leaves: int) -> int:
@@ -260,9 +260,7 @@ def write_tsv(rows: list[dict], path: Path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--domain-file", default="domains_nyan1308.tsv")
-    parser.add_argument("--domains-dir", type=Path, default=REPO_DIR / "domains")
-    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results" / "nyan1308" / "laminar-families")
+    add_dataset_arguments(parser, "laminar-families", groupings=False)
     parser.add_argument(
         "--subset", default=None,
         help="Comma-separated Domain_Type values (e.g. morphosyntactic,length) "
@@ -270,15 +268,15 @@ def main():
              "get a _<subset> tag so a subset run never overwrites the pooled one.",
     )
     args = parser.parse_args()
+    run = resolve_dataset_arguments(args, "laminar-families")
     subset = args.subset.split(",") if args.subset else None
     tag = f"_{'_'.join(subset)}" if subset else ""
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
     family_rows, polytomy_rows, n_families = compute_all(args.domain_file, args.domains_dir, subset=subset)
 
-    write_tsv(family_rows, args.output_dir / f"nyan1308_refinement_counts{tag}.tsv")
+    write_tsv(family_rows, run.output_dir / f"{run.dataset}_refinement_counts{tag}.tsv")
     if polytomy_rows:
-        write_tsv(polytomy_rows, args.output_dir / f"nyan1308_refinement_polytomies{tag}.tsv")
+        write_tsv(polytomy_rows, run.output_dir / f"{run.dataset}_refinement_polytomies{tag}.tsv")
 
     schroder_grand_total = sum(r["schroder_total"] for r in family_rows)
     catalan_grand_total = sum(r["catalan_total"] for r in family_rows)

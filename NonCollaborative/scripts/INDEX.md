@@ -11,19 +11,16 @@ to it, and that is where the porting checks run too.
 
 ## Core Analysis
 
-**On a CCDB structure, use the exporter (below), not these scripts
-directly.** Every script below except `planars_groupings.py` was built for
-nyan1308 and it shows: `span_placement_test.py`, `arbitrary_layers_test.py`
-and `boundary_strength_test.py` crash on a CCDB domain file (they reach for
-a Chichewa-only domain type their fixed group lists expect but CCDB's data
-doesn't have), and several of the rest run but write their output under a
-`nyan1308_*` filename whatever `--domain-file` was given.
-`export_planarsviz_data.py --groupings ccdb` (Data export, below) builds its
-groups from whichever domain types the file actually has, so it doesn't hit
-either problem — for a CCDB structure, run it (or, simplest, run
-`planarsviz_language.py <dataset> --apply`, which calls it) rather than
-these scripts standalone. See `docs/CCDB_PLANARSVIZ_PROGRESS.md`, "Findings
-worth keeping."
+**Every script below runs on any dataset** (since 2026-10-24, laminar
+analysis plan Phase 1; before that most of them assumed nyan1308).
+`--domain-file domains_<dataset>.tsv` names the dataset, and the rest follows
+from the name through `datasets.py`: its groupings (a CCDB structure gets
+`ccdb`), its planar table's position count, and output under
+`results/<dataset>/<topic>/<dataset>_*`. The domain types and bundles
+analysed are the ones the data actually has (`planars_groupings.py`), so a
+script run on its own gives the same numbers as the exported bundle.
+Default: nyan1308, whose paths the outputs below show. To export and draw a
+whole dataset, use `planarsviz_language.py <dataset> --apply`.
 
 **`analysis/laminar_analysis.py`**
 - **Purpose**: Main workhorse for laminar family enumeration
@@ -39,8 +36,8 @@ worth keeping."
   also wrote the charts' R scripts; the `planarsviz` package draws them now
   from the bundle `export_planarsviz_data.py` writes.
 - **Run it**: `python scripts/analysis/laminar_analysis.py` prints the report
-  for nyan1308 pooled, then per domain type, then per bundle. It takes no
-  arguments — call `main()` from Python to analyse a different file.
+  for nyan1308 pooled, then per domain type, then per bundle;
+  `--domain-file` picks another dataset.
 - **Dependencies**: `pandas`
 - **Reading the rows instead of the spans**: `load_spans()` aggregates rows
   that share a span, which throws away each row's own `Domain_Type`. Callers
@@ -122,12 +119,11 @@ annotations, which actually happened with `scales = "free_x"` alone.)*
   types), `_bundle_fragmentation_test.tsv` (3 bundles),
   `_fragmentation_null_draws.tsv` (every draw, long format, for the chart).
   The two summary files record the draw count and seed that produced them.
-- **Imports**: `BUNDLES` from `planars_groupings.py`, `CLASS_COLORS` from
-  `laminar_tree_counts.py` — each defined in one place, not redefined here
+- **Imports**: its groups from `planars_groupings.permutation_groups()`,
+  `CLASS_COLORS` from `laminar_tree_counts.py` — each defined in one place,
+  not redefined here
 - **Also called by the exporter**, through `run_test()`, when
-  `--fragmentation-permutations` is given. The exporter builds the groups from
-  the domain types the data actually has rather than from this file's
-  `CLASS_GROUPS`, so an unfamiliar dataset still works.
+  `--fragmentation-permutations` is given, with the same groups.
 - **Example**: `python scripts/analysis/class_fragmentation_test.py`
   (reproduces the committed files exactly: 5000 draws, seed 0)
 
@@ -175,8 +171,8 @@ with `groups` for the two-bundle variant — from a bundle exported with
   A direct stress test of the "clear quantal jump" claim on the left edge
   of the orthographic word (and the more equivocal one on the right) made
   informally from the bar chart.
-- **Method**: reuses `span_placement_test.py`'s null model and `GROUPS`
-  list exactly (same `random_replicate()`, same "draw over the full
+- **Method**: reuses `span_placement_test.py`'s null model and groups
+  exactly (same `random_replicate()`, same "draw over the full
   22-position structure regardless of group" convention) but computes a
   fresh boundary-strength curve from each replicate's own family
   enumeration, rather than just a family count. Two statistics per
@@ -212,10 +208,19 @@ with `groups` for the two-bundle variant — from a bundle exported with
   out), plus `GROUPINGS`, which packages the two under a dataset name: the
   exporter's `--groupings` picks `"chichewa"` (today's `BUNDLES`/`FILTERS`,
   unchanged) or `"ccdb"` (one bundle, morphosyntactic + indeterminate, no
-  filters). Imported by `laminar_analysis.py`, `laminar_tree_counts.py`,
-  `class_fragmentation_test.py` and the exporter (which reads `GROUPINGS`;
-  the other three still read `BUNDLES` directly, since they aren't wired up
-  for non-Chichewa datasets). Not runnable on its own.
+  filters). Also `CLASS_ORDER` (the order domain types are listed in) and
+  `observed_groups()`/`permutation_groups()`, the one place every script
+  and the exporter build a dataset's groups: only the types and bundles its
+  data has, in a fixed order (the permutation tests' numbers depend on it).
+  Not runnable on its own.
+
+**`analysis/datasets.py`**
+- **Purpose**: What a dataset name means — its domains file, planar table
+  and position count, and its settings (`dataset_settings()`: its own
+  `chart_settings_<dataset>.json`, else its CCDB import file, else the
+  exporter's defaults). Also the command-line options every standalone
+  analysis script shares. Read by those scripts, the exporter and
+  `planarsviz_language.py`. Not runnable on its own.
 
 **`analysis/export_planarsviz_illustrations.py`**
 - **Purpose**: Writes the `illustrations` bundle — the one `planarsviz`

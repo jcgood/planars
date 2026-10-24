@@ -3,7 +3,8 @@ more specifically, the JUMP between adjacent positions -- higher than a
 same-length-profile random arrangement of spans would produce by chance?
 
 This reuses span_placement_test.py's null model exactly (same
-random_replicate(), same GROUPS list, same "draw over the FULL dataset's
+random_replicate(), same groups from planars_groupings.permutation_groups(),
+same "draw over the FULL dataset's
 n_positions regardless of group" convention -- see that module's docstring
 for the reasoning) but asks a different question of each replicate. That
 test asks "how many maximal laminar families does this replicate produce,
@@ -40,15 +41,16 @@ fragmentation_null.tsv's tally (which exists because that chart draws an
 actual violin from the distribution shape; a boundary-strength chart only
 needs an envelope band around the observed curve).
 
-Outputs (under results/nyan1308/boundaries/ by default):
-  nyan1308_boundary_strength_test.tsv -- one row per (group, side, statistic,
-    position): group, kind, label, colour, side, statistic, position,
-    observed, null_mean, null_p05, null_p95, p_value_ge_observed,
-    n_permutations, seed.
+Outputs (under results/<dataset>/boundaries/ by default):
+  <dataset>_boundary_strength_test.tsv -- one row per (group, side, statistic,
+    position): group, side, statistic, position, observed, null_mean,
+    null_p05, null_p95, p_value_ge_observed, n_permutations, seed (the
+    exporter adds kind, label and colour in the bundle's copy).
 
-Usage:
+Usage (from NonCollaborative/; the dataset, its groupings and its planar
+table follow from --domain-file, see datasets.py):
   python scripts/analysis/boundary_strength_test.py
-  python scripts/analysis/boundary_strength_test.py --n-permutations 2000
+  python scripts/analysis/boundary_strength_test.py --domain-file domains_chac1251_verbal.tsv
 """
 
 from __future__ import annotations
@@ -61,7 +63,6 @@ from pathlib import Path
 import numpy as np
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_DIR = SCRIPT_DIR.parents[1]
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from laminar_analysis import (  # noqa: E402
@@ -70,7 +71,9 @@ from laminar_analysis import (  # noqa: E402
     enumerate_maximal_laminar_families,
 )
 from boundary_strength import strength_from_families  # noqa: E402
-from span_placement_test import GROUPS, random_replicate  # noqa: E402
+from span_placement_test import random_replicate  # noqa: E402
+from planars_groupings import permutation_groups  # noqa: E402
+from datasets import add_dataset_arguments, resolve_dataset_arguments  # noqa: E402
 
 
 def curves_from_spans(spans, n_positions: int) -> tuple[np.ndarray, np.ndarray, bool]:
@@ -198,19 +201,18 @@ def write_tsv(rows: list[dict], path: Path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--domain-file", default="domains_nyan1308.tsv")
-    parser.add_argument("--domains-dir", type=Path, default=REPO_DIR / "domains")
-    parser.add_argument("--output-dir", type=Path, default=REPO_DIR / "results" / "nyan1308" / "boundaries")
+    add_dataset_arguments(parser, "boundaries")
     parser.add_argument("--n-permutations", type=int, default=5000)
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
+    run = resolve_dataset_arguments(args, "boundaries")
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
     rows = run_test(
-        args.domain_file, args.domains_dir, groups=GROUPS,
-        n_permutations=args.n_permutations, seed=args.seed,
+        args.domain_file, args.domains_dir,
+        groups=permutation_groups(run.domain_path, run.bundles, pooled=True),
+        n_permutations=args.n_permutations, seed=args.seed, n_positions=run.n_positions,
     )
-    write_tsv(rows, args.output_dir / "nyan1308_boundary_strength_test.tsv")
+    write_tsv(rows, run.output_dir / f"{run.dataset}_boundary_strength_test.tsv")
 
     print(f"\n{args.n_permutations} permutations, seed={args.seed}")
     for group in dict.fromkeys(r["group"] for r in rows):

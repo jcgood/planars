@@ -204,8 +204,10 @@ Steps 3–6 apply either way:
 
 3. **Optional settings files** in `planar_tables/`, each picked up
    automatically by name:
-   - `chart_settings_<dataset>.json` — read by the one-language command in
-     step 6, not by the exporter directly: optional keys `language_name`
+   - `chart_settings_<dataset>.json` — read (through
+     `scripts/analysis/datasets.py`) by the one-language command in step 6
+     and by the standalone analysis scripts, not by the exporter directly:
+     optional keys `language_name`
      (chart titles), `groupings`, `root_position`, `planar_type` (axis
      titles, e.g. "Positions on the nominal planar structure") and
      `forest_axis` (`"subset"` or `"planar"`), each passed to the exporter

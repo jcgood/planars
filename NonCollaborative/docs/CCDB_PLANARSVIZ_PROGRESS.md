@@ -64,6 +64,9 @@ plan says what and why. Update it at every step boundary, in the same commit.
   missing type; several write files named `nyan1308_*` whatever the input).
   Only the exporter path is supported for CCDB; the exporter already builds
   its groups from the types present. Not being fixed in this work.
+  *(Fixed 2026-10-24 by the laminar analysis plan's Phase 1: every script
+  now runs on any dataset; see `docs/laminar-analysis-progress.md` at the
+  repo root.)*
 
 ## Step 2.1 as built
 
