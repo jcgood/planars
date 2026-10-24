@@ -7,7 +7,8 @@ name: Sheet validation
 #   - Errors and crashes get an issue; advisory warnings do not, since a known
 #     recurring warning would otherwise hold an issue open indefinitely.
 #   - Each report carries a fingerprint of what is wrong. Same fingerprint on a
-#     later run means the same problem recurring, so it is added as a comment.
+#     later run means the same problem recurring, so the issue's body is
+#     rewritten in place (no comment, nobody notified).
 #     A different fingerprint means the open issue is about something else, so
 #     it is closed as superseded and a new one is filed.
 #   - The issue title names the problem, not just the date.

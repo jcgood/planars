@@ -449,14 +449,15 @@
     closes the sheet-validation issue through coding/issues.py.
   side_effects:
     - "--out: writes the issue body to a local file"
-    - "--apply: creates, comments on, or closes sheet-validation GitHub issues"
-  idempotent: false
+    - "--apply: creates, rewrites the body of, supersedes or closes sheet-validation GitHub issues"
+  idempotent: true
   idempotency_note: >-
-    The body is a pure function of validate-coding's log text (same input,
-    same output). --apply is not idempotent: re-running with the same
-    still-failing report adds another comment to the open issue, which is
-    the intended daily signal that the problem persists. A clean report
-    closes the issue once; later clean runs find nothing open and do nothing.
+    The body is a pure function of validate-coding's log text and the date
+    (same input, same output). Re-running --apply with the same
+    still-failing report rewrites the open issue's body with the same text
+    and posts nothing (it commented every day until 2026-10-24). A clean
+    report closes the issue once; later clean runs find nothing open and do
+    nothing.
   apply_gate: "--apply"
   preconditions: []
   facts_touched: []

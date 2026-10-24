@@ -231,12 +231,17 @@ def test_errors_with_nothing_open_file_a_new_issue(github):
     assert read_fingerprint(body) == parse_report(ERROR_LOG).fingerprint()
 
 
-def test_the_same_problem_again_is_a_comment_not_a_new_issue(github):
+def test_the_same_problem_again_updates_the_body_and_posts_nothing(github):
+    """#316 gained an identical comment every day; a repeat now notifies nobody."""
     body = build_issue_body(parse_report(ERROR_LOG), "2026-10-12")
     number = github.seed_issue("Sheet validation: 2 errors", "sheet-validation", body=body)
-    assert act_on_report(parse_report(ERROR_LOG), "2026-10-13") == f"commented on #{number}"
+    assert act_on_report(parse_report(ERROR_LOG), "2026-10-13") == (
+        f"updated #{number} (same problem; nothing posted)")
     assert github.calls_of("create") == []
+    assert github.comments.get(number, []) == []
     assert github.issue(number)["state"] == "OPEN"
+    assert "Last checked 2026-10-13" in github.issue(number)["body"]
+    assert read_fingerprint(github.issue(number)["body"]) == parse_report(ERROR_LOG).fingerprint()
 
 
 def test_a_different_problem_supersedes_the_open_issue(github):

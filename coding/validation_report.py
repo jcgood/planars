@@ -30,7 +30,9 @@ that, and this module implements the parts that are not shell:
 2. **A changed problem gets a new issue, not a comment on the old one.** Each
    report carries a fingerprint of *what is wrong*, ignoring counts, row
    numbers, and quoted values. Same fingerprint means the same problem
-   recurring, and a comment is right. A different fingerprint means the old
+   recurring: the issue's body is rewritten in place, which notifies nobody
+   (until 2026-10-24 each run commented, so #316 gained an identical
+   comment every day). A different fingerprint means the old
    issue is about something else, so it is closed as superseded and a new one
    opened.
 
@@ -214,6 +216,8 @@ def issue_title(report: ValidationReport, date: str) -> str:
 def build_issue_body(report: ValidationReport, date: str) -> str:
     """Render the issue body, fingerprint marker included."""
     out: List[str] = []
+    if date:
+        out.append(f"_Last checked {date}._\n")
 
     if report.crash:
         out.append("## What's wrong\n")
@@ -301,7 +305,8 @@ def act_on_report(report: ValidationReport, date: str) -> str:
     """File, update, supersede or close the `sheet-validation` issue.
 
     Errors or a crash: no open issue → file one; open issue with the same
-    fingerprint → comment; a different fingerprint → close it as superseded
+    fingerprint → rewrite its body (warnings, log and "Last checked" date
+    current, nobody notified); a different fingerprint → close it as superseded
     and file a new one. No errors: close any open issue. Returns what it did.
     """
     open_number = issues.find_open(LABEL)
@@ -317,8 +322,11 @@ def act_on_report(report: ValidationReport, date: str) -> str:
     if open_number is None:
         return f"filed #{issues.create(LABEL, title, body)}"
     if read_fingerprint(issues.body_of(open_number)) == report.fingerprint():
-        issues.comment(open_number, body)
-        return f"commented on #{open_number}"
+        # Same problem as yesterday: nothing new to tell anyone, so the body
+        # is refreshed in place (no notification) rather than commented on.
+        # #316 gained an identical comment every day until 2026-10-24.
+        issues.replace_body(open_number, body)
+        return f"updated #{open_number} (same problem; nothing posted)"
     issues.close(open_number,
                  "The problem this issue reports is no longer what validation "
                  "finds. Closing as superseded; a new issue has been filed for "

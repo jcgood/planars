@@ -305,6 +305,11 @@ def comment(number: int, body: str) -> None:
     get_github().comment(number, body)
 
 
+def replace_body(number: int, body: str) -> None:
+    """Rewrite an issue's body in place. Unlike a comment, this notifies nobody."""
+    get_github().edit_issue(number, None, body)
+
+
 def file_issue(label: str, title: str, body: str, *, replace: bool = False,
                match_title: bool = False) -> Tuple[int, bool]:
     """Put `body` in front of whoever watches `label`.

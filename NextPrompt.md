@@ -88,9 +88,8 @@ issue's message in a note on the cell (`validate_coding.highlight_cells`).
 Mind that restructure-sheets already writes cell notes (a split element's
 old answers), so clearing must remove only validate-coding's own notes, and
 the class-sheet spec in `sheet_spec.py` (enforced live) must allow them.
-Same day: the `sheet-validation` issue (#316) gets an identical comment
-every day; comment only when the problem list changes, as `needs-fixing`
-does.
+Asked of Adam on #319 (2026-10-24): what the four `vp_ellipsis` cells
+with two values (`y/unclear`, `both/unclear`) mean.
 Also open, linguistic: displacement, the one standard constituency test
 with no class (#56; English is its data, Adam to write the frames).
 Not now: 8 (drop impossible pairs), 10–12 (proform frames, the

@@ -105,7 +105,8 @@ labels:
       Filed when `validate-coding` finds **errors** (or crashes). Advisory
       warnings never file or hold open an issue — they appear as context
       only. One open issue per *problem*, not per label: a later run
-      reporting the same problem comments on it, a run reporting a different
+      reporting the same problem rewrites its body in place, notifying
+      nobody, and a run reporting a different
       one closes it as superseded and files a new one. Auto-closed when no
       errors remain.
     filed_by: validation-report --apply (sheet-validation.yml)
