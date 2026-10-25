@@ -846,6 +846,29 @@ def test_a_found_folder_labelled_as_something_else_is_reported(env):
                                   identity=drive_door.folder("archive", "arao1248"))
 
 
+def test_a_label_that_cant_be_read_is_an_error_not_no_label(env, monkeypatch):
+    """#324 (2026-10-25): a labelled language folder whose label read failed
+    was taken as unlabelled, and kept so for the rest of the command. Only
+    no such file / not ours to read (404/403) means no label."""
+    from fake_drive import api_error
+    fake, door, _, _ = env
+    folder_id = _language_folder(door)
+    monkeypatch.setattr(drive_door, "_WAITS", ())        # no waiting between tries
+    real = fake.get_file
+
+    def failing(file_id, *a, **kw):
+        if file_id == folder_id:
+            raise api_error(500, "backend error")
+        return real(file_id, *a, **kw)
+
+    monkeypatch.setattr(fake, "get_file", failing)
+    with pytest.raises(Exception, match="backend error"):
+        door._identify(folder_id)
+    assert folder_id not in door._labels, "a failed read must not be kept"
+    monkeypatch.setattr(fake, "get_file", real)
+    assert door._identify(folder_id) == drive_door.folder("language", LANG)
+
+
 # -- rule 5 and the archived label: writer while live, reader once archived -----------
 
 ANNOTATOR = "annotator@example.org"

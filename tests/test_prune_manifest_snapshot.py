@@ -322,7 +322,9 @@ def test_an_unreadable_sheet_is_reported_and_the_move_is_skipped(env, monkeypatc
     doorway, run, _, _ = env
 
     def refuse(*args, **kwargs):
-        raise RuntimeError("no")
+        # As Drive refuses: a 403. (Any other error the door's own label
+        # reads now raise rather than take as "no label".)
+        raise api_error(403, "no", "PERMISSION_DENIED")
 
     monkeypatch.setattr(doorway, "get_file", refuse)
     out = run(["prune-manifest", "--apply"], ["y"])

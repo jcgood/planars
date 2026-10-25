@@ -771,11 +771,17 @@ class CheckedDoorway:
         return Identity.from_labels(self._labels.get(file_id, {}))
 
     def _read_labels(self, file_id: str) -> Dict[str, str]:
-        """A file's Drive properties, read once per command."""
+        """A file's Drive properties, read once per command. No such file
+        (404) or not ours to read (403) means no labels; any other failure,
+        after get_file's retries, is raised, never taken (and kept for the
+        rest of the command) as "no label" (2026-10-25: a labelled language
+        folder was reported unlabelled that way)."""
         if file_id not in self._labels:
             try:
                 meta = self.get_file(file_id, fields="properties")
-            except Exception:  # noqa: BLE001 - no such file, or not ours to read
+            except Exception as exc:  # noqa: BLE001 - re-raised unless 403/404
+                if _status_of(exc) not in (403, 404):
+                    raise
                 meta = {}
             self._labels[file_id] = dict(meta.get("properties") or {})
         return self._labels[file_id]
