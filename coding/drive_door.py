@@ -522,8 +522,15 @@ _WAITS = (15, 30, 45, 60, 60, 60, 60)
 
 def _dropped_connection(exc: Exception) -> bool:
     """The connection to Google broke or timed out before an answer came
-    (the status-sheet step, 2026-10-22: "Connection reset by peer")."""
+    (the status-sheet step, 2026-10-22: "Connection reset by peer"; an
+    upload of English's chart PDF, 2026-10-25: an SSLError "unexpected eof
+    while reading", which the Drive API client raises as is). A certificate
+    that fails to verify is an SSLError too, but no retry mends it."""
+    import ssl
+
     import requests  # gspread's transport; imported here, as only this needs it
+    if isinstance(exc, ssl.SSLError):
+        return not isinstance(exc, ssl.SSLCertVerificationError)
     return isinstance(exc, (ConnectionError, TimeoutError,
                             requests.exceptions.ConnectionError,
                             requests.exceptions.Timeout))

@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import json
+import ssl
 
 import pytest
 
@@ -566,16 +567,22 @@ def test_a_busy_drive_is_retried(env):
 
 
 @pytest.mark.parametrize("exc", [api_error(502, "bad gateway"),
-                                 ConnectionResetError(104, "Connection reset by peer")],
-                         ids=["502", "connection-reset"])
+                                 ConnectionResetError(104, "Connection reset by peer"),
+                                 ssl.SSLError(8, "[SSL: UNEXPECTED_EOF_WHILE_READING] unexpected eof")],
+                         ids=["502", "connection-reset", "ssl-eof"])
 def test_a_server_error_or_dropped_connection_is_retried(env, exc):
-    # Both stopped steps of the daily refresh on 2026-10-22.
+    # The first two stopped steps of the daily refresh on 2026-10-22; the
+    # third, English's chart upload on 2026-10-25.
     fake, door, sheet_id, _ = env
     fake.fail_after("update_cell", 1, exc=exc)
     with _running_out_of_shape():
         ws = _tab(door, sheet_id, "general")
         ws.update_cell(2, _col(ws, "Element") + 1, "renamed")
     assert fake.spreadsheet(sheet_id).worksheet("general").get_all_values()[1][0] == "renamed"
+
+
+def test_a_certificate_error_is_not_retried():
+    assert not drive_door._dropped_connection(ssl.SSLCertVerificationError(1, "certificate verify failed"))
 
 
 def test_a_create_that_landed_before_the_error_is_not_made_twice(env):
