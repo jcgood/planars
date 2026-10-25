@@ -30,6 +30,9 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+linked: list[str] = []   # languages whose status sheet was rebuilt
+
+
 @pytest.fixture()
 def env(monkeypatch):
     """Fake doorway; two languages; spans and drawing stubbed; a fingerprint
@@ -52,6 +55,9 @@ def env(monkeypatch):
     monkeypatch.setattr(cc, "fingerprint", lambda lang_id, table: fingerprints[lang_id])
     monkeypatch.setattr(cc, "draw", draw)
     monkeypatch.setattr("laminar.charts.preflight", lambda lang_id, apply: None)
+    linked.clear()
+    monkeypatch.setattr(laminar_charts, "_link_on_status_sheet",
+                        lambda lang_id: linked.append(lang_id))
     drive_doorway.set_doorway(doorway)
     try:
         yield doorway, fingerprints, drawn
@@ -97,6 +103,7 @@ def test_apply_puts_two_pdfs_in_each_language_folder_unshared(env, monkeypatch):
         assert c["parents"] == [ids[lang]["folder_id"]]
         assert c["mimetype"] == "application/pdf"
     assert doorway.mutations_of("create_permission") == []
+    assert linked == LANGS, "new PDFs: each status sheet rebuilt to link them"
     for lang in LANGS:
         assert ids[lang]["charts_classes_file_id"] and ids[lang]["charts_types_file_id"]
     state = json.loads(state_files.LAMINAR_CHARTS_STATE_PATH.read_text(encoding="utf-8"))
@@ -124,6 +131,7 @@ def test_changed_spans_redraw_that_language_in_place(env, monkeypatch):
     assert drawn == ["stan1293"]
     assert "spans, planar or chart code changed" in out
     assert doorway.mutations_of("create_file") == []
+    assert linked == LANGS, "updated in place: same links, so the status sheet isn't rebuilt"
     assert sorted(u["file_id"] for u in doorway.mutations_of("update_file")) == sorted(
         [first["charts_classes_file_id"], first["charts_types_file_id"]])
 

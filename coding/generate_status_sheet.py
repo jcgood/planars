@@ -331,8 +331,8 @@ def _banner_rows(lang_id: str, folder_url: str,
                  chart_links: List[Tuple[str, str]] = ()) -> List[List[str]]:
     """Locked notice + when the counts were taken (UTC) + a link to the live
     annotation folder + a link to each contributor chart PDF already on Drive
-    (``laminar_charts.chart_links``; drawn after each daily refresh, so a new
-    language's links appear the day after its first charts).
+    (``laminar_charts.chart_links``). laminar-charts, which runs after the
+    daily refresh, rebuilds a language's sheet itself when it creates a PDF.
 
     The link's visible text is a short label (display name only, via the
     project's "Name [glottocode]" convention), not the raw URL -- showing the

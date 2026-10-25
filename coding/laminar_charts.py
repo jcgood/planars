@@ -28,7 +28,10 @@ annotation gives no spans yet is skipped.
 created on the first run, updated in place after that, so the links stay
 the same. They carry no sharing of their own: the language folder already
 lets its annotator read them (``sheet_spec`` sharing rule for ``charts``).
-File IDs are saved to ``drive_config.json`` after each upload.
+File IDs are saved to ``drive_config.json`` after each upload. When a PDF
+is created (so it has a new link), the language's status sheet is rebuilt
+at once (``generate-status-sheet --lang LANG --apply``), since it links
+each PDF and the daily refresh rebuilds it before this runs.
 
 A language that fails (its spans can't be read, R fails, an upload fails)
 is reported and skipped, the others still run, and the command exits
@@ -197,9 +200,11 @@ def _run(apply: bool, only: str | None, force: bool) -> list[Failure]:
             failed.append(Failure(lang_id, "drawing"))
             print(f"  {failed[-1].line()}. To see why, run: {_see_why(lang_id)}")
             continue
+        created = False
         try:
             for d in drawn:
                 existing = drive_config[lang_id].get(_file_key(d.grouping))
+                created = created or not existing
                 file_id = create_or_update_file(doorway, d.pdf, folder_id, existing,
                                                 identity=drive_door.charts(d.grouping, lang_id))
                 drive_config[lang_id][_file_key(d.grouping)] = file_id
@@ -217,8 +222,30 @@ def _run(apply: bool, only: str | None, force: bool) -> list[Failure]:
                           "charts": {d.dataset: d.n_charts for d in drawn}}
         file_door.write_state(file_door.laminar_charts_state(),
                               json.dumps(state, indent=2, sort_keys=True) + "\n")
+        if created:
+            failure = _link_on_status_sheet(lang_id)
+            if failure:
+                failed.append(failure)
+                print(f"  {failure.line()}")
+                continue
         print(f"  {name}: done.")
     return failed
+
+
+def _link_on_status_sheet(lang_id: str) -> Failure | None:
+    """A chart PDF was created, so it has a new link: rebuild the language's
+    status sheet now, which links each PDF (generate_status_sheet), rather
+    than leave the link to the next daily refresh. Run as its own command,
+    as the daily refresh runs it. Its output is held back like the rest."""
+    import subprocess
+    done = subprocess.run([sys.executable, "-m", "coding", "generate-status-sheet",
+                           "--lang", lang_id, "--apply"],
+                          cwd=ROOT, capture_output=True, text=True)
+    if done.returncode == 0:
+        print(f"  [{lang_id}] status sheet now links the charts.")
+        return None
+    return Failure(lang_id, "linking the charts on its status sheet",
+                   f"run python -m coding generate-status-sheet --lang {lang_id} --apply")
 
 
 def issue_body(failed: list[Failure], date: str) -> str:

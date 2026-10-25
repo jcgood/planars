@@ -275,6 +275,11 @@ by workflows. Plan decision 6 and Phase 4a–e have the design.
   (the plan had a label only for 4d): one issue, rewritten on each failing
   full run, closed by a clean one; a `--lang` run leaves it alone. Missing R
   or packages fails every language to be drawn, so that files it too.
+- **Each status sheet links the two PDFs** (`generate_status_sheet._banner_rows`,
+  from `laminar_charts.chart_links`). The refresh rebuilds the status sheets
+  before this runs, so when laminar-charts creates a PDF it rebuilds that
+  language's status sheet itself; otherwise a new language's links would
+  wait a day, or on someone remembering to rebuild by hand.
 - **synth0001 gets charts too**: it has a planar file, and the command draws
   every such language. Harmless (its own Drive folder); noted in case Jeff
   wants it left out.

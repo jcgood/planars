@@ -252,6 +252,9 @@
       .state/laminar_charts_state.json, and the PDFs' file IDs in
       drive_config.json, through the local-file door
     - >-
+      when it creates a PDF (a new link), runs generate-status-sheet --lang
+      LANG --apply, so the language's status sheet links it the same day
+    - >-
       on a run over every language, files (rewriting the open one) or
       closes the laminar-charts-error issue, naming each language that
       failed and the stage, never the reason (it can quote the annotation)
