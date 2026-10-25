@@ -48,7 +48,8 @@ def derive_idiom_domains(
     least one element has idiomatic=y.
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
-    missing_data, complete_positions, partial_positions, and four span keys.
+    missing_data, complete_positions, partial_positions, position_counts (each
+    position's k of n), and four span keys.
     """
     if _data is not None:
         data_df, keystone_pos, pos_to_name, _, _ = _data
@@ -63,7 +64,7 @@ def derive_idiom_domains(
 
     data_df["is_idiomatic"] = data_df["idiomatic"] == "y"
 
-    partial_positions, complete_positions = position_sets_from_element_mask(
+    partial_positions, complete_positions, position_counts = position_sets_from_element_mask(
         data_df, data_df["is_idiomatic"]
     )
 
@@ -74,6 +75,7 @@ def derive_idiom_domains(
         "missing_data": missing_data,
         "complete_positions": sorted(complete_positions),
         "partial_positions":  sorted(partial_positions),
+        "position_counts":    position_counts,
         "strict_complete_span": strict_span(complete_positions, keystone_pos),
         "loose_complete_span":  loose_span(complete_positions,  keystone_pos),
         "strict_partial_span":  strict_span(partial_positions,  keystone_pos),

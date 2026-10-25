@@ -51,7 +51,8 @@ def derive_proform_domains(
     positions; loose span uses partial positions (which subsumes complete).
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
-    missing_data, complete_positions, partial_positions, and four span keys.
+    missing_data, complete_positions, partial_positions, position_counts (each
+    position's k of n under the partial rule), and four span keys.
     """
     if _data is not None:
         data_df, keystone_pos, pos_to_name, _, _ = _data
@@ -70,8 +71,9 @@ def derive_proform_domains(
     # Loose (partial) positions: element always or optionally replaceable
     is_weak = data_df["shareable_proform_replace"].isin(["y", "both"])
 
-    _, complete_positions = position_sets_from_element_mask(data_df, is_strong)
-    partial_positions, _ = position_sets_from_element_mask(data_df, is_weak)
+    _, complete_positions, _ = position_sets_from_element_mask(data_df, is_strong)
+    # A partial span's k of n counts the elements its own rule lets in (y or both).
+    partial_positions, _, position_counts = position_sets_from_element_mask(data_df, is_weak)
 
     return {
         "keystone_position": keystone_pos,
@@ -80,6 +82,7 @@ def derive_proform_domains(
         "missing_data": missing_data,
         "complete_positions": sorted(complete_positions),
         "partial_positions":  sorted(partial_positions),
+        "position_counts":    position_counts,
         "strict_complete_span": strict_span(complete_positions, keystone_pos),
         "loose_complete_span":  loose_span(complete_positions,  keystone_pos),
         "strict_partial_span":  strict_span(partial_positions,  keystone_pos),

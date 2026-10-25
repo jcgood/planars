@@ -3,12 +3,14 @@
 ``strict_span`` (contiguous from the keystone, no gaps), ``loose_span`` (to
 the farthest in-span position on each side), ``blocked_span`` (up to the
 first blocking position), ``position_sets_from_element_mask`` (partial and
-complete positions from a per-element yes/no) and ``fmt_span`` (a span as
-text). The terms themselves are defined in ``schemas/terms.yaml``.
+complete positions from a per-element yes/no, with each position's *k of n*),
+``gained_position_counts`` (the positions a partial span gains over its
+complete counterpart, with their k of n) and ``fmt_span`` (a span as text).
+The terms themselves are defined in ``schemas/terms.yaml``.
 """
 from __future__ import annotations
 
-from typing import Dict, Set, Tuple
+from typing import Dict, List, Set, Tuple
 
 import pandas as pd
 
@@ -113,7 +115,7 @@ def loose_span(span_positions: Set[int], keystone_pos: int) -> Tuple[int, int]:
 
 def position_sets_from_element_mask(
     data_df: pd.DataFrame, element_mask: pd.Series
-) -> Tuple[Set[int], Set[int]]:
+) -> Tuple[Set[int], Set[int], Dict[int, Tuple[int, int]]]:
     """Compute the partial and complete position sets from an element-level mask.
 
     A position is partial if at least one of its elements satisfies the mask.
@@ -125,16 +127,39 @@ def position_sets_from_element_mask(
             elements satisfy the span condition.
 
     Returns:
-        (partial_positions, complete_positions) as sets of integer position numbers.
+        (partial_positions, complete_positions, counts): the two sets of
+        integer position numbers, and for every position with elements its
+        *k of n* as ``{position: (k, n)}`` -- how many of its n elements
+        satisfy the mask. A partial span's weight is read from these counts
+        (``gained_position_counts``).
     """
-    partial_positions: Set[int] = set(
-        data_df.loc[element_mask, "Position_Number"].unique().tolist()
-    )
+    counts: Dict[int, Tuple[int, int]] = {
+        int(pos): (int(element_mask.loc[grp.index].sum()), len(grp))
+        for pos, grp in data_df.groupby("Position_Number")
+    }
+    partial_positions: Set[int] = {pos for pos, (k, _n) in counts.items() if k > 0}
+    # A position is complete only when every element in it passes the mask.
+    complete_positions: Set[int] = {pos for pos, (k, n) in counts.items() if n > 0 and k == n}
+    return partial_positions, complete_positions, counts
 
-    complete_positions: Set[int] = set()
-    for pos, grp in data_df.groupby("Position_Number"):
-        # A position is complete only when every element in it passes the mask.
-        if len(grp) > 0 and element_mask.loc[grp.index].all():
-            complete_positions.add(int(pos))
 
-    return partial_positions, complete_positions
+def gained_position_counts(
+    span: Tuple[int, int],
+    counterpart: Tuple[int, int],
+    counts: Dict[int, Tuple[int, int]],
+) -> List[Tuple[int, int, int]]:
+    """The positions `span` covers beyond `counterpart`, each with its k of n.
+
+    `span` is a span that lets in positions where only some elements satisfy
+    the span rule (a partial span); `counterpart` is the same span built from
+    positions where every element does (its complete span). Each position
+    inside `span` but outside `counterpart` is returned as
+    ``(position, k, n)`` from `counts` (``position_sets_from_element_mask``'s
+    third value), in position order; a loose span's gap is gained with k = 0.
+    A position with no elements in the data has no count and is left out.
+    The keystone is never gained: both spans always contain it.
+    """
+    left, right = span
+    c_left, c_right = counterpart
+    gained = [p for p in range(left, right + 1) if not c_left <= p <= c_right]
+    return [(p, *counts[p]) for p in gained if p in counts]

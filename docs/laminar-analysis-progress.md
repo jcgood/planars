@@ -7,7 +7,7 @@ the current state; update it at every phase boundary, in the same commit.
 |---|---|
 | 1. Take out the Chichewa assumptions, in place | done 2026-10-24 |
 | 2. Move the code (`laminar/`, `planarsviz/` to the root) | done 2026-10-24 |
-| 3. Connect a planars language (adapter, *k of n*, metadata) | not started |
+| 3. Connect a planars language (adapter, *k of n*, metadata) | done 2026-10-24 |
 | 4. Run English; one command for Adam's Claude | not started |
 | 5. Documentation and tests | not started |
 
@@ -71,6 +71,84 @@ the current state; update it at every phase boundary, in the same commit.
   it since the charts moved to R); the shifted bundle's documented export
   command now includes the `--fragmentation-permutations 5000` it was made
   with.
+
+## Phase 3 as built (2026-10-24)
+
+- ***k of n* in the library.** `planars.spans.position_sets_from_element_mask`
+  now also returns each position's `(k, n)`; every module with partial
+  spans puts it in its result (`position_counts`, or per category/domain:
+  subspanrepetition, noninterruption, metrical). ciscategorial now uses the
+  shared helper instead of its own copy. `gained_position_counts` gives the
+  positions a partial span covers beyond its complete counterpart.
+  nonpermutability, coreference, free_occurrence and biuniqueness_deviations
+  have no complete/partial distinction, so no weights. Span snapshots
+  unchanged.
+- **Span rows say which test they are.** `language_spans` rows now carry
+  `Construction`, `Span_Key`, `Position_Basis` (complete / partial / none)
+  and `Gained_Positions`. Which counts weigh which span is
+  `reports._WEIGHTED_SPANS`: every class must be listed, or import fails.
+  **metrical is the reverse of the rest:** its "complete" span is the
+  wider one (it stops only where every element blocks), so that is its
+  weighted span, and its k counts elements that do *not* block.
+- **Side fix:** labels `nonpermutability nonperm strict` and `coreference
+  reflex binder strict` carried the class twice. Now `nonperm strict` (what
+  terms.yaml's glossary already said) and `coref binder strict` ("reflex"
+  dropped: the class now covers pronoun and NP coreference too; glossary
+  entries added).
+- **The adapter is `laminar/planars_language.py`.** For each grouping ×
+  selection it writes one domains file, named `<lang>_<grouping>_<selection>`
+  (8 for English). The groupings (`planars_types`, `planars_classes` in
+  `planars_groupings.py`) are built from the schema's domain types
+  (`schema_values.class_domain_types()`). Labels get their construction in
+  brackets when a class has several; a repeated label fails. Each row has
+  the three weights and its `Gained_Positions` (`28:9/10 29:21/30`), and the
+  exporter copies them into the bundle's `tests.tsv`.
+- **Selections, provisional readings of decision 2:** `complete` and
+  `partial` keep the spans from that kind of position, plus every span of a
+  class without the distinction. `distinct` counts once any of a
+  construction's spans that coincide (strict = loose, or partial =
+  complete), listing the others in `Same_Span_As`. On English, `all` and
+  `distinct` give the same families (families are built from distinct
+  spans); they differ only in convergence.
+- **Weights, provisional reading of decision 3:** a loose partial span's
+  gap is gained with k = 0. That pulls `vp_ellipsis`'s loose partial mean
+  ratio down: it gains 27 positions with no passing element. The
+  per-position counts are kept, so another rule can be computed without a
+  re-run.
+- **Where (changed from decision 5's wording):** `coded_data/.analysis/<lang>/`
+  (domains/, chart_data/, charts/), not `coded_data/<lang>/analysis/`. A
+  folder inside a language's folder is read as a class by
+  `language_completeness`, check-comments and others. Dot-folders are
+  skipped, as `.state` and `.test_fixtures` are. charts/ is in
+  planars-data's `.gitignore`.
+- **datasets.py** knows a planars dataset: domains file and bundle in
+  planars-data, the live planar file (the exporter now reads
+  `Position_Name` as the label), the keystone as root, and the display name
+  "English [stan1293], by class, distinct spans". `python -m laminar charts
+  stan1293_types_all` rebuilds the domains files from the annotation before
+  every export. The exporter's default output folder is now the dataset's,
+  so English can't land in NonCollaborative/ by accident.
+- **Each bundle records its source:** `planars_source` in metadata.json
+  (from `source_<dataset>.json`): planars-data commit, uncommitted changes
+  or not, cells filled (5637 of 6029 on 2026-10-24), each construction's
+  state, and the annotated classes that give no spans yet
+  (biuniqueness_deviations, waiting on morphemes; phrasal_accent, no module,
+  #237).
+- `CLASS_COLORS` moved to `planars_groupings.py` (the planars groupings
+  need it, and the old home imported that module). The old
+  `NonCollaborative/planar_tables/planar_stan1293.tsv` is deleted.
+- **Checked:** English exports, without the permutation tests, to the
+  scratchpad (38 positions, 125 tests, 35 distinct spans, 171 families);
+  nyan1308 re-exported byte-identical except the skipped permutation
+  tables; the CCDB `arao1248_verbal` (whose name starts with a planars
+  language's code) still resolves to its CCDB files. check-codebook,
+  integrity-check, full suite, NonCollaborative no-R tests pass.
+
+**Left for Phase 4:** English's domain types (`phonological-prosodic`,
+`phonological-segmental`, class names) have no colours, so they draw in
+the fallback grey; the planars bundles' colours in `planars_groupings.py`
+are provisional. Committing the bundles to planars-data, and the checks
+for Adam's Claude, are Phase 4 as planned.
 
 ## Findings
 

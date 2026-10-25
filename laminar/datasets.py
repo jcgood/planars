@@ -6,6 +6,16 @@ chac1251_verbal. Every script that takes a domains file works out the rest
 from the name through this module, so a script run on its own analyses a
 dataset exactly as its exported bundle does.
 
+A language annotated through planars has datasets named
+``<lang>_<grouping>_<selection>`` (``stan1293_types_all``), built by
+laminar/planars_language.py. domain_file(), planar_file(), bundle_root()
+and charts_root() say where each dataset's files are: for a planars
+language, in planars-data (``coded_data/.analysis/<lang>/``) with the live
+planar file; for the rest, under NonCollaborative/. Its settings come from
+planars_language.py and the planar file (display name, groupings, the
+keystone as root, planar type, forest axis "planar"); none of the rules
+below apply to it.
+
 dataset_settings(): each chart/analysis setting, first match wins:
 
 1. ``planar_tables/chart_settings_<dataset>.json``, if present: optional keys
@@ -59,8 +69,49 @@ def dataset_name(domain_file: str | Path) -> str:
     return Path(domain_file).stem.removeprefix("domains_")
 
 
+def _planars(dataset: str):
+    """(lang_id, grouping, selection) for a planars language's dataset, else
+    None (laminar/planars_language.py says what the names mean)."""
+    from laminar.planars_language import parse_dataset
+    return parse_dataset(dataset)
+
+
+def domain_file(dataset: str) -> Path:
+    planars = _planars(dataset)
+    if planars:
+        from laminar.planars_language import domains_dir
+        return domains_dir(planars[0]) / f"domains_{dataset}.tsv"
+    return NC / "domains" / f"domains_{dataset}.tsv"
+
+
 def planar_file(dataset: str) -> Path:
+    planars = _planars(dataset)
+    if planars:
+        from laminar.planars_language import planar_file as live_planar
+        return live_planar(planars[0])
     return NC / "planar_tables" / f"planar_{dataset}.tsv"
+
+
+def bundle_root(dataset: str) -> Path:
+    """The folder a dataset's bundle folder goes in: planars-data for a
+    planars language (decision 5 of docs/laminar-analysis-plan.md), else
+    NonCollaborative/results/chart_data/."""
+    planars = _planars(dataset)
+    if planars:
+        from laminar.planars_language import analysis_dir
+        return analysis_dir(planars[0]) / "chart_data"
+    return NC / "results" / "chart_data"
+
+
+def charts_root(dataset: str) -> Path:
+    """The folder the renderer draws a dataset's charts under. For a planars
+    language, a folder planars-data's .gitignore leaves out: charts are not
+    committed (decision 5)."""
+    planars = _planars(dataset)
+    if planars:
+        from laminar.planars_language import analysis_dir
+        return analysis_dir(planars[0]) / "charts"
+    return NC / "results"
 
 
 def planar_position_count(planar_path: Path | None) -> int | None:
@@ -91,6 +142,20 @@ def dataset_settings(dataset: str) -> dict[str, tuple[object, str]]:
         "planar_type": (None, "exporter default (axis titles say verbal)"),
         "forest_axis": (None, "exporter default (subset)"),
     }
+    planars = _planars(dataset)
+    if planars:
+        from laminar import planars_language as pl
+        from planars.languages import get_display_name
+        lang_id, grouping, selection = planars
+        source = "laminar/planars_language.py"
+        by = {"types": "by domain type", "classes": "by class"}[grouping]
+        settings["language_name"] = (f"{get_display_name(lang_id)}, {by}, {selection} spans",
+                                     source)
+        settings["groupings"] = (pl.GROUPINGS_BY[grouping], source)
+        settings["root_position"] = (pl.keystone_position(lang_id), f"{source} (the keystone)")
+        settings["planar_type"] = (pl.planar_type(lang_id), repo_relative(pl.planar_file(lang_id)))
+        settings["forest_axis"] = ("planar", source)
+        return settings
     if ccdb_file.exists():
         ccdb = read_json(ccdb_file)
         source = repo_relative(ccdb_file)

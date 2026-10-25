@@ -10,6 +10,7 @@ import pandas as pd
 from planars.spans import (
     blocked_span,
     fmt_span,
+    gained_position_counts,
     loose_span,
     position_sets_from_element_mask,
     strict_span,
@@ -198,14 +199,14 @@ class TestPositionSetsFromElementMask:
     def test_all_in_span(self):
         df = _make_df({3: ["a", "b"], 4: ["c"], 6: ["d", "e"]})
         mask = pd.Series([True] * len(df), index=df.index)
-        partial, complete = position_sets_from_element_mask(df, mask)
+        partial, complete, _counts = position_sets_from_element_mask(df, mask)
         assert partial == {3, 4, 6}
         assert complete == {3, 4, 6}
 
     def test_none_in_span(self):
         df = _make_df({3: ["a", "b"], 4: ["c"]})
         mask = pd.Series([False] * len(df), index=df.index)
-        partial, complete = position_sets_from_element_mask(df, mask)
+        partial, complete, _counts = position_sets_from_element_mask(df, mask)
         assert partial == set()
         assert complete == set()
 
@@ -213,21 +214,21 @@ class TestPositionSetsFromElementMask:
         # Position 3 has elements a (counts toward the span) and b (does not)
         df = _make_df({3: ["a", "b"]})
         mask = pd.Series([True, False], index=df.index)
-        partial, complete = position_sets_from_element_mask(df, mask)
+        partial, complete, _counts = position_sets_from_element_mask(df, mask)
         assert 3 in partial
         assert 3 not in complete
 
     def test_single_element_position_in_span_both(self):
         df = _make_df({6: ["a"]})
         mask = pd.Series([True], index=df.index)
-        partial, complete = position_sets_from_element_mask(df, mask)
+        partial, complete, _counts = position_sets_from_element_mask(df, mask)
         assert 6 in partial
         assert 6 in complete
 
     def test_single_element_position_not_in_span(self):
         df = _make_df({6: ["a"]})
         mask = pd.Series([False], index=df.index)
-        partial, complete = position_sets_from_element_mask(df, mask)
+        partial, complete, _counts = position_sets_from_element_mask(df, mask)
         assert 6 not in partial
         assert 6 not in complete
 
@@ -238,7 +239,7 @@ class TestPositionSetsFromElementMask:
         # Position 4: both count → complete
         # Position 6: counts → complete
         mask = pd.Series([True, False, True, True, True], index=df.index)
-        partial, complete = position_sets_from_element_mask(df, mask)
+        partial, complete, _counts = position_sets_from_element_mask(df, mask)
         assert complete.issubset(partial)
 
     def test_mixed_multi_element_positions(self):
@@ -246,23 +247,51 @@ class TestPositionSetsFromElementMask:
         # Position 3: only a counts → partial
         # Position 4: both count → complete
         mask = pd.Series([True, False, False, True, True], index=df.index)
-        partial, complete = position_sets_from_element_mask(df, mask)
+        partial, complete, _counts = position_sets_from_element_mask(df, mask)
         assert partial == {3, 4}
         assert complete == {4}
 
     def test_empty_dataframe(self):
         df = pd.DataFrame(columns=["Position_Number", "Element"])
         mask = pd.Series([], dtype=bool)
-        partial, complete = position_sets_from_element_mask(df, mask)
+        partial, complete, _counts = position_sets_from_element_mask(df, mask)
         assert partial == set()
         assert complete == set()
 
     def test_returns_integer_position_numbers(self):
         df = _make_df({3: ["a"], 6: ["b"]})
         mask = pd.Series([True, True], index=df.index)
-        partial, complete = position_sets_from_element_mask(df, mask)
+        partial, complete, _counts = position_sets_from_element_mask(df, mask)
         for pos in partial | complete:
             assert isinstance(pos, int)
+
+    def test_counts_are_k_of_n_per_position(self):
+        df = _make_df({3: ["a", "b", "c"], 4: ["d", "e"], 6: ["f"]})
+        mask = pd.Series([True, False, False, True, True, False], index=df.index)
+        _partial, _complete, counts = position_sets_from_element_mask(df, mask)
+        assert counts == {3: (1, 3), 4: (2, 2), 6: (0, 1)}
+        assert all(isinstance(p, int) for p in counts)
+
+
+# ---------------------------------------------------------------------------
+# gained_position_counts
+# ---------------------------------------------------------------------------
+
+class TestGainedPositionCounts:
+    COUNTS = {2: (0, 2), 3: (1, 4), 4: (2, 2), 6: (3, 3), 7: (1, 2)}
+
+    def test_positions_outside_counterpart_in_order(self):
+        assert gained_position_counts((2, 7), (4, 6), self.COUNTS) == [
+            (2, 0, 2), (3, 1, 4), (7, 1, 2)]
+
+    def test_same_span_gains_nothing(self):
+        assert gained_position_counts((4, 6), (4, 6), self.COUNTS) == []
+
+    def test_position_without_elements_left_out(self):
+        # Position 5 (the keystone here) has no count and is inside both anyway;
+        # position 1 has no elements in the data.
+        assert gained_position_counts((1, 5), (4, 5), self.COUNTS) == [
+            (2, 0, 2), (3, 1, 4)]
 
 
 # ---------------------------------------------------------------------------

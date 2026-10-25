@@ -41,8 +41,10 @@ draft, started while Adam is still annotating. **Current state:
    - (b) by class, each class as its own group.
    Hand-set bundles like Chichewa's stay possible later as a named grouping.
 5. **Where English results live.** Bundles in planars-data
-   (`coded_data/stan1293/analysis/…`), since they derive from unpublished
-   annotation. Charts are not committed: they are drawn into a folder git
+   (`coded_data/.analysis/stan1293/…`; first written as
+   `coded_data/stan1293/analysis/`, moved in Phase 3 because the tooling
+   reads any folder inside a language's folder as a class), since they
+   derive from unpublished annotation. Charts are not committed: they are drawn into a folder git
    ignores. English is opt-in for the cross-language bundle, so the public
    one is unchanged.
 6. **Adam can draw his own charts.** Now: one command his Claude runs,

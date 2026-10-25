@@ -68,7 +68,9 @@ def derive_metrical_domains(
       Returns minimal/maximal × partial/complete = 4 blocked spans.
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
-    missing_data, and four span keys (minimal/maximal × partial/complete).
+    missing_data, the blocked position sets, each domain's position counts
+    (each position's k of n elements that do not block), and four span keys
+    (minimal/maximal × partial/complete).
     """
     if _data is None:
         _data = load_filled_tsv(tsv_path, _REQUIRED_CRITERIA, strict=strict)
@@ -92,7 +94,7 @@ def derive_metrical_domains(
         blocking_df["accented"].isin({"y", "both"}) &
         (blocking_df["independence"] == "y")
     )
-    minimal_partial_blocked, minimal_complete_blocked = position_sets_from_element_mask(
+    minimal_partial_blocked, minimal_complete_blocked, minimal_blocking = position_sets_from_element_mask(
         blocking_df, minimal_block_mask
     )
 
@@ -101,9 +103,17 @@ def derive_metrical_domains(
         (blocking_df["obligatory"] == "y") &
         (blocking_df["independence"] == "y")
     )
-    maximal_partial_blocked, maximal_complete_blocked = position_sets_from_element_mask(
+    maximal_partial_blocked, maximal_complete_blocked, maximal_blocking = position_sets_from_element_mask(
         blocking_df, maximal_block_mask
     )
+
+    # Each position's k of n, counting the elements that do NOT block (that
+    # let the domain through). Here the complete span is the wider one: it
+    # stops only where every element blocks, so it gains positions where only
+    # some elements let it through -- the reverse of the classes whose
+    # partial span is the wider one.
+    def _passing(blocking):
+        return {pos: (n - k, n) for pos, (k, n) in blocking.items()}
 
     return {
         "keystone_position":                  keystone_pos,
@@ -114,7 +124,9 @@ def derive_metrical_domains(
         "minimal_complete_blocked_positions": sorted(minimal_complete_blocked),
         "maximal_partial_blocked_positions":  sorted(maximal_partial_blocked),
         "maximal_complete_blocked_positions": sorted(maximal_complete_blocked),
-        "minimal_partial_span":               blocked_span(all_positions, minimal_partial_blocked,  keystone_pos),
+        "minimal_position_counts":            _passing(minimal_blocking),
+        "maximal_position_counts":            _passing(maximal_blocking),
+        "minimal_partial_span":              blocked_span(all_positions, minimal_partial_blocked,  keystone_pos),
         "minimal_complete_span":              blocked_span(all_positions, minimal_complete_blocked, keystone_pos),
         "maximal_partial_span":               blocked_span(all_positions, maximal_partial_blocked,  keystone_pos),
         "maximal_complete_span":              blocked_span(all_positions, maximal_complete_blocked, keystone_pos),

@@ -3,8 +3,9 @@ read in one place.
 
 Every module in planars/ and coding/ that needs the keystone's name, the
 Status tab's title and values, the columns that identify a row on each
-kind of annotation tab (and the trailing columns after the criteria), or a
-class's required criteria imports them from here instead of typing them
+kind of annotation tab (and the trailing columns after the criteria), a
+class's required criteria, or the classes' domain types imports them from
+here instead of typing them
 (Phase 10, issue #271; hidden-facts entries D0, R3, D3, D4, D5, D-1).
 tests/test_no_hidden_facts.py fails if one of these values is typed anywhere
 else in the code.
@@ -156,6 +157,19 @@ def _class_entry(class_name: str) -> dict:
         if cls.get("name") == class_name:
             return copy.deepcopy(cls)
     raise KeyError(f"diagnostic_classes.yaml has no class {class_name!r}")
+
+
+def class_domain_types() -> dict:
+    """``{class_name: (domain_type, domain_subtype or None)}`` for every class
+    in diagnostic_classes.yaml, in the file's order. A class without a
+    domain_type fails here, naming it, rather than falling into a default."""
+    text = _res_files("schemas").joinpath("diagnostic_classes.yaml").read_text(encoding="utf-8")
+    out = {}
+    for cls in _parse_classes(text).get("classes", []):
+        if not cls.get("domain_type"):
+            raise KeyError(f"diagnostic_classes.yaml class {cls.get('name')!r} has no domain_type")
+        out[cls["name"]] = (cls["domain_type"], cls.get("domain_subtype"))
+    return out
 
 
 def _construction_entry(class_name: str, construction: str) -> dict:

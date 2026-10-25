@@ -88,6 +88,7 @@ def derive_segmental_domains(
             "criterion_cols":          [],
             "complete_positions":      [],
             "partial_positions":       [],
+            "position_counts":         {},
             "strict_complete_span":    strict_span(empty, keystone_pos),
             "loose_complete_span":     loose_span(empty, keystone_pos),
             "strict_partial_span":     strict_span(empty, keystone_pos),
@@ -109,7 +110,7 @@ def derive_segmental_domains(
     for col in criterion_cols:
         in_span &= domain_df[col].isin(_IN_SPAN_VALUES)
 
-    partial_positions, complete_positions = position_sets_from_element_mask(
+    partial_positions, complete_positions, position_counts = position_sets_from_element_mask(
         domain_df, in_span
     )
 
@@ -121,6 +122,7 @@ def derive_segmental_domains(
         "criterion_cols":          list(criterion_cols),
         "complete_positions":      sorted(complete_positions),
         "partial_positions":       sorted(partial_positions),
+        "position_counts":         position_counts,
         "strict_complete_span":    strict_span(complete_positions, keystone_pos),
         "loose_complete_span":     loose_span(complete_positions,  keystone_pos),
         "strict_partial_span":     strict_span(partial_positions,  keystone_pos),

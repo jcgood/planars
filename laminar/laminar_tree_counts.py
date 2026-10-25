@@ -37,20 +37,6 @@ from laminar.laminar_analysis import (
 from laminar.planars_groupings import BUNDLES, CLASS_ORDER, observed_groups
 from laminar.datasets import add_dataset_arguments, resolve_dataset_arguments
 
-# Exact pooled-plot colors. Read by class_fragmentation_test.py and by
-# export_planarsviz_data.py's DOMAIN_TYPE_STYLE, which is where R gets them.
-# `indeterminate` is CCDB's third domain type (absent from nyan1308); it is
-# not in CLASS_ORDER, so it never displaces the five nyan1308 classes --
-# it only supplies a colour for datasets (CCDB's) that observe it.
-CLASS_COLORS = {
-    "morphosyntactic": "#BC3C29",
-    "tonosegmental": "#0072B5",
-    "length": "#E18727",
-    "phonological": "#20845E",
-    "intonational": "#7876B1",
-    "indeterminate": "#6F99AD",
-}
-
 def count_families(spans, n_positions: int) -> tuple[int, int]:
     """Return (number of maximal families, number of compatible spans)."""
     families, truncated = enumerate_maximal_laminar_families(

@@ -5,7 +5,10 @@ exposes:
 
 - ``derive_*()`` -- takes a filled TSV ``Path`` (or ``_data=`` already
   loaded, as Colab passes it) and returns a result dict. Result dicts use
-  ``complete_positions`` / ``partial_positions`` and ``*_span`` keys.
+  ``complete_positions`` / ``partial_positions`` and ``*_span`` keys, and
+  each module with partial spans gives each position's *k of n*
+  (``*position_counts``); ``reports._WEIGHTED_SPANS`` says which
+  counts weigh which span.
 - ``derive`` -- an alias for that function, which the snapshots, the
   generated notebooks and check-codebook call.
 - ``format_result(result)`` -- the result as text.

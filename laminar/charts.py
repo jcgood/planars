@@ -16,9 +16,14 @@ domains file, planar table, display labels, highlights and conflict groups
 are found by the exporter itself from the dataset name.
 
 Bundles go to ``NonCollaborative/results/chart_data/<dataset>/``; charts to
-``NonCollaborative/results/<dataset>/<topic>/``. Runs from anywhere: both
-scripts run from the repository root, and a bundle records the files it
-read relative to that root.
+``NonCollaborative/results/<dataset>/<topic>/``. A language annotated
+through planars (datasets ``<lang>_<grouping>_<selection>``, e.g.
+``stan1293_types_all``) is different: its domains files are first rebuilt
+from the annotation (``laminar/planars_language.py``), and its bundle and
+charts go to planars-data, ``coded_data/.analysis/<lang>/chart_data/`` and
+``.../charts/`` (``datasets.bundle_root()``/``charts_root()``). Runs from
+anywhere: both scripts run from the repository root, and a bundle records
+the files it read relative to that root.
 
 ``--ccdb`` does the same for every CCDB structure (each one
 ``import_ccdb.py`` wrote a ``planar_tables/ccdb_<Planar_ID>.json`` for),
@@ -66,7 +71,10 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from laminar.datasets import NC, REPO, dataset_settings
+from laminar.datasets import (
+    NC, REPO, bundle_root, charts_root, dataset_settings, domain_file, planar_file,
+)
+from laminar.planars_language import parse_dataset, write_inputs
 
 # The four permutation tests, each switched on by its own exporter flag. A
 # re-export without one of them drops that test's tables from the bundle, so
@@ -106,7 +114,9 @@ def rel(path: Path) -> str:
 
 def export_command(dataset: str, settings: dict, permutations: int) -> list[str]:
     cmd = [sys.executable, "-m", "laminar.export_planarsviz_data",
-           "--domain-file", rel(NC / "domains" / f"domains_{dataset}.tsv")]
+           "--domain-file", rel(domain_file(dataset)),
+           "--planar-file", rel(planar_file(dataset)),
+           "--output-dir", rel(bundle_root(dataset))]
     flags = {"groupings": "--groupings", "root_position": "--root-position",
              "language_name": "--language-name", "planar_type": "--planar-type",
              "forest_axis": "--forest-axis"}
@@ -122,8 +132,8 @@ def export_command(dataset: str, settings: dict, permutations: int) -> list[str]
 
 def render_command(dataset: str, formats: str | None, plots: str | None) -> list[str]:
     cmd = ["Rscript", "laminar/render_planarsviz.R",
-           "--bundle", rel(NC / "results" / "chart_data" / dataset),
-           "--output", rel(NC / "results")]
+           "--bundle", rel(bundle_root(dataset) / dataset),
+           "--output", rel(charts_root(dataset))]
     if formats:
         cmd += ["--formats", formats]
     if plots:
@@ -144,13 +154,20 @@ def run(cmd: list[str], label: str) -> None:
 
 def draw_one(args: argparse.Namespace) -> None:
     dataset = args.dataset
-    domain_file = NC / "domains" / f"domains_{dataset}.tsv"
-    planar_file = NC / "planar_tables" / f"planar_{dataset}.tsv"
-    missing = [p for p in (domain_file, planar_file) if not p.exists()]
-    if missing:
+    planars = parse_dataset(dataset)
+    if planars:
+        # Built from the annotation every time, so a chart never shows
+        # yesterday's spans; a dry run only says what would change.
+        print(f"Domains files for {planars[0]} (laminar/planars_language.py):")
+        write_inputs(planars[0], apply=args.apply)
+        print()
+    missing = [p for p in (domain_file(dataset), planar_file(dataset)) if not p.exists()]
+    if missing and not (planars and not args.apply):  # a dry run would have written them
         sys.exit("Can't draw " + dataset + ": missing " +
                  " and ".join(rel(p) for p in missing) +
                  ". A CCDB structure gets both from `python -m laminar.import_ccdb --apply`; "
+                 "a planars language's are written by this command with --apply "
+                 "(datasets <lang>_<types|classes>_<all|complete|partial|distinct>); "
                  "a language set up by hand needs both written first.")
     if args.apply and shutil.which("Rscript") is None:
         sys.exit("Rscript is not on the PATH, so the charts can't be rendered.")
@@ -167,7 +184,7 @@ def draw_one(args: argparse.Namespace) -> None:
     print(f"  {'permutations':14s} {permutations if permutations else 'off'!s:32s} "
           f"{'all four tests' if permutations else ''}")
 
-    bundle_data = NC / "results" / "chart_data" / dataset / "data"
+    bundle_data = bundle_root(dataset) / dataset / "data"
     had_tests = [t for t in PERMUTATION_TABLES if (bundle_data / t).exists()]
     if not permutations and had_tests:
         print(f"\nNote: the current bundle has permutation-test tables ({', '.join(had_tests)}); "
@@ -182,8 +199,8 @@ def draw_one(args: argparse.Namespace) -> None:
 
     run(export_cmd, "Export")
     run(render_cmd, "Render")
-    print(f"\nBundle: {rel(NC / 'results' / 'chart_data' / dataset)}/   "
-          f"Charts: {rel(NC / 'results' / dataset)}/")
+    print(f"\nBundle: {rel(bundle_root(dataset) / dataset)}/   "
+          f"Charts: {rel(charts_root(dataset) / dataset)}/")
 
 
 # ── Every CCDB structure ────────────────────────────────────────────────────

@@ -35,13 +35,10 @@ from laminar.laminar_analysis import (
     select_representative_families,
     span_to_newick,
 )
-from laminar.planars_groupings import GROUPINGS, observed_groups, permutation_groups
+from laminar.planars_groupings import CLASS_COLORS, GROUPINGS, observed_groups, permutation_groups
 from laminar.datasets import NC, planar_position_count, repo_relative
-from laminar.laminar_tree_counts import (
-    CLASS_COLORS,
-    collect_bundle_counts,
-    collect_counts,
-)
+from laminar.datasets import bundle_root, planar_file as dataset_planar_file
+from laminar.laminar_tree_counts import collect_bundle_counts, collect_counts
 from laminar.boundary_strength import compute_boundary_strength
 from laminar.class_fragmentation_test import run_test as run_fragmentation_test
 from laminar.boundary_strength_test import run_test as run_boundary_strength_test
@@ -740,7 +737,7 @@ def export_selections(dataset: str, families, data_dir: Path,
 # and sorts after the known types, alphabetically.
 #
 # The `colour` of each type is NOT written here: it is read from
-# laminar_tree_counts.CLASS_COLORS below, which is the one place in the project
+# planars_groupings.CLASS_COLORS below, which is the one place in the project
 # those five colours are written down. Everything R draws in them arrives
 # through this table, so the bundle is where R gets them from, but the values
 # themselves have a single owner.
@@ -893,10 +890,11 @@ def load_position_labels(planar_file: Path | None, n_positions: int,
 
     Priority: an explicit two-column labels file (position, label) — used when
     a dataset's chart labels differ from its planar table's short slot codes,
-    as nyan1308's do; then the planar table's Position_Label column; then
-    numeric labels — the last fallback, used both when there is no planar
-    table and when the planar table has no Position_Label column (true of
-    every CCDB planar table; nothing in CCDB corresponds to that column).
+    as nyan1308's do; then the planar table's Position_Label column, or
+    Position_Name for a planars language's planar file; then numeric labels
+    — the last fallback, used both when there is no planar table and when the
+    planar table has neither column (true of every CCDB planar table;
+    nothing in CCDB corresponds to either).
     """
     if labels_file is not None:
         with labels_file.open(encoding="utf-8", newline="") as handle:
@@ -916,8 +914,11 @@ def load_position_labels(planar_file: Path | None, n_positions: int,
 
     with planar_file.open(encoding="utf-8", newline="") as handle:
         rows = list(csv.DictReader(handle, delimiter="\t"))
-    if rows and "Position_Label" not in rows[0]:
-        # No Position_Label column at all -- true of every CCDB planar table
+    # A planars language's planar file names its positions in Position_Name
+    # (v:verbstem); a hand-made table has Position_Label.
+    label_column = next((c for c in ("Position_Label", "Position_Name") if rows and c in rows[0]), None)
+    if label_column is None:
+        # No label column at all -- true of every CCDB planar table
         # (chac1251_verbal's columns end at Elements) -- so there is nothing
         # to read; fall back to plain numbers rather than a KeyError.
         return [
@@ -925,7 +926,7 @@ def load_position_labels(planar_file: Path | None, n_positions: int,
             for position in range(1, n_positions + 1)
         ]
     labels = [
-        {"position": int(row["Position"]), "label": row["Position_Label"]}
+        {"position": int(row["Position"]), "label": row[label_column]}
         for row in rows
     ]
     labels.sort(key=lambda row: row["position"])
@@ -1004,8 +1005,14 @@ def export_bundle(
     tests.to_csv(data_dir / "tests.tsv", sep="\t", index=False)
 
     if planar_file is None:
-        candidate = NC / "planar_tables" / f"planar_{dataset}.tsv"
+        candidate = dataset_planar_file(dataset)
         planar_file = candidate if candidate.exists() else None
+    # What a planars language's domains file was built from (the
+    # planars-data commit, how complete the annotation is), written beside it
+    # by laminar/planars_language.py; carried into the metadata as it is.
+    source_record = domain_file.with_name(f"source_{dataset}.json")
+    planars_source = (json.loads(source_record.read_text(encoding="utf-8"))
+                      if source_record.exists() else None)
 
     # Keep the full dataset's position count for every subset.  A subset may
     # stop before the final planar position but its trees still use the full
@@ -1210,6 +1217,8 @@ def export_bundle(
             for key, frequency in span_family_count.items() if key != synthetic_id
         ),
         "enumeration_truncated": truncated,
+        # Only for a planars language, so every other bundle is unchanged.
+        **({"planars_source": planars_source} if planars_source else {}),
         **selection_metadata,
         **fragmentation_metadata,
         **boundary_strength_test_metadata,
@@ -1315,7 +1324,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--domain-file", type=Path, required=True)
     parser.add_argument(
-        "--output-dir", type=Path, default=NC / "results" / "chart_data"
+        "--output-dir", type=Path, default=None,
+        help="Folder the bundle folder goes in. Default: the dataset's (datasets.bundle_root(): "
+             "planars-data for a planars language, else NonCollaborative/results/chart_data)",
     )
     parser.add_argument("--planar-file", type=Path, default=None)
     parser.add_argument(
@@ -1428,7 +1439,8 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    bundle_dir = export_bundle(args.domain_file, args.output_dir, args.planar_file,
+    output_dir = args.output_dir or bundle_root(args.domain_file.stem.removeprefix("domains_"))
+    bundle_dir = export_bundle(args.domain_file, output_dir, args.planar_file,
                                # By name, not position, from here down: this is
                                # the tail of a long signature and each new
                                # option (a permutation test, --root-position,

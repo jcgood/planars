@@ -59,6 +59,7 @@ from planars import idiom as _idiom
 from planars.elements import wrap_element
 from planars.io import load_filled_sheet
 from planars.languages import get_display_name
+from planars.spans import gained_position_counts
 from planars.schema_values import (
     ELEMENT_ROWS, TRAILING_COLUMNS, header_shape, is_keystone, row_columns, row_type,
 )
@@ -102,45 +103,33 @@ _BIUNIQ_VARIANTS = list(_BIUNIQ_MAP.get("variants", {}).items())
 # Row extraction helpers
 # ---------------------------------------------------------------------------
 
+def _span_row(lang_id, analysis, label, key, result):
+    """One span row: `key` is the span's key in the derive function's result."""
+    l, r = result[key]
+    return {"Language": lang_id, "Test_Labels": label, "Analysis": analysis,
+            "Span_Key": key, "Left_Edge": l, "Right_Edge": r, "Size": r - l + 1}
+
+
 def _rows_from_cisc(result, lang_id):
-    rows = []
-    for key, label in _CISC_SPANS:
-        l, r = result[key]
-        rows.append({"Language": lang_id, "Test_Labels": label,
-                     "Analysis": "ciscategorial",
-                     "Left_Edge": l, "Right_Edge": r, "Size": r - l + 1})
-    return rows
+    return [_span_row(lang_id, "ciscategorial", label, key, result)
+            for key, label in _CISC_SPANS]
 
 
 def _rows_from_subspan(result, lang_id):
-    rows = []
-    for cat, short in _SUBSPAN_CATS.items():
-        for variant, vlabel in _SUBSPAN_VARIANTS:
-            l, r = result[f"{variant}_{cat}_span"]
-            rows.append({"Language": lang_id, "Test_Labels": f"{short} {vlabel}",
-                         "Analysis": "subspanrepetition",
-                         "Left_Edge": l, "Right_Edge": r, "Size": r - l + 1})
-    return rows
+    return [_span_row(lang_id, "subspanrepetition", f"{short} {vlabel}",
+                      f"{variant}_{cat}_span", result)
+            for cat, short in _SUBSPAN_CATS.items()
+            for variant, vlabel in _SUBSPAN_VARIANTS]
 
 
 def _rows_from_nonint(result, lang_id):
-    rows = []
-    for key, label in _NONINT_SPANS:
-        l, r = result[key]
-        rows.append({"Language": lang_id, "Test_Labels": label,
-                     "Analysis": "noninterruption",
-                     "Left_Edge": l, "Right_Edge": r, "Size": r - l + 1})
-    return rows
+    return [_span_row(lang_id, "noninterruption", label, key, result)
+            for key, label in _NONINT_SPANS]
 
 
 def _rows_from_metrical(result, lang_id):
-    rows = []
-    for key, label in _METRICAL_BLOCKED_SPANS:
-        l, r = result[key]
-        rows.append({"Language": lang_id, "Test_Labels": label,
-                     "Analysis": "metrical",
-                     "Left_Edge": l, "Right_Edge": r, "Size": r - l + 1})
-    return rows
+    return [_span_row(lang_id, "metrical", label, key, result)
+            for key, label in _METRICAL_BLOCKED_SPANS]
 
 
 def _rows_from_biuniq(result, lang_id):
@@ -154,11 +143,8 @@ def _rows_from_biuniq(result, lang_id):
     for d in result["domains"]:
         where = f"{d['morpheme']}@{d['position_name']}" if d["position_name"] else d["morpheme"]
         for key, variant in _BIUNIQ_VARIANTS:
-            l, r = d[key]
-            rows.append({"Language": lang_id,
-                         "Test_Labels": f"{_BIUNIQ_PREFIX} {d['type']} {where} {variant}",
-                         "Analysis": "biuniqueness_deviations",
-                         "Left_Edge": l, "Right_Edge": r, "Size": r - l + 1})
+            rows.append(_span_row(lang_id, "biuniqueness_deviations",
+                                  f"{_BIUNIQ_PREFIX} {d['type']} {where} {variant}", key, d))
     return rows
 
 
@@ -170,14 +156,8 @@ def _make_simple_rows(analysis_name, span_list=None, prefix=None):
         prefix = _SIMPLE_PREFIXES.get(analysis_name, analysis_name)
 
     def _fn(result, lang_id):
-        rows = []
-        for key, label in span_list:
-            l, r = result[key]
-            rows.append({"Language": lang_id,
-                         "Test_Labels": f"{prefix} {label}",
-                         "Analysis": analysis_name,
-                         "Left_Edge": l, "Right_Edge": r, "Size": r - l + 1})
-        return rows
+        return [_span_row(lang_id, analysis_name, f"{prefix} {label}", key, result)
+                for key, label in span_list]
 
     return _fn
 
@@ -209,6 +189,85 @@ _CLASS_HANDLERS = {
     "play_language":     (_play.derive_play_language_domains,         _make_simple_rows("play_language")),
     "idiom":             (_idiom.derive_idiom_domains,                _make_simple_rows("idiom")),
 }
+
+# ---------------------------------------------------------------------------
+# Partial spans and their weights (docs/laminar-analysis-plan.md decision 3)
+#
+# For each class: {partial span key: (complete counterpart key, counts key)}.
+# A partial span lets in positions where only some elements satisfy the span
+# rule; its counterpart is the same span built from positions where every
+# element does. The counts key names the result's {position: (k, n)}
+# (planars.spans.position_sets_from_element_mask). A class with {} has no
+# partial/complete distinction (its spans come from pairs or other rules).
+# Every class in _CLASS_HANDLERS must be listed: an unlisted one fails at
+# import rather than passing as unweighted.
+#
+# metrical is the reverse of the rest: its "complete" span is the wider one
+# (it stops only where every element blocks), so that is its partial span here.
+# ---------------------------------------------------------------------------
+
+_STANDARD_WEIGHTS = {
+    "strict_partial_span": ("strict_complete_span", "position_counts"),
+    "loose_partial_span":  ("loose_complete_span",  "position_counts"),
+}
+
+_WEIGHTED_SPANS: Dict[str, Dict[str, Tuple[str, str]]] = {
+    "ciscategorial":     _STANDARD_WEIGHTS,
+    "subspanrepetition": {
+        f"{variant}_partial_{cat}_span": (f"{variant}_complete_{cat}_span", f"{cat}_position_counts")
+        for cat in _SUBSPAN_CATS for variant in ("strict", "loose")
+    },
+    "noninterruption": {
+        "no_free_partial_span":     ("no_free_complete_span",     "no_free_position_counts"),
+        "single_free_partial_span": ("single_free_complete_span", "single_free_position_counts"),
+    },
+    "metrical": {
+        "minimal_complete_span": ("minimal_partial_span", "minimal_position_counts"),
+        "maximal_complete_span": ("maximal_partial_span", "maximal_position_counts"),
+    },
+    "nonpermutability":        {},
+    "coreference":             {},
+    "free_occurrence":         {},
+    "biuniqueness_deviations": {},
+    "repair":                  _STANDARD_WEIGHTS,
+    "segmental":               _STANDARD_WEIGHTS,
+    "tonal":                   _STANDARD_WEIGHTS,
+    "tonosegmental":           _STANDARD_WEIGHTS,
+    "intonational":            _STANDARD_WEIGHTS,
+    "pausing":                 _STANDARD_WEIGHTS,
+    "proform":                 _STANDARD_WEIGHTS,
+    "play_language":           _STANDARD_WEIGHTS,
+    "idiom":                   _STANDARD_WEIGHTS,
+}
+if set(_WEIGHTED_SPANS) != set(_CLASS_HANDLERS):
+    raise RuntimeError(
+        "planars/reports.py: _WEIGHTED_SPANS must list exactly the classes in _CLASS_HANDLERS; "
+        f"missing {sorted(set(_CLASS_HANDLERS) - set(_WEIGHTED_SPANS))}, "
+        f"extra {sorted(set(_WEIGHTED_SPANS) - set(_CLASS_HANDLERS))}")
+
+
+def _span_rows(class_name: str, construction: str, result: dict, lang_id: str) -> list:
+    """The class's span rows for one construction, each with its construction,
+    whether it is built from complete or partial positions (Position_Basis:
+    "complete", "partial", or "" for a class without the distinction), and,
+    for a partial span, the positions it gains over its complete counterpart
+    with their k of n (Gained_Positions: [(position, k, n), ...])."""
+    _derive_fn, row_fn = _CLASS_HANDLERS[class_name]
+    weighted = _WEIGHTED_SPANS[class_name]
+    counterparts = {counterpart for counterpart, _counts in weighted.values()}
+    rows = row_fn(result, lang_id)
+    for row in rows:
+        key = row["Span_Key"]
+        row["Construction"] = construction
+        if key in weighted:
+            counterpart, counts_key = weighted[key]
+            row["Position_Basis"] = "partial"
+            row["Gained_Positions"] = gained_position_counts(
+                result[key], result[counterpart], result[counts_key])
+        else:
+            row["Position_Basis"] = "complete" if key in counterparts else ""
+            row["Gained_Positions"] = []
+    return rows
 
 def span_constructions(class_name: str) -> Optional[frozenset]:
     """The class's constructions that produce spans, or None if every one does.
@@ -251,7 +310,10 @@ def project_spans(
     """Collect spans for all languages.
 
     Returns (DataFrame, lang_meta) where:
-      DataFrame columns: Language, Test_Labels, Analysis, Left_Edge, Right_Edge, Size
+      DataFrame columns: Language, Test_Labels, Analysis, Span_Key, Left_Edge,
+        Right_Edge, Size, Construction, Position_Basis, Gained_Positions
+        (see _span_rows; Test_Labels repeat across a class's constructions,
+        so a span is identified by Analysis + Construction + Span_Key)
       lang_meta: {lang_id: {"keystone_pos": int, "pos_to_name": {int: str}}}
 
     Each language has its own independent planar structure and position numbering.
@@ -329,7 +391,7 @@ def _collect_spans_local(repo_root: Path, lang_id: Optional[str] = None):
                 if allowed is not None and tsv.stem not in allowed:
                     continue
                 result = derive_fn(tsv, strict=False)
-                rows.extend(row_fn(result, lid))
+                rows.extend(_span_rows(class_name, tsv.stem, result, lid))
                 if lid not in lang_meta:
                     lang_meta[lid] = {
                         "keystone_pos": result["keystone_position"],
@@ -396,7 +458,7 @@ def _collect_spans_sheets(gc, manifest, lang_id: Optional[str] = None):
                             _data = (pair_df, keystone_pos, pos_to_name, pos_type,
                                      pos_to_elements, elem_to_positions)
                             result = derive_fn(_data=_data, strict=False)
-                            rows.extend(row_fn(result, lid))
+                            rows.extend(_span_rows(class_name, construction, result, lid))
                             if lid not in lang_meta:
                                 lang_meta[lid] = {
                                     "keystone_pos": result["keystone_position"],
@@ -426,7 +488,7 @@ def _collect_spans_sheets(gc, manifest, lang_id: Optional[str] = None):
                             _data = (pair_df, keystone_pos, pos_to_name, elem_to_positions)
                             result = derive_fn(_data=_data, strict=False,
                                                construction=construction)
-                            rows.extend(row_fn(result, lid))
+                            rows.extend(_span_rows(class_name, construction, result, lid))
                             if lid not in lang_meta:
                                 lang_meta[lid] = {
                                     "keystone_pos": result["keystone_position"],
@@ -450,7 +512,7 @@ def _collect_spans_sheets(gc, manifest, lang_id: Optional[str] = None):
                         _data = (_tab_df(MORPHEMES_TAB), _tab_df(construction),
                                  planar["keystone_pos"], pos_to_name)
                         result = derive_fn(_data=_data, strict=False)
-                        rows.extend(row_fn(result, lid))
+                        rows.extend(_span_rows(class_name, construction, result, lid))
                         if lid not in lang_meta:
                             lang_meta[lid] = {
                                 "keystone_pos": result["keystone_position"],
@@ -469,7 +531,7 @@ def _collect_spans_sheets(gc, manifest, lang_id: Optional[str] = None):
                     print(f"  WARNING: could not parse {class_name}/{construction} sheet for {lid}: {e}")
                     continue
                 result = derive_fn(_data=loaded, strict=False)
-                rows.extend(row_fn(result, lid))
+                rows.extend(_span_rows(class_name, construction, result, lid))
                 if lid not in lang_meta:
                     lang_meta[lid] = {
                         "keystone_pos": result["keystone_position"],
@@ -775,8 +837,8 @@ def language_report_data(
         completeness:   dict — from language_completeness()
         status:         dict or None — from language_status() (None for source="local")
         spans:          pd.DataFrame or None — span rows for this language;
-                        columns: Language, Test_Labels, Analysis, Left_Edge,
-                        Right_Edge, Size. Write to TSV for R or other consumers.
+                        columns as project_spans() describes. Write to TSV
+                        for R or other consumers.
         lang_meta:      dict or None — {"keystone_pos": int, "pos_to_name": dict}
                         needed for chart rendering and tree traversal.
 

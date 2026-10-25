@@ -91,7 +91,7 @@ from laminar.laminar_analysis import (
     enumerate_maximal_laminar_families,
 )
 from laminar.planars_groupings import GROUPINGS, permutation_groups
-from laminar.laminar_tree_counts import CLASS_COLORS  # single source of truth for class colors
+from laminar.planars_groupings import CLASS_COLORS  # single source of truth for class colors
 from laminar.datasets import add_dataset_arguments, resolve_dataset_arguments
 
 # group name -> house-style color, every class and every grouping's bundles,

@@ -25,11 +25,14 @@ Six live threads. Read whichever matches what you're picking up.
 The Chichewa/CCDB analysis and charts move out of `NonCollaborative/` into
 the main repo and run on any planars language, English first. **Plan and
 Jeff's decisions: `docs/laminar-analysis-plan.md`** (don't re-ask them);
-**state: `docs/laminar-analysis-progress.md`**. Phases 1 and 2 done
+**state: `docs/laminar-analysis-progress.md`**. Phases 1–3 done
 (2026-10-24): the analysis is `laminar/` at the repo root
 (`python -m laminar charts <dataset>`), with `planarsviz/` and renv beside
-it. **Next action:** Phase 3, the adapter that builds English's span table
-from `planars.reports.language_spans`. Jeff's cuts to the cross-language
+it; `laminar/planars_language.py` builds English's eight datasets
+(`stan1293_<types|classes>_<all|complete|partial|distinct>`) with *k of n*
+weights. **Next action:** Phase 4, run English
+(`python -m laminar charts stan1293_types_all --apply` etc.), starting with
+colours for English's domain types (they draw grey now). Jeff's cuts to the cross-language
 charts (CCDB thread below) come after Phase 2 (his call, 2026-10-24), so
 they can go in now or between later phases, not in the middle of one.
 

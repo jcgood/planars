@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple
 
 from planars.io import load_filled_tsv, _TRAILING_COLS
-from planars.spans import fmt_span, strict_span, loose_span
+from planars.spans import fmt_span, strict_span, loose_span, position_sets_from_element_mask
 
 
 
@@ -30,6 +30,7 @@ def derive_v_ciscategorial_fractures(
       - keystone_position
       - complete_positions: positions where ALL elements are v-ciscategorial
       - partial_positions:  positions where >=1 element is v-ciscategorial
+      - position_counts:    {position: (k, n)}, k of its n elements v-ciscategorial
       - strict_complete_span, loose_complete_span
       - strict_partial_span, loose_partial_span
       - position_number_to_name
@@ -72,19 +73,16 @@ def derive_v_ciscategorial_fractures(
     data_df["is_v_ciscategorial"] = is_v
 
     # Complete: every element in the position is v-ciscategorial.
-    complete_positions = set(
-        int(pos) for pos, grp in data_df.groupby("Position_Number")
-        if len(grp) > 0 and grp["is_v_ciscategorial"].all()
-    )
     # Partial: at least one element in the position is v-ciscategorial.
-    partial_positions = set(
-        data_df.loc[data_df["is_v_ciscategorial"], "Position_Number"].unique().tolist()
+    partial_positions, complete_positions, position_counts = position_sets_from_element_mask(
+        data_df, data_df["is_v_ciscategorial"]
     )
 
     return {
         "keystone_position": keystone_pos,
         "complete_positions": sorted(complete_positions),
         "partial_positions": sorted(partial_positions),
+        "position_counts": position_counts,
         "strict_complete_span": strict_span(complete_positions, keystone_pos),
         "loose_complete_span": loose_span(complete_positions, keystone_pos),
         "strict_partial_span": strict_span(partial_positions, keystone_pos),

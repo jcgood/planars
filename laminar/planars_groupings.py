@@ -29,7 +29,15 @@ from (BUNDLES reuses three of that palette's first five entries rather than
 picking new ones); #6F99AD (the sixth) went to `indeterminate` itself. The
 seventh, #FFDC91, was skipped as too pale for thin lines on white (Jeff,
 2026-09-23), so #EE4C97 stays in the palette and distinct from every
-domain-type and bundle colour already in use.
+domain-type and bundle colour already in use. A language annotated through
+planars uses "planars_types" or "planars_classes", built from the schema's
+domain types by _planars_groupings() (decision 4 of
+docs/laminar-analysis-plan.md); laminar/planars_language.py writes its
+domains files to match.
+
+CLASS_COLORS: the domain types' colours, the one place they are written
+down (moved here from laminar_tree_counts.py so the planars groupings can
+use them without a circular import).
 
 CLASS_ORDER: the order domain types are listed in, wherever a script lists
 them one by one. Only types a dataset actually has are listed, then any type
@@ -51,6 +59,21 @@ import pandas as pd
 
 CLASS_ORDER: list[str] = ["morphosyntactic", "phonological", "tonosegmental", "intonational", "length"]
 
+# Exact pooled-plot colours of the domain types, the one place they are
+# written down. Read by class_fragmentation_test.py and by
+# export_planarsviz_data.py's DOMAIN_TYPE_STYLE, which is where R gets them.
+# `indeterminate` is CCDB's third domain type (absent from nyan1308); it is
+# not in CLASS_ORDER, so it never displaces the five nyan1308 classes --
+# it only supplies a colour for datasets (CCDB's) that observe it.
+CLASS_COLORS: dict[str, str] = {
+    "morphosyntactic": "#BC3C29",
+    "tonosegmental": "#0072B5",
+    "length": "#E18727",
+    "phonological": "#20845E",
+    "intonational": "#7876B1",
+    "indeterminate": "#6F99AD",
+}
+
 BUNDLES: list[tuple[str, list[str], str, str]] = [
     ("phonologylike", ["phonological", "intonational"], "#0072B5", "Phonology-like"),
     ("syntaxlike", ["morphosyntactic", "tonosegmental", "length"], "#BC3C29", "Syntax-like"),
@@ -61,15 +84,79 @@ FILTERS: list[tuple[str, list[str]]] = [
     ("no_tono", ["tonosegmental"]),
 ]
 
+_MORSYN_INDET = ("morsyn_indet", ["morphosyntactic", "indeterminate"], "#EE4C97",
+                 "Morphosyntactic + indeterminate")
+
+# Colours for the planars groupings' bundles that are not a domain type of
+# their own (a phonological subtype, all phonological classes together).
+# Provisional: English's charts are first drawn in Phase 4 of
+# docs/laminar-analysis-plan.md, which settles them.
+_SUBTYPE_COLOURS = {"segmental": "#0072B5", "prosodic": "#7876B1", "tonal": "#E18727"}
+_PHONOLOGICAL_ALL_COLOUR = "#20845E"
+
+
+def planars_domain_type(domain_type: str, subtype: str | None) -> str:
+    """The Domain_Type a planars class's spans carry in the `planars_types`
+    grouping: its domain type, joined to its subtype when it has one
+    (``phonological-prosodic``), so each subtype is a group of its own."""
+    return f"{domain_type}-{subtype}" if subtype else domain_type
+
+
+def _planars_groupings() -> dict[str, dict]:
+    """The two groupings for a language annotated through planars
+    (docs/laminar-analysis-plan.md decision 4), built from each class's
+    domain_type and domain_subtype in schemas/diagnostic_classes.yaml:
+
+    - planars_types: each span's Domain_Type is its class's type-subtype
+      (planars_domain_type()); bundles: every phonological type together,
+      and the CCDB-style morphosyntactic + indeterminate.
+    - planars_classes: each span's Domain_Type is its class name; bundles:
+      the classes of each domain type, of each subtype, and the CCDB-style
+      bundle of morphosyntactic and indeterminate classes.
+
+    observed_groups() keeps only the bundles a dataset has data for, so a
+    class with no spans yet costs nothing here.
+    """
+    from planars.schema_values import class_domain_types
+
+    types = class_domain_types()
+    labels = {planars_domain_type(t, s) for t, s in types.values()}
+    phonological = sorted(l for l in labels if l.split("-")[0] == "phonological")
+    by_type: dict[str, list[str]] = {}
+    by_subtype: dict[str, list[str]] = {}
+    for name, (domain_type, subtype) in types.items():
+        by_type.setdefault(domain_type, []).append(name)
+        if subtype:
+            by_subtype.setdefault(subtype, []).append(name)
+    unknown = sorted(set(by_subtype) - set(_SUBTYPE_COLOURS))
+    if unknown:
+        raise KeyError(f"No bundle colour for domain subtype(s) {unknown}: add to "
+                       "planars_groupings._SUBTYPE_COLOURS.")
+    return {
+        "planars_types": {
+            "bundles": [
+                ("phonological_all", phonological, _PHONOLOGICAL_ALL_COLOUR, "Phonological (all)"),
+                _MORSYN_INDET,
+            ],
+            "filters": [],
+        },
+        "planars_classes": {
+            "bundles": (
+                [(t, names, CLASS_COLORS[t], t.capitalize()) for t, names in by_type.items()]
+                + [(s, names, _SUBTYPE_COLOURS[s], f"Phonological ({s})")
+                   for s, names in by_subtype.items()]
+                + [("morsyn_indet", by_type.get("morphosyntactic", []) + by_type.get("indeterminate", []),
+                    _MORSYN_INDET[2], _MORSYN_INDET[3])]
+            ),
+            "filters": [],
+        },
+    }
+
+
 GROUPINGS: dict[str, dict] = {
     "chichewa": {"bundles": BUNDLES, "filters": FILTERS},
-    "ccdb": {
-        "bundles": [
-            ("morsyn_indet", ["morphosyntactic", "indeterminate"], "#EE4C97",
-             "Morphosyntactic + indeterminate"),
-        ],
-        "filters": [],
-    },
+    "ccdb": {"bundles": [_MORSYN_INDET], "filters": []},
+    **_planars_groupings(),
 }
 
 

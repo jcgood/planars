@@ -37,7 +37,8 @@ def derive_noninterruption_domains(
     Only strict spans are computed for non-interruption (no loose span).
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
-    missing_data, and positions and spans for each of the four combinations.
+    missing_data, and positions and spans for each of the four combinations,
+    with each domain's position counts (each position's k of n).
     """
     if _data is not None:
         data_df, keystone_pos, pos_to_name, _, _ = _data
@@ -62,8 +63,10 @@ def derive_noninterruption_domains(
         ((data_df["free"] == "y") & (data_df["multiple"] == "n"))
     )
 
-    no_free_partial,    no_free_complete    = position_sets_from_element_mask(data_df, data_df["is_bound"])
-    single_free_partial, single_free_complete = position_sets_from_element_mask(data_df, data_df["is_single_free_ok"])
+    no_free_partial, no_free_complete, no_free_counts = position_sets_from_element_mask(
+        data_df, data_df["is_bound"])
+    single_free_partial, single_free_complete, single_free_counts = position_sets_from_element_mask(
+        data_df, data_df["is_single_free_ok"])
 
     return {
         "keystone_position": keystone_pos,
@@ -72,6 +75,8 @@ def derive_noninterruption_domains(
         "no_free_partial_positions":      sorted(no_free_partial),
         "single_free_complete_positions": sorted(single_free_complete),
         "single_free_partial_positions":  sorted(single_free_partial),
+        "no_free_position_counts":        no_free_counts,
+        "single_free_position_counts":    single_free_counts,
         "no_free_complete_span":          strict_span(no_free_complete, keystone_pos),
         "no_free_partial_span":           strict_span(no_free_partial, keystone_pos),
         "single_free_complete_span":      strict_span(single_free_complete, keystone_pos),

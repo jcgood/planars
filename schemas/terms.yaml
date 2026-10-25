@@ -197,6 +197,20 @@ chart_labels:
         free-permutable interior positions, as long as the outermost (edge) positions
         of the span are not free-permutable.
 
+  coreference:
+    - label: "coref binder strict"
+      meaning: >
+        Contiguous span from the keystone through positions where an antecedent
+        (binder) can occur in a coreference pair the annotator marked y.
+    - label: "coref binder loose"
+      meaning: Leftmost to rightmost binder position (gaps allowed).
+    - label: "coref bindee strict"
+      meaning: >
+        Contiguous span from the keystone through positions where the anaphor
+        (bindee) can occur in a coreference pair the annotator marked y.
+    - label: "coref bindee loose"
+      meaning: Leftmost to rightmost bindee position (gaps allowed).
+
   free_occurrence:
     - label: "free-occ minimal"
       meaning: >
@@ -323,6 +337,8 @@ span_label_map:
   # is too long for chart labels. Omitted entries use the full analysis name.
   simple_prefix_overrides:
     free_occurrence: "free-occ"
+    nonpermutability: nonperm
+    coreference:     coref
     segmental:       seg
     pausing:         pause
     play_language:   play
@@ -354,10 +370,12 @@ span_label_map:
     maximal_partial_span:  "metr maximal partial"
     maximal_complete_span: "metr maximal complete"
 
+  # Labels without the class's prefix: reports.py adds it (from
+  # simple_prefix_overrides), as for free_occurrence.
   nonpermutability:
-    strict_span:           "nonperm strict"
-    minimal_flexible_span: "nonperm flexible minimal"
-    maximal_flexible_span: "nonperm flexible maximal"
+    strict_span:           "strict"
+    minimal_flexible_span: "flexible minimal"
+    maximal_flexible_span: "flexible maximal"
 
   free_occurrence:
     minimal_span: "minimal"
@@ -377,10 +395,10 @@ span_label_map:
       loose_partial:   "loose partial"
 
   coreference:
-    binder_strict_span: "reflex binder strict"
-    binder_loose_span:  "reflex binder loose"
-    bindee_strict_span: "reflex bindee strict"
-    bindee_loose_span:  "reflex bindee loose"
+    binder_strict_span: "binder strict"
+    binder_loose_span:  "binder loose"
+    bindee_strict_span: "bindee strict"
+    bindee_loose_span:  "bindee loose"
 
 # ---------------------------------------------------------------------------
 # RETIRED TERMS

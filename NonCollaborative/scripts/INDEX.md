@@ -131,7 +131,7 @@ annotations, which actually happened with `scales = "free_x"` alone.)*
   `_fragmentation_null_draws.tsv` (every draw, long format, for the chart).
   The two summary files record the draw count and seed that produced them.
 - **Imports**: its groups from `planars_groupings.permutation_groups()`,
-  `CLASS_COLORS` from `laminar_tree_counts.py` — each defined in one place,
+  `CLASS_COLORS` from `planars_groupings.py` — each defined in one place,
   not redefined here
 - **Also called by the exporter**, through `run_test()`, when
   `--fragmentation-permutations` is given, with the same groups.
@@ -151,9 +151,6 @@ with `groups` for the two-bundle variant — from a bundle exported with
 - **Output**: `results/nyan1308/counts-and-chance/nyan1308_tree_counts.tsv`. The bar charts of these
   counts are drawn by the package; until the 2026-09-20 cutover this script
   drew them itself, in matplotlib.
-- **Also owns `CLASS_COLORS`** — the five domain-type colours, in one place.
-  `class_fragmentation_test.py` imports them and so does the exporter's
-  `DOMAIN_TYPE_STYLE`, which is how they reach R.
 - **Example**: `python -m laminar.laminar_tree_counts`
 
 **`laminar/boundary_strength.py`**
@@ -218,8 +215,13 @@ with `groups` for the two-bundle variant — from a bundle exported with
   display labels) and `FILTERS` (the domain types a subset analysis leaves
   out), plus `GROUPINGS`, which packages the two under a dataset name: the
   exporter's `--groupings` picks `"chichewa"` (today's `BUNDLES`/`FILTERS`,
-  unchanged) or `"ccdb"` (one bundle, morphosyntactic + indeterminate, no
-  filters). Also `CLASS_ORDER` (the order domain types are listed in) and
+  unchanged), `"ccdb"` (one bundle, morphosyntactic + indeterminate, no
+  filters), or, for a language annotated through planars, `"planars_types"`
+  / `"planars_classes"` (built from the schema's domain types; see
+  `planars_language.py`). Also `CLASS_COLORS` (the six domain-type colours,
+  in one place: `class_fragmentation_test.py` and the exporter's
+  `DOMAIN_TYPE_STYLE`, which is how they reach R, import them),
+  `CLASS_ORDER` (the order domain types are listed in) and
   `observed_groups()`/`permutation_groups()`, the one place every script
   and the exporter build a dataset's groups: only the types and bundles its
   data has, in a fixed order (the permutation tests' numbers depend on it).
@@ -231,7 +233,20 @@ with `groups` for the two-bundle variant — from a bundle exported with
   `chart_settings_<dataset>.json`, else its CCDB import file, else the
   exporter's defaults). Also the command-line options every standalone
   analysis script shares. Read by those scripts, the exporter and
-  `python -m laminar charts`. Not runnable on its own.
+  `python -m laminar charts`. Not runnable on its own. A planars
+  language's datasets (`<lang>_<types|classes>_<selection>`) have their
+  files in planars-data (`coded_data/.analysis/<lang>/`) and their settings
+  from `planars_language.py`.
+
+**`laminar/planars_language.py`**
+- **Purpose**: Connects a language annotated through planars (English
+  first) to the analysis: builds its span table from
+  `planars.reports.language_spans`, with each span's domain type or class,
+  construction, partial/complete basis and three weights, and writes one
+  domains file (plus a `source_<dataset>.json`: planars-data commit,
+  annotation completeness) per grouping × selection. `python -m laminar
+  charts <lang>_…` runs it before every export. Details: its docstring.
+- **Example**: `python -m laminar.planars_language stan1293` (dry run)
 
 **`laminar/export_planarsviz_illustrations.py`**
 - **Purpose**: Writes the `illustrations` bundle — the one `planarsviz`

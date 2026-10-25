@@ -49,7 +49,8 @@ def derive_subspanrepetition_spans(
 
     Returns a dict with keystone_position, position_number_to_name, element_table,
     missing_data, and for each category: complete_positions, partial_positions,
-    strict/loose x complete/partial spans.
+    position_counts (each position's k of n), strict/loose x complete/partial
+    spans.
     """
     if _data is not None:
         data_df, keystone_pos, pos_to_name, _, _ = _data
@@ -83,11 +84,12 @@ def derive_subspanrepetition_spans(
     # For each of the 5 span categories, compute all 4 span variants
     # (strict/loose × complete/partial) and store in the result dict.
     for cat_name, flag_col in _CATEGORIES.items():
-        partial_positions, complete_positions = position_sets_from_element_mask(
+        partial_positions, complete_positions, position_counts = position_sets_from_element_mask(
             data_df, data_df[flag_col]
         )
         results[f"{cat_name}_complete_positions"] = sorted(complete_positions)
         results[f"{cat_name}_partial_positions"]  = sorted(partial_positions)
+        results[f"{cat_name}_position_counts"]    = position_counts
         results[f"strict_complete_{cat_name}_span"] = strict_span(complete_positions, keystone_pos)
         results[f"loose_complete_{cat_name}_span"]  = loose_span(complete_positions, keystone_pos)
         results[f"strict_partial_{cat_name}_span"]  = strict_span(partial_positions, keystone_pos)
