@@ -180,7 +180,9 @@ states them.
    for the current template and any glossing convention once there is a
    contract.
 2. **Manuscripts live in planars-data, in `coded_data/.papers/`** (Jeff,
-   2026-10-25, replacing "a new private GitHub repository"). A dot-folder
+   2026-10-25, replacing "a new private GitHub repository"; a starting
+   point he may revise later, so build nothing that makes moving them
+   hard, but don't re-ask). A dot-folder
    because every command that loops over planars-data takes a plain
    top-level folder for a language and skips only dot-folders (as
    `.state/` and `.analysis/`). Consequences for Phase 3: anyone with
