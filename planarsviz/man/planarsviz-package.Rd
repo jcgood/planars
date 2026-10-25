@@ -6,7 +6,7 @@
 \alias{planarsviz-package}
 \title{planarsviz: visualizations for planar constituency analyses}
 \description{
-Data-driven charts for planar constituency and laminar-family analyses: pooled test plots, boundary frequencies, laminar forests and overlays, representative trees, conflict groups, tree counts and boundary strength. Analysis stays in Python; the package reads a data bundle exported by scripts/analysis/export_planarsviz_data.py and returns plot objects. See README.md, docs/planarsviz_guide.md and docs/planarsviz_charts.md.
+Data-driven charts for planar constituency and laminar-family analyses: pooled test plots, boundary frequencies, laminar forests and overlays, representative trees, conflict groups, tree counts and boundary strength. Analysis stays in Python; the package reads a data bundle exported by laminar/export_planarsviz_data.py and returns plot objects. See README.md, NonCollaborative/docs/planarsviz_guide.md and NonCollaborative/docs/planarsviz_charts.md.
 }
 \author{
 \strong{Maintainer}: Jeff Good \email{jcgood@buffalo.edu}
