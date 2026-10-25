@@ -266,6 +266,8 @@ labels:
       repository is public), and the issue gives the command that shows it.
       Resolve: fix the cause, then run `python -m coding laminar-charts
       --apply`. Auto-closed when a run draws every language that needs it.
+      Also filed by the workflow itself when a setup step (R, system
+      libraries) fails before the command runs.
     filed_by: laminar-charts --apply (laminar-charts.yml)
 
   - name: collaborator-notes

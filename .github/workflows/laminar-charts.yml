@@ -55,14 +55,19 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install system libraries (PDF pages, R graphics)
-        run: >-
-          sudo apt-get install -y libpango-1.0-0 libpangocairo-1.0-0 libcairo2
-          libcairo2-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libfontconfig1-dev
-          libpng-dev libjpeg-dev libtiff5-dev libcurl4-openssl-dev libxml2-dev fonts-dejavu
-
+      # Python first: the last step needs it to file the issue when a later
+      # setup step fails.
       - name: Install Python dependencies
         run: pip install -r requirements.txt
+
+      - name: Install system libraries (PDF pages, R graphics)
+        # The runner's package list can be stale (two 404s, 2026-10-25), so
+        # refresh it first.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpango-1.0-0 libpangocairo-1.0-0 libcairo2 \
+            libcairo2-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libfontconfig1-dev \
+            libpng-dev libjpeg-dev libtiff5-dev libcurl4-openssl-dev libxml2-dev fonts-dejavu
 
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
@@ -90,6 +95,24 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Draw and upload contributor charts
+        id: draw
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python -m coding laminar-charts --apply
+
+      # The command files its own issue when it runs. If a setup step above
+      # failed, it never ran: file the same issue here, so the failure
+      # reaches someone rather than only turning the run red.
+      - name: File an issue if setup failed
+        if: failure() && steps.draw.outcome == 'skipped'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          printf '%s\n\n%s\n\n%s\n' \
+            "## Contributor charts not drawn — $(date -u +%Y-%m-%d)" \
+            "The laminar-charts.yml workflow failed while setting up the machine, before it could draw anything, so every language's Drive folder still holds its previous charts. The failed step and its log: $RUN_URL (setup output only; nothing from the annotation)." \
+            "## What to do"$'\n\n'"Fix the failing step in .github/workflows/laminar-charts.yml, then run: gh workflow run laminar-charts.yml. This issue closes by itself when a run draws every language that needs it." \
+            > /tmp/body.md
+          python -m coding issue --file laminar-charts-error --replace \
+            --title "Contributor charts not drawn ($(date -u +%Y-%m-%d))" --body-file /tmp/body.md
