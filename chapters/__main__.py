@@ -1,6 +1,8 @@
-"""``python -m chapters <command>``: the package's commands.
+"""``python -m chapters <command>``: the package's read-only commands.
 
-Each command is a module with a ``main(argv)``.
+Each command is a module with a ``main(argv)``. Building the chapters
+writes into planars-data, so it is ``python -m coding build-chapters``
+(chapters/build.py), which runs it through the local-file door.
 """
 
 from __future__ import annotations
@@ -10,7 +12,6 @@ import sys
 
 # command -> (module, one line for the list)
 COMMANDS = {
-    "build": ("chapters.build", "Write a language chapter's (or the introduction's) generated fragments."),
     "values": ("chapters.show_values", "Print every value a language's chapter can cite, and what is missing."),
 }
 

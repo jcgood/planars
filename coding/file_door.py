@@ -66,6 +66,16 @@ let through), write only what differs and commit with the rest. They are
 not research data, so they get no archive copy or change-log line: git
 keeps their history.
 
+**The chapters** (``PAPER_KINDS``; docs/chapter-generation-plan.md
+Phase 3): files under ``.papers/`` (``state_files.PAPERS_DIR``), written
+by build-chapters with ``write_paper`` and ``remove_paper``. Two kinds: a
+*built* file (fragments, values, outlines), rewritten by every build, and
+a *stub* (a prose slot, ``volume.yaml``), made once for a person to write
+in. The door refuses to write over or remove an existing stub, so what
+someone wrote is never overwritten. Like the state files: rule 1 checked,
+only what differs written, committed with the rest, no archive copy or
+change-log line.
+
 **Enforced** (unit 6c, 2026-10-22): the door watched live writes first
 (design § 4.1, the Drive door's § 4 rule), letting a broken rule through and
 filing a ``door-violation`` issue, until its first real data-file write went
@@ -331,6 +341,62 @@ def id_file() -> StateFile:
     return StateFile(ID_FILE)
 
 
+# ---------------------------------------------------------------------------
+# The chapters (docs/chapter-generation-plan.md, Phase 3): files in .papers/
+# ---------------------------------------------------------------------------
+
+# A file build-chapters makes and rewrites each time (fragments, values,
+# outlines, main.tex), and a stub it makes once for a person to write in (a
+# prose slot, volume.yaml) and never touches again: the door refuses to
+# write over a stub kind, so no bug can overwrite what someone wrote.
+PAPER_BUILT = "paper_built"
+PAPER_STUB = "paper_stub"
+PAPER_KINDS: Dict[str, str] = {
+    PAPER_BUILT: "a file the chapter build makes, rewritten by every build",
+    PAPER_STUB: "a starting stub for a person to write in, never written over",
+}
+
+
+@dataclass(frozen=True)
+class PaperFile:
+    """One file under ``.papers/``, by kind and its path there
+    (``stan1293/prose/background.tex``). Manuscripts, not a language's
+    research data: no archive copy or change-log line (git keeps their
+    history); the door checks, writes only what differs, and commits."""
+    kind: str
+    relpath: str
+
+    def __post_init__(self) -> None:
+        if self.kind not in PAPER_KINDS:
+            raise ValueError(f"unknown kind of paper file {self.kind!r}; known: {sorted(PAPER_KINDS)}")
+        parts = Path(self.relpath).parts
+        if not parts or Path(self.relpath).is_absolute() or ".." in parts:
+            raise ValueError(f"a paper file's path must lie inside .papers/: {self.relpath!r}")
+
+    @property
+    def path(self) -> Path:
+        return state_files.PAPERS_DIR / self.relpath
+
+
+def paper_built(relpath: str) -> PaperFile:
+    return PaperFile(PAPER_BUILT, relpath)
+
+
+def paper_stub(relpath: str) -> PaperFile:
+    return PaperFile(PAPER_STUB, relpath)
+
+
+def read_paper(target: PaperFile) -> Optional[str]:
+    """The file's text exactly as stored, or None."""
+    return _read(target.path)
+
+
+def paper_files(folder: str, pattern: str) -> List[Path]:
+    """The files under ``.papers/<folder>`` matching ``pattern``, in name order."""
+    base = state_files.PAPERS_DIR / folder
+    return sorted(base.glob(pattern)) if base.is_dir() else []
+
+
 def stamp() -> str:
     """Now, in the archive date format (UTC)."""
     return datetime.now(timezone.utc).strftime(ARCHIVE_STAMP_FORMAT)
@@ -576,23 +642,82 @@ def remove_state(target: StateFile) -> bool:
     return True
 
 
-def _note_state(run: Optional[_Run], target: StateFile, path: Path, action: str) -> None:
+def _note_state(run: Optional[_Run], target: Union[StateFile, "PaperFile"], path: Path,
+                action: str) -> None:
     if run is not None:
         run.written.append(path)
-        run.state[target.relpath] = action
+        run.state[_where(target)] = action
+
+
+def write_paper(target: PaperFile, text: str) -> bool:
+    """Write a file under .papers/ if ``text`` differs from what is there.
+    True if written. A stub that already exists is refused, whatever its
+    text: it belongs to the person writing in it."""
+    path = target.path
+    old = _read(path)
+    if old == text:
+        return False
+    run = _runs[-1] if _runs else None
+    problems = _paper_problems(run, target, "write")
+    if target.kind == PAPER_STUB and old is not None:
+        problems.append("this is a stub someone may have written in; the tooling never "
+                        "writes over one")
+    _act(run, target, problems)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        f.write(text)
+    _note_state(run, target, path, "created" if old is None else "rebuilt")
+    return True
+
+
+def remove_paper(target: PaperFile) -> bool:
+    """Delete a built file under .papers/ (a fragment no longer made). True
+    if there was one. A stub is never removed."""
+    path = target.path
+    if not path.exists():
+        return False
+    run = _runs[-1] if _runs else None
+    problems = _paper_problems(run, target, "remove")
+    if target.kind != PAPER_BUILT:
+        problems.append("only a built file may be removed; a stub belongs to the person "
+                        "writing in it")
+    _act(run, target, problems)
+    path.unlink()
+    _note_state(run, target, path, "removed")
+    return True
+
+
+def _paper_problems(run: Optional[_Run], target: PaperFile, action: str) -> List[str]:
+    """Rule 1 for .papers/: a command is running, and this invocation writes."""
+    if run is None:
+        return ["no command is running, so the door cannot tell whether it may write "
+                "(run it through `python -m coding`)"]
+    if run.may_write:
+        return []
+    return [f"`{run.command}` was run without the flag that lets it write files (a dry "
+            f"run), but tried to {action} {PAPER_KINDS[target.kind]}"]
+
+
+def _where(target) -> str:
+    """How a message or commit names a file: its path within planars-data."""
+    if isinstance(target, PaperFile):
+        return f"{state_files.PAPERS_DIR.name}/{target.relpath}"
+    if isinstance(target, StateFile):
+        return target.relpath
+    return f"{target.lang_id}/{target.relpath}"
 
 
 # ---------------------------------------------------------------------------
 # Checks
 # ---------------------------------------------------------------------------
 
-def _act(run: Optional[_Run], target: Union[LocalFile, StateFile], problems: List[str]) -> None:
+def _act(run: Optional[_Run], target: Union[LocalFile, StateFile, PaperFile],
+         problems: List[str]) -> None:
     """Refuse the write if anything is wrong with it."""
     if not problems:
         return
     command = run.command if run else "(no command)"
-    where = target.relpath if isinstance(target, StateFile) else f"{target.lang_id}/{target.relpath}"
-    messages = [f"{command}: {where}: {p}" for p in problems]
+    messages = [f"{command}: {_where(target)}: {p}" for p in problems]
     raise DoorViolation("The local-file door refused a write.\n  " + "\n  ".join(messages))
 
 

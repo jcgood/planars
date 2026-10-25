@@ -432,3 +432,44 @@ def test_a_nested_command_commits_its_own_files(coded):
         with drive_door.running("inner", may_write=True):
             file_door.write(_target(), _text(rows), why="answered")
         assert _git(coded, "log", "-1", "--format=%s").startswith("data: inner")
+
+
+# ---------------------------------------------------------------------------
+# The chapters' files in .papers/
+# ---------------------------------------------------------------------------
+
+def test_a_built_paper_file_is_rewritten_and_removed():
+    import argparse
+    target = file_door.paper_built("stan1293/fragments/x.tex")
+    with drive_door.running("build-chapters", argparse.Namespace(apply=True)):
+        assert file_door.write_paper(target, "a\n")
+        assert not file_door.write_paper(target, "a\n")
+        assert file_door.write_paper(target, "b\n")
+        assert file_door.remove_paper(target)
+    assert not target.path.exists()
+
+
+def test_a_stub_is_made_once_and_never_written_over_or_removed():
+    target = file_door.paper_stub("stan1293/prose/background.tex")
+    with drive_door.running("t", may_write=True):
+        assert file_door.write_paper(target, "\\proseslot{background}\n")
+        assert not file_door.write_paper(target, "\\proseslot{background}\n")
+        with pytest.raises(DoorViolation, match="never writes over"):
+            file_door.write_paper(target, "something else\n")
+        with pytest.raises(DoorViolation, match="only a built file"):
+            file_door.remove_paper(target)
+    assert file_door.read_paper(target) == "\\proseslot{background}\n"
+
+
+def test_a_dry_run_writes_no_paper_file():
+    import argparse
+    target = file_door.paper_built("main.tex")
+    with drive_door.running("build-chapters", argparse.Namespace(apply=False)):
+        with pytest.raises(DoorViolation, match="dry run"):
+            file_door.write_paper(target, "x\n")
+    assert not target.path.exists()
+
+
+def test_a_paper_file_stays_inside_papers():
+    with pytest.raises(ValueError, match="inside .papers"):
+        file_door.paper_built("../stan1293/planar_stan1293.tsv")

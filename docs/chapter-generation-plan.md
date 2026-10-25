@@ -1,7 +1,7 @@
 # Plan: generating the data-driven parts of the chapters
 
-Jeff, 2026-10-25. Phases 1 and 2 built 2026-10-25 (see "Phase 1 as
-built" and "Phase 2 as built" at the end); the rest not started. Chapters are to be written
+Jeff, 2026-10-25. Phases 1–3 built 2026-10-25 (see the "as built"
+sections at the end); the rest not started. Chapters are to be written
 from the annotation: an introduction chapter with shared conventions, one
 chapter per language with its own sections, and results sections. Most of
 the prose is written by people; what this plan covers is the part that can
@@ -45,9 +45,9 @@ Missing today, needed before a chapter can be generated:
 
 ## How it fits together
 
-**One command builds a chapter's generated parts** (working name
-`python -m chapters build --lang stan1293`), from a pinned version of the
-data (below), into a folder of fragments:
+**One command builds a chapter's generated parts**
+(`python -m coding build-chapters --lang stan1293`, as built), from a
+pinned version of the data (below), into a folder of fragments:
 
 - `fragments/` — one file per generated piece (`planar_table.tex`,
   `diagnostic_ciscategorial.tex`, `spans_table.tex`, `results_forest.pdf`),
@@ -55,7 +55,7 @@ data (below), into a folder of fragments:
 - `values.tex` — every number and short value a sentence might cite, as a
   named macro (`\pv{stan1293.spans.total}`, `\pv{stan1293.families.morsyn}`),
   so prose cites a value by name and never types it;
-- `outline.tex` — the chapter skeleton: sections in a fixed order taken from
+- `chapter.tex` (planned as `outline.tex`) — the chapter skeleton: sections in a fixed order taken from
   the schema (class order, grouped by domain type), each generated fragment
   `\input` where it goes, and a prose slot (`\input{prose/<section>}`) per
   section;
@@ -244,10 +244,10 @@ states them.
 
 ## Phase 2 as built (2026-10-25)
 
-- **`python -m chapters build --lang LANG --out DIR [--version COMMIT]
-  [--apply]`** and **`--intro --out DIR`** (`chapters/build.py`; what each
-  writes is its docstring). Dry run by default; writes only what changed
-  and deletes a fragment it no longer makes.
+- **`python -m chapters build --lang LANG --out DIR`** and **`--intro`**
+  (`chapters/build.py`). Dry run by default; writes only what changed
+  and deletes a fragment it no longer makes. Replaced in Phase 3 by
+  `python -m coding build-chapters` (below).
 - **Wording lives in `chapters/templates/`** (Jinja2 with LaTeX-safe
   delimiters, `chapters/tex.py`). Everything a template prints is escaped
   unless it is already LaTeX, so a template can't forget to.
@@ -264,11 +264,10 @@ states them.
   around it); `chapter_data` refuses otherwise. CI now checks planars-data
   out as a clone into `coded_data/` (it used to copy it without `.git`,
   which failed the pinned-version test three times on 2026-10-25).
-- **Refusals:** a language chapter's DIR may not be inside this public
-  repository (it holds unpublished annotation; `coded_data/.papers/` is set
-  up in Phase 3), and coded_data/ with uncommitted changes for the language is
+- **Refusals:** coded_data/ with uncommitted changes for the language is
   refused unless `--version` is given, so every chapter names a commit it
-  can be rebuilt from.
+  can be rebuilt from. (Phase 2 also refused an `--out` inside this public
+  repository; Phase 3 removed `--out`.)
 - **Checked:** English and the introduction compile with pdflatex in the
   book class with no errors and no undefined values (also a test, skipped
   without pdflatex). Math symbols in schema prose (∈, →, ×) are escaped;
@@ -278,3 +277,42 @@ states them.
   venue's class is known.
 - **Not in Phase 2:** examples (Phase 6 decides glossed or not per
   language) and construction descriptions (#318 (e)).
+
+## Phase 3 as built (2026-10-25)
+
+- **`python -m coding build-chapters [--lang LANG [--version COMMIT] |
+  --intro] [--apply]`** (`chapters/build.py`, whose docstring says what
+  it writes where). A `coding` command rather than `python -m chapters
+  build`, because it writes into planars-data: it runs inside the doors,
+  its record is in `operations.yaml` (preconditions: planars-data up to
+  date, git identity), and what it wrote is committed and pushed when it
+  ends. With no `--lang`/`--intro` it builds every part `volume.yaml`
+  names. `python -m chapters` keeps only `values` (read-only).
+- **Layout in `coded_data/.papers/`** (`state_files.PAPERS_DIR`, the one
+  statement of where; moving the manuscripts means changing it):
+  `volume.yaml` (title and parts: `intro` or a Glottocode), `main.tex`
+  built from it, `planarschapter.sty`, and per part `chapter.tex` (the
+  outline), `fragments/`, `prose/`, and `values.tex` for a language.
+  `main.tex` loads every language's values, so the introduction or a
+  results chapter can cite any language's numbers.
+- **The outline is `chapters/templates/outline.yaml`**: each kind of
+  chapter's sections in order, with a slot's `who` and `says` (the
+  instructions written into its stub, decision 5). Class sections are one
+  section per domain type (in order of first appearance in the schema's
+  class order), one subsection per class. The build refuses an outline
+  that leaves a made fragment unplaced, or places one not made.
+- **Stubs are protected by the door, not by care:** two new kinds in
+  `coding/file_door.py`, *built* (rewritten each build) and *stub*
+  (`volume.yaml`, prose slots: made once; the door refuses to write over
+  or remove one). An unwritten slot shows in the PDF as a boxed "Still to
+  write"; the build counts written slots and lists prose files whose slot
+  has left the outline (never deletes them).
+- `tests/test_file_door_coverage.py` now scans `chapters/` as well.
+- **Checked:** the introduction and English build into a temporary
+  `.papers/` and `main.tex` compiles with pdflatex (book class), with no
+  undefined value and no missing file. The book class's upper-cased
+  running heads needed `\pv` kept out of case changing.
+- **Not done, deliberately:** the real `.papers/` in planars-data is not
+  created yet; the first `build-chapters --apply` makes it and pushes it
+  (a write to planars-data, Jeff's go-ahead). Overleaf co-writing (decision
+  2) is still open.

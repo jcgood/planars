@@ -1,0 +1,11 @@
+\#{ The starting volume.yaml, made once and never written over. Context:
+   parts (folder names). Not LaTeX: everything printed must be plain. }
+# The volume: its title and its parts, in order. `python -m coding
+# build-chapters` made this file once and never changes it: edit it by hand,
+# then rebuild, and main.tex follows. A part is `intro` (the introduction)
+# or a language's Glottocode (its chapter, built from its annotation).
+title: Untitled volume
+parts:
+\BLOCK{for p in parts}
+  - \VAR{p}
+\BLOCK{endfor}

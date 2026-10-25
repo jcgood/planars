@@ -12,17 +12,21 @@ prints a named value from ``values.tex``. So a position name such as
 ``NP{S,A,P}`` or ``v:ad_VP`` can never break the document, and a template
 that forgets to escape is impossible. Filters: ``|name`` for an identifier
 set in typewriter (escaped, with line breaks allowed after _ : -);
-``lines(text)`` for schema prose whose indented lines must stay lines.
+``lines(text)`` for schema prose whose indented lines must stay lines;
+``comment(text)`` for plain text as ``%`` lines (a prose stub's
+instructions); ``path(text)`` for a file path in ``\\input``.
 
 The output is plain LaTeX tied to no document class (decision 1 of
 docs/chapter-generation-plan.md): ``booktabs`` and ``longtable`` tables,
-and the macros in ``planarschapter.sty`` (``STY``), which the build writes
-beside the fragments.
+and the macros in ``planarschapter.sty`` (``STY``: ``\\pv``, and
+``\\proseslot`` for a slot nobody has written yet), which the build writes
+at the top of ``.papers/``.
 """
 
 from __future__ import annotations
 
 import re
+import textwrap
 from pathlib import Path
 
 import jinja2
@@ -75,6 +79,18 @@ def pv(name: str) -> Tex:
     return Tex(rf"\pv{{{check_value_name(name)}}}")
 
 
+_PATH = re.compile(r"[A-Za-z0-9_\-]+(/[A-Za-z0-9_\-]+)*")
+
+
+def path(text: str) -> Tex:
+    """A file path for ``\\input`` or ``\\include``, as it is (escaping would
+    break it); only letters, digits, _ - and / are allowed."""
+    if not _PATH.fullmatch(text):
+        raise ValueError(f"Path {text!r} has characters \\input can't take; only letters, "
+                         f"digits, _ - and / are allowed.")
+    return Tex(text)
+
+
 def lines(text) -> Tex:
     """Schema prose with its line breaks kept: a YAML folded block keeps a
     newline only where the author indented a line (a list inside a span
@@ -85,6 +101,13 @@ def lines(text) -> Tex:
         body = (rf"\hspace*{{{indent / 2:g}em}}" if indent else "") + escape(line.strip())
         out.append(body if i == 0 else r"\newline " + body)
     return Tex("\n".join(out))
+
+
+def comment(text) -> Tex:
+    """Plain text as LaTeX comment lines (``% ...``), wrapped at 72
+    columns. Not escaped: a comment is never typeset."""
+    wrapped = textwrap.wrap(" ".join(str(text).split()), width=70) or [""]
+    return Tex("\n".join(f"% {line}" for line in wrapped))
 
 
 def _finalize(value):
@@ -102,7 +125,7 @@ def environment() -> jinja2.Environment:
         trim_blocks=True, lstrip_blocks=True, keep_trailing_newline=True,
         undefined=jinja2.StrictUndefined, autoescape=False, finalize=_finalize,
     )
-    env.globals.update(pv=pv, lines=lines, Tex=Tex)
+    env.globals.update(pv=pv, lines=lines, Tex=Tex, comment=comment, path=path)
     env.filters["tex"] = escape
     env.filters["name"] = name
     return env
@@ -127,7 +150,7 @@ def values_tex(values: dict, header: str) -> str:
 
 
 STY = r"""% planarschapter.sty: macros the generated fragments use.
-% Written by `python -m chapters build`; never edit it by hand.
+% Written by `python -m coding build-chapters`; never edit it by hand.
 % Plain LaTeX, tied to no document class.
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{planarschapter}[2026/10/25 planars chapter fragments]
@@ -136,9 +159,16 @@ STY = r"""% planarschapter.sty: macros the generated fragments use.
 \RequirePackage{array}
 % \pvset{name}{value} stores a value (values.tex); \pv{name} prints it.
 % A name with no value prints in bold and warns, so it is seen, not skipped.
+% Robust, so a value can sit in a heading that goes into the contents.
 \newcommand{\pvset}[2]{\expandafter\def\csname pv@#1\endcsname{#2}}
-\newcommand{\pv}[1]{%
+\DeclareRobustCommand{\pv}[1]{%
   \ifcsname pv@#1\endcsname\csname pv@#1\endcsname
   \else\textbf{[\detokenize{#1}?]}%
     \PackageWarning{planarschapter}{No value named #1}\fi}
+% Running heads are upper-cased (\MakeUppercase), which would upper-case
+% the value's name too; its argument is kept as written.
+\ifdefined\AddToNoCaseChangeList\AddToNoCaseChangeList{\pv}\fi
+% \proseslot{name} stands in a prose slot nobody has written yet, so the
+% gap shows in the PDF.
+\newcommand{\proseslot}[1]{\par\noindent\fbox{\textit{Still to write: #1}}\par}
 """

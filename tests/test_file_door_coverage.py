@@ -1,8 +1,10 @@
-"""Every file write in coding/ goes through the local-file door, or is listed.
+"""Every file write in coding/ and chapters/ goes through the local-file
+door, or is listed.
 
 The local twin of tests/test_doorway_coverage.py (Phase 10 unit 6a; design
-docs/ownership-design.md § 4.1). It reads every module under coding/ except
-the door itself and finds each call that writes, moves or deletes a file
+docs/ownership-design.md § 4.1). It reads every module under coding/ and
+chapters/ (which builds the manuscripts in planars-data) except the door
+itself and finds each call that writes, moves or deletes a file
 (write_text, to_csv to a path, open for writing, json/yaml dump to a file,
 shutil copy/move/rmtree, unlink, rename, rmdir). Each one must be in
 ``NOT_THROUGH_THE_DOOR`` with the reason it is not the door's: a file outside
@@ -22,6 +24,7 @@ from typing import Dict, Set, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 CODING = ROOT / "coding"
+CHAPTERS = ROOT / "chapters"
 
 Site = Tuple[str, str, str]   # (module, enclosing function, call)
 
@@ -103,8 +106,12 @@ def _call_name(node: ast.Call) -> str:
 
 def _write_sites() -> Set[Site]:
     sites: Set[Site] = set()
-    for path in sorted(CODING.glob("*.py")):
-        if path.name == "file_door.py":
+    # chapters/ builds the manuscripts in planars-data's .papers/; its
+    # modules are named with their folder ("chapters/build.py").
+    modules = [(p, p.name) for p in sorted(CODING.glob("*.py"))]
+    modules += [(p, f"chapters/{p.name}") for p in sorted(CHAPTERS.glob("*.py"))]
+    for path, module in modules:
+        if path.name == "file_door.py" and path.parent == CODING:
             continue
         tree = ast.parse(path.read_text(encoding="utf-8"))
 
@@ -116,7 +123,7 @@ def _write_sites() -> Set[Site]:
                 if isinstance(child, ast.Call):
                     call = _call_name(child)
                     if call:
-                        sites.add((path.name, func, call))
+                        sites.add((module, func, call))
                 visit(child, name)
 
         visit(tree, "<module>")

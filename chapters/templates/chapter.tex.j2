@@ -1,0 +1,28 @@
+\#{ A chapter's outline: its sections in the order of outline.yaml, each
+   with its prose slot and then its generated fragments. Context: part
+   (the chapter's folder: "intro" or a glottocode), L (glottocode, or None
+   for the introduction), items (list of dicts: command ("section",
+   "subsection" or None), heading (text or None), domain (a domain type,
+   for a domain section, else None), slot (or None), fragments (names)). }
+% chapter.tex: the outline of this chapter, from chapters/templates/outline.yaml.
+% Written by `python -m coding build-chapters`; never edit it by hand.
+% Write in the files under prose/; the build never changes those.
+\BLOCK{if L}
+\chapter{\pv{\VAR{L}.language.name}}
+\BLOCK{else}
+\chapter{Introduction}
+\BLOCK{endif}
+\BLOCK{for item in items}
+
+\BLOCK{if item.command and item.domain}
+\\VAR{Tex(item.command)}{\VAR{item.domain|capitalize} diagnostics}
+\BLOCK{elif item.command}
+\\VAR{Tex(item.command)}{\VAR{item.heading}}
+\BLOCK{endif}
+\BLOCK{if item.slot}
+\input{\VAR{path(part ~ "/prose/" ~ item.slot)}}
+\BLOCK{endif}
+\BLOCK{for f in item.fragments}
+\input{\VAR{path(part ~ "/fragments/" ~ f)}}
+\BLOCK{endfor}
+\BLOCK{endfor}

@@ -1,0 +1,76 @@
+# The sections of each kind of chapter, in order: the one statement of a
+# chapter's outline. build-chapters writes chapter.tex from it (through
+# chapter.tex.j2) and makes a prose stub for each slot named here, with the
+# slot's instructions written into it for whoever writes there.
+#
+# A section has any of:
+#   heading:    its \section title (none: text before the first section)
+#   slot:       the name of its prose file, prose/<slot>.tex
+#   who:        who writes the slot (shown in the stub)
+#   says:       what the slot should say (shown in the stub)
+#   fragments:  generated fragments, \input after the prose, in order
+#   classes:    true: one \section per domain type, holding one \subsection
+#               per class the chapter covers, in the schema's class order;
+#               each has the slot class_<class> and the fragment
+#               class_<class>. `who` and `says` apply to every class slot.
+#
+# Renaming a slot leaves its old prose file behind: the build lists it as
+# no longer in the outline, never deletes it, so move its text by hand.
+
+language:
+  - fragments: [front_matter]
+  - heading: Introduction
+    slot: background
+    who: the language's annotator
+    says: >-
+      The language and its speakers, the sources the annotation draws on,
+      and anything about its grammar a reader needs before the planar
+      structure.
+  - heading: The planar structure
+    slot: planar
+    who: the language's annotator
+    says: >-
+      How the positions were chosen, what the keystone is, and any position
+      whose content is not obvious from its name.
+    fragments: [planar_table]
+  - heading: The diagnostics
+    slot: diagnostics
+    who: the language's annotator
+    says: >-
+      Which diagnostics apply to this language and why; any the language
+      does not have, and why not.
+    fragments: [diagnostics_table]
+  - classes: true
+    who: the language's annotator
+    says: >-
+      Each construction used as a test: what it is, with an example, why it
+      was chosen, and anything that made coding it hard. The spans it gives
+      follow this text and are written by the build.
+  - heading: The spans together
+    slot: spans
+    who: the language's annotator
+    says: >-
+      What the spans show taken together: where they converge, where they
+      do not, and what that says about constituency in this language.
+    fragments: [spans_table]
+
+intro:
+  - heading: The question
+    slot: argument
+    who: Jeff Good and Adam Tallman
+    says: >-
+      The question, the three hypotheses (tree, morphosyntax/phonology
+      divide, word), and how the volume tests them.
+  - heading: Terms
+    slot: terms
+    who: Jeff Good and Adam Tallman
+    says: >-
+      How the terms below extend those of Tallman, Auderset and Uchihara
+      (2024); the definitions follow this text and are written by the build.
+    fragments: [terms]
+  - classes: true
+    who: Jeff Good and Adam Tallman
+    says: >-
+      What the diagnostic tests and how it relates to the tests in the
+      literature; its criteria and span rule follow this text and are
+      written by the build.

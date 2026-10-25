@@ -1,0 +1,21 @@
+\#{ The volume, from volume.yaml. Context: title, parts (folder names, in
+   order), languages (the parts that are language chapters). }
+% main.tex: the volume, from volume.yaml.
+% Written by `python -m coding build-chapters`; never edit it by hand
+% (change the title or the parts in volume.yaml, then rebuild).
+% Compile it here, in .papers/: latexmk -pdf main.tex
+% The document class is a stand-in for the venue's (De Gruyter's dgruyter).
+\documentclass{book}
+\usepackage[T1]{fontenc}
+\usepackage{planarschapter}
+\BLOCK{for L in languages}
+\input{\VAR{path(L ~ "/values")}}
+\BLOCK{endfor}
+\title{\VAR{title}}
+\begin{document}
+\maketitle
+\tableofcontents
+\BLOCK{for p in parts}
+\include{\VAR{path(p ~ "/chapter")}}
+\BLOCK{endfor}
+\end{document}

@@ -30,13 +30,15 @@ its five decisions (2026-10-25; the plan's "Decisions" — don't re-ask): De
 Gruyter, class-neutral fragments; a private GitHub repo; a sentence per
 test plus tables; structured examples for every language but English (a
 per-language field, not a coded exception); mixed authorship.
-Phases 1 (the data layer) and 2 (`python -m chapters build`: templates,
-fragments, `values.tex`) are built (2026-10-25; the plan's "as built"
-sections; the language-wide span table is done too). **Next action:**
-Phase 3, the outline and prose slots, in `coded_data/.papers/` in planars-data (decision 2, revised
-2026-10-25: a dot-folder, writes through the local-file door). Still waiting on #318 (e) (construction
+Phases 1–3 are built (2026-10-25; the plan's "as built" sections):
+`python -m coding build-chapters` writes the volume into
+`coded_data/.papers/` through the local-file door (outline, fragments,
+values, prose stubs the door never overwrites). **Next action:** Jeff's
+go-ahead for the first real `build-chapters --apply` (creates and pushes
+`.papers/` in planars-data); then Phase 4 (`chapters update`, `\claim`)
+or Phase 6 (structured examples). Still waiting on #318 (e) (construction
 descriptions), laminar plan 4d (the permutation tests) and #321 (span
-rules), none of which blocks Phase 3.
+rules).
 
 ### Thread: the laminar analysis on English, for a paper (2026-10-24)
 

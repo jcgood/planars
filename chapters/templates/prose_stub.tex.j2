@@ -1,0 +1,31 @@
+\#{ The starting text of a prose slot, made once and never written over.
+   Everything here but the last line is a comment, so nothing is escaped
+   (Tex). Context: L (glottocode, or None for the introduction), chapter
+   (the language's display name, or None), slot, heading (the section's,
+   or None), in_domain (a class subsection's domain type, or None), who,
+   says. }
+\BLOCK{if L}
+\BLOCK{set where = "the " ~ chapter ~ " chapter"}
+\BLOCK{else}
+\BLOCK{set where = "the introduction"}
+\BLOCK{endif}
+\BLOCK{if in_domain}
+% Prose slot "\VAR{Tex(slot)}": the \VAR{Tex(heading)} subsection of the
+% \VAR{Tex(in_domain)} diagnostics, in \VAR{Tex(where)}.
+\BLOCK{elif heading}
+% Prose slot "\VAR{Tex(slot)}": the section "\VAR{Tex(heading)}", in \VAR{Tex(where)}.
+\BLOCK{else}
+% Prose slot "\VAR{Tex(slot)}", in \VAR{Tex(where)}.
+\BLOCK{endif}
+% Written by \VAR{Tex(who)}.
+%
+\VAR{comment("What to write: " ~ says)}
+%
+% `python -m coding build-chapters` made this file once and will never
+% change it. Replace the \proseslot line below with your text.
+\BLOCK{if L}
+\VAR{comment("A number from the data is cited by name, never typed: \\pv{" ~ L ~ ".spans.total} prints the number of spans, and `python -m chapters values --lang " ~ L ~ "` lists every name.")}
+\BLOCK{else}
+\VAR{comment("A number from the data is cited by name, never typed: \\pv{stan1293.spans.total} prints English's number of spans, and `python -m chapters values --lang <glottocode>` lists every name.")}
+\BLOCK{endif}
+\proseslot{\VAR{slot}}

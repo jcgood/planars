@@ -274,6 +274,40 @@
   cascades_triggered: []
   modes: []
 
+- id: build_chapters
+  cli_command: build-chapters
+  writes_to_drive: false
+  writes_locally: true
+  description: >-
+    Builds the volume's chapters in planars-data's .papers/ (chapters/build.py;
+    docs/chapter-generation-plan.md): each chapter's outline, generated
+    fragments and values, the volume's main.tex, and a stub for each prose
+    slot and for volume.yaml.
+  side_effects:
+    - >-
+      writes, through the local-file door, every built file under .papers/
+      whose text changed (main.tex, planarschapter.sty, each part's
+      chapter.tex, values.tex and fragments) and deletes fragments no longer
+      made
+    - >-
+      makes each missing prose stub and volume.yaml once; the door refuses
+      to write over or remove an existing one
+    - "commits and pushes what it wrote in planars-data (the door, when it ends)"
+  idempotent: true
+  idempotency_note: >-
+    Writes only files whose text differs and only stubs that don't exist,
+    so a second run with nothing changed writes nothing. The output depends
+    only on the data version, the schemas and the templates.
+  apply_gate: "--apply"
+  preconditions: [coded_data_up_to_date, coded_data_git_identity_configured]
+  facts_touched:
+    - {fact: planar_sheet_structure, role: reads}
+    - {fact: diagnostics_scope, role: reads}
+    - {fact: languages_metadata, role: reads}
+    - {fact: span_rule_semantics, role: reads}
+  cascades_triggered: []
+  modes: []
+
 - id: sync_params
   cli_command: sync-params
   writes_to_drive: true

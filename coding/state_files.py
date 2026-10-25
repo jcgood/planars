@@ -31,7 +31,11 @@ both went when those Sheets became read-only copies, unit 11b, 2026-10-24.)
   changes.
 
 and, at planars-data's top level, ``ID_FILE`` (``drive_config.json``): the
-Drive IDs of the files the tooling made.
+Drive IDs of the files the tooling made; and ``PAPERS_DIR``
+(``.papers/``), the chapters written from the annotation
+(``python -m coding build-chapters``; docs/chapter-generation-plan.md,
+decision 2). Not state, but tooling writes there, so its place is stated
+here with the rest.
 
 This module is the one statement of where they are; every reader uses these
 names at call time (tests point them at a temporary folder,
@@ -60,6 +64,7 @@ COMMENTS_STATE_PATH = STATE_DIR / "comments_state.json"
 RENUMBERING_PATH = STATE_DIR / "renumbering.json"
 LAMINAR_CHARTS_STATE_PATH = STATE_DIR / "laminar_charts_state.json"
 ID_FILE = CODED_DATA / "drive_config.json"
+PAPERS_DIR = CODED_DATA / ".papers"
 
 
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:

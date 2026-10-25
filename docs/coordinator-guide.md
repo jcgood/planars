@@ -329,6 +329,27 @@ and how complete the annotation was.
 
 The dry run says which of these is missing.
 
+#### 6. Building the chapters
+
+The chapters written from the annotation live in planars-data's
+`.papers/` (private, like the annotation). One command builds them:
+
+```bash
+python -m coding build-chapters                    # dry run: every part in .papers/volume.yaml
+python -m coding build-chapters --apply            # write, commit and push
+python -m coding build-chapters --lang stan1293 --apply   # one language's chapter
+```
+
+It rewrites the generated parts (tables, one sentence per span, every
+number a sentence can cite) and makes, once, a file for each piece of prose
+someone has to write (`prose/<slot>.tex`), with instructions saying who
+writes it and what it should say. It never changes a prose file again, so
+rebuild whenever the annotation changes. Compile `.papers/main.tex`
+(`latexmk -pdf main.tex` there); an unwritten slot shows as a boxed "Still
+to write". The volume's title and the order of its chapters are
+`.papers/volume.yaml`, edited by hand. Design and state:
+`docs/chapter-generation-plan.md`.
+
 #### Cross-sheet criterion consistency
 
 Some criteria appear in more than one sheet. Currently:
