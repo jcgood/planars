@@ -108,16 +108,42 @@ pair_row_shapes:
 # types it (tests/test_no_hidden_facts.py checks).
 keystone_position_name: "v:verbstem"
 
-# Columns appended after criterion columns on every annotation tab, all the
-# annotator's, free text, never validated. In order:
-#   Example   the forms or sentences that show the answer (*, ?, ?? marked
-#             as usual), the evidence for a speaker's own judgements
-#   Source    a page or section of a published description
-#   Comments  anything the annotator wants the coordinator to see; read by
-#             the daily refresh (check-comments). The tooling never writes here.
+# Columns appended after criterion columns on an annotation tab, all the
+# annotator's, free text, never validated. Every column any language's tabs
+# may carry, in order:
+#   Example      the forms or sentences that show the answer (*, ?, ?? marked
+#                as usual), the evidence for a speaker's own judgements.
+#                Several examples in one cell are separated by
+#                example_separator (below).
+#   Gloss        a glossed language only: the morpheme gloss of each example,
+#                word for word, in the same order and separated the same way
+#   Translation  a glossed language only: each example's free translation
+#   Source       a page or section of a published description
+#   Comments     anything the annotator wants the coordinator to see; read by
+#                the daily refresh (check-comments). The tooling never writes here.
+# Which of them a language's tabs carry is its example style (below).
 # update-sheets inserts a missing one at its place in this order.
-# Read through planars.schema_values.TRAILING_COLUMNS.
-trailing_columns: [Example, Source, Comments]
+# Read through planars.schema_values: TRAILING_COLUMNS (all of them, for code
+# that tells criteria from what follows them) and trailing_columns_for(lang).
+trailing_columns: [Example, Gloss, Translation, Source, Comments]
+
+# How a language's examples are written (docs/chapter-generation-plan.md
+# decision 4): the `examples` field in its schemas/languages.yaml meta, one
+# of the styles below, each listing the trailing columns its tabs leave out.
+# unglossed is for a language whose examples need no gloss because the
+# metalanguage is that language (English); every other language is glossed.
+# Synthetic test languages (ids starting synth, copies of English) have no
+# languages.yaml entry and take synthetic_example_style. A language with no
+# `examples` field, or an unknown style, fails. Read through
+# planars.schema_values.example_style(lang).
+example_styles:
+  glossed: {omits: []}
+  unglossed: {omits: [Gloss, Translation]}
+synthetic_example_style: unglossed
+# What separates several examples in one Example (Gloss, Translation) cell,
+# as docs/collaborator-guide.md tells annotators. The chapters split cells
+# on it (chapters/data.py).
+example_separator: ";"
 
 # The Status tab every annotation sheet carries, its columns, and the two
 # values an annotator sets on each construction's row there. Code reads these

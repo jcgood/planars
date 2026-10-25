@@ -13,7 +13,7 @@ import unicodedata
 import pytest
 
 from chapters import build, tex
-from chapters.data import ChapterDataError, chapter_data, commit_of
+from chapters.data import ChapterDataError, chapter_data, commit_of, split_examples
 from coding import drive_door, file_door, state_files
 from laminar import planars_language as pl
 
@@ -22,6 +22,7 @@ needs_english = pytest.mark.skipif(not pl.planar_file("stan1293").exists(),
 needs_latex = pytest.mark.skipif(shutil.which("pdflatex") is None, reason="no pdflatex")
 
 PV = re.compile(r"\\pv\{([^}]*)\}")
+VOLUME = "title: A test volume\nvenue: book\nparts: [intro, stan1293]\n"
 
 
 @pytest.fixture(scope="module")
@@ -113,10 +114,50 @@ def test_the_language_wide_span_table_has_every_span(english):
     assert len(rows) == english.values["stan1293.spans.total"]
 
 
+@needs_english
+def test_every_english_example_is_printed_plain(english):
+    fragments = build.language_fragments(english)
+    text = "".join(t for name, t in fragments.items() if name.startswith("examples_"))
+    expected = sum(len(split_examples(r, False)[0])
+                   for _i, r in english.tables["examples"].iterrows())
+    assert text.count(r"\planarsplainex{") == expected and r"\planarsex{" not in text
+
+
+def test_a_glossed_row_pairs_each_example_with_its_gloss_or_with_neither():
+    row = {"Example": "a b; c", "Gloss": "A B; C", "Translation": "ab; c;"}
+    assert split_examples(row, True) == ([{"form": "a b", "gloss": "A B", "translation": "ab"},
+                                          {"form": "c", "gloss": "C", "translation": "c"}], True)
+    items, paired = split_examples({**row, "Gloss": "A B"}, True)
+    assert not paired and all(e["gloss"] == "" for e in items)
+
+
+def test_an_example_uses_its_style_macro_and_falls_back_to_plain():
+    assert tex.example("a_b", "A", "ab", "p. 3", True) == r"\planarsex{a\_b}{A}{ab}{p. 3}"
+    assert tex.example("a_b", "", "", "", True) == r"\planarsplainex{a\_b}{}"
+    assert tex.example("a b", "", "", "", False) == r"\planarsplainex{a b}{}"
+
+
+def test_every_venue_file_defines_both_example_macros():
+    assert "book" in tex.venues()
+    for venue in tex.venues():
+        sty = tex.venue_sty(venue)
+        assert r"\newcommand{\planarsex}[4]" in sty and r"\newcommand{\planarsplainex}[2]" in sty
+    with pytest.raises(ValueError, match="chapters/venues"):
+        tex.venue_sty("nosuchvenue")
+
+
+def test_the_volume_must_name_a_venue():
+    with drive_door.running("t", may_write=True):
+        file_door.write_paper(file_door.paper_stub(build.VOLUME),
+                              "title: T\nvenue: nosuchvenue\nparts: [intro]\n")
+    with pytest.raises(ChapterDataError, match="venue"):
+        build.read_volume()
+
+
 def test_the_volume_must_name_parts_the_build_knows():
     with drive_door.running("t", may_write=True):
         file_door.write_paper(file_door.paper_stub(build.VOLUME),
-                              "title: T\nparts: [intro, nosuchlang]\n")
+                              "title: T\nvenue: book\nparts: [intro, nosuchlang]\n")
     with pytest.raises(ChapterDataError, match="nosuchlang"):
         build.read_volume()
 
@@ -239,7 +280,7 @@ def test_the_check_leaves_out_an_analysis_not_drawn_on_both_sides():
 def test_the_check_files_a_chapter_behind_and_closes_it_when_caught_up(capsys, github):
     _run("--lang", "stan1293", "--version", "HEAD", "--apply")
     volume = state_files.PAPERS_DIR / "volume.yaml"
-    volume.write_text("title: A test volume\nparts: [intro, stan1293]\n", encoding="utf-8")
+    volume.write_text(VOLUME, encoding="utf-8")
     values = state_files.PAPERS_DIR / "stan1293" / "values.tex"
     text = values.read_text(encoding="utf-8")
     name = next(m for m in re.findall(r"\\pvset\{([^}]*\.left)\}", text))
@@ -276,11 +317,13 @@ def _compile(folder):
 def test_the_volume_compiles(english):
     _run("--intro", "--apply")
     volume = state_files.PAPERS_DIR / "volume.yaml"
-    volume.write_text("title: A test volume\nparts: [intro, stan1293]\n", encoding="utf-8")
+    volume.write_text(VOLUME, encoding="utf-8")
     _run("--apply")
     total = english.values["stan1293.planar.positions"]
     _prose("intro", "argument.tex", f"English has \\claim{{stan1293.planar.positions}}{{{total}}} "
-                                    f"positions, not \\claim{{stan1293.planar.positions}}{{{total + 1}}}.\n")
+                                    f"positions, not \\claim{{stan1293.planar.positions}}{{{total + 1}}}.\n"
+                                    + tex.example("ema=ja kweti", "1SG=ERG go.PST", "I went", "p. 3",
+                                                  True) + "\n")
     log = _compile(state_files.PAPERS_DIR)
     # TeX breaks log lines at 79 characters.
     assert log.replace("\n", "").count("Claim stan1293.planar.positions no longer holds") == 1

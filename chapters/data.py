@@ -20,7 +20,8 @@ Glottocode (``stan1293.planar.positions``), so an introduction or results
 chapter citing several languages has one namespace. The groups:
 
 - ``<L>.language.*``: name, glottocode, iso639_3, family, author,
-  annotator, display_name (schemas/languages.yaml);
+  annotator, display_name, examples (its example style)
+  (schemas/languages.yaml);
 - ``<L>.data.*``: commit, commit_short (its first 12 characters), date
   (the planars-data commit's date), and ``planars_commit``;
 - ``<L>.planar.*``: positions, zones, slots, keystone (its position
@@ -42,7 +43,9 @@ chapter citing several languages has one namespace. The groups:
 (one row per class and construction, in the schema's class order, with its
 domain type and criteria as ``{criterion: [values]}``), ``completeness`` (one row per construction),
 ``spans`` (language_spans' rows), ``examples`` (every annotation row with
-an Example, its row identified by the schema's row columns).
+an Example, its row identified by the schema's row columns, with its Gloss,
+Translation and Source; ``split_examples`` splits a row into its examples,
+and ``missing`` lists a glossed row whose cells don't pair up).
 
 **The analysis** comes from the laminar bundles in the clone's
 ``.analysis/<L>/chart_data/`` (working files, never committed; the weekly
@@ -78,7 +81,9 @@ from laminar import planars_language as _pl
 from laminar.datasets import REPO, bundle_root
 from planars.languages import get_display_name, get_entry
 from planars.reports import completeness_summary, language_completeness, language_spans
-from planars.schema_values import SLOT, ZONE, class_domain_types, is_keystone, row_columns
+from planars.schema_values import (EXAMPLE_SEPARATOR, SLOT, ZONE, class_domain_types,
+                                   example_style, is_keystone, row_columns,
+                                   trailing_columns_for)
 
 CODED_DATA = REPO / "coded_data"
 
@@ -101,6 +106,8 @@ BUNDLE_COUNTS = {
 }
 
 EXAMPLE_COLUMN = "Example"
+GLOSS_COLUMN = "Gloss"
+TRANSLATION_COLUMN = "Translation"
 SOURCE_COLUMN = "Source"
 
 
@@ -193,6 +200,7 @@ def _language_values(lang_id: str) -> dict:
         "author": meta.get("author", ""),
         "annotator": meta.get("annotator", ""),
         "display_name": get_display_name(lang_id),
+        "examples": example_style(lang_id),
     }
 
 
@@ -257,9 +265,32 @@ def _completeness(lang_id: str, root: Path) -> tuple[pd.DataFrame, dict]:
     return table, {"filled": summary["filled"], "total": summary["total"], "percent": percent}
 
 
+def is_glossed(lang_id: str) -> bool:
+    """Whether `lang_id`'s examples carry a gloss and translation: its
+    example style keeps the Gloss column (schemas/planar.yaml example_styles)."""
+    return GLOSS_COLUMN in trailing_columns_for(lang_id)
+
+
+def split_examples(row: dict, glossed: bool) -> tuple[list, bool]:
+    """The examples in one annotation row, as [{form, gloss, translation}],
+    each cell split on EXAMPLE_SEPARATOR. For a glossed language, False when
+    the Gloss or Translation cell doesn't hold one entry per example; the
+    examples then come without them, so nothing is paired wrongly."""
+    split = lambda cell: [x.strip() for x in str(cell).split(EXAMPLE_SEPARATOR) if x.strip()]
+    forms = split(row["Example"])
+    if not glossed:
+        return [{"form": f, "gloss": "", "translation": ""} for f in forms], True
+    glosses, translations = split(row[GLOSS_COLUMN]), split(row[TRANSLATION_COLUMN])
+    if len(glosses) != len(forms) or len(translations) != len(forms):
+        return [{"form": f, "gloss": "", "translation": ""} for f in forms], False
+    return [{"form": f, "gloss": g, "translation": t}
+            for f, g, t in zip(forms, glosses, translations)], True
+
+
 def _examples(lang_dir: Path) -> pd.DataFrame:
     """Every annotation row with an Example, identified by its row columns
-    (schema_values.row_columns) joined with " | "."""
+    (schema_values.row_columns) joined with " | ", with its Gloss and
+    Translation (blank where the tab has no such column)."""
     rows = []
     for cls in class_domain_types():
         class_dir = lang_dir / cls
@@ -274,8 +305,11 @@ def _examples(lang_dir: Path) -> pd.DataFrame:
                 rows.append({"Class": cls, "Construction": tsv.stem,
                              "Row": " | ".join(row[c] for c in key),
                              "Example": row[EXAMPLE_COLUMN].strip(),
+                             GLOSS_COLUMN: row.get(GLOSS_COLUMN, "").strip(),
+                             TRANSLATION_COLUMN: row.get(TRANSLATION_COLUMN, "").strip(),
                              "Source": row.get(SOURCE_COLUMN, "").strip()})
-    return pd.DataFrame(rows, columns=["Class", "Construction", "Row", "Example", "Source"])
+    return pd.DataFrame(rows, columns=["Class", "Construction", "Row", "Example", GLOSS_COLUMN,
+                                       TRANSLATION_COLUMN, "Source"])
 
 
 def _span_values(spans: pd.DataFrame, pos_to_name: dict) -> dict:
@@ -381,7 +415,16 @@ def chapter_data(lang_id: str, version: Optional[str] = None) -> ChapterData:
             chapter.missing.append("Annotated classes that give no spans yet: "
                                    + ", ".join(without_spans) + ".")
         chapter.values.update({f"{lang_id}.{k}": v for k, v in values.items()})
+        examples = _examples(lang_dir)
         chapter.tables = {"planar": planar, "diagnostics": diagnostics, "completeness": completeness,
-                          "spans": spans, "examples": _examples(lang_dir)}
+                          "spans": spans, "examples": examples}
+        glossed = is_glossed(lang_id)
+        unpaired = [f"{r['Class']}/{r['Construction']} {r['Row']}" for _i, r in examples.iterrows()
+                    if not split_examples(r, glossed)[1]]
+        if unpaired:
+            chapter.missing.append(
+                f"{len(unpaired)} annotation row(s) whose Gloss or Translation doesn't hold one "
+                f"entry per example (separated by {EXAMPLE_SEPARATOR!r}), so their "
+                f"examples are printed without them: " + "; ".join(unpaired))
         _analysis(lang_id, root, chapter)
     return chapter

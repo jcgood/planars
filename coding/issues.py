@@ -483,6 +483,9 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--body-file", type=Path, metavar="BODY.md", help="issue body (--file)")
     ap.add_argument("--replace", action="store_true",
                     help="--file: overwrite the open issue's title and body instead of commenting")
+    ap.add_argument("--match-title", action="store_true",
+                    help="--file: use only the open issue with exactly --title (a label with one "
+                         "issue per language, such as sheet-updates), creating it if there is none")
     ap.add_argument("--message", help="comment text (--close, --remind)")
     ap.add_argument("--older-than-days", type=int, default=7, metavar="N",
                     help="--remind: only issues open longer than N days (default 7)")
@@ -514,7 +517,7 @@ def main(args: argparse.Namespace | None = None) -> None:
             ap.error("--file needs --title and --body-file")
         number, created = file_issue(args.file, args.title,
                                      args.body_file.read_text(encoding="utf-8"),
-                                     replace=args.replace)
+                                     replace=args.replace, match_title=args.match_title)
         print(f"{'Created' if created else 'Updated'} issue #{number} ({args.file}).")
         return
 

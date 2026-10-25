@@ -55,9 +55,13 @@ languages.yaml
     Source of truth for per-language metadata.  Glottolog fields
     (name, iso639_3, family, coordinates) are written and refreshed by
     ``python -m coding lookup-lang <glottocode>``.  Project metadata
-    (source, author, annotator, annotation_status, notes) is hand-edited
-    by coordinators.  Valid annotation_status values: planned | in-progress
-    | complete.  Always edit this file, never the copy in the manifest
+    (source, author, annotator, annotation_status, examples, notes) is
+    hand-edited by coordinators.  Valid annotation_status values: planned |
+    in-progress | complete.  ``examples`` is how the language's examples are
+    written, one of planar.yaml's ``example_styles`` (glossed, or unglossed
+    for a language that is its own metalanguage, i.e. English); it decides
+    which example columns its annotation tabs carry and how the chapters
+    print its examples.  Always edit this file, never the copy in the manifest
     (generate-sheets and import-sheets write that copy).  No email addresses
     here (this repo is public): the annotator's address lives in private
     planars-data, ``coded_data/people.yaml``, keyed by the ``annotator``
@@ -73,8 +77,9 @@ languages.yaml
 planar.yaml
     Source of truth for structural column definitions and element conventions:
     the planar file's columns, the keystone's name, each row shape's columns
-    and key, the Status tab, the trailing columns appended to every
-    annotation tab (``trailing_columns``; to add one, edit it and run
+    and key, the Status tab, the trailing columns appended to annotation
+    tabs (``trailing_columns``, and per example style the ones a language's
+    tabs leave out, ``example_styles``; to add one, edit it and run
     ``update-sheets --apply``) and the locked tabs (``locked_tabs``). Read
     in one place, ``planars/schema_values.py`` (locked tabs:
     ``coding/locked_tabs.py``).

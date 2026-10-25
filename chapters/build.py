@@ -16,11 +16,13 @@ commits and pushes what the command wrote when it ends.
 decision 2; a language chapter holds unpublished annotation, so it never
 goes in this public repository):
 
-- ``volume.yaml``: the volume's title and its parts in order (``intro``,
-  or a language's Glottocode). Hand-edited; the build makes a starting one
-  if there is none, and checks every part is one it can build.
-- ``main.tex`` (from volume.yaml) and ``planarschapter.sty`` (``\\pv``,
-  ``\\proseslot``): compile ``main.tex`` there.
+- ``volume.yaml``: the volume's title, its venue (a file in
+  ``chapters/venues/``) and its parts in order (``intro``, or a language's
+  Glottocode). Hand-edited; the build makes a starting one if there is
+  none, and checks every part is one it can build.
+- ``main.tex`` (from volume.yaml), ``planarschapter.sty`` (``\\pv``,
+  ``\\proseslot``) and ``planarsvenue.sty`` (the venue's example macros,
+  chapters.tex): compile ``main.tex`` there.
 - one folder per part: ``chapter.tex`` (the outline: sections in the order
   of ``chapters/templates/outline.yaml``, each with its prose slot and
   then its fragments), ``fragments/``, ``prose/``, and for a language
@@ -65,7 +67,9 @@ at its pinned version. Its fragments:
 ``front_matter.tex`` (language, annotator, data version, how complete the
 annotation was), ``planar_table.tex``, ``diagnostics_table.tex``,
 ``class_<class>.tex`` for each class the language has (one sentence per
-span, then the class's span table), and ``spans_table.tex`` (every span of
+span, then the class's span table), ``examples_<class>.tex`` (the examples
+its annotation gives, through the venue's example macro for the
+language's example style), and ``spans_table.tex`` (every span of
 the language in one table, grouped by domain type in the schema's class
 order). **The introduction** (``--intro``) comes from the schemas alone:
 ``terms.tex`` (schemas/terms.yaml) and ``class_<class>.tex`` for every
@@ -98,7 +102,8 @@ from importlib.resources import files as _res_files
 import yaml
 
 from chapters import tex
-from chapters.data import ChapterData, ChapterDataError, chapter_data, commit_of
+from chapters.data import (ChapterData, ChapterDataError, chapter_data, commit_of, is_glossed,
+                           split_examples)
 from coding import file_door
 from laminar.planars_language import parse_dataset
 from planars.languages import get_display_name, get_entry
@@ -172,6 +177,20 @@ def _class_context(chapter: ChapterData, cls: str) -> list:
     return constructions
 
 
+def _class_examples(chapter: ChapterData, cls: str) -> list:
+    """[{name, rows: [{row, examples: [Tex]}]}] for the class's annotation
+    rows with an Example, in table order, each example as its venue macro."""
+    glossed = is_glossed(chapter.lang_id)
+    examples = chapter.tables["examples"]
+    out = {}
+    for _i, r in examples[examples["Class"] == cls].iterrows():
+        items, _paired = split_examples(r, glossed)
+        out.setdefault(r["Construction"], []).append({"row": r["Row"], "examples": [
+            tex.example(e["form"], e["gloss"], e["translation"], r["Source"], glossed)
+            for e in items]})
+    return [{"name": name, "rows": rows} for name, rows in out.items()]
+
+
 def language_fragments(chapter: ChapterData) -> dict:
     """{file name: text} for a language chapter's fragments."""
     L = chapter.lang_id
@@ -195,6 +214,9 @@ def language_fragments(chapter: ChapterData) -> dict:
         out[f"class_{cls}.tex"] = tex.render("class_section.tex.j2", L=L,
                                              display_name=entries[cls]["display_name"],
                                              constructions=constructions)
+        out[f"examples_{cls}.tex"] = tex.render("examples_section.tex.j2",
+                                                display_name=entries[cls]["display_name"],
+                                                constructions=_class_examples(chapter, cls))
         rows = groups.setdefault(_domain(entries[cls]), [])
         rows.extend({"class_name": entries[cls]["display_name"], "construction": c["name"], **s}
                     for c in constructions for s in c["spans"])
@@ -215,7 +237,7 @@ MAIN = "main.tex"
 STY_FILE = "planarschapter.sty"
 # What a prose stub holds until someone writes in it.
 SLOT_MARK = "\\proseslot{"
-_SECTION_KEYS = {"heading", "slot", "who", "says", "fragments", "classes"}
+_SECTION_KEYS = {"heading", "slot", "who", "says", "fragments", "classes", "class_fragments"}
 
 
 def _outline(kind: str) -> list:
@@ -230,7 +252,8 @@ def outline_items(kind: str, classes: list) -> list:
     heading or headless block. ``classes`` is [(class, display name,
     domain type)] in the schema's class order; a ``classes: true`` section
     becomes one section per domain type (in order of first appearance) and
-    one subsection per class."""
+    one subsection per class, holding the fragments its `class_fragments`
+    name for that class."""
     items = []
     for section in _outline(kind):
         unknown = set(section) - _SECTION_KEYS
@@ -241,6 +264,9 @@ def outline_items(kind: str, classes: list) -> list:
             raise ChapterDataError(f"outline.yaml ({kind}): a section with a prose slot needs "
                                    f"`who` and `says` (its stub's instructions): {section}")
         if section.get("classes"):
+            if not section.get("class_fragments"):
+                raise ChapterDataError(f"outline.yaml ({kind}): a `classes` section needs "
+                                       f"`class_fragments` (e.g. [class]): {section}")
             by_domain = {}
             for cls, display_name, domain_type in classes:
                 by_domain.setdefault(domain_type, []).append((cls, display_name))
@@ -249,7 +275,8 @@ def outline_items(kind: str, classes: list) -> list:
                               "slot": None, "fragments": []})
                 items += [{"command": "subsection", "heading": display_name, "domain": None,
                            "in_domain": domain_type, "slot": f"class_{cls}",
-                           "fragments": [f"class_{cls}"], "who": section["who"],
+                           "fragments": [f"{f}_{cls}" for f in section["class_fragments"]],
+                           "who": section["who"],
                            "says": section["says"]} for cls, display_name in members]
         else:
             items.append({"command": "section" if section.get("heading") else None,
@@ -481,7 +508,7 @@ def read_volume(lang: str | None = None) -> tuple[dict, str | None]:
     volume = yaml.safe_load(current) or {}
     parts = volume.get("parts")
     if not isinstance(volume.get("title"), str) or not isinstance(parts, list) or not parts:
-        raise ChapterDataError(".papers/volume.yaml needs a `title` and a list of `parts`.")
+        raise ChapterDataError(".papers/volume.yaml needs a `title`, a `venue` and a list of `parts`.")
     unknown = [p for p in parts if p != INTRO and get_entry(str(p)) is None]
     if unknown:
         raise ChapterDataError(
@@ -490,6 +517,9 @@ def read_volume(lang: str | None = None) -> tuple[dict, str | None]:
     repeated = sorted({p for p in parts if parts.count(p) > 1})
     if repeated:
         raise ChapterDataError(f".papers/volume.yaml lists {repeated} more than once.")
+    if volume.get("venue") not in tex.venues():
+        raise ChapterDataError(f".papers/volume.yaml: `venue` is {volume.get('venue')!r}; it must "
+                               f"name a file in chapters/venues/ ({', '.join(tex.venues())}).")
     return volume, stub
 
 
@@ -748,7 +778,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     try:
         volume, volume_stub = read_volume(args.lang)
         parts = [args.lang] if args.lang else [INTRO] if args.intro else list(volume["parts"])
-        built = {STY_FILE: tex.STY, MAIN: tex.render(
+        built = {STY_FILE: tex.STY, tex.VENUE_STY: tex.venue_sty(volume["venue"]), MAIN: tex.render(
             "main.tex.j2", title=volume["title"], parts=volume["parts"],
             languages=[p for p in volume["parts"] if p != INTRO])}
         stubs = {VOLUME: volume_stub} if volume_stub else {}

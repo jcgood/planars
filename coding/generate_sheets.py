@@ -116,7 +116,7 @@ from planars.schema_values import (
     STATUS_CONSTRUCTION_COLUMN, STATUS_PROBLEMS_COLUMN, STATUS_STATUS_COLUMN,
     STATUS_IN_PROGRESS, STATUS_READY, STATUS_TAB, STATUS_VALUES, ZONE, status_map,
     ELEMENT_ROWS, PAIR_ROWS,
-    TRAILING_COLUMNS as _TRAILING_COLS,
+    TRAILING_COLUMNS as _TRAILING_COLS, trailing_columns_for,
     header_shape, is_keystone as _is_keystone, prefill_by_label,
     row_columns, row_key, row_type, source_construction,
 )
@@ -156,8 +156,9 @@ from .make_forms import (
 MANIFEST_PATH = ROOT / "sheets_manifest.json"
 CODED_DATA = ROOT / "coded_data"
 
-# Columns appended after param columns on every tab; no dropdown validation:
-# planar.yaml's trailing_columns, imported above as _TRAILING_COLS.
+# Columns appended after param columns; no dropdown validation: planar.yaml's
+# trailing_columns. A tab gets its language's (trailing_columns_for); every
+# one that any language may have is _TRAILING_COLS.
 _STATUS_TAB = STATUS_TAB
 _STATUS_VALUES = STATUS_VALUES
 
@@ -988,13 +989,15 @@ def _fill_new_tab(ss, lang_id: str, class_name: str, construction: str,
                    "position_pairs": _populate_tab_reflex_pairs}
         if shape not in writers:
             raise ValueError(f"{class_name}/{construction}: no writer for pair shape {shape!r}")
-        writers[shape](ss, construction, param_names, param_values, pairs)
+        writers[shape](ss, construction, param_names, param_values, pairs,
+                       trailing=trailing_columns_for(lang_id))
         return f"{len(pairs)} candidate pairs"
     if kind != ELEMENT_ROWS:
         raise ValueError(f"{class_name}/{construction}: no writer for row_type {kind!r}")
     rows = starting_rows(element_index, lang_id, class_name, construction, param_names,
                          data_dir=planar_path.parent)
-    _populate_tab(ss, construction, param_names, param_values, rows)
+    _populate_tab(ss, construction, param_names, param_values, rows,
+                  trailing=trailing_columns_for(lang_id))
     return f"{len(rows)} rows, {len(param_names)} params"
 
 
@@ -1005,6 +1008,8 @@ def _populate_tab_pairs(
     param_values: Dict[str, List[str]],
     pairs: List[List[str]],
     prefill: Optional[Dict[Tuple[str, str], Dict[str, str]]] = None,
+    *,
+    trailing: List[str],
 ) -> WorksheetHandle:
     """Create or clear a worksheet tab and populate it with pair rows.
 
@@ -1020,12 +1025,13 @@ def _populate_tab_pairs(
         pairs:        candidate pair rows from pair_rows() (no header).
         prefill:      optional {(Element_A, Element_B): {col: val}} dict; when
                       provided, retained pairs are pre-filled with existing values.
+        trailing:     the language's trailing columns (trailing_columns_for).
 
     Returns:
         The populated worksheet handle.
     """
     pair_struct = PAIR_ROW_SHAPES["element_pairs"]
-    num_cols = len(pair_struct) + len(param_names) + len(_TRAILING_COLS)  # structure, params, trailing
+    num_cols = len(pair_struct) + len(param_names) + len(trailing)  # structure, params, trailing
     try:
         ws = spreadsheet.worksheet(tab_name)
         _reset_worksheet(ws, len(pairs), num_cols)
@@ -1034,7 +1040,7 @@ def _populate_tab_pairs(
             title=tab_name, rows=len(pairs) + 2, cols=num_cols
         )
 
-    all_cols = param_names + _TRAILING_COLS
+    all_cols = param_names + trailing
     header = pair_struct + all_cols
     data_rows = []
     for pair in pairs:
@@ -1061,6 +1067,8 @@ def _populate_tab_reflex_pairs(
     param_values: Dict[str, List[str]],
     pairs: List[List[str]],
     prefill: Optional[Dict] = None,
+    *,
+    trailing: List[str],
 ) -> WorksheetHandle:
     """Create or clear a worksheet tab and populate it with coreference pair rows.
 
@@ -1074,7 +1082,7 @@ def _populate_tab_reflex_pairs(
                  regenerating an existing tab.
     """
     _REFLEX_STRUCT = PAIR_ROW_SHAPES["position_pairs"]
-    num_cols = len(_REFLEX_STRUCT) + len(param_names) + len(_TRAILING_COLS)
+    num_cols = len(_REFLEX_STRUCT) + len(param_names) + len(trailing)
     try:
         ws = spreadsheet.worksheet(tab_name)
         _reset_worksheet(ws, len(pairs), num_cols)
@@ -1083,7 +1091,7 @@ def _populate_tab_reflex_pairs(
             title=tab_name, rows=len(pairs) + 2, cols=num_cols
         )
 
-    all_cols = param_names + _TRAILING_COLS
+    all_cols = param_names + trailing
     header = _REFLEX_STRUCT + all_cols
     data_rows = []
     for pair in pairs:
@@ -1104,6 +1112,8 @@ def _populate_tab_keyed(
     param_names: List[str],
     param_values: Dict[str, List[str]],
     rows: List[Dict[str, str]],
+    *,
+    trailing: List[str],
 ) -> WorksheetHandle:
     """Create or clear a worksheet tab and populate it with keyed rows.
 
@@ -1113,14 +1123,14 @@ def _populate_tab_keyed(
     or trailing value it carries (an answer carried over, or a pre-fill) is
     written, everything else is blank.
     """
-    num_cols = len(keyed_columns) + len(param_names) + len(_TRAILING_COLS)
+    num_cols = len(keyed_columns) + len(param_names) + len(trailing)
     try:
         ws = spreadsheet.worksheet(tab_name)
         _reset_worksheet(ws, len(rows), num_cols)
     except WorksheetNotFound:
         ws = spreadsheet.add_worksheet(title=tab_name, rows=len(rows) + 2, cols=num_cols)
 
-    header = keyed_columns + param_names + _TRAILING_COLS
+    header = keyed_columns + param_names + trailing
     data_rows = [[str(r.get(c, "")) for c in header] for r in rows]
     ws.update([header] + data_rows, "A1")
     per_col_values = [param_values[p] for p in param_names]  # values come from criteria_for
@@ -1167,11 +1177,13 @@ def _biuniq_populate(
         raise ValueError(f"{_br.CLASS_NAME} has no tab named {construction!r} "
                          f"(schema: {_br.ELEMENTS}, {', '.join(_br.KEYED)})")
     rows = _biuniq_generate(lang_id, construction, param_names, planar_path)
+    trailing = trailing_columns_for(lang_id)
     if construction == _br.ELEMENTS:
-        _populate_tab(spreadsheet, construction, param_names, param_values, rows)
+        _populate_tab(spreadsheet, construction, param_names, param_values, rows, trailing=trailing)
     else:
         columns, _ = _br.KEYED[construction]
-        _populate_tab_keyed(spreadsheet, construction, columns, param_names, param_values, rows)
+        _populate_tab_keyed(spreadsheet, construction, columns, param_names, param_values, rows,
+                            trailing=trailing)
     return len(rows)
 
 
@@ -1220,7 +1232,8 @@ def _regen_keyed_construction(
 
     planar_path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
     generated = _biuniq_generate(lang_id, construction_name, param_names, planar_path)
-    answer_cols = param_names + _TRAILING_COLS
+    trailing = trailing_columns_for(lang_id)
+    answer_cols = param_names + trailing
     rows, counts = _br.carry_over(generated, existing_rows, key, answer_cols)
     _rebuild_tab(
         spreadsheet, lang_id, class_name, construction_name,
@@ -1229,7 +1242,7 @@ def _regen_keyed_construction(
                     "mistake, fix it there, import, and regenerate again. If the drop is "
                     "intended, re-run with --confirm-drop:"),
         populate=lambda: _populate_tab_keyed(spreadsheet, construction_name, columns,
-                                             param_names, param_values, rows))
+                                             param_names, param_values, rows, trailing=trailing))
     print(f"    {construction_name}: {counts['retained']} retained, {counts['added']} added, "
           f"{counts['removed']} removed, {counts['hand_added']} hand-added kept")
 
@@ -1544,11 +1557,13 @@ def _populate_tab(
     param_names: List[str],
     param_values: Dict[str, List[str]],
     rows: List[List[object]],
+    *,
+    trailing: List[str],
 ) -> WorksheetHandle:
     """Create or clear a worksheet tab and populate it with data.
 
     If a tab named tab_name already exists it is cleared and rewritten;
-    otherwise a new worksheet is created. Trailing columns (_TRAILING_COLS)
+    otherwise a new worksheet is created. The language's trailing columns
     are appended after the criterion columns with empty values.
 
     Args:
@@ -1557,11 +1572,12 @@ def _populate_tab(
         param_names: ordered list of criterion column names.
         param_values: dict mapping criterion name to list of allowed values.
         rows: data rows from starting_rows (no header).
+        trailing: the language's trailing columns (trailing_columns_for).
 
     Returns:
         The populated worksheet handle.
     """
-    num_cols = len(ELEMENT_ROW_COLUMNS) + len(param_names) + len(_TRAILING_COLS)  # structure, params, trailing
+    num_cols = len(ELEMENT_ROW_COLUMNS) + len(param_names) + len(trailing)  # structure, params, trailing
     try:
         ws = spreadsheet.worksheet(tab_name)
         _reset_worksheet(ws, len(rows), num_cols)
@@ -1570,10 +1586,10 @@ def _populate_tab(
             title=tab_name, rows=len(rows) + 2, cols=num_cols
         )
 
-    all_cols = param_names + _TRAILING_COLS
+    all_cols = param_names + trailing
     header = ELEMENT_ROW_COLUMNS + all_cols
     # Pad data rows with empty trailing columns (e.g. Comments).
-    all_rows = [header] + [[str(v) for v in row] + [""] * len(_TRAILING_COLS) for row in rows]
+    all_rows = [header] + [[str(v) for v in row] + [""] * len(trailing) for row in rows]
     ws.update(all_rows, "A1")
     per_col_values = [param_values[p] for p in param_names]  # values come from criteria_for
     per_col_notes = _build_criterion_notes(param_names)
@@ -1863,10 +1879,11 @@ def _regen_construction(
     def populate() -> None:
         if class_name == "coreference":
             _populate_tab_reflex_pairs(spreadsheet, construction_name, param_names,
-                                       param_values, pairs, prefill=existing)
+                                       param_values, pairs, prefill=existing,
+                                       trailing=trailing_columns_for(lang_id))
         else:
             _populate_tab_pairs(spreadsheet, construction_name, param_names, param_values,
-                                pairs, prefill=existing)
+                                pairs, prefill=existing, trailing=trailing_columns_for(lang_id))
 
     _rebuild_tab(
         spreadsheet, lang_id, class_name, construction_name,

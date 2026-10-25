@@ -6,6 +6,7 @@ conftest installs for every test.
 from __future__ import annotations
 
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -92,6 +93,21 @@ def test_file_matching_title_ignores_other_issues_under_the_label(github):
     github.seed_issue("Something else", "diagnostics")
     number, created = issues.file_issue("diagnostics", "[x] divergent", "b", match_title=True)
     assert created
+
+
+def test_the_file_command_can_match_a_per_language_title(github, tmp_path, monkeypatch):
+    # sheet-updates has one issue per language: filing for Araona must not
+    # comment on English's (the CLI had no way to ask, 2026-10-25).
+    english = github.seed_issue("Sheet updates — stan1293", "sheet-updates")
+    body = tmp_path / "body.md"
+    body.write_text("note", encoding="utf-8")
+    monkeypatch.setattr(sys, "argv", ["issue", "--file", "sheet-updates", "--match-title",
+                                      "--title", "Sheet updates — arao1248",
+                                      "--body-file", str(body)])
+    issues.main()
+    assert english not in github.comments
+    assert [i["title"] for i in github.issues] == ["Sheet updates — stan1293",
+                                                   "Sheet updates — arao1248"]
 
 
 def test_a_closed_issue_does_not_count_as_open(github):

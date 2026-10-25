@@ -137,8 +137,10 @@ own hand edits (to the YAML or the planar) still need committing by hand.
      author: "Author Name"
      annotator: "Annotator Name"
      annotation_status: planned   # planned | in-progress | complete
+     examples: glossed            # glossed | unglossed
      notes: ""
    ```
+   `examples` decides which example columns the language's sheets get (Example, then Gloss and Translation when glossed) and how its chapter prints them. It is `glossed` for every language except one whose examples need no gloss because it is the language the chapters are written in (English, `unglossed`). The sheets can't be made until it is set.
    If the annotator is new, add them to `coded_data/people.yaml` (private planars-data), keyed by the name exactly as `languages.yaml` writes it: their `email` (the sheets are shared with it), and their `github` username if they have one. Commit and push it in `coded_data/`.
    ```yaml
    Annotator Name:
@@ -360,8 +362,12 @@ files to reread. A writer states a fact their argument depends on as
 every build lists the claims the data no longer bear out, with file and
 line, and the PDF boxes them. Compile `.papers/main.tex`
 (`latexmk -pdf main.tex` there); an unwritten slot shows as a boxed "Still
-to write". The volume's title and the order of its chapters are
-`.papers/volume.yaml`, edited by hand.
+to write". The volume's title, its venue and the order of its chapters
+are `.papers/volume.yaml`, edited by hand. The venue (`book` until the
+publisher's template arrives) names a file in `chapters/venues/` that sets
+how examples are printed; each language's examples come from its sheets'
+Example column, glossed or not as `examples` in `schemas/languages.yaml`
+says.
 
 Nobody has to remember to check whether a chapter has fallen behind: the
 daily refresh runs `build-chapters --check --apply`, which files one

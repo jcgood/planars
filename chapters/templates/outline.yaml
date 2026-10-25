@@ -11,8 +11,9 @@
 #   fragments:  generated fragments, \input after the prose, in order
 #   classes:    true: one \section per domain type, holding one \subsection
 #               per class the chapter covers, in the schema's class order;
-#               each has the slot class_<class> and the fragment
-#               class_<class>. `who` and `says` apply to every class slot.
+#               each has the slot class_<class> and, for each name in
+#               class_fragments, the fragment <name>_<class>, in order.
+#               `who` and `says` apply to every class slot.
 #
 # Renaming a slot leaves its old prose file behind: the build lists it as
 # no longer in the outline, never deletes it, so move its text by hand.
@@ -41,11 +42,13 @@ language:
       does not have, and why not.
     fragments: [diagnostics_table]
   - classes: true
+    class_fragments: [class, examples]
     who: the language's annotator
     says: >-
       Each construction used as a test: what it is, with an example, why it
-      was chosen, and anything that made coding it hard. The spans it gives
-      follow this text and are written by the build.
+      was chosen, and anything that made coding it hard. The spans it gives,
+      and the examples given in the annotation, follow this text and are
+      written by the build.
   - heading: The spans together
     slot: spans
     who: the language's annotator
@@ -69,6 +72,7 @@ intro:
       (2024); the definitions follow this text and are written by the build.
     fragments: [terms]
   - classes: true
+    class_fragments: [class]
     who: Jeff Good and Adam Tallman
     says: >-
       What the diagnostic tests and how it relates to the tests in the

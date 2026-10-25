@@ -9,7 +9,7 @@ import pytest
 from coding import check_comments, state_files
 from command_runner import run_command
 from fake_drive import point_coded_data_at
-from planars.schema_values import ELEMENT_ROW_COLUMNS, TRAILING_COLUMNS
+from planars.schema_values import ELEMENT_ROW_COLUMNS, trailing_columns_for
 
 LANG = "stan1293"
 TAB = ("ciscategorial", "general")
@@ -18,7 +18,7 @@ TAB = ("ciscategorial", "general")
 def _write_tab(coded, rows, columns=None):
     folder = coded / LANG / TAB[0]
     folder.mkdir(parents=True, exist_ok=True)
-    columns = columns or ELEMENT_ROW_COLUMNS + ["n-combines"] + TRAILING_COLUMNS
+    columns = columns or ELEMENT_ROW_COLUMNS + ["n-combines"] + trailing_columns_for(LANG)
     lines = ["\t".join(columns)] + ["\t".join(r) for r in rows]
     (folder / f"{TAB[1]}.tsv").write_text("\n".join(lines) + "\n", encoding="utf-8")
 

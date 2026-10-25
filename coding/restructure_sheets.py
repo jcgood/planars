@@ -135,7 +135,7 @@ from .schemas import apply_schema_criteria, free_entry_kind, load_diagnostic_cla
 from planars.schema_values import (
     ELEMENT_ROW_COLUMNS,
     PAIR_ROW_SHAPES,
-    TRAILING_COLUMNS as _TRAILING_COLS,
+    TRAILING_COLUMNS as _TRAILING_COLS, trailing_columns_for,
     row_columns, row_columns_of, row_key_of, row_type_of,
 )
 from .drive import (
@@ -407,8 +407,11 @@ def _write_tab_with_carryover(
     element_rename_map: Dict[str, str] = {},
     tsv_target: Optional[file_door.LocalFile] = None,
     split_element_map: Dict[str, List[str]] = {},
+    *,
+    trailing: List[str],
 ) -> Tuple[int, int, int]:
     """Create/clear a tab and populate it, carrying over matching annotations.
+    ``trailing`` is the language's trailing columns (trailing_columns_for).
 
     ``tsv_target``: the tab's annotation TSV, rewritten to match through the
     local-file door (which keeps the previous version).
@@ -432,7 +435,7 @@ def _write_tab_with_carryover(
     new_to_old_split: Dict[str, str] = {
         n: old for old, news in split_element_map.items() for n in news
     }
-    all_cols = param_names + _TRAILING_COLS
+    all_cols = param_names + trailing
     header = ELEMENT_ROW_COLUMNS + all_cols
 
     carried = 0
@@ -449,7 +452,7 @@ def _write_tab_with_carryover(
         old_values = _lookup_existing(element, pos_name, existing, old_for_new, old_el_for_new)
         if old_values is not None:
             param_vals = [old_values.get(p, "") for p in param_names]
-            trailing_vals = [old_values.get(c, "") for c in _TRAILING_COLS]
+            trailing_vals = [old_values.get(c, "") for c in trailing]
             reachable_old_keys.add(_old_key(element, pos_name, existing, old_for_new, old_el_for_new))
             carried += 1
         else:
@@ -457,7 +460,7 @@ def _write_tab_with_carryover(
             # (generate_sheets.starting_rows: keystone na, pre-fills).
             param_vals = [str(v) for v in row[len(ELEMENT_ROW_COLUMNS):][:len(param_names)]]
             param_vals += [""] * (len(param_names) - len(param_vals))
-            trailing_vals = [""] * len(_TRAILING_COLS)
+            trailing_vals = [""] * len(trailing)
             split_source = new_to_old_split.get(element)
             old_split = existing.get((split_source, pos_name)) if split_source else None
             if old_split is not None and param_names:
@@ -853,6 +856,7 @@ def _copy_pair_tab_with_rename(
     criterion_col: Optional[str] = None,
     *,
     class_name: str,
+    trailing: List[str],
 ) -> Tuple[int, int, int, int]:
     """Copy a pair tab from old_ss to new_ss with rename_map applied to position cells
     and split_element_map applied to Element_A/Element_B cells (see
@@ -872,17 +876,18 @@ def _copy_pair_tab_with_rename(
         all_values = []
 
     if not all_values:
-        header = row_columns(class_name, tab_name) + list(param_names) + list(_TRAILING_COLS)
+        header = row_columns(class_name, tab_name) + list(param_names) + list(trailing)
         ws = new_ss.add_worksheet(title=tab_name, rows=10, cols=len(header))
         ws.update([header], "A1")
         return 0, 0, 0, 0
 
-    # The trailing columns are the schema's, in its order, whatever the old
-    # tab had: a column added to schemas/planar.yaml since the old sheet was
-    # made (Example, 2026-10-22) must be on the rebuilt one, and a trailing
-    # column the schema dropped must not be. Cells move by column name.
+    # The trailing columns are the language's (``trailing``), in the schema's
+    # order, whatever the old tab had: a column added to schemas/planar.yaml
+    # since the old sheet was made (Example, 2026-10-22) must be on the
+    # rebuilt one, and a trailing column the language doesn't carry must not
+    # be. Cells move by column name.
     old_header = all_values[0]
-    header = [c for c in old_header if c not in _TRAILING_COLS] + list(_TRAILING_COLS)
+    header = [c for c in old_header if c not in _TRAILING_COLS] + list(trailing)
     old_idx = {c: i for i, c in enumerate(old_header)}
     rows_by_name = [[(row[old_idx[c]] if c in old_idx and old_idx[c] < len(row) else "")
                      for c in header] for row in all_values[1:]]
@@ -927,7 +932,7 @@ def _copy_pair_tab_with_rename(
     else:
         # Last-resort derived fallback (not a literal guess): the criterion
         # columns are the ones immediately before the trailing columns.
-        col_start = len(header) - len(_TRAILING_COLS) - len(param_names)
+        col_start = len(header) - len(trailing) - len(param_names)
     _format_and_validate(ws, len(new_data) - 1, per_col, col_start=col_start)
     _add_cell_notes(ws, split_notes)
     return len(new_data) - 1, renamed, split_fanned, split_manual
@@ -1064,19 +1069,22 @@ def _copy_keyed_tab_with_rename(
     rename_map: Dict[str, str],
     element_rename_map: Dict[str, str],
     split_element_map: Dict[str, List[str]],
+    *,
+    trailing: List[str],
 ) -> Tuple[int, int, int]:
-    """Copy a keyed tab into the recreated sheet with renames applied.
+    """Copy a keyed tab into the recreated sheet with renames applied; its
+    trailing columns become the language's (``trailing``).
     Returns (rows_copied, cells_changed, rows_flagged)."""
     try:
         all_values = old_ss.worksheet(tab_name).get_all_values()
     except WorksheetNotFound:
         all_values = []
-    header = all_values[0] if all_values else keyed["columns"] + param_names + list(_TRAILING_COLS)
+    header = all_values[0] if all_values else keyed["columns"] + param_names + list(trailing)
     rows, changed, flagged, notes = _transform_keyed_rows(
         header, all_values[1:], _position_param_cols(param_values),
         rename_map, element_rename_map, split_element_map)
     ws = _populate_tab_keyed(new_ss, tab_name, keyed["columns"], param_names, param_values,
-                             [dict(zip(header, r)) for r in rows])
+                             [dict(zip(header, r)) for r in rows], trailing=trailing)
     _add_cell_notes(ws, notes)
     return len(rows), changed, flagged
 
@@ -1286,7 +1294,8 @@ def _rename_class_for_language(
         rows = starting_rows(element_index, lang_id, new_class, construction, param_names)
         existing = all_annotations.get(construction, {})
         carried, new_count, dropped_count = _write_tab_with_carryover(
-            new_ss, construction, param_names, param_values, rows, existing, {}, {}
+            new_ss, construction, param_names, param_values, rows, existing, {}, {},
+            trailing=trailing_columns_for(lang_id),
         )
         tab_names.append(construction)
         new_construction_params[construction] = {"param_names": param_names}
@@ -1821,7 +1830,8 @@ def main(args: argparse.Namespace | None = None) -> None:
                 if keyed:
                     copied, changed, flagged = _copy_keyed_tab_with_rename(
                         ss, new_ss, construction, keyed, param_names, param_values,
-                        rename_map, element_rename_map, split_element_map)
+                        rename_map, element_rename_map, split_element_map,
+                        trailing=trailing_columns_for(lang_id))
                     tab_names.append(construction)
                     new_construction_params[construction] = {"param_names": param_names}
                     msg = f"    [{construction}] (keyed tab) copied {copied} rows, {changed} cell(s) renamed"
@@ -1838,7 +1848,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                     rows_copied, cells_renamed, rows_split, rows_manual = _copy_pair_tab_with_rename(
                         ss, new_ss, construction, rename_map, param_names, param_values,
                         split_element_map=split_element_map, criterion_col=criterion_col,
-                        class_name=class_name,
+                        class_name=class_name, trailing=trailing_columns_for(lang_id),
                     )
                     tab_names.append(construction)
                     new_construction_params[construction] = {"param_names": param_names}
@@ -1859,6 +1869,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                     rename_map, element_rename_map,
                     tsv_target=file_door.annotation(lang_id, class_name, construction),
                     split_element_map=split_element_map,
+                    trailing=trailing_columns_for(lang_id),
                 )
                 tab_names.append(construction)
                 new_construction_params[construction] = {"param_names": param_names}

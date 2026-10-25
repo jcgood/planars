@@ -21,7 +21,14 @@ docs/chapter-generation-plan.md): ``booktabs`` and ``longtable`` tables,
 and the macros in ``planarschapter.sty`` (``STY``: ``\\pv``, ``\\claim``
 for a checked statement in prose, and ``\\proseslot`` for a slot nobody
 has written yet), which the build writes
-at the top of ``.papers/``.
+at the top of ``.papers/``. **Examples** go through two macros of our
+own, ``\\planarsex{form}{gloss}{translation}{source}`` and
+``\\planarsplainex{sentence}{source}`` (a language whose examples need no
+gloss), defined per venue in ``chapters/venues/<venue>.sty`` on top of the
+venue's glossing package and written as ``.papers/planarsvenue.sty``; so
+when the publisher's template arrives, a new venue file is all that
+changes. ``example(...)`` in a template writes the right call for the
+language's example style.
 """
 
 from __future__ import annotations
@@ -33,6 +40,24 @@ from pathlib import Path
 import jinja2
 
 TEMPLATES = Path(__file__).resolve().parent / "templates"
+# One file per venue (``venues/<venue>.sty``), copied to .papers/ as
+# planarsvenue.sty: the example macros on top of the venue's glossing package.
+VENUES = Path(__file__).resolve().parent / "venues"
+VENUE_STY = "planarsvenue.sty"
+
+
+def venues() -> list:
+    """The venues there is a file for, by name."""
+    return sorted(p.stem for p in VENUES.glob("*.sty"))
+
+
+def venue_sty(venue: str) -> str:
+    """The text of `venue`'s planarsvenue.sty. Fails on a venue with no file."""
+    if venue not in venues():
+        raise ValueError(f"No venue {venue!r}: there is a file in chapters/venues/ for "
+                         f"{', '.join(venues())}. Write chapters/venues/{venue}.sty "
+                         f"(defining \\planarsex and \\planarsplainex) to add one.")
+    return (VENUES / f"{venue}.sty").read_text(encoding="utf-8")
 
 _SPECIALS = {
     "\\": r"\textbackslash{}", "{": r"\{", "}": r"\}", "$": r"\$", "&": r"\&",
@@ -111,6 +136,16 @@ def comment(text) -> Tex:
     return Tex("\n".join(f"% {line}" for line in wrapped))
 
 
+def example(form, gloss, translation, source, glossed: bool) -> Tex:
+    """One example as the venue macro for its language's style: a glossed
+    one through ``\\planarsex``, one needing no gloss (or a glossed
+    language's example that came without one) through ``\\planarsplainex``."""
+    if glossed and gloss and translation:
+        return Tex(rf"\planarsex{{{escape(form)}}}{{{escape(gloss)}}}"
+                   rf"{{{escape(translation)}}}{{{escape(source)}}}")
+    return Tex(rf"\planarsplainex{{{escape(form)}}}{{{escape(source)}}}")
+
+
 def _finalize(value):
     if isinstance(value, Tex):
         return value
@@ -126,7 +161,7 @@ def environment() -> jinja2.Environment:
         trim_blocks=True, lstrip_blocks=True, keep_trailing_newline=True,
         undefined=jinja2.StrictUndefined, autoescape=False, finalize=_finalize,
     )
-    env.globals.update(pv=pv, lines=lines, Tex=Tex, comment=comment, path=path)
+    env.globals.update(pv=pv, lines=lines, Tex=Tex, comment=comment, path=path, example=example)
     env.filters["tex"] = escape
     env.filters["name"] = name
     return env

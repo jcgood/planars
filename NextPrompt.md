@@ -30,17 +30,22 @@ its five decisions (2026-10-25; the plan's "Decisions" — don't re-ask): De
 Gruyter, class-neutral fragments; a private GitHub repo; a sentence per
 test plus tables; structured examples for every language but English (a
 per-language field, not a coded exception); mixed authorship.
-Phases 1–4 are built (2026-10-25; the plan's "as built" sections):
+Phases 1–6 are built (2026-10-25; the plan's "as built" sections):
 `python -m coding build-chapters` writes the volume into
 `coded_data/.papers/` through the local-file door (outline, fragments,
 values, prose stubs the door never overwrites), pins each language
 chapter (`data.lock`; `--update` moves it and reports) and checks
-`\claim`s. **Next action:** Jeff's go-ahead for the first real
-`build-chapters --apply` (creates and pushes `.papers/` in planars-data);
-then Phase 5 (the daily check and its issue) or Phase 6 (structured
-examples). Still waiting on #318 (e) (construction
-descriptions), laminar plan 4d (the permutation tests) and #321 (span
-rules).
+`\claim`s; `--check` runs in the daily refresh and files a
+`chapter-behind` issue per chapter (Phase 5); examples are structured per
+language (`examples: glossed|unglossed` in languages.yaml; Araona's sheets
+got Gloss and Translation live 2026-10-25, Adam told on #326) and printed
+through the venue file `chapters/venues/book.sty` (Phase 6). **Next
+action:** the first real `build-chapters --apply` (creates and pushes
+`.papers/` in planars-data), after which the daily check has something to
+check; then Phase 7 (Word). Check the 2026-10-26 refresh: its `chapters`
+step is green and files nothing unexpected. Still waiting on
+#318 (e) (construction descriptions), laminar plan 4d (the permutation
+tests) and #321 (span rules).
 
 ### Thread: the laminar analysis on English, for a paper (2026-10-24)
 

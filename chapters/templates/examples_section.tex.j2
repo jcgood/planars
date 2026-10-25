@@ -1,0 +1,17 @@
+\#{ The examples the annotation gives for one class in a language chapter,
+   by construction and row, each through the venue's example macro.
+   Context: display_name, constructions (list of dicts: name, rows: list of
+   dicts: row, examples: list of Tex). }
+\BLOCK{if constructions}
+\paragraph{Examples from the annotation (\VAR{display_name})}
+\BLOCK{for c in constructions}
+\BLOCK{for r in c.rows}
+\noindent\texttt{\VAR{c.name|name}}: \VAR{r.row}
+\BLOCK{for e in r.examples}
+\VAR{e}
+\BLOCK{endfor}
+\BLOCK{endfor}
+\BLOCK{endfor}
+\BLOCK{else}
+% The annotation gives no examples for this class yet.
+\BLOCK{endif}

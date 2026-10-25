@@ -1,6 +1,6 @@
 # Plan: generating the data-driven parts of the chapters
 
-Jeff, 2026-10-25. Phases 1–5 built 2026-10-25 (see the "as built"
+Jeff, 2026-10-25. Phases 1–6 built 2026-10-25 (see the "as built"
 sections at the end); the rest not started. Chapters are to be written
 from the annotation: an introduction chapter with shared conventions, one
 chapter per language with its own sections, and results sections. Most of
@@ -365,3 +365,37 @@ states them.
   live.
 - Until the first real `build-chapters --apply` makes `.papers/`, the step
   prints "No chapters yet" and files nothing.
+
+## Phase 6 as built (2026-10-25)
+
+- **The per-language field is `examples`** in a language's
+  `schemas/languages.yaml` meta: `glossed` (Araona) or `unglossed`
+  (English). The styles are `schemas/planar.yaml`'s `example_styles`, each
+  listing the trailing columns its tabs leave out; `trailing_columns` now
+  lists every column any language may have (Example, Gloss, Translation,
+  Source, Comments). A language with no `examples` fails
+  (`schema_values.example_style`), so onboarding must set it
+  (`lookup-lang` scaffolds it blank; `required_meta_fields` warns).
+  Synthetic test languages take `synthetic_example_style` (unglossed).
+- **The sheets:** code that tells criteria from what follows them still
+  reads the full list; everything that writes a tab's columns
+  (generate-sheets, restructure-sheets, update-sheets, the sheet spec the
+  Drive door enforces) uses `trailing_columns_for(lang)`. The 2026-10-25
+  dry run of update-sheets adds Gloss and Translation to Araona's seven
+  tabs only, before Source; English and synth0001 are unchanged. The daily
+  refresh applies it.
+- **Several examples in one cell are separated by `;`**
+  (`example_separator`), as the collaborator guide already told
+  annotators; Gloss and Translation are separated the same way, and a row
+  whose cells don't pair up is printed without them and listed in
+  `missing`.
+- **The macros:** `\planarsex{form}{gloss}{translation}{source}` and
+  `\planarsplainex{sentence}{source}`, defined per venue in
+  `chapters/venues/<venue>.sty` (written as `.papers/planarsvenue.sty`);
+  `volume.yaml` names the venue (`venue: book`, on expex, which leaves `_`
+  and `^` alone). When De Gruyter's template arrives, a new venue file is
+  the whole change.
+- **Each class section ends with `examples_<class>.tex`**: the
+  annotation's examples by construction and row (outline.yaml's
+  `class_fragments`). English prints all of its examples plain; the
+  volume compiles with a glossed example too (a test).

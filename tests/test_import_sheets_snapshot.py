@@ -454,8 +454,10 @@ def test_no_status_tab_treats_every_construction_as_ready_for_review(env):
 
 def test_ignore_status_treats_every_tab_as_ready_for_review(env):
     out, _ = env.run(["import-sheets", "--lang", "arao1248", "--apply", "--ignore-status"])
-    assert "in-progress" not in out
-    assert "[backup]" not in out
+    # The ways import marks a tab it treated as in-progress (revalidation's
+    # summary line names in-progress tabs in general, so not the bare word).
+    for mark in ("[backup]", "in-progress backup(s)", "in-progress sheet(s) have"):
+        assert mark not in out, out
 
 
 def test_mixed_status_only_treats_the_flipped_construction_as_ready(env):

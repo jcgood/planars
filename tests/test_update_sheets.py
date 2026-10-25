@@ -29,6 +29,7 @@ from coding.update_sheets import (
     _TRAILING_COLS,
 )
 from coding.make_forms import element_rows
+from planars.schema_values import EXAMPLE_STYLES, trailing_columns_for
 
 
 class _FakeWorksheet:
@@ -290,7 +291,7 @@ class TestAddTrailingColumns:
     def test_noop_when_nothing_missing(self):
         header = ["Element", "Position_Name", "Position_Number"] + list(_TRAILING_COLS)
         ws = _FakeWorksheet([header])
-        result = _add_trailing_columns(ws, header, [header])
+        result = _add_trailing_columns(ws, header, [header], list(_TRAILING_COLS))
         assert result == header
         assert ws.insert_cols_calls == []
 
@@ -298,7 +299,7 @@ class TestAddTrailingColumns:
         header = ["Element", "Position_Name", "Position_Number"]
         rows = [header, ["he", "v:npsubj1", "5"]]
         ws = _FakeWorksheet(rows)
-        result = _add_trailing_columns(ws, header, rows)
+        result = _add_trailing_columns(ws, header, rows, list(_TRAILING_COLS))
         assert result == header + list(_TRAILING_COLS)
         assert len(ws.insert_cols_calls) == len(_TRAILING_COLS)
 
@@ -306,7 +307,7 @@ class TestAddTrailingColumns:
         header = ["Element", "Position_Name", "Position_Number"]
         rows = [header, ["he", "v:npsubj1", "5"], ["she", "v:npsubj1", "5"]]
         ws = _FakeWorksheet(rows)
-        _add_trailing_columns(ws, header, rows)
+        _add_trailing_columns(ws, header, rows, list(_TRAILING_COLS))
         first_col_data, _ = ws.insert_cols_calls[0]
         # header + one blank per data row (2 data rows here)
         assert first_col_data == [[_TRAILING_COLS[0]] + [""] * 2]
@@ -316,6 +317,21 @@ class TestAddTrailingColumns:
         header = ["Element", "Position_Name", "Position_Number", _TRAILING_COLS[0]]
         rows = [header]
         ws = _FakeWorksheet(rows)
-        result = _add_trailing_columns(ws, header, rows)
+        result = _add_trailing_columns(ws, header, rows, list(_TRAILING_COLS))
         assert result == header + list(_TRAILING_COLS[1:])
         assert len(ws.insert_cols_calls) == len(_TRAILING_COLS) - 1
+
+    def test_a_glossed_language_gets_its_example_columns_in_schema_order(self):
+        # An unglossed tab moving to glossed: the columns its style left out
+        # go in where the schema orders them, not at the end.
+        unglossed = [c for c in _TRAILING_COLS if c not in EXAMPLE_STYLES["unglossed"]]
+        header = ["Element", "Position_Name", "Position_Number"] + unglossed
+        ws = _FakeWorksheet([header])
+        result = _add_trailing_columns(ws, header, [header], list(_TRAILING_COLS))
+        assert result == ["Element", "Position_Name", "Position_Number"] + list(_TRAILING_COLS)
+
+    def test_a_language_gets_only_its_own_trailing_columns(self):
+        header = ["Element", "Position_Name", "Position_Number"]
+        ws = _FakeWorksheet([header])
+        result = _add_trailing_columns(ws, header, [header], trailing_columns_for("stan1293"))
+        assert not set(result) & set(EXAMPLE_STYLES["unglossed"])

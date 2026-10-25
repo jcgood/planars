@@ -12,6 +12,7 @@
 # and import-sheets) as a convenience; always edit here, not there.
 #
 # annotation_status values: planned | in-progress | complete
+# examples values: glossed | unglossed (schemas/planar.yaml example_styles)
 #
 # Email addresses are NOT kept here: this repo is public. They live in the
 # private planars-data repo, coded_data/people.yaml, keyed by the annotator's
@@ -22,7 +23,7 @@
 
 # Machine-readable list of meta fields integrity-check warns about when blank.
 # Survives lookup-lang rewrites (PyYAML preserves data keys).
-required_meta_fields: [source, author]
+required_meta_fields: [source, author, examples]
 
 arao1248:
   glottolog:
@@ -39,6 +40,7 @@ arao1248:
     author: Adam Tallman
     annotator: Adam Tallman
     annotation_status: in-progress
+    examples: glossed
     notes: ""
 
 stan1293:
@@ -55,4 +57,5 @@ stan1293:
     author: Adam Tallman
     annotator: Adam Tallman
     annotation_status: in-progress
+    examples: unglossed
     notes: ""

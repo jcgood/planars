@@ -26,7 +26,7 @@ A few rules:
 - **Keystone row** (`v:verbstem`): Pre-filled with `NA`. Do not change these cells.
 - **Blank cells**: Leave blank if you have not yet annotated this element. Blanks appear as warnings when the coordinator imports the data and are excluded from span computations.
 - **`?`**: Use `?` (not a blank) when you have consulted the source and genuinely cannot determine the value. A `?` is a positive annotation of uncertainty — it tells the coordinator "I looked and could not decide", which is different from "I have not looked yet". Both are flagged on import, but they mean different things for the record.
-- **Example column**: the forms or sentences that show your answer (`*Martin babysat himself`, `diagnose vs. diagram`).
+- **Example column**: the forms or sentences that show your answer (`*Martin babysat himself`, `diagnose vs. diagram`). For most languages it is followed by **Gloss** and **Translation** (details below).
 - **Source column**: page or section references that justify your answer (`§4.3`, `p. 217`).
 - **Comments column**: anything you want the coordinator to see — a question, a doubt about a value, something the columns can't express. New comments are passed to the coordinator each day. (Details below.)
 
@@ -81,11 +81,19 @@ Pink means the value is not in the allowed list for that criterion. Common cause
 
 Fix the cell using the dropdown. The pink goes within a day.
 
-### Using the Example, Source and Comments columns
+### Using the Example, Gloss, Translation, Source and Comments columns
 
-All three are free text and are never checked.
+All are free text and are never checked.
 
 **Example** — The forms or sentences that show your answer, marked `*`, `?` or `??` as usual. Separate several with `;`. If you are judging your own language, this is your evidence.
+
+**Gloss** and **Translation** — On every language's sheets except English's (whose examples need neither). Give each example its gloss, word for word, and its free translation, in the same order as in Example and separated with `;` in the same way (an invented example):
+
+| Example | Gloss | Translation |
+|---|---|---|
+| `ema=ja kweti; *kweti ema=ja` | `1SG=ERG go.PST; go.PST 1SG=ERG` | `I went; I went` |
+
+The chapters written from the annotation print these as glossed examples. A cell whose number of entries doesn't match Example's is printed without its gloss and translation.
 
 **Source** — Page or section references for a published description (`§4.3`, `p. 217`, `Table 6.2`), so anyone can check a decision later without re-reading the whole grammar.
 

@@ -93,7 +93,7 @@ from planars.schema_values import (
     STATUS_TAB,
     STATUS_TOOLING_COLUMNS,
     STATUS_VALUES,
-    TRAILING_COLUMNS,
+    trailing_columns_for,
     row_columns,
     row_key,
     row_type,
@@ -215,7 +215,7 @@ def _construction_tab(lang_id: str, class_name: str, construction: str,
     key_cols = row_columns(class_name, construction)
     columns = [ColumnSpec(c, TOOLING, None) for c in key_cols]
     columns += [ColumnSpec(n, ANNOTATOR, dropdown_values(values[n])) for n in names]
-    columns += [ColumnSpec(c, ANNOTATOR, None) for c in TRAILING_COLUMNS]
+    columns += [ColumnSpec(c, ANNOTATOR, None) for c in trailing_columns_for(lang_id)]
     rows = None
     if planar_path is not None and row_type(class_name, construction) == ELEMENT_ROWS:
         rows = _element_rows(lang_id, class_name, construction, planar_path)

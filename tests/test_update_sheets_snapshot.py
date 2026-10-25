@@ -57,7 +57,7 @@ from fake_drive import (FIXTURE_DIR, FROZEN_CODED_DATA, FakeDriveDoorway, MANIFE
                         point_coded_data_at)
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
-from planars.schema_values import TRAILING_COLUMNS
+from planars.schema_values import TRAILING_COLUMNS, trailing_columns_for
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "update_sheets"
@@ -617,9 +617,10 @@ def test_a_keystone_row_writes_na_only_into_criterion_columns(env):
     rows = ws.get_all_values()
     added = [r for r in rows if r[0] == NEW_ELEMENT]
     assert len(added) == 1
-    assert added[0] == [NEW_ELEMENT, "v:verbstem", "30", ""] + [""] * len(TRAILING_COLUMNS)
+    trailing = trailing_columns_for("synth0001")
+    assert added[0] == [NEW_ELEMENT, "v:verbstem", "30", ""] + [""] * len(trailing)
     # A class whose keystone takes no part still gets NA, in its criteria only.
     cis = [r for r in env.tab("synth0001", "ciscategorial", "general").get_all_values()
            if r[0] == NEW_ELEMENT]
-    assert cis and set(cis[0][3:-len(TRAILING_COLUMNS)]) == {"NA"}
-    assert cis[0][-len(TRAILING_COLUMNS):] == [""] * len(TRAILING_COLUMNS)
+    assert cis and set(cis[0][3:-len(trailing)]) == {"NA"}
+    assert cis[0][-len(trailing):] == [""] * len(trailing)

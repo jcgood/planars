@@ -1,0 +1,21 @@
+% planarsvenue.sty for the venue `book`: the stand-in until the series
+% editor sends De Gruyter's template (docs/chapter-generation-plan.md,
+% decision 1). Copied to .papers/planarsvenue.sty by
+% `python -m coding build-chapters` from chapters/venues/book.sty; edit
+% that file, never the copy.
+%
+% A venue file defines the two example macros every fragment uses, on top
+% of whichever glossing package the venue wants (here expex, which leaves
+% _ and ^ alone):
+%   \planarsex{form}{gloss}{translation}{source}  a glossed example: the
+%       form and its gloss aligned word for word, then the translation
+%   \planarsplainex{sentence}{source}  an example in the metalanguage
+%       itself, which needs no gloss (an unglossed language, e.g. English)
+% Either may have an empty source.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{planarsvenue}[2026/10/25 planars venue: book]
+\RequirePackage{expex}
+\newcommand{\planarsex}[4]{%
+  \ex \begingl \gla #1// \glb #2// \glft `#3'\if\relax\detokenize{#4}\relax\else\hfill #4\fi// \endgl \xe}
+\newcommand{\planarsplainex}[2]{%
+  \ex #1\if\relax\detokenize{#2}\relax\else\hfill #2\fi \xe}

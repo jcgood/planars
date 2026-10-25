@@ -99,6 +99,40 @@ def is_keystone(position_name) -> bool:
 # ---------------------------------------------------------------------------
 
 TRAILING_COLUMNS: list = list(_require("trailing_columns"))
+
+# Example styles: which trailing columns each leaves out (planar.yaml).
+EXAMPLE_STYLES: dict = {name: list((spec or {}).get("omits") or [])
+                        for name, spec in _require("example_styles").items()}
+for _style, _omits in EXAMPLE_STYLES.items():
+    if not set(_omits) <= set(TRAILING_COLUMNS):
+        raise KeyError(f"schemas/planar.yaml example_styles.{_style}.omits must be "
+                       f"trailing columns ({TRAILING_COLUMNS})")
+SYNTHETIC_EXAMPLE_STYLE: str = _require("synthetic_example_style")
+EXAMPLE_SEPARATOR: str = _require("example_separator")
+if SYNTHETIC_EXAMPLE_STYLE not in EXAMPLE_STYLES:
+    raise KeyError(f"schemas/planar.yaml synthetic_example_style must be one of {list(EXAMPLE_STYLES)}")
+
+
+def example_style(lang_id: str) -> str:
+    """How `lang_id`'s examples are written: its languages.yaml meta
+    `examples`, or SYNTHETIC_EXAMPLE_STYLE for a synthetic test language.
+    Fails on a language with none or an unknown one."""
+    from planars.languages import get_entry, is_synthetic
+    entry = get_entry(lang_id)
+    if entry is None and is_synthetic(lang_id):
+        return SYNTHETIC_EXAMPLE_STYLE
+    style = ((entry or {}).get("meta") or {}).get("examples")
+    if style not in EXAMPLE_STYLES:
+        raise ValueError(
+            f"{lang_id}: schemas/languages.yaml meta `examples` is {style!r}; it must be one of "
+            f"{list(EXAMPLE_STYLES)} (schemas/planar.yaml example_styles).")
+    return style
+
+
+def trailing_columns_for(lang_id: str) -> list:
+    """The trailing columns `lang_id`'s annotation tabs carry, in order."""
+    omits = EXAMPLE_STYLES[example_style(lang_id)]
+    return [c for c in TRAILING_COLUMNS if c not in omits]
 def _key_within(where: str, key, columns: list) -> list:
     if not key or not set(key) <= set(columns):
         raise KeyError(f"schemas/planar.yaml {where} must be a non-empty subset of {columns}")

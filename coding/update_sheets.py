@@ -66,7 +66,7 @@ from . import biuniqueness_rows as _br
 from planars.schema_values import (
     ELEMENT_ROW_COLUMNS,
     PAIR_ROW_SHAPES,
-    TRAILING_COLUMNS as _TRAILING_COLS,
+    TRAILING_COLUMNS as _TRAILING_COLS, trailing_columns_for,
     is_keystone as _is_keystone,
 )
 
@@ -145,7 +145,7 @@ def _resolve_criterion_columns(
     if col_start >= end:
         return None, [], (
             f"no criterion columns between column {col_start} and "
-            f"{_TRAILING_COLS[0] if trailing else 'end of header'}"
+            f"{header[end] if trailing else 'end of header'}"
         )
 
     names = header[col_start:end]
@@ -254,17 +254,18 @@ def _add_trailing_columns(
     ws: WorksheetHandle,
     header: List[str],
     rows: List[List[str]],
+    trailing: List[str],
 ) -> List[str]:
     """Insert any missing trailing columns at their correct ordered position.
 
-    Trailing columns are defined by _TRAILING_COLS (ordered). Each missing
-    column is inserted immediately before the first existing trailing column
-    that follows it in _TRAILING_COLS order, or appended at the end if none
-    follow it.
+    ``trailing`` is the language's trailing columns (trailing_columns_for),
+    in the schema's order (_TRAILING_COLS). Each missing column is inserted
+    immediately before the first existing trailing column that follows it
+    in that order, or appended at the end if none follow it.
 
     Returns the updated header list (mutated in place on the sheet).
     """
-    missing = [col for col in _TRAILING_COLS if col not in header]
+    missing = [col for col in trailing if col not in header]
     if not missing:
         return header
 
@@ -586,12 +587,13 @@ def main(args: argparse.Namespace | None = None) -> None:
                 # still count as pair-row here, so the tab is skipped, not written to.
                 is_pair_row = any(c in header for c in PAIR_ROW_SHAPES["element_pairs"])
 
-                missing_trailing = [col for col in _TRAILING_COLS if col not in header]
+                lang_trailing = trailing_columns_for(manifest_lang)
+                missing_trailing = [col for col in lang_trailing if col not in header]
                 if missing_trailing:
                     any_changes = True
                     print(f"    [{construction}] add trailing column(s): {missing_trailing}")
                     if apply:
-                        _add_trailing_columns(ws, header, rows)
+                        _add_trailing_columns(ws, header, rows, lang_trailing)
                         # Re-read so the header and row count below describe the
                         # tab as it now is, not as it was before the insert.
                         rows = ws.get_all_values()

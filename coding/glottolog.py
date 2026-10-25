@@ -104,6 +104,9 @@ def _update_languages_yaml(glottocode: str, meta: dict) -> None:
             "author":            "",
             "annotator":         "",
             "annotation_status": "planned",
+            # glossed or unglossed (schemas/planar.yaml example_styles), set
+            # by the coordinator; the language's sheets can't be made until it is.
+            "examples":          "",
             "notes":             "",
         }
 
@@ -115,15 +118,9 @@ def _update_languages_yaml(glottocode: str, meta: dict) -> None:
 # Public API
 # ---------------------------------------------------------------------------
 
-# Language IDs with this prefix are synthetic test languages (CLAUDE.md): exempt
-# from the Glottocode format and Glottolog verification. The one statement of
-# the prefix; ask is_synthetic() rather than testing it (hidden-facts R-2).
-SYNTHETIC_PREFIX = "synth"
-
-
-def is_synthetic(lang_id: str) -> bool:
-    """True for a synthetic test language's ID (not a real Glottocode)."""
-    return lang_id.startswith(SYNTHETIC_PREFIX)
+# Synthetic test language IDs (``synth...``): stated in planars.languages,
+# re-exported here for the commands that already ask this module.
+from planars.languages import SYNTHETIC_PREFIX, is_synthetic  # noqa: E402,F401
 
 
 def is_valid_format(glottocode: str) -> bool:
