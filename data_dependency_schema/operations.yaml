@@ -251,6 +251,10 @@
       records each language's fingerprint and drawing date in
       .state/laminar_charts_state.json, and the PDFs' file IDs in
       drive_config.json, through the local-file door
+    - >-
+      on a run over every language, files (rewriting the open one) or
+      closes the laminar-charts-error issue, naming each language that
+      failed and the stage, never the reason (it can quote the annotation)
   idempotent: true
   idempotency_note: >-
     A second run with nothing changed draws nothing. Uploads update the

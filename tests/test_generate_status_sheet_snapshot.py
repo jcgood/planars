@@ -376,6 +376,18 @@ def test_the_folder_link_in_the_banner_is_a_hyperlink_formula(env):
     assert values[2][0] == f'=HYPERLINK("{folder_url}", "📁 Annotation folder for Araona [arao1248]")'
 
 
+def test_the_banner_links_each_chart_pdf_on_drive(env, monkeypatch):
+    doorway, run, _ = env
+    config = {"_planars_config_file_id": MANIFEST_FILE_ID, "_root_folder_id": ROOT_FOLDER_ID,
+              "arao1248": {"charts_classes_file_id": "CLS", "charts_types_file_id": "TYP"}}
+    monkeypatch.setattr(gen, "_load_drive_config", lambda: json.loads(json.dumps(config)))
+    run(["gen", "--lang", "arao1248", "--apply"])
+    values = the_sheet(doorway, "status_arao1248").worksheet("Status").get_all_values()
+    assert values[3][0].startswith('=HYPERLINK("https://drive.google.com/file/d/CLS/view", "📊 Charts by class')
+    assert values[4][0].startswith('=HYPERLINK("https://drive.google.com/file/d/TYP/view", "📊 Charts by domain type')
+    assert values[5][0] == ""
+
+
 def test_each_construction_cell_links_to_its_own_tab(env):
     doorway, run, _ = env
     run(["gen", "--lang", "arao1248", "--apply"])

@@ -1,0 +1,95 @@
+name: Contributor charts
+
+# Runs after data-refresh.yml completes (success or failure), as
+# generate-reports.yml does: for each language whose spans, planar or chart
+# code changed, draws its two contributor charts PDFs and puts them in its
+# Drive folder (`python -m coding laminar-charts --apply`; what it does, and
+# the laminar-charts-error issue it files or closes, is that module's
+# docstring). docs/laminar-analysis-plan.md decision 6, Phase 4c.
+#
+# This repository is public, so this run's log is too. The command holds
+# back everything the annotation could show up in (the span code's, the
+# exporter's and the renderer's output); nothing is uploaded as a
+# downloadable artifact. Keep it that way: no step here prints annotation.
+#
+# R draws the charts, with the packages pinned in renv.lock (cached between
+# runs by setup-renv). Only drawing runs here: the porting checks compare
+# against Mac renders and stay local.
+#
+# Required secrets (Settings → Secrets and variables → Actions):
+#   PLANARS_DATA_TOKEN        — PAT with read/write access to jcgood/planars-data
+#                               (the command commits its state file and
+#                               drive_config.json there, through the local-file door)
+#   PLANARS_OAUTH_CREDENTIALS — contents of ~/.config/planars/oauth_credentials.json
+#   GOOGLE_OAUTH_TOKEN        — contents of ~/.config/gspread/authorized_user.json
+
+on:
+  workflow_run:
+    workflows: ["Data refresh"]
+    types: [completed]
+  workflow_dispatch:        # allow manual trigger from the Actions tab
+
+concurrency:
+  group: laminar-charts     # never two at once: both would draw and push the same state file
+  cancel-in-progress: false
+
+jobs:
+  charts:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write         # file and close the laminar-charts-error issue
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check out planars-data
+        uses: actions/checkout@v5
+        with:
+          repository: jcgood/planars-data
+          token: ${{ secrets.PLANARS_DATA_TOKEN }}
+          path: coded_data
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install system libraries (PDF pages, R graphics)
+        run: >-
+          sudo apt-get install -y libpango-1.0-0 libpangocairo-1.0-0 libcairo2
+          libcairo2-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libfontconfig1-dev
+          libpng-dev libjpeg-dev libtiff5-dev libcurl4-openssl-dev libxml2-dev fonts-dejavu
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: renv
+          use-public-rspm: true
+
+      - name: Install the pinned R packages
+        uses: r-lib/actions/setup-renv@v2
+
+      - name: Write credentials
+        env:
+          OAUTH_CREDS: ${{ secrets.PLANARS_OAUTH_CREDENTIALS }}
+          OAUTH_TOKEN: ${{ secrets.GOOGLE_OAUTH_TOKEN }}
+        run: |
+          mkdir -p ~/.config/planars ~/.config/gspread
+          printf '%s' "$OAUTH_CREDS" > ~/.config/planars/oauth_credentials.json
+          printf '%s' "$OAUTH_TOKEN" > ~/.config/gspread/authorized_user.json
+
+      - name: Configure git identity
+        # The local-file door commits the state file and drive_config.json
+        # to planars-data when the command ends.
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Draw and upload contributor charts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python -m coding laminar-charts --apply

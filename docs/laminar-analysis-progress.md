@@ -8,7 +8,7 @@ the current state; update it at every phase boundary, in the same commit.
 | 1. Take out the Chichewa assumptions, in place | done 2026-10-24 |
 | 2. Move the code (`laminar/`, `planarsviz/` to the root) | done 2026-10-24 |
 | 3. Connect a planars language (adapter, *k of n*, metadata) | done 2026-10-24 |
-| 4. Run English; charts to contributors through Drive (revised) | 4a and 4b built 2026-10-24 (4b not yet live); 4c–e not started |
+| 4. Run English; charts to contributors through Drive (revised) | 4a and 4b built 2026-10-24, 4c 2026-10-25 (4b and 4c not yet live); 4d–e not started |
 | 5. Documentation and tests | not started |
 
 ## Phase 1 as built (2026-10-24)
@@ -159,7 +159,7 @@ by workflows. Plan decision 6 and Phase 4a–e have the design.
 |---|---|
 | 4a. Local: colours, `--lang`, English drawn, cross-language `--with` | built 2026-10-24 (below) |
 | 4b. `laminar-charts` command: contributor charts to Drive | built 2026-10-24, not yet run live (below) |
-| 4c. Workflow after the daily refresh, R on the runner | not started |
+| 4c. Workflow after the daily refresh, R on the runner | built 2026-10-25, not yet pushed (below) |
 | 4d. Weekly full analysis with permutation tests | not started |
 | 4e. Documentation | not started |
 
@@ -254,6 +254,35 @@ by workflows. Plan decision 6 and Phase 4a–e have the design.
   exporter's or renderer's output, which could name elements. 4c must
   decide what reaches the workflow's log (plan: nothing from the private
   annotation).
+
+### 4c as built (2026-10-25)
+
+- **`.github/workflows/laminar-charts.yml`**, started when the data refresh
+  finishes (success or failure, as `generate-reports.yml` is) and by hand:
+  planars-data checked out as `coded_data/` with the write token (the
+  command commits its state file and `drive_config.json` there, through the
+  local-file door), R from `renv.lock`'s version (`r-lib/actions/setup-r`,
+  Posit's Linux binaries) and the pinned packages (`setup-renv`, cached),
+  then `python -m coding laminar-charts --apply`. One run at a time
+  (`concurrency`). No artifacts.
+- **The log is public** (the repository is), so the command now holds back
+  everything printed while spans are read and charts drawn (`_private`), and
+  a failure says only the language and the stage (reading its spans,
+  drawing, uploading, setting up R), with the command that shows the reason
+  locally (`python -m laminar.contributor_charts LANG OUT_DIR`). Upload and
+  R-setup messages say nothing about the annotation and are shown.
+- **A failed language files an issue**, new label `laminar-charts-error`
+  (the plan had a label only for 4d): one issue, rewritten on each failing
+  full run, closed by a clean one; a `--lang` run leaves it alone. Missing R
+  or packages fails every language to be drawn, so that files it too.
+- **synth0001 gets charts too**: it has a planar file, and the command draws
+  every such language. Harmless (its own Drive folder); noted in case Jeff
+  wants it left out.
+- **Not yet run on GitHub.** Pushing the workflow means the next refresh
+  draws and uploads for the first time (the 4b live step), so it waits on
+  Jeff. Untested until then: the R setup on Ubuntu (system libraries are a
+  best guess; a missing one shows as "setting up R" or "drawing" failed) and
+  how long the cached run takes.
 
 ## Findings
 

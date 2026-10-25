@@ -327,8 +327,12 @@ def _lock_read_only(doorway, file_id: str, lang_ids: List[str]) -> None:
 # Spreadsheet writing
 # ---------------------------------------------------------------------------
 
-def _banner_rows(lang_id: str, folder_url: str) -> List[List[str]]:
-    """Locked notice + when the counts were taken (UTC) + a link to the live annotation folder.
+def _banner_rows(lang_id: str, folder_url: str,
+                 chart_links: List[Tuple[str, str]] = ()) -> List[List[str]]:
+    """Locked notice + when the counts were taken (UTC) + a link to the live
+    annotation folder + a link to each contributor chart PDF already on Drive
+    (``laminar_charts.chart_links``; drawn after each daily refresh, so a new
+    language's links appear the day after its first charts).
 
     The link's visible text is a short label (display name only, via the
     project's "Name [glottocode]" convention), not the raw URL -- showing the
@@ -349,19 +353,22 @@ def _banner_rows(lang_id: str, folder_url: str) -> List[List[str]]:
         [f"Counts as of {stamp}. Rebuilt once a day, so edits made since then "
          f"aren't counted yet."],
         [f'=HYPERLINK("{folder_url}", "{folder_link_text}")'] if folder_url else [folder_link_text],
+        *([f'=HYPERLINK("{url}", "📊 {label}, to check the spans your answers give")']
+          for label, url in chart_links),
         [""],
     ]
 
 
 def _write_status_sheet(
-    ss, lang_id: str, folder_url: str, rows: List[Dict]
+    ss, lang_id: str, folder_url: str, rows: List[Dict],
+    chart_links: List[Tuple[str, str]] = (),
 ):
     """Write banner + header + data rows to ss's single worksheet, with formatting."""
     ws = ss.sheet1
     if ws.title != STATUS_TAB:
         ws.update_title(STATUS_TAB)
 
-    banner = _banner_rows(lang_id, folder_url)
+    banner = _banner_rows(lang_id, folder_url, chart_links)
     header_row_idx = len(banner)  # 0-based index of the header row, after banner+blank spacer
 
     # The construction name itself is the link (rather than a separate "Tab Link"
@@ -540,7 +547,9 @@ def main(args: argparse.Namespace | None = None) -> None:
         ss, created = get_or_create_spreadsheet(
             doorway, folder_id, sheet_name,
             identity=drive_door.lang_file("status_sheet", lang_id))
-        _write_status_sheet(ss, lang_id, lang_folder_url, rows)
+        from .laminar_charts import chart_links
+        _write_status_sheet(ss, lang_id, lang_folder_url, rows,
+                            chart_links(_load_drive_config().get(lang_id, {})))
         _lock_read_only(doorway, ss.id, [lang_id])
         action = "Created" if created else "Updated"
         print(f"    {action}: {ss.url}")

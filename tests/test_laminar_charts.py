@@ -59,11 +59,16 @@ def env(monkeypatch):
         drive_doorway.reset_doorway()
 
 
-def run(argv, monkeypatch) -> str:
+def run(argv, monkeypatch, fails: bool = False) -> str:
+    """The command's output; with `fails`, check it exits non-zero."""
     monkeypatch.setattr("sys.argv", ["laminar-charts", *argv])
     buf = io.StringIO()
     with redirect_stdout(buf):
-        run_command(laminar_charts, "laminar-charts")
+        if fails:
+            with pytest.raises(SystemExit):
+                run_command(laminar_charts, "laminar-charts")
+        else:
+            run_command(laminar_charts, "laminar-charts")
     return buf.getvalue()
 
 
@@ -158,3 +163,88 @@ def test_a_failure_skips_that_language_records_nothing_and_fails_the_run(env, mo
         run(["--apply"], monkeypatch)
     state = json.loads(state_files.LAMINAR_CHARTS_STATE_PATH.read_text(encoding="utf-8"))
     assert "arao1248" not in state and "stan1293" in state
+
+
+# What the annotation could show up in never reaches the output or the issue:
+# the workflow's log and the issue are public (the repository is).
+SECRET = "v:secret-element"
+
+
+def _failing_draw(env, monkeypatch, lang="arao1248"):
+    _, _, drawn = env
+    real = cc.draw
+
+    def draw(lang_id, work, date, table=None):
+        if lang_id == lang:
+            print(f"R says: {SECRET}")
+            raise cc.DrawingFailed(f"Drawing failed:\n{SECRET}")
+        return real(lang_id, work, date, table=table)
+
+    monkeypatch.setattr(cc, "draw", draw)
+
+
+def test_a_drawing_failure_files_an_issue_without_the_reason(env, monkeypatch, github):
+    _failing_draw(env, monkeypatch)
+    out = run(["--apply"], monkeypatch, fails=True)
+    assert SECRET not in out
+    assert "python -m laminar.contributor_charts arao1248" in out
+    [issue] = [i for i in github.issues if laminar_charts.ISSUE_LABEL in i["labels"]]
+    assert SECRET not in issue["body"]
+    assert "drawing failed" in issue["body"]
+    assert "python -m laminar.contributor_charts arao1248" in issue["body"]
+    assert "stan1293" not in issue["body"]
+
+
+def test_a_second_failure_rewrites_the_issue_and_a_clean_run_closes_it(env, monkeypatch, github):
+    working_draw = cc.draw
+    _failing_draw(env, monkeypatch)
+    for _ in range(2):
+        with pytest.raises(SystemExit):
+            run(["--apply"], monkeypatch)
+    filed = [i for i in github.issues if laminar_charts.ISSUE_LABEL in i["labels"]]
+    assert len(filed) == 1
+    monkeypatch.setattr(cc, "draw", working_draw)
+    run(["--apply"], monkeypatch)
+    assert filed[0]["number"] in [c[1] for c in github.calls_of("close")]
+
+
+def test_what_the_span_code_prints_is_held_back(env, monkeypatch, github):
+    def span_table(lang_id):
+        print(f"warning about {SECRET}")
+        if lang_id == "arao1248":
+            raise planars_language.SpanTableError(f"cannot place {SECRET}")
+        return lang_id
+
+    monkeypatch.setattr(planars_language, "span_table", span_table)
+    out = run(["--apply"], monkeypatch, fails=True)
+    assert SECRET not in out
+    assert "reading its spans failed" in out
+    [issue] = [i for i in github.issues if laminar_charts.ISSUE_LABEL in i["labels"]]
+    assert SECRET not in issue["body"]
+
+
+def test_missing_r_fails_every_language_to_be_drawn(env, monkeypatch, github):
+    _, _, drawn = env
+
+    def preflight(lang_id, apply):
+        raise SystemExit("Can't draw yet:\n- R is not installed (no `Rscript` on the PATH).")
+
+    monkeypatch.setattr("laminar.charts.preflight", preflight)
+    with pytest.raises(SystemExit, match="Failed for arao1248, stan1293"):
+        run(["--apply"], monkeypatch)
+    assert drawn == []
+    [issue] = [i for i in github.issues if laminar_charts.ISSUE_LABEL in i["labels"]]
+    assert "setting up R failed: R is not installed" in issue["body"]
+
+
+def test_a_lang_run_leaves_the_issue_alone(env, monkeypatch, github):
+    _failing_draw(env, monkeypatch, lang="stan1293")
+    with pytest.raises(SystemExit):
+        run(["--apply", "--lang", "stan1293"], monkeypatch)
+    assert not [i for i in github.issues if laminar_charts.ISSUE_LABEL in i["labels"]]
+
+
+def test_a_dry_run_files_no_issue(env, monkeypatch, github):
+    _failing_draw(env, monkeypatch)
+    run([], monkeypatch)
+    assert github.calls == []

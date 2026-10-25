@@ -17,6 +17,7 @@ Once set up, the following run without coordinator action:
 | Daily, scheduled 06:00 UTC (GitHub often starts it hours later) | `data-refresh.yml` → `python -m coding daily-refresh --apply` | Imports the latest sheets, syncs, checks, rebuilds status sheets and snapshots, commits; files or closes one issue per kind of problem (see [What each workflow does](#what-each-workflow-does)) |
 | Daily, scheduled 09:00 UTC | `sheet-validation.yml` | Runs `validate-coding`; opens a `sheet-validation` issue if problems found; closes it when clean |
 | After each data refresh | `generate-reports.yml` | Generates and uploads PDF reports to Drive |
+| After each data refresh | `laminar-charts.yml` → `python -m coding laminar-charts --apply` | Redraws the contributor charts of each language whose spans changed and puts them in its Drive folder; files or closes a `laminar-charts-error` issue |
 
 The hooks require a one-time install per machine — see [Regression testing and hooks](#regression-testing-and-hooks). The GitHub Actions require secrets configured in the repo — see [Automated workflows](#automated-workflows).
 
@@ -291,8 +292,10 @@ spans, planar or chart code changed since it last drew, it puts two PDFs in
 the language's Drive folder, `charts_by_class_{lang}.pdf` and
 `charts_by_type_{lang}.pdf`: every chart drawn without the permutation
 tests, with bookmarks, and the date and how complete the annotation was
-above each page. It needs R locally (as below); a workflow will run it after
-each daily refresh (Phase 4c). To look at the PDFs without uploading:
+above each page. The `laminar-charts.yml` workflow runs it after each daily
+refresh; run it yourself only to redraw at once (it needs R locally, as
+below). To look at the PDFs without uploading, or to see why a language
+failed:
 `python -m laminar.contributor_charts stan1293 OUT_DIR`.
 
 For working on the analysis yourself, one local command does all of it:
@@ -856,6 +859,8 @@ Each issue closes by itself on the next clean run. The run's summary page on Git
 **`sheet-validation.yml`** — runs `validate-coding` against all live Google Sheets and opens a GitHub issue labeled `sheet-validation` if problems are found. Closes the issue automatically when the next run comes back clean.
 
 **`generate-reports.yml`** — runs `generate-reports --apply` and uploads refreshed PDF reports to Drive. The report timestamp at the top of each PDF shows when it was last regenerated. You can trigger it manually at any time. Requires WeasyPrint system libraries (installed automatically in the workflow; not needed locally unless you run `generate-reports --apply` yourself).
+
+**`laminar-charts.yml`** — runs `laminar-charts --apply` (see § "5. Laminar charts for a language") with R and the pinned packages from `renv.lock`, cached between runs. Most days nothing has changed and it draws nothing. The repository is public, so its log says only which languages were drawn or failed and at what stage, never why: the reason can quote the annotation. The `laminar-charts-error` issue gives the command that shows the reason on your machine. You can trigger it manually at any time (`gh workflow run laminar-charts.yml`).
 
 ### Drive folder structure
 

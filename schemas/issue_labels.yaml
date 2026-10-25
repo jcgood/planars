@@ -255,6 +255,19 @@ labels:
       Auto-closed when a later run succeeds.
     filed_by: data-refresh.yml
 
+  - name: laminar-charts-error
+    color: "d73a4a"
+    description: "Contributor charts could not be drawn or put on Drive after the daily refresh."
+    meaning: >-
+      `laminar-charts --apply`, run after each daily refresh, could not draw
+      or upload some languages' contributor charts, so their Drive folders
+      still hold the previous ones. The issue names each language and the
+      stage; the reason is left out (it can quote the annotation, and the
+      repository is public), and the issue gives the command that shows it.
+      Resolve: fix the cause, then run `python -m coding laminar-charts
+      --apply`. Auto-closed when a run draws every language that needs it.
+    filed_by: laminar-charts --apply (laminar-charts.yml)
+
   - name: collaborator-notes
     color: "0075ca"
     description: "Collaborator notes need coordinator triage. Review, file warranted issues, close."
