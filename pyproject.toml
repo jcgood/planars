@@ -35,6 +35,7 @@ include = ["planars*", "coding*", "schemas*", "laminar*", "chapters*"]
 
 [tool.setuptools.package-data]
 schemas = ["*.yaml"]
+chapters = ["templates/*.j2"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
