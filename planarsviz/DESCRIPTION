@@ -11,9 +11,9 @@ Description:
     pooled test plots, boundary frequencies, laminar forests and overlays,
     representative trees, conflict groups, tree counts and boundary
     strength. Analysis stays in Python; the package reads a data bundle
-    exported by scripts/analysis/export_planarsviz_data.py and returns plot
-    objects. See README.md, docs/planarsviz_guide.md and
-    docs/planarsviz_charts.md.
+    exported by laminar/export_planarsviz_data.py and returns plot
+    objects. See README.md, NonCollaborative/docs/planarsviz_guide.md and
+    NonCollaborative/docs/planarsviz_charts.md.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends:

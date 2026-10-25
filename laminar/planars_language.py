@@ -41,10 +41,12 @@ loose span's gap is gained with k = 0. The analysis carries the weights
 without using them; they reach the bundle because the exporter copies every
 column of the domains file into its ``tests.tsv``.
 
-**Where.** Into planars-data, since the spans derive from unpublished
-annotation (decision 5): ``coded_data/.analysis/<lang>/domains/``, beside
-the language's folders, not inside it, where the tooling would read a new
-folder as a class. Beside each domains file, ``source_<dataset>.json``
+**Where.** Inside the planars-data clone, since the spans derive from
+unpublished annotation (decision 5): ``coded_data/.analysis/<lang>/domains/``,
+beside the language's folders, not inside it, where the tooling would read
+a new folder as a class. They are working files: planars-data's
+.gitignore leaves ``.analysis/`` out, and nothing here commits them.
+Beside each domains file, ``source_<dataset>.json``
 records the planars-data commit (and whether the clone had uncommitted
 changes), how complete the annotation is (``language_completeness``), and
 which annotated classes give no spans yet; the exporter puts it in the

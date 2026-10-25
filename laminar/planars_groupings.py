@@ -33,7 +33,10 @@ domain-type and bundle colour already in use. A language annotated through
 planars uses "planars_types" or "planars_classes", built from the schema's
 domain types by _planars_groupings() (decision 4 of
 docs/laminar-analysis-plan.md); laminar/planars_language.py writes its
-domains files to match.
+domains files to match. Those two also carry "styles": each domain type's
+(or class's) colours, display order and forest id, which the exporter uses
+in place of its own table for the other datasets' types
+(export_planarsviz_data.grouping_style()).
 
 CLASS_COLORS: the domain types' colours, the one place they are written
 down (moved here from laminar_tree_counts.py so the planars groupings can
@@ -95,6 +98,53 @@ _SUBTYPE_COLOURS = {"segmental": "#0072B5", "prosodic": "#7876B1", "tonal": "#E1
 _PHONOLOGICAL_ALL_COLOUR = "#20845E"
 
 
+# Second colour of each planars type, for the span-frequency chart (Paul
+# Tol's "bright" palette, as export_planarsviz_data._DOMAIN_TYPE_ORDERS
+# gives the other datasets' types).
+_TYPE_ALT_COLOURS = {"morphosyntactic": "#EE6677", "indeterminate": "#66CCEE",
+                     "phonological": "#4477AA", "segmental": "#228833",
+                     "prosodic": "#CCBB44", "tonal": "#AA3377"}
+
+# One colour per class for the planars_classes grouping, fixed per class (not
+# per language) so a class looks the same in every language's charts. Every
+# class in the schema must be here: a new class fails until it gets one.
+# Provisional (Phase 4, 2026-10-24): the strongest colours (Okabe-Ito, then
+# Paul Tol's "muted") go to the classes English has data for.
+_CLASS_COLOURS = {
+    "ciscategorial":           "#D55E00",
+    "subspanrepetition":       "#0072B2",
+    "noninterruption":         "#009E73",
+    "nonpermutability":        "#CC79A7",
+    "coreference":             "#E69F00",
+    "free_occurrence":         "#56B4E9",
+    "proform":                 "#882255",
+    "idiom":                   "#999933",
+    "biuniqueness_deviations": "#332288",
+    "repair":                  "#DDCC77",
+    "metrical":                "#117733",
+    "phrasal_accent":          "#44AA99",
+    "segmental":               "#AA4499",
+    "tonal":                   "#88CCEE",
+    "tonosegmental":           "#CC6677",
+    "intonational":            "#6699CC",
+    "pausing":                 "#997700",
+    "play_language":           "#000000",
+}
+
+# The short id each planars type's forest is named by (forest ids are file
+# names; a class's own name is its id).
+_TYPE_SHORT = {"morphosyntactic": "morsyn", "indeterminate": "indet", "phonological": "phon"}
+
+
+def _style_rows(entries: list[tuple[str, str, str, str]]) -> list[dict]:
+    """Style rows (export_planarsviz_data's domain_types.tsv columns, plus
+    the forest id `short`) from (domain_type, short, colour, alt_colour) in
+    display order."""
+    return [{"domain_type": dt, "short": short, "colour": colour, "alt_colour": alt,
+             "sort_order": i, "legend_order": i, "facet_order": i, "colour_priority": i}
+            for i, (dt, short, colour, alt) in enumerate(entries, start=1)]
+
+
 def planars_domain_type(domain_type: str, subtype: str | None) -> str:
     """The Domain_Type a planars class's spans carry in the `planars_types`
     grouping: its domain type, joined to its subtype when it has one
@@ -128,10 +178,24 @@ def _planars_groupings() -> dict[str, dict]:
         by_type.setdefault(domain_type, []).append(name)
         if subtype:
             by_subtype.setdefault(subtype, []).append(name)
-    unknown = sorted(set(by_subtype) - set(_SUBTYPE_COLOURS))
-    if unknown:
-        raise KeyError(f"No bundle colour for domain subtype(s) {unknown}: add to "
-                       "planars_groupings._SUBTYPE_COLOURS.")
+    for what, missing, table in (
+            ("domain subtype", set(by_subtype) - set(_SUBTYPE_COLOURS), "_SUBTYPE_COLOURS"),
+            ("domain type", set(by_type) - set(CLASS_COLORS), "CLASS_COLORS"),
+            ("domain type", set(by_type) - set(_TYPE_SHORT), "_TYPE_SHORT"),
+            ("class", set(types) - set(_CLASS_COLOURS), "_CLASS_COLOURS")):
+        if missing:
+            raise KeyError(f"No entry for {what}(s) {sorted(missing)}: add to planars_groupings.{table}.")
+
+    type_entries = []
+    for label in dict.fromkeys(planars_domain_type(t, s) for t, s in types.values()):
+        domain_type, _, subtype = label.partition("-")
+        if subtype:
+            type_entries.append((label, f"{_TYPE_SHORT[domain_type]}_{subtype}",
+                                 _SUBTYPE_COLOURS[subtype], _TYPE_ALT_COLOURS[subtype]))
+        else:
+            type_entries.append((label, _TYPE_SHORT[domain_type], CLASS_COLORS[domain_type],
+                                 _TYPE_ALT_COLOURS[domain_type]))
+    class_entries = [(name, name, _CLASS_COLOURS[name], _CLASS_COLOURS[name]) for name in types]
     return {
         "planars_types": {
             "bundles": [
@@ -139,16 +203,21 @@ def _planars_groupings() -> dict[str, dict]:
                 _MORSYN_INDET,
             ],
             "filters": [],
+            "styles": _style_rows(type_entries),
         },
         "planars_classes": {
             "bundles": (
                 [(t, names, CLASS_COLORS[t], t.capitalize()) for t, names in by_type.items()]
-                + [(s, names, _SUBTYPE_COLOURS[s], f"Phonological ({s})")
+                # phon_<subtype>, not the bare subtype: a subtype can share
+                # its name with a class (segmental, tonal), and forest ids
+                # are file names.
+                + [(f"phon_{s}", names, _SUBTYPE_COLOURS[s], f"Phonological ({s})")
                    for s, names in by_subtype.items()]
                 + [("morsyn_indet", by_type.get("morphosyntactic", []) + by_type.get("indeterminate", []),
                     _MORSYN_INDET[2], _MORSYN_INDET[3])]
             ),
             "filters": [],
+            "styles": _style_rows(class_entries),
         },
     }
 
@@ -161,8 +230,13 @@ GROUPINGS: dict[str, dict] = {
 
 
 def observed_domain_types(domain_file: Path) -> set[str]:
-    """The Domain_Type values a domains file's active (uncommented) rows have."""
+    """The Domain_Type values of a domains file's active (uncommented) rows
+    that the analysis keeps: a span of one position is dropped
+    (laminar_analysis.load_domain_dataframe()), so a type with only those
+    has nothing to analyse and is no group (English's proform, in the
+    complete selection, crashed the boundary-strength test that way)."""
     tests = pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")
+    tests = tests[pd.to_numeric(tests["Size"]) > 1]
     return set(tests["Domain_Type"].dropna().str.strip())
 
 

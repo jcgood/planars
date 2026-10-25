@@ -19,6 +19,7 @@ import csv
 import hashlib
 import json
 import unicodedata
+from typing import NamedTuple
 from pathlib import Path
 
 import numpy as np
@@ -46,21 +47,47 @@ from laminar.span_placement_test import run_test as run_span_placement_test
 from laminar.arbitrary_layers_test import run_test as run_arbitrary_layers_test
 
 
-def forest_variants(bundles: list) -> list[tuple[str, list[str], str]]:
+class Style(NamedTuple):
+    """How a grouping's domain types are drawn: `rows` are domain_types.tsv's
+    rows (colour, alt_colour, orders), `overlay` the per-type groups
+    (domain types, colour, forest id) for the per-type forests and overlays."""
+    rows: list
+    overlay: list
+
+
+def grouping_style(groupings: str) -> Style:
+    """The style a grouping draws its domain types in: its own "styles" in
+    planars_groupings.GROUPINGS when it has them (a planars language's), else
+    this module's DOMAIN_TYPE_STYLE and laminar_analysis.OVERLAY_GROUPS (the
+    nyan1308 and CCDB types), so those bundles are unchanged."""
+    own = GROUPINGS[groupings].get("styles")
+    if own is None:
+        return Style(DOMAIN_TYPE_STYLE, OVERLAY_GROUPS)
+    return Style([{k: v for k, v in row.items() if k != "short"} for row in own],
+                 [([row["domain_type"]], row["colour"], row["short"]) for row in own])
+
+
+def _palette(style: Style | None) -> dict[str, str]:
+    return {row["domain_type"]: row["colour"] for row in (style or Style(DOMAIN_TYPE_STYLE, [])).rows}
+
+
+def forest_variants(bundles: list, style: Style | None = None) -> list[tuple[str, list[str], str]]:
     """(forest id, domain types, colour) for every per-class forest chart.
 
-    The per-domain-type groups come from laminar_analysis.OVERLAY_GROUPS and
-    the bundles from the dataset's chosen grouping set (--groupings; see
-    planars_groupings.GROUPINGS), so ids and colours match the charts that
-    were previously drawn from nyan1308_{id}_laminar_forest.r.
+    The per-domain-type groups come from the grouping's style (by default
+    laminar_analysis.OVERLAY_GROUPS) and the bundles from the dataset's
+    chosen grouping set (--groupings; see planars_groupings.GROUPINGS), so
+    ids and colours match the charts that were previously drawn from
+    nyan1308_{id}_laminar_forest.r.
     """
-    variants = [(short, list(types), colour) for types, colour, short in OVERLAY_GROUPS]
+    overlay = style.overlay if style else OVERLAY_GROUPS
+    variants = [(short, list(types), colour) for types, colour, short in overlay]
     variants += [(name, list(types), colour) for name, types, colour, _ in bundles]
     return variants
 
 
 def export_forests(domain_file: Path, domains_dir: Path, data_dir: Path, bundles: list,
-                   n_positions_override: int | None = None) -> None:
+                   n_positions_override: int | None = None, style: Style | None = None) -> None:
     """Write the trees of every per-class forest chart, exactly as drawn.
 
     For each variant, the same inputs the archived per-class forest scripts
@@ -84,7 +111,7 @@ def export_forests(domain_file: Path, domains_dir: Path, data_dir: Path, bundles
         pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
     )
     index = []
-    for forest_id, types, colour in forest_variants(bundles):
+    for forest_id, types, colour in forest_variants(bundles, style):
         # Skip a forest none of whose domain types occur in this dataset:
         # load_spans() fails on an empty subset rather than returning nothing.
         # Found by the shifted test dataset, where tonosegmental is renamed.
@@ -156,11 +183,12 @@ def tree_rows(families) -> list[dict]:
 
 
 def export_overlay_groups(domain_file: Path, domains_dir: Path, data_dir: Path,
-                          n_positions: int | None = None) -> None:
+                          n_positions: int | None = None, style: Style | None = None) -> None:
     """Write the trees of every group the overlay charts can stack.
 
-    One group per laminar_analysis.OVERLAY_GROUPS
-    entry (the subset's families, but using the FULL dataset's position count,
+    One group per per-type entry of the grouping's style (by default
+    laminar_analysis.OVERLAY_GROUPS;
+    the subset's families, but using the FULL dataset's position count,
     unlike the per-class forests), plus group "all" (every family of the full
     dataset, drawn in black by nyan1308_all_families_labeled.r). Groups whose
     domain types don't occur in the data are skipped.
@@ -171,7 +199,8 @@ def export_overlay_groups(domain_file: Path, domains_dir: Path, data_dir: Path,
         pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
     )
     _, n_positions = load_spans(domain_file.name, str(domains_dir), n_positions=n_positions)
-    groups = [(short, list(types), colour) for types, colour, short in OVERLAY_GROUPS]
+    overlay = style.overlay if style else OVERLAY_GROUPS
+    groups = [(short, list(types), colour) for types, colour, short in overlay]
     groups.append(("all", None, "black"))
     index = []
     for group_id, types, colour in groups:
@@ -218,7 +247,8 @@ def export_highlights(dataset: str, data_dir: Path, highlights_file: Path | None
     write_tsv(data_dir / "highlights.tsv", fields, rows)
 
 
-def export_tree_counts(domain_file: Path, domains_dir: Path, data_dir: Path, bundles: list) -> None:
+def export_tree_counts(domain_file: Path, domains_dir: Path, data_dir: Path, bundles: list,
+                       style: Style | None = None) -> None:
     """Write tree_counts.tsv: the numbers behind the tree-count bar charts.
 
     Calls laminar_tree_counts.collect_counts() and collect_bundle_counts()
@@ -227,14 +257,14 @@ def export_tree_counts(domain_file: Path, domains_dir: Path, data_dir: Path, bun
     bundles are planars_groupings.observed_groups()'s, as everywhere. Added
     columns: kind (all / class / bundle), label (the bar label: the type
     title-cased as that script does, or the bundle's display name) and colour
-    (the type's colour from DOMAIN_TYPE_STYLE or the fallback grey, or the
+    (the type's colour from the grouping's style or the fallback grey, or the
     bundle's colour); empty for the all-tests rows, whose bar colours are a
     chart choice.
 
     `bundles` is the dataset's chosen grouping set (--groupings).
     """
     classes, bundles = observed_groups(domain_file, bundles)
-    palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
+    palette = _palette(style)
     bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
 
     rows = []
@@ -253,7 +283,7 @@ def export_tree_counts(domain_file: Path, domains_dir: Path, data_dir: Path, bun
 
 def export_fragmentation_test(domain_file: Path, domains_dir: Path, data_dir: Path,
                               n_permutations: int, seed: int, bundles: list,
-                              n_positions: int | None = None) -> dict:
+                              n_positions: int | None = None, style: Style | None = None) -> dict:
     """Write fragmentation_test.tsv and fragmentation_null.tsv.
 
     Calls class_fragmentation_test.run_test() unchanged, so the numbers equal
@@ -276,7 +306,7 @@ def export_fragmentation_test(domain_file: Path, domains_dir: Path, data_dir: Pa
     --fragmentation-permutations rather than on the default path.
     """
     _classes, bundles = observed_groups(domain_file, bundles)
-    palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
+    palette = _palette(style)
 
     groups = permutation_groups(domain_file, bundles, pooled=False)
     summary, null_counts = run_fragmentation_test(
@@ -315,7 +345,7 @@ def export_fragmentation_test(domain_file: Path, domains_dir: Path, data_dir: Pa
 
 def export_span_placement_test(domain_file: Path, domains_dir: Path, data_dir: Path,
                                n_permutations: int, seed: int, bundles: list,
-                               n_positions: int | None = None) -> dict:
+                               n_positions: int | None = None, style: Style | None = None) -> dict:
     """Write span_placement_test.tsv and span_placement_null.tsv: does the
     real arrangement of a group's spans produce fewer laminar families than
     the same span *lengths* placed at random would?
@@ -343,7 +373,7 @@ def export_span_placement_test(domain_file: Path, domains_dir: Path, data_dir: P
     one family enumeration per replicate costs minutes.
     """
     _classes, bundles = observed_groups(domain_file, bundles)
-    palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
+    palette = _palette(style)
     bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
 
     groups = permutation_groups(domain_file, bundles, pooled=True)
@@ -382,7 +412,7 @@ def export_span_placement_test(domain_file: Path, domains_dir: Path, data_dir: P
 
 def export_arbitrary_layers_test(domain_file: Path, domains_dir: Path, data_dir: Path,
                                  n_permutations: int, seed: int, bundles: list,
-                                 n_positions: int | None = None) -> dict:
+                                 n_positions: int | None = None, style: Style | None = None) -> dict:
     """Write arbitrary_layers_test.tsv and arbitrary_layers_null.tsv: is a
     group's family count remarkable for that many spans of arbitrary size at
     arbitrary positions?
@@ -401,7 +431,7 @@ def export_arbitrary_layers_test(domain_file: Path, domains_dir: Path, data_dir:
     Not run unless asked, for the same reason as --fragmentation-permutations.
     """
     _classes, bundles = observed_groups(domain_file, bundles)
-    palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
+    palette = _palette(style)
     bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
 
     groups = permutation_groups(domain_file, bundles, pooled=True)
@@ -440,7 +470,7 @@ def export_arbitrary_layers_test(domain_file: Path, domains_dir: Path, data_dir:
 
 def export_boundary_strength_test(domain_file: Path, domains_dir: Path, data_dir: Path,
                                   n_permutations: int, seed: int, bundles: list,
-                                  n_positions: int | None = None) -> dict:
+                                  n_positions: int | None = None, style: Style | None = None) -> dict:
     """Write boundary_strength_test.tsv: is the per-position boundary
     strength (and its jump from the previous position) higher than a
     same-length-profile random arrangement would produce?
@@ -458,7 +488,7 @@ def export_boundary_strength_test(domain_file: Path, domains_dir: Path, data_dir
     minutes, not the ~2 seconds the rest of the export takes.
     """
     _classes, bundles = observed_groups(domain_file, bundles)
-    palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
+    palette = _palette(style)
     bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
 
     groups = permutation_groups(domain_file, bundles, pooled=True)
@@ -776,9 +806,10 @@ DOMAIN_TYPE_STYLE: list[dict] = [
 FALLBACK_COLOUR = "#7F7F7F"
 
 
-def domain_type_rows(observed: list[str]) -> list[dict]:
+def domain_type_rows(observed: list[str], style: Style | None = None) -> list[dict]:
     """Style rows for every known domain type this dataset observes, plus any
-    unknown observed one.
+    unknown observed one. Known means in the grouping's style (by default
+    DOMAIN_TYPE_STYLE; grouping_style()).
 
     Filtered by `observed` on both sides (not just the unknown-type half, as
     before DOMAIN_TYPE_STYLE covered a sixth type -- `indeterminate` --
@@ -787,14 +818,15 @@ def domain_type_rows(observed: list[str]) -> list[dict]:
     tests), and listing a style row for a type absent from this dataset's own
     tests.tsv is misleading, not merely unused.
     """
+    table = style.rows if style else DOMAIN_TYPE_STYLE
     observed_set = set(observed)
-    rows = [dict(row, known=True) for row in DOMAIN_TYPE_STYLE if row["domain_type"] in observed_set]
+    rows = [dict(row, known=True) for row in table if row["domain_type"] in observed_set]
     known = {row["domain_type"] for row in rows}
     extra = sorted(t for t in observed if t not in known)
     # Number unknown types after every known style, not after the rows kept:
     # the kept rows keep their own order numbers, gaps and all, so counting
     # only them would hand an unknown type a number a known type already has.
-    base = len(DOMAIN_TYPE_STYLE)
+    base = len(table)
     for i, domain_type in enumerate(extra, start=1):
         rows.append({
             "domain_type": domain_type,
@@ -809,7 +841,7 @@ def domain_type_rows(observed: list[str]) -> list[dict]:
     return rows
 
 
-def blend_colour(domain_types) -> str:
+def blend_colour(domain_types, style: Style | None = None) -> str:
     """One colour for a span with one or more domain types.
 
     Copied from scripts/make_forestspans_table.py mix_hex_colors() (the
@@ -820,7 +852,7 @@ def blend_colour(domain_types) -> str:
     grey, as it does in every other chart. The synthetic root has no type and
     gets black, as an empty list did there.
     """
-    palette = {row["domain_type"]: row["colour"] for row in DOMAIN_TYPE_STYLE}
+    palette = _palette(style)
     cols = [palette.get(t, FALLBACK_COLOUR) for t in sorted(domain_types) if t != "(synthetic)"]
     if not cols:
         return "#000000"
@@ -992,6 +1024,7 @@ def export_bundle(
     data_dir.mkdir(parents=True, exist_ok=True)
     bundles = GROUPINGS[groupings]["bundles"]
     filters = GROUPINGS[groupings]["filters"]
+    style = grouping_style(groupings)
 
     tests = pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")
     active_source_rows = [
@@ -1065,7 +1098,7 @@ def export_bundle(
                 "domain_types": "|".join(sorted(span.domain_types)),
                 "synthetic": span.domain_types == frozenset(["(synthetic)"]),
                 "span_chart_rank": span_chart_rank.get(key, ""),
-                "blend_colour": blend_colour(span.domain_types),
+                "blend_colour": blend_colour(span.domain_types, style),
             })
         write_tsv(target_dir / "spans.tsv", [
             "span_id", "left", "right", "size", "convergence",
@@ -1138,7 +1171,7 @@ def export_bundle(
     write_tsv(data_dir / "domain_types.tsv",
               ["domain_type", "colour", "sort_order", "legend_order", "facet_order",
                "alt_colour", "colour_priority", "known"],
-              domain_type_rows(observed_types))
+              domain_type_rows(observed_types, style))
 
     # Off unless asked: the permutation test is minutes, the rest of the
     # export is seconds. A bundle without it has no fragmentation tables
@@ -1148,28 +1181,28 @@ def export_bundle(
     if fragmentation_permutations:
         fragmentation_metadata = export_fragmentation_test(
             domain_file, domains_dir, data_dir,
-            fragmentation_permutations, fragmentation_seed, bundles, n_positions,
+            fragmentation_permutations, fragmentation_seed, bundles, n_positions, style,
         )
 
     boundary_strength_test_metadata: dict = {}
     if boundary_strength_test_permutations:
         boundary_strength_test_metadata = export_boundary_strength_test(
             domain_file, domains_dir, data_dir,
-            boundary_strength_test_permutations, boundary_strength_test_seed, bundles, n_positions,
+            boundary_strength_test_permutations, boundary_strength_test_seed, bundles, n_positions, style,
         )
 
     span_placement_metadata: dict = {}
     if span_placement_permutations:
         span_placement_metadata = export_span_placement_test(
             domain_file, domains_dir, data_dir,
-            span_placement_permutations, span_placement_seed, bundles, n_positions,
+            span_placement_permutations, span_placement_seed, bundles, n_positions, style,
         )
 
     arbitrary_layers_metadata: dict = {}
     if arbitrary_layers_permutations:
         arbitrary_layers_metadata = export_arbitrary_layers_test(
             domain_file, domains_dir, data_dir,
-            arbitrary_layers_permutations, arbitrary_layers_seed, bundles, n_positions,
+            arbitrary_layers_permutations, arbitrary_layers_seed, bundles, n_positions, style,
         )
 
     # A test not run this time must not leave its tables from an earlier
@@ -1312,10 +1345,11 @@ def export_bundle(
         json.dumps(subset_index, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     export_forests(domain_file, domains_dir, data_dir, bundles,
-                   n_positions_override=n_positions if forest_axis == "planar" else None)
-    export_overlay_groups(domain_file, domains_dir, data_dir, n_positions)
+                   n_positions_override=n_positions if forest_axis == "planar" else None,
+                   style=style)
+    export_overlay_groups(domain_file, domains_dir, data_dir, n_positions, style=style)
     export_highlights(dataset, data_dir, highlights_file)
-    export_tree_counts(domain_file, domains_dir, data_dir, bundles)
+    export_tree_counts(domain_file, domains_dir, data_dir, bundles, style=style)
     export_boundary_strength(domain_file, domains_dir, data_dir, n_positions=n_positions)
     return bundle_dir
 

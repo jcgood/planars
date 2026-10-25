@@ -64,9 +64,19 @@ which gives the p-value (share between >= observed; 5000 shuffles, seed 0,
 by default). Synthetic spans (a full-structure span the exporter adds when a
 structure has none) are left out; they never conflict.
 
+A LANGUAGE ANNOTATED THROUGH PLANARS is left out unless asked for, so the
+public bundle is unchanged: ``--with stan1293_types_all`` adds that
+dataset's bundle (drawn first with ``python -m laminar charts``), and the
+result, which then holds unpublished data, is written into that language's
+working folder in the planars-data clone
+(``coded_data/.analysis/<lang>/chart_data/cross_language/``, tables under
+``charts/cross_language/``; never committed). Its sides are
+planars_groupings' ``morsyn_indet`` against every phonological type or class.
+
 Usage (from anywhere):
     python -m laminar.export_cross_language            # dry run
     python -m laminar.export_cross_language --apply
+    python -m laminar.export_cross_language --with stan1293_types_all --apply
 """
 
 from __future__ import annotations
@@ -81,8 +91,9 @@ import unicodedata
 from itertools import combinations
 from pathlib import Path
 
-from laminar.datasets import NC
+from laminar.datasets import NC, bundle_root, charts_root
 from laminar.planars_groupings import GROUPINGS
+from laminar.planars_language import parse_dataset
 
 CONTRACT_VERSION = 1
 DATASET = "cross_language"
@@ -111,6 +122,16 @@ SIDES = {
     "chichewa": {
         "syntax_side": _bundle_types("chichewa", "syntaxlike"),
         "phonology_side": _bundle_types("chichewa", "phonologylike"),
+    },
+    # A planars language (--with): CCDB's divide, indeterminate with syntax,
+    # every phonological type or class on the other side.
+    "planars_types": {
+        "syntax_side": _bundle_types("planars_types", "morsyn_indet"),
+        "phonology_side": _bundle_types("planars_types", "phonological_all"),
+    },
+    "planars_classes": {
+        "syntax_side": _bundle_types("planars_classes", "morsyn_indet"),
+        "phonology_side": _bundle_types("planars_classes", "phonological"),
     },
 }
 
@@ -466,7 +487,8 @@ def summary_markdown(rows, pooled):
         "One row per structure. Positions in the last two columns are relative to the root (root = 0).",
         "`p placement` / `p layers`: one-sided p-value that chance gives as few families as observed, on the",
         "span-placement and arbitrary-layers nulls. `Confl. betw.`: conflicting span pairs that fall wholly",
-        "across the morphosyntax/phonology divide. * = not from CCDB (Chichewa).",
+        "across the morphosyntax/phonology divide. * = not from CCDB ("
+        + ", ".join(sorted({r["label"].rsplit(" (", 1)[0] for r in rows if r["source"] != "ccdb"})) + ").",
         "Written by laminar/export_cross_language.py; do not edit by hand.",
         "",
         "| " + " | ".join(h for _k, h in SUMMARY_COLUMNS) + " |",
@@ -508,9 +530,28 @@ def main():
     parser.add_argument("--shuffles", type=int, default=5000, help="Label shuffles for chart C (default 5000).")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--convergence-ranks", type=int, default=3)
+    parser.add_argument("--with", dest="with_", action="append", default=[], metavar="DATASET",
+                        help="Also include a planars language's dataset, e.g. stan1293_types_all "
+                             "(repeatable). Its bundle derives from unpublished annotation, so the "
+                             "result is written into that language's working folder in the "
+                             "planars-data clone (never committed), not "
+                             "beside the public bundles.")
     args = parser.parse_args()
 
     bundles = {d.name: load(d) for d in structure_dirs(args.chart_data)}
+    out_root, tables_dir = args.chart_data, args.tables_dir
+    for ds in args.with_:
+        planars = parse_dataset(ds)
+        if planars is None:
+            raise SystemExit(f"--with {ds}: not a planars language's dataset "
+                             "(<lang>_<types|classes>_<selection>).")
+        bundle_dir = bundle_root(ds) / ds
+        if not (bundle_dir / "data" / "metadata.json").exists():
+            raise SystemExit(f"--with {ds}: no bundle at {bundle_dir}; draw it first: "
+                             f"python -m laminar charts {ds} --apply")
+        bundles[ds] = load(bundle_dir)
+        # Written beside the private bundle, never over the public one.
+        out_root, tables_dir = bundle_root(ds), charts_root(ds) / DATASET
     for name, b in bundles.items():
         if b["meta"]["dataset"] != name:
             raise SystemExit(f"{name}: metadata.json names dataset {b['meta']['dataset']!r}")
@@ -539,8 +580,10 @@ def main():
         "producer": "laminar/export_cross_language.py",
         "n_structures": len(structures),
         "inputs": [{"dataset": ds, "metadata_sha256": bundles[ds]["meta_sha256"]} for ds in sorted(bundles)],
+        # Only the groupings these bundles use, so adding one to SIDES leaves
+        # a bundle without it unchanged.
         "sides": {g: {role: {"group": grp, "domain_types": types} for role, (grp, types) in s.items()}
-                  for g, s in SIDES.items()},
+                  for g, s in SIDES.items() if g in {st["groupings"] for st in structures}},
         "conflict_divide": {"n_shuffles": args.shuffles, "seed": args.seed},
         "convergence_ranks": args.convergence_ranks,
     }
@@ -558,17 +601,17 @@ def main():
         print("Dry run; pass --apply to write.")
         return
 
-    data_dir = args.chart_data / DATASET / "data"
+    data_dir = out_root / DATASET / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
     for name, rows in tables.items():
         write_tsv(rows, data_dir / name)
         print(f"wrote {data_dir / name} ({len(rows)} rows)")
     (data_dir / "metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n")
     print(f"wrote {data_dir / 'metadata.json'}")
-    args.tables_dir.mkdir(parents=True, exist_ok=True)
-    (args.tables_dir / "cross_language_summary.md").write_text(summary_markdown(table_rows, pooled), encoding="utf-8")
-    (args.tables_dir / "cross_language_summary.tex").write_text(summary_latex(table_rows), encoding="utf-8")
-    print(f"wrote {args.tables_dir / 'cross_language_summary.md'} and .tex")
+    tables_dir.mkdir(parents=True, exist_ok=True)
+    (tables_dir / "cross_language_summary.md").write_text(summary_markdown(table_rows, pooled), encoding="utf-8")
+    (tables_dir / "cross_language_summary.tex").write_text(summary_latex(table_rows), encoding="utf-8")
+    print(f"wrote {tables_dir / 'cross_language_summary.md'} and .tex")
 
 
 if __name__ == "__main__":

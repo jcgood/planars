@@ -20,10 +20,16 @@ Bundles go to ``NonCollaborative/results/chart_data/<dataset>/``; charts to
 through planars (datasets ``<lang>_<grouping>_<selection>``, e.g.
 ``stan1293_types_all``) is different: its domains files are first rebuilt
 from the annotation (``laminar/planars_language.py``), and its bundle and
-charts go to planars-data, ``coded_data/.analysis/<lang>/chart_data/`` and
-``.../charts/`` (``datasets.bundle_root()``/``charts_root()``). Runs from
-anywhere: both scripts run from the repository root, and a bundle records
-the files it read relative to that root.
+charts go to ``coded_data/.analysis/<lang>/chart_data/`` and
+``.../charts/`` (``datasets.bundle_root()``/``charts_root()``): working
+files on this machine, which planars-data's .gitignore leaves out. This
+command commits nothing; charts reach contributors through Drive by the
+workflows of docs/laminar-analysis-plan.md decision 6. Before anything
+runs it checks R, the packages planarsviz/DESCRIPTION needs and that
+coded_data/ has everything on GitHub, and says what to run about anything
+missing. ``--lang <lang_id>`` does every dataset of a planars language at
+once. Runs from anywhere: both scripts run from the repository root, and
+a bundle records the files it read relative to that root.
 
 ``--ccdb`` does the same for every CCDB structure (each one
 ``import_ccdb.py`` wrote a ``planar_tables/ccdb_<Planar_ID>.json`` for),
@@ -55,6 +61,8 @@ Usage:
     python -m laminar charts --ccdb --apply             # all 21, four at a time
     python -m laminar charts --ccdb --apply --only chac1251_nominal,mart1259_verbal
     python -m laminar charts --ccdb --summary-only
+    python -m laminar charts --lang stan1293             # dry run: checks, then what would run
+    python -m laminar charts --lang stan1293 --apply     # English's eight datasets
 """
 
 from __future__ import annotations
@@ -74,7 +82,9 @@ from pathlib import Path
 from laminar.datasets import (
     NC, REPO, bundle_root, charts_root, dataset_settings, domain_file, planar_file,
 )
-from laminar.planars_language import parse_dataset, write_inputs
+from laminar.planars_language import CODED_DATA, parse_dataset, write_inputs
+from laminar.planars_language import planar_file as lang_planar_file
+from planars.languages import get_display_name
 
 # The four permutation tests, each switched on by its own exporter flag. A
 # re-export without one of them drops that test's tables from the bundle, so
@@ -141,6 +151,62 @@ def render_command(dataset: str, formats: str | None, plots: str | None) -> list
     return cmd
 
 
+# ── Checks before drawing ───────────────────────────────────────────────────
+
+# Packages planarsviz/DESCRIPTION lists that drawing does not need (its style
+# checks). Every other Imports/Suggests entry is checked before a run.
+DEV_ONLY_R_PACKAGES = frozenset({"lintr", "styler"})
+
+
+def r_packages() -> list[str]:
+    """The R packages drawing needs: planarsviz/DESCRIPTION's Imports and
+    Suggests, read from that file, less DEV_ONLY_R_PACKAGES."""
+    text = (REPO / "planarsviz" / "DESCRIPTION").read_text(encoding="utf-8")
+    fields = re.findall(r"^(Imports|Suggests):(.*?)(?=^\S|\Z)", text, re.M | re.S)
+    names = [re.sub(r"\(.*?\)", "", item).strip()
+             for _field, body in fields for item in body.split(",")]
+    return sorted(n for n in names if n and n not in DEV_ONLY_R_PACKAGES)
+
+
+def preflight(lang_id: str | None, apply: bool) -> None:
+    """Check what a run needs, and say what to do about anything missing:
+    R and the pinned packages (only when drawing, --apply), and for a
+    planars language that coded_data/ has everything on GitHub. A dry run
+    prints the problems; --apply stops on them."""
+    problems = []
+    if apply and shutil.which("Rscript") is None:
+        problems.append("R is not installed (no `Rscript` on the PATH). Install R 4.2 or later "
+                        "from https://cran.r-project.org, then run this again.")
+    elif apply:
+        script = ("p <- commandArgs(TRUE); "
+                  "m <- p[!vapply(p, requireNamespace, logical(1), quietly = TRUE)]; "
+                  "cat(m); quit(status = length(m) > 0)")
+        check = subprocess.run(["Rscript", "-e", script, *r_packages()], cwd=REPO,
+                               capture_output=True, text=True)
+        if check.returncode != 0:
+            missing = check.stdout.split() or ["(R did not say which)"]
+            problems.append(f"R packages missing: {', '.join(missing)}. Install the pinned versions "
+                            "by running, from the repository root: Rscript -e 'renv::restore()'")
+    if lang_id:
+        fetch = subprocess.run(["git", "-C", str(CODED_DATA), "fetch", "-q"],
+                               capture_output=True, text=True)
+        if fetch.returncode != 0:
+            problems.append("Could not reach planars-data on GitHub to check coded_data/ is current: "
+                            + fetch.stderr.strip())
+        else:
+            behind = subprocess.run(["git", "-C", str(CODED_DATA), "rev-list", "--count", "HEAD..@{u}"],
+                                    capture_output=True, text=True, check=True).stdout.strip()
+            if behind != "0":
+                problems.append(f"coded_data/ is {behind} commit(s) behind planars-data on GitHub, so "
+                                "the charts would show old annotation. Run: git -C coded_data pull")
+    if not problems:
+        return
+    message = "\n".join(f"- {p}" for p in problems)
+    if apply:
+        sys.exit(f"Can't draw yet:\n{message}")
+    print(f"Before running with --apply:\n{message}\n")
+
+
 def run(cmd: list[str], label: str) -> None:
     print(f"\n== {label} ==\n{shlex.join(cmd)}", flush=True)
     start = time.monotonic()
@@ -155,7 +221,8 @@ def run(cmd: list[str], label: str) -> None:
 def draw_one(args: argparse.Namespace) -> None:
     dataset = args.dataset
     planars = parse_dataset(dataset)
-    if planars:
+    if planars and not args.inputs_written:
+        preflight(planars[0], args.apply)
         # Built from the annotation every time, so a chart never shows
         # yesterday's spans; a dry run only says what would change.
         print(f"Domains files for {planars[0]} (laminar/planars_language.py):")
@@ -203,6 +270,39 @@ def draw_one(args: argparse.Namespace) -> None:
           f"Charts: {rel(charts_root(dataset) / dataset)}/")
 
 
+# ── Every dataset of a planars language ─────────────────────────────────────
+
+def draw_language(args: argparse.Namespace) -> None:
+    """--lang: every dataset of one planars language (all groupings x
+    selections), several at a time, after one set of checks and one rebuild
+    of the domains files. Each dataset's full output goes to its log in the
+    charts folder."""
+    lang_id = args.lang
+    if not lang_planar_file(lang_id).exists():
+        sys.exit(f"{lang_id}: not a planars language here (no {rel(lang_planar_file(lang_id))}; "
+                 "is coded_data/ cloned?).")
+    preflight(lang_id, args.apply)
+    print(f"Domains files for {get_display_name(lang_id)} (laminar/planars_language.py):")
+    datasets = write_inputs(lang_id, apply=args.apply)
+    if not args.apply:
+        print(f"\nWould then run, {args.jobs} at a time:\n")
+        for ds in datasets:
+            print("  python -m laminar charts " + " ".join(one_dataset_args(ds, args)))
+        print(f"\n{len(datasets)} datasets. Nothing was run. Add --apply to run them.")
+        return
+    log_dir = charts_root(datasets[0]) / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    start = time.monotonic()
+    with ThreadPoolExecutor(max_workers=args.jobs) as pool:
+        results = list(pool.map(
+            lambda ds: run_in_batch(ds, args, log_dir, ["--inputs-written"]), datasets))
+    failed = [ds for ds, code, _ in results if code != 0]
+    print(f"\nAll {len(datasets)} done in {(time.monotonic() - start) / 60:.1f} min. "
+          f"Charts: {rel(charts_root(datasets[0]))}/<dataset>/; logs: {rel(log_dir)}/")
+    if failed:
+        sys.exit(f"Failed: {', '.join(failed)} (see each one's log).")
+
+
 # ── Every CCDB structure ────────────────────────────────────────────────────
 
 def pdf_can_draw(char: str) -> bool:
@@ -233,9 +333,10 @@ def one_dataset_args(dataset: str, args: argparse.Namespace) -> list[str]:
     return extra
 
 
-def run_in_batch(dataset: str, args: argparse.Namespace) -> tuple[str, int, float]:
-    cmd = [sys.executable, "-m", "laminar", "charts", *one_dataset_args(dataset, args)]
-    log = BATCH_DIR / f"{dataset}.log"
+def run_in_batch(dataset: str, args: argparse.Namespace, log_dir: Path = BATCH_DIR,
+                 extra: list[str] | None = None) -> tuple[str, int, float]:
+    cmd = [sys.executable, "-m", "laminar", "charts", *one_dataset_args(dataset, args), *(extra or [])]
+    log = log_dir / f"{dataset}.log"
     start = time.monotonic()
     with log.open("w", encoding="utf-8") as out:
         out.write("$ " + " ".join(cmd) + "\n")
@@ -422,9 +523,17 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--plots", help="Passed to the renderer: only these charts "
                                         "(names as render_planarsviz.R --list prints them). "
                                         "One dataset only.")
+    parser.add_argument("--lang", metavar="LANG_ID",
+                        help="Every dataset of one language annotated through planars, e.g. "
+                             "stan1293: checks R, its packages and that coded_data/ is current, "
+                             "rebuilds the domains files and draws all, on this machine.")
     parser.add_argument("--only", help="With --ccdb: comma-separated Planar_IDs instead of all.")
     parser.add_argument("--jobs", type=int, default=4,
-                        help="With --ccdb: structures run at once (default 4).")
+                        help="With --ccdb or --lang: datasets run at once (default 4).")
+    # Set by a --lang run on the runs it starts: it has checked and rebuilt
+    # the domains files once, so each run must not (they would write the
+    # same files at the same time).
+    parser.add_argument("--inputs-written", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--summary-only", action="store_true",
                         help="With --ccdb: rewrite the summary from the existing logs and "
                              "bundles; run nothing.")
@@ -433,15 +542,17 @@ def main(argv: list[str] | None = None) -> None:
     args.permutations_given = args.permutations is not None
     if args.permutations is None:
         args.permutations = 5000
-    if args.ccdb == bool(args.dataset):
-        parser.error("give either a dataset name or --ccdb, not both or neither")
+    if sum([bool(args.dataset), args.ccdb, bool(args.lang)]) != 1:
+        parser.error("give one of: a dataset name, --ccdb, --lang LANG_ID")
     if not args.ccdb and (args.only or args.summary_only):
         parser.error("--only and --summary-only go with --ccdb")
-    if args.ccdb and args.plots:
-        parser.error("--plots is for one dataset; leave it out with --ccdb")
+    if (args.ccdb or args.lang) and args.plots:
+        parser.error("--plots is for one dataset; leave it out with --ccdb or --lang")
 
     if args.ccdb:
         draw_ccdb(args)
+    elif args.lang:
+        draw_language(args)
     else:
         draw_one(args)
 

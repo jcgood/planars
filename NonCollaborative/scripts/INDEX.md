@@ -235,7 +235,8 @@ with `groups` for the two-bundle variant — from a bundle exported with
   analysis script shares. Read by those scripts, the exporter and
   `python -m laminar charts`. Not runnable on its own. A planars
   language's datasets (`<lang>_<types|classes>_<selection>`) have their
-  files in planars-data (`coded_data/.analysis/<lang>/`) and their settings
+  files in the planars-data clone (`coded_data/.analysis/<lang>/`, working
+  files never committed) and their settings
   from `planars_language.py`.
 
 **`laminar/planars_language.py`**

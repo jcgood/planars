@@ -30,9 +30,14 @@ Jeff's decisions: `docs/laminar-analysis-plan.md`** (don't re-ask them);
 (`python -m laminar charts <dataset>`), with `planarsviz/` and renv beside
 it; `laminar/planars_language.py` builds English's eight datasets
 (`stan1293_<types|classes>_<all|complete|partial|distinct>`) with *k of n*
-weights. **Next action:** Phase 4, run English
-(`python -m laminar charts stan1293_types_all --apply` etc.), starting with
-colours for English's domain types (they draw grey now). Jeff's cuts to the cross-language
+weights. Phase 4 was revised (2026-10-24, Jeff): charts reach contributors
+through Drive by workflows (daily reality checks without permutation
+tests, by class and by domain type; weekly full analysis with them; R on
+the runner) — plan decision 6. 4a (local) is built; English is drawn
+locally in `coded_data/.analysis/stan1293/charts/` (not committed).
+**Next action:** 4b, the `laminar-charts` command (contributor charts to
+Drive through the doorway; a new Drive kind). Don't re-ask decision 6's
+choices. Jeff's cuts to the cross-language
 charts (CCDB thread below) come after Phase 2 (his call, 2026-10-24), so
 they can go in now or between later phases, not in the middle of one.
 

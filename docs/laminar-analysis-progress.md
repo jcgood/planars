@@ -8,7 +8,7 @@ the current state; update it at every phase boundary, in the same commit.
 | 1. Take out the Chichewa assumptions, in place | done 2026-10-24 |
 | 2. Move the code (`laminar/`, `planarsviz/` to the root) | done 2026-10-24 |
 | 3. Connect a planars language (adapter, *k of n*, metadata) | done 2026-10-24 |
-| 4. Run English; one command for Adam's Claude | not started |
+| 4. Run English; charts to contributors through Drive (revised) | 4a built 2026-10-24; 4b–e not started |
 | 5. Documentation and tests | not started |
 
 ## Phase 1 as built (2026-10-24)
@@ -119,8 +119,8 @@ the current state; update it at every phase boundary, in the same commit.
   (domains/, chart_data/, charts/), not `coded_data/<lang>/analysis/`. A
   folder inside a language's folder is read as a class by
   `language_completeness`, check-comments and others. Dot-folders are
-  skipped, as `.state` and `.test_fixtures` are. charts/ is in
-  planars-data's `.gitignore`.
+  skipped, as `.state` and `.test_fixtures` are. All of `.analysis/` is
+  in planars-data's `.gitignore` (Phase 4a): local working files.
 - **datasets.py** knows a planars dataset: domains file and bundle in
   planars-data, the live planar file (the exporter now reads
   `Position_Name` as the label), the keystone as root, and the display name
@@ -144,11 +144,71 @@ the current state; update it at every phase boundary, in the same commit.
   language's code) still resolves to its CCDB files. check-codebook,
   integrity-check, full suite, NonCollaborative no-R tests pass.
 
-**Left for Phase 4:** English's domain types (`phonological-prosodic`,
-`phonological-segmental`, class names) have no colours, so they draw in
-the fallback grey; the planars bundles' colours in `planars_groupings.py`
-are provisional. Committing the bundles to planars-data, and the checks
-for Adam's Claude, are Phase 4 as planned.
+**Left for Phase 4:** colours for English's domain types (done in 4a).
+
+## Phase 4 (revised 2026-10-24)
+
+Phase 4 was "run English locally and commit its bundles". Jeff asked how
+Adam would see the charts. Checked against CLAUDE.md's foundations
+(terminal output reaches no collaborator; design for John; nothing to
+remember; 30–40 languages; Drive through the doorway; only the local-file
+door commits to planars-data), charts now reach contributors through Drive
+by workflows. Plan decision 6 and Phase 4a–e have the design.
+
+| Unit | Status |
+|---|---|
+| 4a. Local: colours, `--lang`, English drawn, cross-language `--with` | built 2026-10-24 (below) |
+| 4b. `laminar-charts` command: contributor charts to Drive | not started |
+| 4c. Workflow after the daily refresh, R on the runner | not started |
+| 4d. Weekly full analysis with permutation tests | not started |
+| 4e. Documentation | not started |
+
+### 4a as built (2026-10-24)
+
+- **Colours and forests per grouping.** A grouping in `planars_groupings.GROUPINGS`
+  can carry its own `styles` (colour, second colour, display order and forest
+  id per domain type); the exporter's `grouping_style()` uses them in place
+  of its own table, for every colour it writes and for the per-type forests
+  and overlays. English's types and each of the 18 classes now have colours
+  (provisional, `_CLASS_COLOURS`; fixed per class, so a class looks the same
+  in every language). Without this English drew grey and got no per-type
+  forests at all, since those came from a third copy of the colours
+  (`laminar_analysis.OVERLAY_GROUPS`), which knows only Chichewa's and CCDB's
+  types. Chichewa, CCDB and the shifted test bundle keep their tables, so
+  their bundles are unchanged (re-exported nyan1308 and chac1251_verbal:
+  byte-identical apart from the skipped permutation tables).
+- **Found by a test:** in the by-class grouping the subtype bundles were
+  named `segmental`/`tonal`, the same as those classes, and forest files are
+  named by id, so one would have overwritten the other. Now `phon_segmental`
+  etc.
+- **One command for a language:** `python -m laminar charts --lang stan1293
+  [--apply]`. It checks R, the packages `planarsviz/DESCRIPTION` lists (less
+  the style tools) and that coded_data/ has everything on GitHub, and says
+  what to run about each; rebuilds the domains files once; draws the eight
+  datasets four at a time (logs in the charts folder). It commits nothing:
+  a first version committed and pushed the bundles itself, against "only
+  the local-file door commits to planars-data"; removed, and planars-data
+  ignores `.analysis/`. Machine setup: coordinator guide § "5. Laminar
+  charts for a language".
+- **English drawn locally, all eight datasets with the tests:** about 45–50
+  minutes per dataset with four running at once, ~100 minutes for the
+  language, nearly all of it the permutation tests (Chichewa: 1.6 s
+  without, ~11 min with). Hence decision 6: contributors get charts
+  without the tests, daily; the tests run weekly.
+- **Found by the English run, fixed:** in the `complete` selection every
+  proform span is one position (the verb stem's), which the analysis
+  drops, so proform was a group with no spans and the boundary-strength
+  test crashed. A group is now made only of spans the analysis keeps
+  (`observed_domain_types`), and `load_spans` returns no spans for such a
+  group, so every caller's existing skip works.
+- **Cross-language, opt-in:** `python -m laminar.export_cross_language --with
+  stan1293_types_all --apply` adds English and writes the result into
+  the clone's working folder (`.analysis/stan1293/chart_data/cross_language/`,
+  not committed). Its divide
+  is `morsyn_indet` against every phonological type or class. Without
+  `--with` the public bundle is byte-identical (re-exported and checked).
+- Side fix: `planarsviz/DESCRIPTION` pointed to the exporter's and guides'
+  old paths.
 
 ## Findings
 

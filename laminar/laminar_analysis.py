@@ -303,6 +303,10 @@ def load_spans(domain_file: str, domains_dir: str | None = None,
         df = df[df["Domain_Type"].isin(subset)]
 
     spans = aggregate_spans(df)
+    if df.empty:
+        # Every row was a one-position span (dropped above), or the subset
+        # has none: no spans, which callers already skip.
+        return [], (n_positions or 0)
 
     observed_max = int(df["Right_Edge"].max())
     if n_positions is None:

@@ -10,7 +10,8 @@ A language annotated through planars has datasets named
 ``<lang>_<grouping>_<selection>`` (``stan1293_types_all``), built by
 laminar/planars_language.py. domain_file(), planar_file(), bundle_root()
 and charts_root() say where each dataset's files are: for a planars
-language, in planars-data (``coded_data/.analysis/<lang>/``) with the live
+language, in the planars-data clone's ``coded_data/.analysis/<lang>/``
+(working files, never committed: planars-data's .gitignore) with the live
 planar file; for the rest, under NonCollaborative/. Its settings come from
 planars_language.py and the planar file (display name, groupings, the
 keystone as root, planar type, forest axis "planar"); none of the rules
@@ -93,8 +94,9 @@ def planar_file(dataset: str) -> Path:
 
 
 def bundle_root(dataset: str) -> Path:
-    """The folder a dataset's bundle folder goes in: planars-data for a
-    planars language (decision 5 of docs/laminar-analysis-plan.md), else
+    """The folder a dataset's bundle folder goes in: inside the planars-data
+    clone for a planars language (``.analysis/<lang>/chart_data``, never
+    committed; decision 5 of docs/laminar-analysis-plan.md), else
     NonCollaborative/results/chart_data/."""
     planars = _planars(dataset)
     if planars:
@@ -105,7 +107,7 @@ def bundle_root(dataset: str) -> Path:
 
 def charts_root(dataset: str) -> Path:
     """The folder the renderer draws a dataset's charts under. For a planars
-    language, a folder planars-data's .gitignore leaves out: charts are not
+    language, ``.analysis/<lang>/charts`` in the planars-data clone, never
     committed (decision 5)."""
     planars = _planars(dataset)
     if planars:

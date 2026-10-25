@@ -277,6 +277,44 @@ Spans are computed for you; there is no command to run. Each place shows them:
 
 See [analyses.md](analyses.md) for what each analysis computes.
 
+#### 5. Laminar charts for a language
+
+The laminar analysis (do the spans nest? see [laminar-analysis-plan.md](laminar-analysis-plan.md))
+runs on any language annotated through planars. Charts will reach
+contributors in their language's Drive folder by themselves (the plan's
+Phase 4b–4d, being built): reality-check charts after each daily refresh,
+the full analysis with its statistical tests weekly.
+
+For working on the analysis yourself, one local command does all of it:
+
+```bash
+python -m laminar charts --lang stan1293            # dry run: checks, then what it would do
+python -m laminar charts --lang stan1293 --apply    # draw everything
+```
+
+It first checks that R is installed, that the R packages are the pinned ones,
+and that `coded_data/` has everything on GitHub, and says what to run if not.
+It then builds the language's datasets from the annotation (two groupings, by
+domain type and by class, times four selections of spans: eight in all),
+exports each one's bundle with the four permutation tests and draws its
+charts, four at a time. For English that took about 100 minutes
+(2026-10-24); without the permutation tests (`--no-permutations`) a few
+minutes. Bundles and charts go to `coded_data/.analysis/{lang}/`
+(`chart_data/`, `charts/{dataset}/`): working files on your machine, which
+planars-data's `.gitignore` leaves out, so nothing is committed. Each bundle's
+`metadata.json` (`planars_source`) says which planars-data commit it came from
+and how complete the annotation was.
+
+**Setting up a machine for the first time** (once):
+
+1. The repository, Python environment and `coded_data/` clone, as in
+   [Repository setup](#repository-setup).
+2. R 4.2 or later, from https://cran.r-project.org.
+3. The pinned R packages: from the repository root, `Rscript -e 'renv::restore()'`
+   (several minutes; it installs the versions in `renv.lock`).
+
+The dry run says which of these is missing.
+
 #### Cross-sheet criterion consistency
 
 Some criteria appear in more than one sheet. Currently:

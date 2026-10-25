@@ -40,18 +40,38 @@ draft, started while Adam is still annotating. **Current state:
      phonological;
    - (b) by class, each class as its own group.
    Hand-set bundles like Chichewa's stay possible later as a named grouping.
-5. **Where English results live.** Bundles in planars-data
-   (`coded_data/.analysis/stan1293/…`; first written as
+5. **Where English results live.** Never in the public repo, since they
+   derive from unpublished annotation. A local run writes to the
+   planars-data clone's `coded_data/.analysis/stan1293/…` (first planned as
    `coded_data/stan1293/analysis/`, moved in Phase 3 because the tooling
-   reads any folder inside a language's folder as a class), since they
-   derive from unpublished annotation. Charts are not committed: they are drawn into a folder git
-   ignores. English is opt-in for the cross-language bundle, so the public
-   one is unchanged.
-6. **Adam can draw his own charts.** Now: one command his Claude runs,
-   which checks its own prerequisites. Later: charts delivered to his
-   language's Drive folder by a workflow (needs R on a GitHub runner for
-   drawing only, and a new kind of Drive file in the door's rules; both
-   decided when that phase starts).
+   reads any folder inside a language's folder as a class), which
+   planars-data's `.gitignore` leaves out. The weekly analysis's bundles
+   are committed to planars-data through the local-file door (Phase 4d);
+   charts reach people through Drive (decision 6). English is opt-in for
+   the cross-language bundle, so the public one is unchanged.
+6. **Charts reach contributors through Drive, by themselves** (revised
+   2026-10-24, replacing "Adam can draw his own charts" with delivery
+   later). The first use is contributors checking their own data, not
+   analysis: charts that live on whoever ran a command reach nobody (CLAUDE.md:
+   terminal output reaches no collaborator; design for John; nothing to
+   remember; 30–40 languages). So:
+   - **Contributor charts, after each daily refresh:** for each language
+     whose spans changed, two datasets, by class and by domain type, all
+     spans (`<lang>_classes_all`, `<lang>_types_all`), **without** the
+     permutation tests (they are for analysis, and cost nearly all the
+     time), drawn and put in the language's Drive folder through the
+     doorway. Each chart's title carries the date and how complete the
+     annotation was.
+   - **Full analysis, weekly:** every dataset with all four permutation
+     tests, for each language whose spans changed since its last run;
+     bundles into planars-data through the local-file door, charts into an
+     analysis folder beside the contributor charts. A failed run files an
+     issue. Nobody has to remember the tests exist or run them.
+   - **R on the GitHub runner, for drawing only (Jeff, 2026-10-24).** Not
+     the porting checks: those pixel-compare against Mac renders and stay
+     local, as before.
+   - The local command (`python -m laminar charts`) stays, for whoever is
+     working on the analysis; it is not how charts reach people.
 7. **`planarsviz/` moves to the repo root** with the Python. The archived
    scripts (`NonCollaborative/OlderFiles/planarsviz_superseded/`) and the
    porting checks that compare against them stay in `NonCollaborative/`.
@@ -102,11 +122,36 @@ span table in memory from `planars.reports.language_spans`:
   completeness (`language_completeness`), so a chart drawn mid-annotation
   says so.
 
-**Phase 4: run English.** Every selection × both groupings; bundles to
-planars-data; charts to an ignored folder. The one command (decision 6)
-checks R, the restored packages and that `coded_data/` is current, and says
-what to do when one is missing. Setup for Adam's Claude goes in
-`docs/coordinator-guide.md`. Cross-language with English, opt-in.
+**Phase 4: run English, and deliver charts** (revised 2026-10-24; decision 6).
+- **4a, local (built 2026-10-24):** colours and per-type forests for the
+  planars groupings; `python -m laminar charts --lang <lang>` with its
+  checks (R, packages, coded_data/ current); English drawn locally;
+  cross-language with English, opt-in (`--with`). Bring into line: the
+  local command must not commit to planars-data itself (only the local-file
+  door commits there); it writes locally and says so.
+- **4b, contributor charts:** a `coding` command (`laminar-charts`, with
+  its `operations.yaml` record) that, for each language whose span table
+  changed since it last drew (a state file, through the local-file door),
+  builds the two contributor datasets in a temporary folder (derived and
+  regenerated, so not stored), exports them without permutation tests,
+  draws them, and replaces the previous charts in the language's Drive
+  folder through the doorway: a new Drive kind with its own sharing rule
+  in `sheet_spec.py`, in watch mode until its first clean real write. The
+  date and completeness go into each chart's title.
+- **4c, the workflow:** `laminar-charts.yml`, started when the data refresh
+  finishes (as `generate-reports.yml` is), with R and the pinned packages
+  (cached). Nothing from the private annotation goes into its logs or
+  downloadable files.
+- **4d, weekly full analysis:** `laminar-analysis.yml`, one job per
+  (language, dataset) for the languages whose spans changed since their
+  last run, all four permutation tests; bundles written to planars-data as
+  new local-file door kinds; charts to the analysis folder on Drive; a
+  failure files an issue (a new label in `schemas/issue_labels.yaml`).
+- **4e, documentation:** the coordinator guide (both kinds of chart, the
+  weekly run in "What happens automatically"), the collaborator guide (where
+  the charts are and what they are for), a note in the Drive folder.
+- **Live steps, each named to Jeff first:** the first upload to a language's
+  Drive folder; the first write to planars-data by a workflow; the new label.
 
 **Phase 5: documentation and tests.** Move `scripts/INDEX.md`,
 `README_laminar_analysis.md`, the planarsviz guide, tutorial and chart
@@ -116,7 +161,6 @@ code, and its pointers move) and the README. The analysis tests that need no
 R join the main suite; keep an eye on its run time.
 
 **Later, not in this plan:**
-- charts delivered to Drive (decision 6);
 - Chichewa through the adapter once `tonosegmental` and `intonational`
   exist (#72), retiring its hand-coded domains table;
 - `planars/charts.py` (matplotlib) overlaps planarsviz's span chart; one
