@@ -20,6 +20,12 @@ def english():
     return cd.chapter_data("stan1293")
 
 
+def test_a_coded_data_that_is_not_a_clone_is_refused(monkeypatch, tmp_path):
+    monkeypatch.setattr(cd, "CODED_DATA", tmp_path)
+    with pytest.raises(cd.ChapterDataError, match="not a clone of planars-data"):
+        cd._version_record("stan1293", None)
+
+
 def test_completeness_summary():
     summary = completeness_summary({
         "ciscategorial": {"general": {"total": 10, "filled": 7, "blank": 3}},

@@ -147,7 +147,18 @@ def data_at(version: Optional[str]) -> Iterator[Path]:
 
 
 def _version_record(lang_id: str, version: Optional[str]) -> dict:
-    commit = _git(CODED_DATA, "rev-parse", f"{version or 'HEAD'}^{{commit}}")
+    # A coded_data/ that is a plain copy, not a clone, would make git answer
+    # for the planars repository around it, and the chapter would name a
+    # planars commit as its data version.
+    try:
+        top = Path(_git(CODED_DATA, "rev-parse", "--show-toplevel")).resolve()
+    except subprocess.CalledProcessError:
+        top = None
+    if top != CODED_DATA.resolve():
+        raise ChapterDataError(
+            "coded_data/ is not a clone of planars-data, so its data version can't be "
+            "named. Clone it there (docs/coordinator-guide.md, setup).")
+    commit =_git(CODED_DATA, "rev-parse", f"{version or 'HEAD'}^{{commit}}")
     return {
         "planars_data_commit": commit,
         "date": _git(CODED_DATA, "log", "-1", "--format=%cs", commit),
