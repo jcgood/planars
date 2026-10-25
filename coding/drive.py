@@ -442,17 +442,27 @@ def create_or_update_shared_file(
     #276) reshare on every run, so their per-file duplicate implementations
     collapse into this one function once the sharing timing is unified.
     """
+    file_id = create_or_update_file(doorway, content, folder_id, existing_file_id,
+                                    identity=identity)
+    ensure_anyone_permission(doorway, file_id, role=role)
+    return file_id
+
+
+def create_or_update_file(doorway, content: bytes, folder_id: str,
+                          existing_file_id: Optional[str] = None, *, identity) -> str:
+    """Create-or-update a Drive file, renaming on update, with no sharing of
+    its own (it has its folder's). Returns the file ID. ``identity`` labels
+    the file when it is created and gives its name and type
+    (``sheet_spec.file_spec``). Contributor charts (laminar-charts) use it;
+    create_or_update_shared_file adds the link share."""
     from .sheet_spec import file_spec
     spec = file_spec(identity)
     if existing_file_id:
         doorway.update_file(existing_file_id, name=spec.name,
                             content=content, mimetype=spec.mimetype)
-        file_id = existing_file_id
-    else:
-        file_id = doorway.create_file(spec.name, parents=[folder_id], content=content,
-                                      mimetype=spec.mimetype, identity=identity)
-    ensure_anyone_permission(doorway, file_id, role=role)
-    return file_id
+        return existing_file_id
+    return doorway.create_file(spec.name, parents=[folder_id], content=content,
+                               mimetype=spec.mimetype, identity=identity)
 
 
 def get_or_create_spreadsheet(doorway, folder_id: str, name: str, *,

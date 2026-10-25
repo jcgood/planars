@@ -145,17 +145,27 @@ def _weights(gained: list[tuple[int, int, int]]) -> tuple[float, float, float]:
     return (round(sum(ratios) / len(ratios), 4), round(min(ratios), 4), round(share, 4))
 
 
+class SpanTableError(Exception):
+    """The annotation can't be made into a span table; the message says why."""
+
+
+class NoSpansYet(SpanTableError):
+    """The language's annotation gives no spans yet (nothing to chart)."""
+
+
 def span_table(lang_id: str) -> pd.DataFrame:
     """Every span the language's annotation gives, one row per test, with
     both groupings' Domain_Type (``Domain_Type_types``, ``Domain_Type_classes``)
-    and the record columns of DOMAIN_COLUMNS."""
+    and the record columns of DOMAIN_COLUMNS. Raises NoSpansYet when there
+    are none, SpanTableError when the spans can't be placed."""
     spans, _meta = language_spans(lang_id, source="local", repo_root=REPO)
     if spans.empty:
-        sys.exit(f"{get_display_name(lang_id)}: the annotation gives no spans yet.")
+        raise NoSpansYet(f"{get_display_name(lang_id)}: the annotation gives no spans yet.")
     types = class_domain_types()
     unknown = sorted(set(spans["Analysis"]) - set(types))
     if unknown:
-        sys.exit(f"Classes with spans but no entry in schemas/diagnostic_classes.yaml: {unknown}")
+        raise SpanTableError(
+            f"Classes with spans but no entry in schemas/diagnostic_classes.yaml: {unknown}")
 
     table = spans.rename(columns={"Analysis": "Class"}).copy()
     table["Domain_Type_types"] = [planars_domain_type(*types[c]) for c in table["Class"]]
@@ -167,7 +177,8 @@ def span_table(lang_id: str) -> pd.DataFrame:
     ]
     repeated = table["Test_Labels"][table["Test_Labels"].duplicated()].tolist()
     if repeated:
-        sys.exit(f"Span labels repeat, so two tests would merge: {sorted(set(repeated))}")
+        raise SpanTableError(
+            f"Span labels repeat, so two tests would merge: {sorted(set(repeated))}")
     weights = [_weights(g) for g in table["Gained_Positions"]]
     table["Weight_Mean_Ratio"] = [w[0] for w in weights]
     table["Weight_Weakest"] = [w[1] for w in weights]
@@ -249,30 +260,38 @@ def source_record(lang_id: str, grouping: str, selection: str, table: pd.DataFra
 
 # ── Writing ─────────────────────────────────────────────────────────────────
 
-def write_inputs(lang_id: str, apply: bool) -> list[str]:
-    """Build every dataset's domains file and source record for `lang_id`,
-    write those that differ when `apply`, and return the dataset names."""
-    table = span_table(lang_id)
-    out_dir = domains_dir(lang_id)
-    for grouping in GROUPINGS_BY:
-        for selection in SELECTIONS:
-            dataset = dataset_name(lang_id, grouping, selection)
-            frame = domains_frame(select(table, selection), grouping)
-            files = {
-                out_dir / f"domains_{dataset}.tsv": frame.to_csv(sep="\t", index=False),
-                out_dir / f"source_{dataset}.json":
-                    json.dumps(source_record(lang_id, grouping, selection, table),
-                               indent=2, sort_keys=True, ensure_ascii=False) + "\n",
-            }
-            for path, text in files.items():
-                same = path.exists() and path.read_text(encoding="utf-8") == text
-                verb = "unchanged" if same else ("wrote" if apply else "would write")
-                print(f"  {verb:12s} {repo_relative(path)}"
-                      + (f"  ({len(frame)} tests)" if path.suffix == ".tsv" else ""))
-                if apply and not same:
-                    out_dir.mkdir(parents=True, exist_ok=True)
-                    path.write_text(text, encoding="utf-8")
-    return dataset_names(lang_id)
+def input_texts(lang_id: str, table: pd.DataFrame, grouping: str,
+                selection: str) -> tuple[str, str]:
+    """One dataset's domains file and source record, as text."""
+    frame = domains_frame(select(table, selection), grouping)
+    record = json.dumps(source_record(lang_id, grouping, selection, table),
+                        indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+    return frame.to_csv(sep="\t", index=False), record
+
+
+def write_inputs(lang_id: str, apply: bool, out_dir: Path | None = None,
+                 datasets: list[str] | None = None, table: pd.DataFrame | None = None) -> list[str]:
+    """Build the domains file and source record of each of `datasets` (default
+    every dataset of `lang_id`) into `out_dir` (default domains_dir()), write
+    those that differ when `apply`, and return the dataset names. `table` is
+    the span table, when the caller already has it."""
+    table = span_table(lang_id) if table is None else table
+    out_dir = out_dir or domains_dir(lang_id)
+    datasets = datasets or dataset_names(lang_id)
+    for dataset in datasets:
+        _lang, grouping, selection = parse_dataset(dataset)
+        domains_text, record_text = input_texts(lang_id, table, grouping, selection)
+        files = {out_dir / f"domains_{dataset}.tsv": domains_text,
+                 out_dir / f"source_{dataset}.json": record_text}
+        for path, text in files.items():
+            same = path.exists() and path.read_text(encoding="utf-8") == text
+            verb = "unchanged" if same else ("wrote" if apply else "would write")
+            print(f"  {verb:12s} {repo_relative(path)}"
+                  + (f"  ({domains_text.count(chr(10)) - 1} tests)" if path.suffix == ".tsv" else ""))
+            if apply and not same:
+                out_dir.mkdir(parents=True, exist_ok=True)
+                path.write_text(text, encoding="utf-8")
+    return datasets
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -287,7 +306,10 @@ def main(argv: list[str] | None = None) -> None:
         sys.exit(f"{args.lang_id}: no planar file at {repo_relative(planar_file(args.lang_id))}; "
                  "is coded_data/ cloned and current?")
     print(f"{get_display_name(args.lang_id)}:")
-    write_inputs(args.lang_id, args.apply)
+    try:
+        write_inputs(args.lang_id, args.apply)
+    except SpanTableError as exc:
+        sys.exit(str(exc))
     if not args.apply:
         print("\nNothing was written. Add --apply to write.")
 

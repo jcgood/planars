@@ -17,6 +17,7 @@ weasyprint>=70.0   # 70.0 fixes GHSA-jf6q-chmf-3h3v (SSRF) and clears GHSA-jhhc-
 networkx         # laminar-family verification scripts (NonCollaborative/scripts/verification/)
 numpy
 pillow           # planarsviz image checks
+pypdf            # laminar-charts: one PDF per contributor chart set, with bookmarks
 scipy            # checks laminar's weighted density against scipy's (verify_boundary_density.py)
 
 # Needed at runtime but not directly imported

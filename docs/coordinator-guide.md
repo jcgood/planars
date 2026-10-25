@@ -285,6 +285,16 @@ contributors in their language's Drive folder by themselves (the plan's
 Phase 4b–4d, being built): reality-check charts after each daily refresh,
 the full analysis with its statistical tests weekly.
 
+The reality-check charts are `python -m coding laminar-charts` (dry run;
+`--apply` draws and uploads; `--lang`, `--force`). For each language whose
+spans, planar or chart code changed since it last drew, it puts two PDFs in
+the language's Drive folder, `charts_by_class_{lang}.pdf` and
+`charts_by_type_{lang}.pdf`: every chart drawn without the permutation
+tests, with bookmarks, and the date and how complete the annotation was
+above each page. It needs R locally (as below); a workflow will run it after
+each daily refresh (Phase 4c). To look at the PDFs without uploading:
+`python -m laminar.contributor_charts stan1293 OUT_DIR`.
+
 For working on the analysis yourself, one local command does all of it:
 
 ```bash

@@ -233,6 +233,40 @@
   cascades_triggered: []
   modes: []
 
+- id: laminar_charts
+  cli_command: laminar-charts
+  writes_to_drive: true
+  writes_locally: false
+  description: >-
+    Draws each language's contributor charts (by class and by domain type,
+    without the permutation tests; laminar/contributor_charts.py) and puts
+    them in its Drive folder, for languages whose spans, planar or chart
+    code changed since they were last drawn.
+  side_effects:
+    - >-
+      create-or-update uploads charts_by_class_{lang_id}.pdf and
+      charts_by_type_{lang_id}.pdf into the language's Drive folder (no
+      sharing of their own: the folder's)
+    - >-
+      records each language's fingerprint and drawing date in
+      .state/laminar_charts_state.json, and the PDFs' file IDs in
+      drive_config.json, through the local-file door
+  idempotent: true
+  idempotency_note: >-
+    A second run with nothing changed draws nothing. Uploads update the
+    existing file in place (its ID is in drive_config.json, saved after
+    each upload); the state file is written only after both of a
+    language's PDFs are up, so a run that fails partway draws that
+    language again next time.
+  apply_gate: "--apply"
+  preconditions: []
+  facts_touched:
+    - {fact: planar_sheet_structure, role: reads}
+    - {fact: diagnostics_scope, role: reads}
+    - {fact: languages_metadata, role: reads}
+  cascades_triggered: []
+  modes: []
+
 - id: sync_params
   cli_command: sync-params
   writes_to_drive: true

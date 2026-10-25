@@ -71,7 +71,7 @@ tests). Reads pass straight through. Every write is checked first:
   their order and protection, and that each proposal tab written has its
   source's columns and What changed?.
 - **Rule 8, the files that are not spreadsheets** (``FILE_KINDS``: notes
-  Docs, reports, notebooks, the manifest, folders; design § 8, "5f";
+  Docs, reports, contributor charts, notebooks, the manifest, folders; design § 8, "5f";
   ``sheet_spec.file_spec``): a create, rename, move or upload sends only the
   spec's name, folder, type and kind of content (the manifest's checked
   against ``manifest_contract``, a notebook's and a PDF's by their form); a
@@ -178,7 +178,8 @@ COPY_SHEETS: Dict[str, Tuple[str, str]] = {
 NOTES_DOC = "notes_doc"
 SHEET_KINDS: FrozenSet[str] = frozenset({CLASS_SHEET, *COPY_SHEETS, STATUS_SHEET,
                                          PROPOSAL_SHEET})
-FILE_KINDS: FrozenSet[str] = frozenset({NOTES_DOC, "report", "manifest", "notebook", "folder"})
+FILE_KINDS: FrozenSet[str] = frozenset({NOTES_DOC, "report", "charts", "manifest", "notebook",
+                                        "folder"})
 # The kinds of file that may be put in Drive's trash (rule 8): the tooling
 # writes every cell of them, so nobody's work is in one.
 TRASHABLE_KINDS: FrozenSet[str] = frozenset({"notebook"})
@@ -233,6 +234,9 @@ KINDS: Dict[str, Dict[str, Any]] = {
     PROPOSAL_SHEET:      {"lang": _LANG, "class": None, "name": None},
     NOTES_DOC:          {"lang": _LANG, "class": None, "name": None},
     "report":            {"lang": _LANG, "class": None, "name": None},
+    # A language's contributor charts, one PDF per grouping
+    # (laminar/contributor_charts.py; coding/laminar_charts.py).
+    "charts":            {"lang": _LANG, "class": None, "name": {"classes", "types"}},
     "manifest":          {"lang": None, "class": None, "name": None},
     # These two depend on the name: see Identity.__post_init__. (A
     # "validation" notebook was retired 2026-10-23,
@@ -343,6 +347,11 @@ def class_sheet(lang_id: str, class_name: str) -> Identity:
 def lang_file(kind: str, lang_id: str) -> Identity:
     """A planar, diagnostics or status sheet, notes Doc or report."""
     return Identity(kind, lang_id)
+
+
+def charts(grouping: str, lang_id: str) -> Identity:
+    """A language's contributor charts PDF, by ``classes`` or ``types``."""
+    return Identity("charts", lang_id, name=grouping)
 
 
 def manifest() -> Identity:

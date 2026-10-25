@@ -26,6 +26,9 @@ both went when those Sheets became read-only copies, unit 11b, 2026-10-24.)
   numbers are being carried into the class sheets, of the numbering each
   sheet's position cells already use, so a run that stops partway never
   renumbers a sheet twice (``sync_planar._renumber_class_sheets``).
+- ``LAMINAR_CHARTS_STATE_PATH``: what each language's contributor charts
+  were last drawn from (laminar-charts), so they are redrawn only when that
+  changes.
 
 and, at planars-data's top level, ``ID_FILE`` (``drive_config.json``): the
 Drive IDs of the files the tooling made.
@@ -55,6 +58,7 @@ JOURNAL_PATH = STATE_DIR / "restructure_journal.json"
 NOTES_STATE_PATH = STATE_DIR / "notes_state.json"
 COMMENTS_STATE_PATH = STATE_DIR / "comments_state.json"
 RENUMBERING_PATH = STATE_DIR / "renumbering.json"
+LAMINAR_CHARTS_STATE_PATH = STATE_DIR / "laminar_charts_state.json"
 ID_FILE = CODED_DATA / "drive_config.json"
 
 

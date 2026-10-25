@@ -13,7 +13,7 @@ tooling's), the proposal sheets (`proposal_sheet_spec`, titled
 `proposal_sheet_title`: a locked Instructions tab, Last review, the
 tooling's, then Planar and Diagnostics, copies of the two sources plus a
 What changed? column, every cell the annotator's), and the files that are not spreadsheets — notes Docs, the
-manifest, notebooks, PDF reports and folders (`file_spec`: name, folder,
+manifest, notebooks, PDF reports, contributor chart PDFs and folders (`file_spec`: name, folder,
 type, what may be written into it, `content_problems`,
 `appended_text_problems`). Sharing is specified for every kind
 (`sharing_spec`: who gets which role, and whether a link share is allowed; one
@@ -477,7 +477,7 @@ def status_sheet_spec(lang_id: str, data_dir: Path) -> StatusSheetSpec:
 
 # ---------------------------------------------------------------------------
 # Files that are not spreadsheets: notes Docs, the manifest, notebooks,
-# PDF reports and folders
+# PDF reports, contributor chart PDFs and folders
 # ---------------------------------------------------------------------------
 
 # What may be written into a file of each kind (``content_problems``).
@@ -513,7 +513,7 @@ class FileSpec:
 
 
 def file_spec(identity) -> FileSpec:
-    """The spec for a notes Doc, report, notebook, the manifest or a folder
+    """The spec for a notes Doc, report, charts PDF, notebook, the manifest or a folder
     (``identity`` is a ``drive_door.Identity``). The one place each is named:
     the commands that make these files call this for the name."""
     from planars.languages import get_display_name
@@ -526,6 +526,10 @@ def file_spec(identity) -> FileSpec:
                         folder("language", lang), _DOC_MIME, ACKNOWLEDGMENTS, True)
     if kind == "report":
         return FileSpec(f"report_{lang}.pdf", folder("language", lang), _PDF_MIME, PDF, True)
+    if kind == "charts":
+        by = {"classes": "class", "types": "type"}[identity.name]
+        return FileSpec(f"charts_by_{by}_{lang}.pdf", folder("language", lang), _PDF_MIME,
+                        PDF, True)
     if kind == "notebook":
         if identity.name == "all_languages":
             return FileSpec("all_languages.ipynb", folder("root"), _JSON_MIME,
@@ -625,6 +629,11 @@ _SHARING: Dict[str, Dict[str, Optional[str]]] = {
     # Q4). Then they become {"who": _ANNOTATOR, "role": READER, "link": None}.
     "report":            {"who": _NOBODY, "role": None, "link": READER},
     "notebook":          {"who": _NOBODY, "role": None, "link": READER},
+    # Contributor charts (laminar-charts): no grants of their own. The
+    # language folder they sit in already lets its annotator read them, and
+    # coordinators have the root's writer; no link share, since they come
+    # from unpublished annotation.
+    "charts":            {"who": _NOBODY, "role": None, "link": None},
     "manifest":          {"who": _NOBODY, "role": None, "link": None},
 }
 # Folders differ by which folder: a language folder lets its annotator see

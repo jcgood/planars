@@ -82,7 +82,7 @@ from pathlib import Path
 from laminar.datasets import (
     NC, REPO, bundle_root, charts_root, dataset_settings, domain_file, planar_file,
 )
-from laminar.planars_language import CODED_DATA, parse_dataset, write_inputs
+from laminar.planars_language import CODED_DATA, SpanTableError, parse_dataset, write_inputs
 from laminar.planars_language import planar_file as lang_planar_file
 from planars.languages import get_display_name
 
@@ -122,11 +122,21 @@ def rel(path: Path) -> str:
 
 # ── One dataset ─────────────────────────────────────────────────────────────
 
-def export_command(dataset: str, settings: dict, permutations: int) -> list[str]:
+def shown_path(path: Path) -> str:
+    """Relative to the repository root when inside it (as a bundle records
+    it), else absolute: a temporary folder (coding/laminar_charts.py)."""
+    return rel(path) if path.resolve().is_relative_to(REPO) else str(path)
+
+
+def export_command(dataset: str, settings: dict, permutations: int,
+                   domains: Path | None = None, output_dir: Path | None = None) -> list[str]:
+    """The exporter's command line. `domains` and `output_dir` replace the
+    dataset's own domains file and bundle folder (contributor charts are
+    built in a temporary folder)."""
     cmd = [sys.executable, "-m", "laminar.export_planarsviz_data",
-           "--domain-file", rel(domain_file(dataset)),
+           "--domain-file", shown_path(domains or domain_file(dataset)),
            "--planar-file", rel(planar_file(dataset)),
-           "--output-dir", rel(bundle_root(dataset))]
+           "--output-dir", shown_path(output_dir or bundle_root(dataset))]
     flags = {"groupings": "--groupings", "root_position": "--root-position",
              "language_name": "--language-name", "planar_type": "--planar-type",
              "forest_axis": "--forest-axis"}
@@ -140,10 +150,13 @@ def export_command(dataset: str, settings: dict, permutations: int) -> list[str]
     return cmd
 
 
-def render_command(dataset: str, formats: str | None, plots: str | None) -> list[str]:
+def render_command(dataset: str, formats: str | None, plots: str | None,
+                   bundle_dir: Path | None = None, output_dir: Path | None = None) -> list[str]:
+    """The renderer's command line; `bundle_dir` (the folder holding the
+    dataset's bundle folder) and `output_dir` as in export_command()."""
     cmd = ["Rscript", "laminar/render_planarsviz.R",
-           "--bundle", rel(bundle_root(dataset) / dataset),
-           "--output", rel(charts_root(dataset))]
+           "--bundle", shown_path((bundle_dir or bundle_root(dataset)) / dataset),
+           "--output", shown_path(output_dir or charts_root(dataset))]
     if formats:
         cmd += ["--formats", formats]
     if plots:
@@ -226,7 +239,10 @@ def draw_one(args: argparse.Namespace) -> None:
         # Built from the annotation every time, so a chart never shows
         # yesterday's spans; a dry run only says what would change.
         print(f"Domains files for {planars[0]} (laminar/planars_language.py):")
-        write_inputs(planars[0], apply=args.apply)
+        try:
+            write_inputs(planars[0], apply=args.apply)
+        except SpanTableError as exc:
+            sys.exit(str(exc))
         print()
     missing = [p for p in (domain_file(dataset), planar_file(dataset)) if not p.exists()]
     if missing and not (planars and not args.apply):  # a dry run would have written them
@@ -283,7 +299,10 @@ def draw_language(args: argparse.Namespace) -> None:
                  "is coded_data/ cloned?).")
     preflight(lang_id, args.apply)
     print(f"Domains files for {get_display_name(lang_id)} (laminar/planars_language.py):")
-    datasets = write_inputs(lang_id, apply=args.apply)
+    try:
+        datasets = write_inputs(lang_id, apply=args.apply)
+    except SpanTableError as exc:
+        sys.exit(str(exc))
     if not args.apply:
         print(f"\nWould then run, {args.jobs} at a time:\n")
         for ds in datasets:

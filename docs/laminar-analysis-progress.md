@@ -8,7 +8,7 @@ the current state; update it at every phase boundary, in the same commit.
 | 1. Take out the Chichewa assumptions, in place | done 2026-10-24 |
 | 2. Move the code (`laminar/`, `planarsviz/` to the root) | done 2026-10-24 |
 | 3. Connect a planars language (adapter, *k of n*, metadata) | done 2026-10-24 |
-| 4. Run English; charts to contributors through Drive (revised) | 4a built 2026-10-24; 4b–e not started |
+| 4. Run English; charts to contributors through Drive (revised) | 4a and 4b built 2026-10-24 (4b not yet live); 4c–e not started |
 | 5. Documentation and tests | not started |
 
 ## Phase 1 as built (2026-10-24)
@@ -158,7 +158,7 @@ by workflows. Plan decision 6 and Phase 4a–e have the design.
 | Unit | Status |
 |---|---|
 | 4a. Local: colours, `--lang`, English drawn, cross-language `--with` | built 2026-10-24 (below) |
-| 4b. `laminar-charts` command: contributor charts to Drive | not started |
+| 4b. `laminar-charts` command: contributor charts to Drive | built 2026-10-24, not yet run live (below) |
 | 4c. Workflow after the daily refresh, R on the runner | not started |
 | 4d. Weekly full analysis with permutation tests | not started |
 | 4e. Documentation | not started |
@@ -210,7 +210,58 @@ by workflows. Plan decision 6 and Phase 4a–e have the design.
 - Side fix: `planarsviz/DESCRIPTION` pointed to the exporter's and guides'
   old paths.
 
+### 4b as built (2026-10-24)
+
+- **`python -m coding laminar-charts`** (`coding/laminar_charts.py`, with
+  its `operations.yaml` record): for each language with a planar file, two
+  PDFs in its Drive folder, `charts_by_class_{lang}.pdf` and
+  `charts_by_type_{lang}.pdf` (datasets `<lang>_classes_all`,
+  `<lang>_types_all`), uploaded through the doorway as a new Drive kind,
+  `charts` (`drive_door.KINDS`, `sheet_spec.file_spec`), in watch mode.
+  Updated in place, so the links stay; IDs in `drive_config.json`.
+- **One PDF per dataset, not a folder of charts** (Claude's call, not in
+  the plan): the renderer draws ~300 files per English dataset. Each PDF
+  has a first page saying what it is, sections in a fixed order (spans,
+  boundaries, counts, laminar families; an unknown renderer folder fails),
+  a bookmark per section and chart, and opens with the bookmarks shown.
+  `laminar/contributor_charts.py` draws and combines; `pypdf` added to
+  `requirements.in`.
+- **Date and completeness go in a strip added above each page**, not into
+  the charts' titles as the plan said: most charts have no title carrying
+  the dataset, and changing the R charts would change Chichewa's and the
+  CCDB references the porting checks compare against. A page shared alone
+  still says when it was drawn and how complete the annotation was.
+- **No sharing of their own** (sharing rule `charts`: nobody, no link):
+  they sit in the language folder, which its annotator can already read.
+  Unlike reports and notebooks, no "anyone with the link" share, since
+  they come from unpublished annotation.
+- **Redrawn only when needed:** a state file
+  (`.state/laminar_charts_state.json`, through the local-file door) keeps
+  each language's fingerprint (the two domains files, the planar file, git's
+  record of `laminar/` and `planarsviz/`); completeness and the
+  planars-data commit are left out, so annotation that changes no span
+  redraws nothing. Written only after both PDFs are up. `--force` redraws.
+- A language with no spans yet is skipped; one that fails is reported and
+  the run exits non-zero after the others (for 4c's issue).
+  `planars_language.span_table` now raises (`SpanTableError`,
+  `NoSpansYet`) instead of exiting, so one language can't stop the rest.
+- Built in a temporary folder (`export_command`/`render_command` take the
+  folders), so a run never touches the coordinator's
+  `.analysis/` working bundles.
+- Side fix: `tests/conftest.py` listed every state file's path a second
+  time; it now moves every path `state_files` names.
+- **For 4c:** on a failure the command prints the last 15 lines of the
+  exporter's or renderer's output, which could name elements. 4c must
+  decide what reaches the workflow's log (plan: nothing from the private
+  annotation).
+
 ## Findings
+
+- **To fix (found 2026-10-24, drawing 4b's PDFs):** English's by-class
+  pooled span chart (`pooled_plot`) cuts its legend off at the right edge
+  (proform, metrical lost): nine classes are more than the legend's one row
+  fits on that canvas. A planarsviz fix (wrap the legend), then the
+  renderer check; Chichewa's and CCDB's references should not change.
 
 - `check_forestspans.R` had failed since 2026-09-23 without anyone seeing it
   (the R checks run only locally): `expand_limits(x = 1)`, added then so the

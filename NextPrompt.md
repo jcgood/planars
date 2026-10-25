@@ -35,9 +35,11 @@ through Drive by workflows (daily reality checks without permutation
 tests, by class and by domain type; weekly full analysis with them; R on
 the runner) — plan decision 6. 4a (local) is built; English is drawn
 locally in `coded_data/.analysis/stan1293/charts/` (not committed).
-**Next action:** 4b, the `laminar-charts` command (contributor charts to
-Drive through the doorway; a new Drive kind). Don't re-ask decision 6's
-choices. Jeff's cuts to the cross-language
+4b, `python -m coding laminar-charts`, is built (2026-10-24; progress doc
+"4b as built"): its first live `--apply` (the first upload to the language
+folders) waits on Jeff's go-ahead. **Next action:** that live run, then 4c,
+the workflow after the daily refresh (R on the runner; keep annotation out
+of its logs). Don't re-ask decision 6's choices. Jeff's cuts to the cross-language
 charts (CCDB thread below) come after Phase 2 (his call, 2026-10-24), so
 they can go in now or between later phases, not in the middle of one.
 

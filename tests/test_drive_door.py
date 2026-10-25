@@ -270,6 +270,7 @@ def test_every_kind_is_shared_with_its_annotator_at_its_role_and_never_by_link(
 
 @pytest.mark.parametrize("identity", [
     drive_door.manifest(), drive_door.folder("root"), drive_door.folder("archive", LANG),
+    drive_door.charts("classes", LANG),
 ])
 def test_files_shared_with_nobody_take_no_grant(env, identity):
     fake, door, _, _ = env
@@ -277,6 +278,15 @@ def test_files_shared_with_nobody_take_no_grant(env, identity):
     with drive_door.running("update-sheets", APPLY):
         with pytest.raises(DoorViolation, match="names nobody"):
             door.create_permission(file_id, type="user", role="reader", email=ANNOTATOR)
+
+
+def test_contributor_charts_take_no_link_share(env):
+    """They come from unpublished annotation; their folder lets the annotator read them."""
+    fake, door, _, _ = env
+    file_id = _labelled_file(fake, drive_door.charts("types", LANG))
+    with drive_door.running("laminar-charts", APPLY):
+        with pytest.raises(DoorViolation):
+            door.create_permission(file_id, type="anyone", role="reader")
 
 
 @pytest.mark.parametrize("identity", [
@@ -441,6 +451,7 @@ def test_a_notes_doc_is_made_once_with_its_name_in_its_language_folder(env):
     (drive_door.notebook("domains", LANG), b'{"cells": [], "nbformat": 4}', b'{"cells": 1}',
      "not a notebook"),
     (drive_door.lang_file("report", LANG), b"%PDF-1.7 ...", b"<html></html>", "not a PDF"),
+    (drive_door.charts("classes", LANG), b"%PDF-1.7 ...", b"<html></html>", "not a PDF"),
 ])
 def test_an_upload_sends_the_kind_of_content_its_spec_names(env, identity, good, bad, message):
     from coding.sheet_spec import file_spec

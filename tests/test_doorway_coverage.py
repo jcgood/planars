@@ -6,8 +6,10 @@ found seventeen. The seven missed included `import_planar` (the command at the
 centre of the #248 revert) and `check_notes` (the only user of Google Docs).
 
 That is the project's recurring defect in miniature — a written description
-trusted over the thing it describes — so the list is derived here instead. The
-count of files left to migrate is now answered by running this test.
+trusted over the thing it describes — so the list is derived here instead.
+(A test that kept a hand-written count in docs/data-layer-progress.md in
+step with the code was dropped on 2026-10-24, with the count: it made every
+new command update a number.)
 
 When the migration is finished, `_REMAINING` is empty, this file's main test
 flips from "the list is exactly this" to "the list is empty", and no new
@@ -101,32 +103,3 @@ def test_nothing_reaches_past_the_door():
         f"{reaching} reach inside a Drive door handle (`._inner`/`.inner`). Add "
         "the method the command needs to coding/drive_door.py, with its check.")
 
-
-def test_stated_counts_match_the_code():
-    """The progress doc says how many files are done; keep it arithmetic, not memory.
-
-    The list of remaining files has been derived since 2026-08-02, but the
-    *count* was still hand-copied into docs/data-layer-progress.md — and it went
-    stale within two days, reading "of 17" when the real total was 18. Same
-    defect as the list it replaced, one level up.
-
-    The phrasing changed once Phase 0b/1 finished: "migrating callers, N of M
-    done" (an in-progress count) became "done, N of N" (a finished one, plus a
-    date). The regex below tracks whichever phrasing is currently true rather
-    than assuming the in-progress one forever.
-    """
-    doc = (ROOT / "docs" / "data-layer-progress.md").read_text(encoding="utf-8")
-    match = re.search(r"migrating callers, (\d+) of (\d+) done", doc) or \
-        re.search(r"0b/1 — done, (\d+) of (\d+)", doc)
-    assert match, "docs/data-layer-progress.md no longer states the migration count"
-    said_done, said_total = int(match.group(1)), int(match.group(2))
-
-    migrated = {
-        path.name for path in sorted(CODING.glob("*.py"))
-        if path.name not in _EXEMPT and _uses_doorway(path.name)
-    }
-    remaining = _reaches_google_directly()
-    assert (said_done, said_total) == (len(migrated), len(migrated) + len(remaining)), (
-        f"the doc says {said_done} of {said_total}; the code says "
-        f"{len(migrated)} of {len(migrated) + len(remaining)}"
-    )

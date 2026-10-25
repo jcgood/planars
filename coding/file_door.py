@@ -56,7 +56,8 @@ test's own temporary folder.
 
 **The tooling's own files** (unit 6b; ``STATE_KINDS``): the state files in
 ``.state/`` (the provenance log, regen snapshots, the restructure journal,
-check-notes' and check-comments' state, sync-planar's renumbering record) and the ID file,
+check-notes' and check-comments' state, sync-planar's renumbering record,
+laminar-charts' record of what it drew) and the ID file,
 ``drive_config.json``. Where each lives is ``coding/state_files.py``'s. They
 are written with ``write_state``, ``append_state`` (the provenance log) and
 ``remove_state``, which check rule 1 (a dry run writes none, except the
@@ -237,6 +238,7 @@ RESTRUCTURE_JOURNAL = "restructure_journal"
 NOTES_STATE = "notes_state"
 COMMENTS_STATE = "comments_state"
 RENUMBERING = "renumbering"
+LAMINAR_CHARTS_STATE = "laminar_charts_state"
 ID_FILE = "id_file"
 
 # Where each lives is coding/state_files.py's (read at call time: tests move
@@ -255,6 +257,9 @@ STATE_KINDS: Dict[str, Dict[str, object]] = {
     RENUMBERING:         {"path": lambda f: state_files.RENUMBERING_PATH,
                           "what": "sync-planar's record of class sheets renumbered "
                                   "ahead of a new planar"},
+    LAMINAR_CHARTS_STATE: {"path": lambda f: state_files.LAMINAR_CHARTS_STATE_PATH,
+                          "what": "what each language's contributor charts were last "
+                                  "drawn from"},
     ID_FILE:            {"path": lambda f: state_files.ID_FILE,
                           "what": "the Drive IDs of the files the tooling made"},
 }
@@ -316,6 +321,10 @@ def comments_state() -> StateFile:
 
 def renumbering() -> StateFile:
     return StateFile(RENUMBERING)
+
+
+def laminar_charts_state() -> StateFile:
+    return StateFile(LAMINAR_CHARTS_STATE)
 
 
 def id_file() -> StateFile:

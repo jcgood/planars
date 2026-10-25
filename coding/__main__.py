@@ -38,6 +38,7 @@ _COMMANDS = {
     "generate-sheets":             "coding.generate_sheets",
     "generate-notebooks":          "coding.generate_notebooks",
     "generate-reports":            "coding.generate_reports",
+    "laminar-charts":              "coding.laminar_charts",
     "sync-params":                 "coding.sync_params",
     "sync-diagnostics-yaml":       "coding.sync_diagnostics_yaml",
     "sync-span-rule-hashes":       "coding.sync_span_rule_hashes",

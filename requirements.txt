@@ -148,6 +148,8 @@ pygments==2.20.0
     # via pytest
 pyparsing==3.3.2
     # via httplib2
+pypdf==6.21.2
+    # via -r requirements.in
 pyphen==0.17.2
     # via weasyprint
 pytest==9.0.3
