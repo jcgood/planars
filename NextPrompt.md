@@ -18,7 +18,18 @@ this project is trying to remove.
 
 ## Now
 
-Six live threads. Read whichever matches what you're picking up.
+Seven live threads. Read whichever matches what you're picking up.
+
+### Thread: generating the chapters' data-driven parts (2026-10-25)
+
+Jeff wants chapters written from the annotation (an introduction, one
+chapter per language, results), with what can be generated generated and
+kept current as the annotation changes; LaTeX now, Word authors later.
+**Scoping plan: `docs/chapter-generation-plan.md`** (nothing built).
+**Next action:** Jeff answers its five decisions (venue/template, where the
+manuscripts live, how much generated sentences say, examples, who writes
+per-language prose); then Phase 1. Depends on #318 (e) (construction
+descriptions), laminar plan 4d, and the span rules settled in #321.
 
 ### Thread: the laminar analysis on English, for a paper (2026-10-24)
 
