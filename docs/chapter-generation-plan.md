@@ -114,10 +114,9 @@ makes every change visible and nothing silently stale:
 
 Unpublished manuscripts must not be in this public repository. The
 generator lives here (`chapters/`, beside `laminar/`); the manuscripts and
-their built fragments live in a **private repository** (a new
-`planars-papers`, or one per volume), as the annotation lives in
-planars-data. If Overleaf is wanted for co-writing, Overleaf's git link
-points at that private repository.
+their built fragments live in the private planars-data repository, in
+`coded_data/.papers/` (decision 2, which says why a dot-folder and what
+follows from it).
 
 ## LaTeX and Word
 
@@ -180,9 +179,17 @@ states them.
    examples defined per venue (see "LaTeX and Word"). Ask the series editor
    for the current template and any glossing convention once there is a
    contract.
-2. **Manuscripts live in a new private GitHub repository** (Overleaf may
-   link to it). The generator writes fragments there with a commit each
-   time; the claim check runs there.
+2. **Manuscripts live in planars-data, in `coded_data/.papers/`** (Jeff,
+   2026-10-25, replacing "a new private GitHub repository"). A dot-folder
+   because every command that loops over planars-data takes a plain
+   top-level folder for a language and skips only dot-folders (as
+   `.state/` and `.analysis/`). Consequences for Phase 3: anyone with
+   access to planars-data can read the manuscripts; the build's writes
+   there are tooling writes to planars-data, so they go through the
+   local-file door (`coding/file_door.py`, a new kind) like every other;
+   the daily refresh commits to the same repository, so pull before
+   writing; Overleaf's GitHub sync takes a whole repository, so co-writing
+   in Overleaf would need another route (decide if it is wanted).
 3. **Generated text: one templated sentence per test stating its span,
    plus tables.** Anything interpretive is prose.
 4. **Examples are structured** (form, gloss, translation, source) in the
@@ -247,12 +254,13 @@ states them.
   data change that moves a span changes `values.tex` only; a change in
   shape (a span becoming one position, a new construction) changes the
   fragment too.
-- **One span table per class**, inside the class's fragment, rather than
-  one table for the whole language (the plan's "span table"): a chapter
-  is laid out by class.
+- **One span table per class**, inside the class's fragment. **To fix
+  (Jeff, 2026-10-25): a language-wide span table is needed as well**
+  (`spans_table.tex`, every span of the language in one table), keeping
+  the per-class ones.
 - **Refusals:** a language chapter's DIR may not be inside this public
-  repository (it holds unpublished annotation; the private repository is
-  Phase 3), and coded_data/ with uncommitted changes for the language is
+  repository (it holds unpublished annotation; `coded_data/.papers/` is set
+  up in Phase 3), and coded_data/ with uncommitted changes for the language is
   refused unless `--version` is given, so every chapter names a commit it
   can be rebuilt from.
 - **Checked:** English and the introduction compile with pdflatex in the

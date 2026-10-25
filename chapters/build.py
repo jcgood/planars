@@ -28,7 +28,7 @@ Fragments are never edited by hand: each build overwrites them and
 deletes a fragment it no longer makes (a class retired). The prose that
 goes around them lives in other files (Phase 3). A language chapter holds
 unpublished annotation, so its DIR may not be inside this public
-repository (the manuscripts go in a private repository, decision 2).
+repository (the manuscripts go in planars-data's ``.papers/``, decision 2).
 The wording is in chapters/templates/ (chapters.tex says how they work).
 """
 
@@ -183,8 +183,8 @@ def _check_out(out: Path) -> None:
     out = out.resolve()
     if out.is_relative_to(REPO) and not out.is_relative_to(CODED_DATA):
         sys.exit(f"{out} is inside the public planars repository, and a language chapter "
-                 f"holds unpublished annotation. Write it to the private manuscripts "
-                 f"repository (or any folder outside this one).")
+                 f"holds unpublished annotation. Write it under coded_data/.papers/ "
+                 f"(or any folder outside this repository).")
 
 
 def main(argv: list[str] | None = None) -> None:

@@ -32,9 +32,10 @@ test plus tables; structured examples for every language but English (a
 per-language field, not a coded exception); mixed authorship.
 Phases 1 (the data layer) and 2 (`python -m chapters build`: templates,
 fragments, `values.tex`) are built (2026-10-25; the plan's "as built"
-sections). **Next action:** Phase 3, the outline and prose slots, and
-the private manuscripts repository (creating a GitHub repo is a live
-step: name it to Jeff first). Still waiting on #318 (e) (construction
+sections). **Next action:** first the language-wide span table Jeff asked
+for (plan, "Phase 2 as built", "To fix"); then Phase 3, the outline and
+prose slots, in `coded_data/.papers/` in planars-data (decision 2, revised
+2026-10-25: a dot-folder, writes through the local-file door). Still waiting on #318 (e) (construction
 descriptions), laminar plan 4d (the permutation tests) and #321 (span
 rules), none of which blocks Phase 3.
 
