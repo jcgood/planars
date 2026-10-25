@@ -293,6 +293,13 @@ by workflows. Plan decision 6 and Phase 4a–e have the design.
   reported English's two uploads as in an unlabelled folder (#324): its
   folder is labelled, and the door had taken a failed label read as "no
   label"; fixed in the door (only 404/403 mean no label).
+- **Titles and chapters (2026-10-25, Jeff):** every chart titled, the PDF
+  in chapters with contents pages, the combined forest first (renderer
+  `chart_table()` sets each chart's title and part). Redrawn live the same
+  day: English's upload first failed on a TLS connection cut off mid-answer
+  (#325), which the door did not count as a dropped connection; fixed in
+  `drive_door._dropped_connection`, and the rerun drew English and closed
+  #325.
 
 ## Findings
 
