@@ -270,6 +270,23 @@ labels:
       libraries) fails before the command runs.
     filed_by: laminar-charts --apply (laminar-charts.yml)
 
+  - name: chapter-behind
+    color: "fbca04"
+    description: "A chapter's data or code has moved on since the version it is built from."
+    meaning: >-
+      One issue per language chapter ("Chapter behind its data — {Name
+      [glottocode]}"): the daily refresh built the chapter in
+      planars-data's `.papers/` against today's annotation and code without
+      moving its pinned data version, and something the chapter shows
+      changed (spans, the planar structure, the diagnostics, the analysis,
+      a generated file, or a `\claim` in its prose). The issue gives counts
+      and the prose to reread, never the annotation (the repository is
+      public). Resolve: run the command in the issue; or, to keep the
+      chapter on its version for now, leave the issue open (it is rewritten
+      in place, notifying nobody). Auto-closed when the chapter matches its
+      data again.
+    filed_by: build-chapters --check --apply (data-refresh.yml)
+
   - name: collaborator-notes
     color: "0075ca"
     description: "Collaborator notes need coordinator triage. Review, file warranted issues, close."

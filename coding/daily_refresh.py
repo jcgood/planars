@@ -21,7 +21,7 @@ overwrite check, committing the snapshots), as the workflow's
 
 Exit status: 1 if the refresh itself failed, or if a step with no issue of
 its own failed (label sync, collaborator notes, criterion columns,
-dropdowns, snapshots), so the workflow run shows red; 0 otherwise. On GitHub Actions
+chapters, dropdowns, snapshots), so the workflow run shows red; 0 otherwise. On GitHub Actions
 each command's output also goes to the run's summary page
 (``GITHUB_STEP_SUMMARY``).
 
@@ -548,6 +548,12 @@ def integrity(r: Refresh) -> None:
              lambda: integrity_error_body(result.output), "Integrity check passed")
 
 
+def chapters(r: Refresh) -> None:
+    """After the checks, so a chapter is compared with data that passed them.
+    Files its own chapter-behind issues; a crash shows the run red."""
+    r.unreported("chapters", run("build-chapters", "--check", "--apply"))
+
+
 def snapshots(r: Refresh) -> None:
     r.unreported("snapshots", regenerate_snapshots())
 
@@ -675,6 +681,8 @@ STEPS: List[Step] = [
     Step("codebook", "check-codebook (+ generate-rule-update-prompt) → codebook-error", codebook),
     Step("manifest", "integrity-check --check-manifest → stale-manifest", stale_manifest),
     Step("integrity", "integrity-check → integrity-error", integrity),
+    Step("chapters", "build-chapters --check --apply (files its own chapter-behind issues)",
+         chapters),
     Step("snapshots", "generate_snapshots.py", snapshots, always=True),
     Step("overwrite", "change log: did the refresh replace someone's change? → data-overwrite",
          overwrite_check, always=True),

@@ -4,8 +4,9 @@
     python -m coding build-chapters --lang stan1293 [--version COMMIT] [--apply]
     python -m coding build-chapters [--lang stan1293] --update [--version COMMIT] [--apply]
     python -m coding build-chapters --intro [--apply]
+    python -m coding build-chapters --check [--lang stan1293] [--apply]
 
-Phases 2–4 of docs/chapter-generation-plan.md. Dry run by default:
+Phases 2–5 of docs/chapter-generation-plan.md. Dry run by default:
 says what it would write; ``--apply`` writes. Only files whose text
 changed are written, so a rebuild with nothing new touches nothing. Every
 write goes through the local-file door (``file_door.write_paper``), which
@@ -70,6 +71,19 @@ order). **The introduction** (``--intro``) comes from the schemas alone:
 ``terms.tex`` (schemas/terms.yaml) and ``class_<class>.tex`` for every
 class (what it tests, its criteria, its span rule).
 
+**The daily check** (``--check``, run by the daily refresh) writes nothing
+in ``.papers/``. For each language chapter in volume.yaml that has been
+built, it builds the chapter again at its pin and compares that with what
+is written (the code's changes: values and fragments), and today's data
+with the pin (the annotation's), and finds the ``\\claim``s that fail now
+or would fail after a move. When any of that touches the chapter (see
+``VALUE_GROUPS``: how complete the annotation is, on its own, does not),
+``--apply`` files or rewrites that chapter's ``chapter-behind`` issue,
+counts and file names only (the repository is public); when nothing does,
+it closes it. The analysis is compared only for datasets with a bundle on
+the machine running it, which on GitHub is none (bundles are never
+committed) until the weekly analysis (laminar plan 4d) keeps them.
+
 The wording is in chapters/templates/ (chapters.tex says how they work).
 """
 
@@ -78,6 +92,7 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+from datetime import datetime, timezone
 from importlib.resources import files as _res_files
 
 import yaml
@@ -85,6 +100,7 @@ import yaml
 from chapters import tex
 from chapters.data import ChapterData, ChapterDataError, chapter_data, commit_of
 from coding import file_door
+from laminar.planars_language import parse_dataset
 from planars.languages import get_display_name, get_entry
 from planars.reports import span_constructions
 from planars.schema_values import is_keystone
@@ -525,6 +541,171 @@ def slot_report(stubs: dict, parts: list) -> list:
     return lines
 
 
+# ── The daily check (Phase 5) ───────────────────────────────────────────────
+
+CHECK_LABEL = "chapter-behind"
+
+# Whether a change in each group of values (chapters.data's docstring) puts
+# a chapter behind on its own. The data version changes with every move;
+# how complete the annotation is changes with every session, and is shown
+# only in the front matter, so on its own it files nothing. A group not
+# listed here fails the check (a new group must be placed by hand).
+VALUE_GROUPS = {"language": True, "data": False, "planar": True, "diagnostics": True,
+                "annotation": False, "spans": True, "span": True, "analysis": True}
+
+
+def check_title(lang: str) -> str:
+    return f"Chapter behind its data — {get_display_name(lang)}"
+
+
+def _group(name: str) -> str:
+    group = name.split(".")[1] if name.count(".") else ""
+    if group not in VALUE_GROUPS:
+        raise ChapterDataError(f"Value {name}: group {group!r} is not in chapters/build.py "
+                               f"VALUE_GROUPS; say there whether a change in it puts a chapter behind.")
+    return group
+
+
+def _comparable(values: dict, lang: str, chapters: list) -> dict:
+    """`values` without the analysis of datasets that some of `chapters` has
+    no bundle for here (none is committed: on GitHub there is none at all),
+    so an analysis absent from this machine never reads as one that changed."""
+    drawn = set.intersection(*(set(c.bundles) for c in chapters))
+    keep = tuple(f"{lang}.analysis.{g}.{s}." for _l, g, s in map(parse_dataset, drawn))
+    return {k: v for k, v in values.items() if _group(k) != "analysis" or k.startswith(keep)}
+
+
+def _counts(names: set) -> dict:
+    """How many spans, analysis datasets and other values (those that put a
+    chapter behind) `names` holds."""
+    spans = {m.group("cls", "con", "key") for m in map(_SPAN.match, names) if m}
+    analysis = {m.group() for m in map(_ANALYSIS.match, names) if m}
+    other = {n for n in names if VALUE_GROUPS[_group(n)] and _group(n) not in ("span", "analysis")}
+    return {"spans": len(spans), "analysis": len(analysis), "other": len(other)}
+
+
+def check_chapter(lang: str, parts: list) -> dict | None:
+    """What has moved on under `lang`'s chapter since it was built: its
+    pinned build against values.tex and the fragments as written (the
+    code), and today's data against the pin (the annotation). None if the
+    chapter has not been built. Writes nothing."""
+    lock = read_lock(lang)
+    old_text = file_door.read_paper(file_door.paper_built(f"{lang}/values.tex"))
+    if lock is None or old_text is None:
+        return None
+    pinned = chapter_data(lang, version=lock["planars_data"])
+    current = chapter_data(lang)
+    text = lambda chapter: {k: tex.value_text(v) for k, v in chapter.values.items()}
+    old = _comparable(tex.read_values_tex(old_text), lang, [pinned])
+    at_pin = text(pinned)
+    _lines, code = value_changes(old, _comparable(at_pin, lang, [pinned]), lang)
+    _lines, data = value_changes(_comparable(at_pin, lang, [pinned, current]),
+                                 _comparable(text(current), lang, [pinned, current]), lang)
+    fragments = language_fragments(pinned)
+    written = {p.name for p in file_door.paper_files(f"{lang}/fragments", "*.tex")}
+    files = sorted(name for name in set(fragments) | written
+                   if file_door.read_paper(file_door.paper_built(f"{lang}/fragments/{name}"))
+                   != fragments.get(name))
+    entries = _class_entries()
+    items = outline_items("language", [(c, entries[c]["display_name"], entries[c]["domain_type"])
+                                       for c in dict.fromkeys(current.tables["diagnostics"]["Class"])])
+    claims_now = broken_claims(pinned.values, [lang], parts)[1:]
+    claims_moved = [c for c in broken_claims(current.values, [lang], parts)[1:] if c not in claims_now]
+    # The file (and line) only: the rest of the line names the value.
+    reread = list(dict.fromkeys(re.match(r"\s*(\S+?)(?::? |$)", line).group(1) for line in
+                                near_changes(lang, code | data, language_fragments(current), items, parts)[1:]))
+    return {"lock": lock, "current": current.version, "code": _counts(code),
+            "data": _counts(data), "files": files, "claims_now": len(claims_now),
+            "claims_moved": len(claims_moved), "reread": reread,
+            "behind": bool(files or claims_now or claims_moved
+                           or any(VALUE_GROUPS[_group(n)] for n in code | data))}
+
+
+def _said(counts: dict) -> str:
+    said = [f"{n} {what}{'' if n == 1 else 's'}" for n, what in
+            ((counts["spans"], "span"), (counts["other"], "other value"),
+             (counts["analysis"], "analysis dataset"))
+            if n]
+    return ", ".join(said) if said else "nothing"
+
+
+def check_body(lang: str, found: dict, today: str) -> str:
+    """The issue for a chapter behind its data. Counts and file names only:
+    the repository is public, and spans and claims come from unpublished
+    annotation."""
+    lock, current = found["lock"], found["current"]
+    lines = [f"## The {get_display_name(lang)} chapter is behind — {today}", "",
+             f"The chapter in planars-data's `.papers/{lang}/` is built from planars-data "
+             f"`{lock['planars_data'][:12]}` ({lock['date']}). Today's daily refresh built it "
+             f"again without moving that version and found:", "",
+             f"- **Changed in the annotation** since then (to `{current['planars_data_commit'][:12]}`, "
+             f"{current['date']}): {_said(found['data'])}.",
+             f"- **Changed by the code** (schemas, span rules, wording) at the same version: "
+             + (_said(found["code"]) if any(found["code"].values()) or not found["files"]
+                else "no values")
+             + (f"; {len(found['files'])} generated file(s) would be rewritten" if found["files"] else "")
+             + "."]
+    if found["claims_now"]:
+        lines.append(f"- **{found['claims_now']} `\\claim`(s) in the prose already fail** at the "
+                     f"chapter's own version.")
+    if found["claims_moved"]:
+        lines.append(f"- **{found['claims_moved']} `\\claim`(s) would fail** once the chapter moves "
+                     f"to today's data.")
+    if found["reread"]:
+        lines += ["", "Prose next to a change, to reread:", ""] + [f"- `{p}`" for p in found["reread"]]
+    lines += ["", "## What to do", "",
+              "In Claude Code in the planars repository, run the dry run, which lists each change:", "",
+              f"```bash\npython -m coding build-chapters --lang {lang} --update\n```", "",
+              "then the same with `--apply` to move the chapter to today's data, and reread the prose "
+              "it lists. To bring in only the code's changes and keep the data version, run "
+              f"`python -m coding build-chapters --lang {lang} --apply` instead. To keep the chapter "
+              "where it is for now, leave this issue open: the daily refresh rewrites it in place, "
+              "notifying nobody. It closes by itself when the chapter matches its data again."]
+    return "\n".join(lines) + "\n"
+
+
+def check(langs: list | None, apply: bool, today: str) -> None:
+    """Check every language chapter in volume.yaml (or `langs`), filing,
+    rewriting or closing each one's chapter-behind issue with `apply`."""
+    from coding import issues
+    volume, stub = read_volume()
+    if stub is not None:
+        print("No chapters yet (.papers/volume.yaml does not exist); nothing to check.")
+        chapters = []
+    else:
+        chapters = [p for p in volume["parts"] if p != INTRO and (langs is None or p in langs)]
+    parts = list(volume["parts"]) if stub is None else []
+    behind = set()
+    for lang in chapters:
+        found = check_chapter(lang, parts)
+        if found is None:
+            print(f"{get_display_name(lang)}: not built yet.")
+            continue
+        print(f"{get_display_name(lang)}: annotation {_said(found['data'])}; code {_said(found['code'])}, "
+              f"{len(found['files'])} file(s); claims failing {found['claims_now']}, "
+              f"failing after a move {found['claims_moved']}.")
+        if not found["behind"]:
+            continue
+        behind.add(lang)
+        if apply:
+            number, created = issues.file_issue(CHECK_LABEL, check_title(lang),
+                                                check_body(lang, found, today),
+                                                replace=True, match_title=True)
+            print(f"  {'Filed' if created else 'Rewrote'} issue #{number} ({CHECK_LABEL}).")
+    if not apply:
+        if behind:
+            print("Dry run: add --apply to file the issues.")
+        return
+    titles = {check_title(lang) for lang in behind}
+    checked = {check_title(lang) for lang in chapters}
+    for issue in issues.list_open(CHECK_LABEL):
+        if issue["title"] in titles or (langs is not None and issue["title"] not in checked):
+            continue
+        issues.close(issue["number"], f"The chapter matches its data again (or is no longer in "
+                                      f"the volume) on {today} — closing.")
+        print(f"  Closed issue #{issue['number']} ({CHECK_LABEL}).")
+
+
 # ── The command ─────────────────────────────────────────────────────────────
 
 def build_parser() -> argparse.ArgumentParser:
@@ -541,6 +722,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--update", action="store_true",
                         help="Move each language chapter's pin to --version (default: coded_data/ "
                              "as it is) and report what that changes.")
+    parser.add_argument("--check", action="store_true",
+                        help="Write nothing in .papers/: compare each language chapter (or "
+                             "--lang's) with today's data and code, and with --apply file, rewrite "
+                             "or close its chapter-behind issue (the daily refresh).")
     parser.add_argument("--apply", action="store_true", help="Write (default: dry run).")
     return parser
 
@@ -550,6 +735,16 @@ def main(args: argparse.Namespace | None = None) -> None:
     if args.version and not args.lang:
         sys.exit("--version names the planars-data commit of one language's chapter; "
                  "give --lang too.")
+    if args.check:
+        if args.intro or args.update or args.version:
+            sys.exit("--check compares each chapter at its pin with today's data; it takes "
+                     "only --lang and --apply.")
+        try:
+            check([args.lang] if args.lang else None, args.apply,
+                  datetime.now(timezone.utc).strftime("%Y-%m-%d"))
+        except ChapterDataError as e:
+            sys.exit(str(e))
+        return
     try:
         volume, volume_stub = read_volume(args.lang)
         parts = [args.lang] if args.lang else [INTRO] if args.intro else list(volume["parts"])

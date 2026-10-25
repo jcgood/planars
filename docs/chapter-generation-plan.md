@@ -1,6 +1,6 @@
 # Plan: generating the data-driven parts of the chapters
 
-Jeff, 2026-10-25. Phases 1–4 built 2026-10-25 (see the "as built"
+Jeff, 2026-10-25. Phases 1–5 built 2026-10-25 (see the "as built"
 sections at the end); the rest not started. Chapters are to be written
 from the annotation: an introduction chapter with shared conventions, one
 chapter per language with its own sections, and results sections. Most of
@@ -340,3 +340,28 @@ states them.
   claims about spans.
 - **The report is terminal output** for whoever runs the build; Phase 5
   puts it in an issue for the chapter's writers.
+
+## Phase 5 as built (2026-10-25)
+
+- **`build-chapters --check [--lang L] [--apply]`**, a mode of the same
+  command (its record's `--check` mode in `operations.yaml`), run by the
+  daily refresh after `integrity` (`coding/daily_refresh.py`, step
+  `chapters`). It writes nothing in `.papers/`; how it compares is
+  `chapters/build.py`'s docstring.
+- **One `chapter-behind` issue per chapter** ("Chapter behind its data —
+  English [stan1293]"), rewritten in place while it stays behind (notifies
+  nobody) and closed when it catches up or leaves the volume. It holds
+  counts and prose file names only, never spans or values: the planars
+  repository and its issues are public.
+- **What puts a chapter behind is explicit** (`VALUE_GROUPS`): a change in
+  spans, planar, diagnostics, language metadata or the analysis, a
+  generated file the code would rewrite, or a `\claim` that fails now or
+  would after a move. How complete the annotation is changes every day and
+  on its own files nothing; a new value group fails the check until it is
+  placed.
+- **The analysis is compared only where a bundle exists on both sides.**
+  Bundles are never committed, so on GitHub the daily check compares no
+  analysis at all; that changes when 4d decides where the weekly bundles
+  live.
+- Until the first real `build-chapters --apply` makes `.papers/`, the step
+  prints "No chapters yet" and files nothing.

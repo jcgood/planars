@@ -310,7 +310,29 @@
     - {fact: languages_metadata, role: reads}
     - {fact: span_rule_semantics, role: reads}
   cascades_triggered: []
-  modes: []
+  modes:
+    - name: "--check"
+      writes_to_drive: false
+      writes_locally: false
+      description: >-
+        The daily check (Phase 5): compares each built language chapter at
+        its pin with what is written and with today's data, writing nothing
+        in .papers/.
+      side_effects:
+        - >-
+          with --apply, files or rewrites one chapter-behind issue per
+          chapter that is behind (counts and file names only), and closes
+          the issue of a chapter that is not
+      idempotent: true
+      idempotency_note: >-
+        The issue is rewritten in place with the same body while nothing
+        changes, and closed only once.
+      apply_gate: "--check --apply"
+      preconditions: [coded_data_up_to_date]
+      facts_touched:
+        - {fact: planar_sheet_structure, role: reads}
+        - {fact: diagnostics_scope, role: reads}
+        - {fact: span_rule_semantics, role: reads}
 
 - id: sync_params
   cli_command: sync-params

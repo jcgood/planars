@@ -207,6 +207,60 @@ def test_a_chapter_is_pinned_and_moving_the_pin_reports_by_cause(capsys):
     assert build.read_lock("stan1293")["planars_data"] == old, "a dry run moved the pin"
 
 
+def test_the_check_with_no_volume_says_so(capsys):
+    _run("--check", "--apply")
+    assert "No chapters yet" in capsys.readouterr().out
+    assert not state_files.PAPERS_DIR.exists()
+
+
+def test_the_check_takes_only_lang_and_apply():
+    with pytest.raises(SystemExit, match="only --lang"):
+        _run("--check", "--update")
+
+
+def test_every_value_group_says_whether_it_puts_a_chapter_behind():
+    with pytest.raises(ChapterDataError, match="VALUE_GROUPS"):
+        build._group("L.newgroup.x")
+
+
+def test_the_check_leaves_out_an_analysis_not_drawn_on_both_sides():
+    class Drawn:
+        def __init__(self, *bundles):
+            self.bundles = dict.fromkeys(bundles)
+    L = "stan1293"
+    values = {f"{L}.analysis.types.all.families": "4", f"{L}.analysis.classes.all.families": "2",
+              f"{L}.planar.positions": "38"}
+    assert build._comparable(values, L, [Drawn(f"{L}_types_all", f"{L}_classes_all"),
+                                         Drawn(f"{L}_types_all")]) \
+        == {f"{L}.analysis.types.all.families": "4", f"{L}.planar.positions": "38"}
+
+
+@needs_english
+def test_the_check_files_a_chapter_behind_and_closes_it_when_caught_up(capsys, github):
+    _run("--lang", "stan1293", "--version", "HEAD", "--apply")
+    volume = state_files.PAPERS_DIR / "volume.yaml"
+    volume.write_text("title: A test volume\nparts: [intro, stan1293]\n", encoding="utf-8")
+    values = state_files.PAPERS_DIR / "stan1293" / "values.tex"
+    text = values.read_text(encoding="utf-8")
+    name = next(m for m in re.findall(r"\\pvset\{([^}]*\.left)\}", text))
+    stale = re.sub(r"(\\pvset\{" + re.escape(name) + r"\}\{)[^}]*", r"\g<1>1--99", text)
+    values.write_text(stale, encoding="utf-8")
+    capsys.readouterr()
+    _run("--check")
+    assert "Dry run" in capsys.readouterr().out and not github.issues
+    _run("--check", "--apply")
+    [issue] = github.issues
+    assert issue["title"] == build.check_title("stan1293") and issue["labels"] == [build.CHECK_LABEL]
+    assert "1 span" in issue["body"] and "--lang stan1293 --update" in issue["body"]
+    assert re.search(r"- `\.papers/stan1293/prose/class_\w+\.tex`\n", issue["body"])
+    assert "1--99" not in issue["body"] and name not in issue["body"], "annotation in a public issue"
+    _run("--check", "--apply")
+    assert len(github.issues) == 1 and github.calls_of("edit"), "a second run filed again"
+    _run("--lang", "stan1293", "--apply")
+    _run("--check", "--apply")
+    assert github.issue(issue["number"])["state"] == "CLOSED"
+
+
 def _compile(folder):
     run = subprocess.run(["pdflatex", "-interaction=nonstopmode", "-halt-on-error", "main.tex"],
                          cwd=folder, capture_output=True, text=True)

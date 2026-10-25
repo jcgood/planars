@@ -361,7 +361,13 @@ every build lists the claims the data no longer bear out, with file and
 line, and the PDF boxes them. Compile `.papers/main.tex`
 (`latexmk -pdf main.tex` there); an unwritten slot shows as a boxed "Still
 to write". The volume's title and the order of its chapters are
-`.papers/volume.yaml`, edited by hand. Design and state:
+`.papers/volume.yaml`, edited by hand.
+
+Nobody has to remember to check whether a chapter has fallen behind: the
+daily refresh runs `build-chapters --check --apply`, which files one
+`chapter-behind` issue per chapter whose spans, structure, analysis,
+generated files or claims would change, and closes it once the chapter
+catches up. The issue says what to run. Design and state:
 `docs/chapter-generation-plan.md`.
 
 #### Cross-sheet criterion consistency

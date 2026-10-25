@@ -270,6 +270,12 @@ def find_open(label: str, title: Optional[str] = None,
     return None
 
 
+def list_open(label: str) -> List[Dict]:
+    """Every open issue under `label` ({number, title, ...}), lowest number first."""
+    check_label(label)
+    return sorted(get_github().list_issues(label), key=lambda i: i["number"])
+
+
 def is_open(number: int) -> Optional[bool]:
     """True/False if the issue's state is known, None if it could not be read."""
     issue = get_github().get_issue(number)
