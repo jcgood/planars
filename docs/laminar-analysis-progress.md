@@ -8,7 +8,7 @@ the current state; update it at every phase boundary, in the same commit.
 | 1. Take out the Chichewa assumptions, in place | done 2026-10-24 |
 | 2. Move the code (`laminar/`, `planarsviz/` to the root) | done 2026-10-24 |
 | 3. Connect a planars language (adapter, *k of n*, metadata) | done 2026-10-24 |
-| 4. Run English; charts to contributors through Drive (revised) | 4a and 4b built 2026-10-24, 4c 2026-10-25 (4b and 4c not yet live); 4d–e not started |
+| 4. Run English; charts to contributors through Drive (revised) | 4a and 4b built 2026-10-24, 4c 2026-10-25; 4b and 4c live 2026-10-25; 4d–e not started |
 | 5. Documentation and tests | not started |
 
 ## Phase 1 as built (2026-10-24)
@@ -158,8 +158,8 @@ by workflows. Plan decision 6 and Phase 4a–e have the design.
 | Unit | Status |
 |---|---|
 | 4a. Local: colours, `--lang`, English drawn, cross-language `--with` | built 2026-10-24 (below) |
-| 4b. `laminar-charts` command: contributor charts to Drive | built 2026-10-24, not yet run live (below) |
-| 4c. Workflow after the daily refresh, R on the runner | built 2026-10-25, not yet pushed (below) |
+| 4b. `laminar-charts` command: contributor charts to Drive | built 2026-10-24, live 2026-10-25 (below) |
+| 4c. Workflow after the daily refresh, R on the runner | built and live 2026-10-25 (below) |
 | 4d. Weekly full analysis with permutation tests | not started |
 | 4e. Documentation | not started |
 
@@ -283,11 +283,16 @@ by workflows. Plan decision 6 and Phase 4a–e have the design.
 - **synth0001 gets charts too**: it has a planar file, and the command draws
   every such language. Harmless (its own Drive folder); noted in case Jeff
   wants it left out.
-- **Not yet run on GitHub.** Pushing the workflow means the next refresh
-  draws and uploads for the first time (the 4b live step), so it waits on
-  Jeff. Untested until then: the R setup on Ubuntu (system libraries are a
-  best guess; a missing one shows as "setting up R" or "drawing" failed) and
-  how long the cached run takes.
+- **First live run (2026-10-25, Jeff's go-ahead):** the first attempt
+  stopped installing system libraries (stale package list; now
+  `apt-get update` first), and filed nothing because the command never ran:
+  a last step now files the issue when setup fails. The second drew all
+  three languages (English: 318 charts by class, 272 by type), uploaded six
+  PDFs and linked them on each status sheet, in ~23 minutes with no cache
+  (drawing ~20). The log carried nothing from the annotation. The door
+  reported English's two uploads as in an unlabelled folder (#324): its
+  folder is labelled, and the door had taken a failed label read as "no
+  label"; fixed in the door (only 404/403 mean no label).
 
 ## Findings
 

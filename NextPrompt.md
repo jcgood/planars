@@ -36,13 +36,13 @@ tests, by class and by domain type; weekly full analysis with them; R on
 the runner) — plan decision 6. 4a (local) is built; English is drawn
 locally in `coded_data/.analysis/stan1293/charts/` (not committed).
 4b, `python -m coding laminar-charts`, is built (2026-10-24; progress doc
-"4b as built"). 4c, the workflow `laminar-charts.yml`, is built
-(2026-10-25; "4c as built") but its commit is **not pushed**: pushing it
-makes the next refresh do the first upload to the language folders, which
-waits on Jeff's go-ahead. **Next action:** with his go-ahead, push and
-trigger it (`gh workflow run laminar-charts.yml`), check the run (R setup
-on Ubuntu is untested) and the PDFs on Drive; then 4d, the weekly full
-analysis. Don't re-ask decision 6's choices. Jeff's cuts to the cross-language
+"4b as built"). 4c, the workflow `laminar-charts.yml`, is built and
+live (2026-10-25; "4c as built"): the first run drew all three languages,
+put the PDFs on Drive and linked them on each status sheet. **Next
+action:** check the next daily run is green and draws nothing (no span
+change) or only what changed, and that the `charts` Drive kind can now be
+enforced (its first clean real write); then 4d, the weekly full analysis.
+Don't re-ask decision 6's choices. Jeff's cuts to the cross-language
 charts (CCDB thread below) come after Phase 2 (his call, 2026-10-24), so
 they can go in now or between later phases, not in the middle of one.
 
