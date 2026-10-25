@@ -1,6 +1,6 @@
 # Plan: generating the data-driven parts of the chapters
 
-Jeff, 2026-10-25. Phases 1–3 built 2026-10-25 (see the "as built"
+Jeff, 2026-10-25. Phases 1–4 built 2026-10-25 (see the "as built"
 sections at the end); the rest not started. Chapters are to be written
 from the annotation: an introduction chapter with shared conventions, one
 chapter per language with its own sections, and results sections. Most of
@@ -316,3 +316,27 @@ states them.
   created yet; the first `build-chapters --apply` makes it and pushes it
   (a write to planars-data, Jeff's go-ahead). Overleaf co-writing (decision
   2) is still open.
+
+## Phase 4 as built (2026-10-25)
+
+- **`chapters update` is `build-chapters --update`**, not a second
+  command: one command builds, pins and reports (`chapters/build.py`'s
+  docstring says how).
+- **The pin is `.papers/<L>/data.lock`**: the planars-data commit and its
+  date, and the planars commit last built with. The first build pins;
+  every later build reads the data at the pin, and a `--version` other
+  than the pin is refused without `--update`.
+- **The report goes one pin at a time** (Phase 1's finding): the code's
+  changes are values.tex as built against the old data read with today's
+  code; the annotation's are the old data against the new, both with
+  today's code. Spans are one line each, the analysis a count per
+  dataset; then the prose to reread (slots whose fragments changed or
+  cite a changed value, and prose lines citing one). Moving English from
+  2026-10-22 to 2026-10-25 shows the twelve new coreference spans and
+  three slots to reread.
+- **`\claim{name}{text}`**: every build lists claims the data no longer
+  bear out, with file and line, across every part's prose; the PDF boxes
+  them with the value now. Each span has a `range` value (`9--20`) for
+  claims about spans.
+- **The report is terminal output** for whoever runs the build; Phase 5
+  puts it in an issue for the chapter's writers.

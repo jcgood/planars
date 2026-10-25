@@ -30,13 +30,15 @@ its five decisions (2026-10-25; the plan's "Decisions" — don't re-ask): De
 Gruyter, class-neutral fragments; a private GitHub repo; a sentence per
 test plus tables; structured examples for every language but English (a
 per-language field, not a coded exception); mixed authorship.
-Phases 1–3 are built (2026-10-25; the plan's "as built" sections):
+Phases 1–4 are built (2026-10-25; the plan's "as built" sections):
 `python -m coding build-chapters` writes the volume into
 `coded_data/.papers/` through the local-file door (outline, fragments,
-values, prose stubs the door never overwrites). **Next action:** Jeff's
-go-ahead for the first real `build-chapters --apply` (creates and pushes
-`.papers/` in planars-data); then Phase 4 (`chapters update`, `\claim`)
-or Phase 6 (structured examples). Still waiting on #318 (e) (construction
+values, prose stubs the door never overwrites), pins each language
+chapter (`data.lock`; `--update` moves it and reports) and checks
+`\claim`s. **Next action:** Jeff's go-ahead for the first real
+`build-chapters --apply` (creates and pushes `.papers/` in planars-data);
+then Phase 5 (the daily check and its issue) or Phase 6 (structured
+examples). Still waiting on #318 (e) (construction
 descriptions), laminar plan 4d (the permutation tests) and #321 (span
 rules).
 

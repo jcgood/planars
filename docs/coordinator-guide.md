@@ -344,7 +344,21 @@ It rewrites the generated parts (tables, one sentence per span, every
 number a sentence can cite) and makes, once, a file for each piece of prose
 someone has to write (`prose/<slot>.tex`), with instructions saying who
 writes it and what it should say. It never changes a prose file again, so
-rebuild whenever the annotation changes. Compile `.papers/main.tex`
+rebuild whenever you like. Each language chapter is pinned to the
+annotation as it was when first built (`.papers/<glottocode>/data.lock`),
+so new annotation reaches it only when you move the pin:
+
+```bash
+python -m coding build-chapters --lang stan1293 --update           # dry run: what moving to today's annotation changes
+python -m coding build-chapters --lang stan1293 --update --apply   # move it
+```
+
+The report lists the spans and numbers that change, first from changes
+to the schemas and span rules, then from the annotation, and the prose
+files to reread. A writer states a fact their argument depends on as
+`\claim{name}{value}` (e.g. `\claim{stan1293.planar.positions}{38}`);
+every build lists the claims the data no longer bear out, with file and
+line, and the PDF boxes them. Compile `.papers/main.tex`
 (`latexmk -pdf main.tex` there); an unwritten slot shows as a boxed "Still
 to write". The volume's title and the order of its chapters are
 `.papers/volume.yaml`, edited by hand. Design and state:

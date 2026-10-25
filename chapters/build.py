@@ -2,9 +2,10 @@
 
     python -m coding build-chapters [--apply]                  # every part in volume.yaml
     python -m coding build-chapters --lang stan1293 [--version COMMIT] [--apply]
+    python -m coding build-chapters [--lang stan1293] --update [--version COMMIT] [--apply]
     python -m coding build-chapters --intro [--apply]
 
-Phases 2 and 3 of docs/chapter-generation-plan.md. Dry run by default:
+Phases 2–4 of docs/chapter-generation-plan.md. Dry run by default:
 says what it would write; ``--apply`` writes. Only files whose text
 changed are written, so a rebuild with nothing new touches nothing. Every
 write goes through the local-file door (``file_door.write_paper``), which
@@ -22,7 +23,8 @@ goes in this public repository):
 - one folder per part: ``chapter.tex`` (the outline: sections in the order
   of ``chapters/templates/outline.yaml``, each with its prose slot and
   then its fragments), ``fragments/``, ``prose/``, and for a language
-  ``values.tex`` (every named value, ``\\pvset{name}{value}``).
+  ``values.tex`` (every named value, ``\\pvset{name}{value}``) and
+  ``data.lock`` (its pin, below).
 
 **Built and hand-written files never share a file.** Everything except
 ``volume.yaml`` and ``prose/`` is rebuilt every time; a fragment no longer
@@ -33,10 +35,32 @@ made (a class retired) is deleted. ``volume.yaml`` and each
 listed, never deleted; a slot still holding its ``\\proseslot`` line is
 counted as not yet written.
 
+**A language chapter is pinned to a data version**, recorded in
+``<L>/data.lock`` (the planars-data commit and its date, and the planars
+commit the chapter was last built with). Its first build pins the version
+asked for (``--version``; default coded_data/ as it is, which must have no
+uncommitted changes for the language, so every chapter can be rebuilt
+exactly from the commit it names); every later build reads the data at the
+pin, so new annotation never reaches a chapter unannounced. ``--update``
+moves the pin (to ``--version``, or coded_data/ as it is).
+
+**Every build reports what it changes** in a chapter's values (spans one
+line each, the analysis counted per dataset), by cause, one pin at a
+time: first the code (schemas, span rules: values.tex as built against the
+old data read with today's code), then, with ``--update``, the annotation
+(the old data against the new, both with today's code). It then lists the
+prose to reread: each slot whose section's fragments changed or cite a
+changed value, and each line of prose that cites one (``\\pv`` or
+``\\claim``).
+
+**Checked claims.** Prose states a fact it argues from as
+``\\claim{name}{text}``, text written as values.tex writes the value (a
+span's range is ``9--20``). Every build lists each claim in any part's
+prose, about a language it built, that the data no longer bear out (with
+its file and line), and the PDF boxes it. A claim must sit on one line.
+
 **A language chapter** (``--lang``) is built from chapters.data.chapter_data
-at the data version asked for (default: coded_data/ as it is, which must
-have no uncommitted changes for the language, so every chapter can be
-rebuilt exactly from the commit it names). Its fragments:
+at its pinned version. Its fragments:
 ``front_matter.tex`` (language, annotator, data version, how complete the
 annotation was), ``planar_table.tex``, ``diagnostics_table.tex``,
 ``class_<class>.tex`` for each class the language has (one sentence per
@@ -52,13 +76,14 @@ The wording is in chapters/templates/ (chapters.tex says how they work).
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from importlib.resources import files as _res_files
 
 import yaml
 
 from chapters import tex
-from chapters.data import ChapterData, ChapterDataError, chapter_data
+from chapters.data import ChapterData, ChapterDataError, chapter_data, commit_of
 from coding import file_door
 from planars.languages import get_display_name, get_entry
 from planars.reports import span_constructions
@@ -218,28 +243,194 @@ def outline_items(kind: str, classes: list) -> list:
     return items
 
 
+# ── The pin: the data version a chapter is built from ───────────────────────
+
+LOCK = "data.lock"
+LOCK_HEADER = ("# data.lock: the planars-data version this chapter is built from, and the\n"
+               "# planars code (schemas, span rules) it was last built with. Written by\n"
+               "# `python -m coding build-chapters`; move it with --update, never by hand.\n")
+
+
+def read_lock(lang: str) -> dict | None:
+    text = file_door.read_paper(file_door.paper_built(f"{lang}/{LOCK}"))
+    if text is None:
+        return None
+    lock = yaml.safe_load(text) or {}
+    if not all(isinstance(lock.get(k), str) for k in ("planars_data", "date", "planars")):
+        raise ChapterDataError(f".papers/{lang}/{LOCK} needs `planars_data`, `date` and `planars`. "
+                               f"It is written only by build-chapters: restore it from git.")
+    return lock
+
+
+def lock_text(chapter: ChapterData) -> str:
+    return LOCK_HEADER + yaml.safe_dump({"planars_data": chapter.version["planars_data_commit"],
+                                         "date": chapter.version["date"],
+                                         "planars": chapter.version["planars_commit"]},
+                                        sort_keys=False)
+
+
+def pinned_version(lang: str, lock: dict | None, version: str | None, update: bool) -> str | None:
+    """The planars-data version to build `lang` from: its pin, unless there is
+    none yet or the pin is being moved (None: coded_data/ as it is)."""
+    if update or lock is None:
+        return version
+    if version and commit_of(version) != lock["planars_data"]:
+        raise ChapterDataError(
+            f"The {get_display_name(lang)} chapter is pinned to planars-data "
+            f"{lock['planars_data'][:12]} ({lock['date']}) by .papers/{lang}/{LOCK}. To move it, "
+            f"add --update: the dry run reports what the move changes.")
+    return lock["planars_data"]
+
+
+# ── What changed, and the claims prose makes ────────────────────────────────
+
+# \pv{name} and \claim{name}{text} in prose; a claim's text may hold escaped
+# characters (\{) and one level of braces, and sits on one line.
+_CITE = re.compile(r"\\(pv|claim)\{([^}]*)\}(?:\{((?:\\.|[^{}\\]|\{[^{}]*\})*)\})?")
+_COMMENT = re.compile(r"(?<!\\)%.*")
+_SPAN = re.compile(r"^(?P<L>[^.]+)\.span\.(?P<cls>[^.]+)\.(?P<con>[^.]+)\.(?P<key>[^.]+)\.(?P<field>[^.]+)$")
+_ANALYSIS = re.compile(r"^[^.]+\.analysis\.[^.]+\.[^.]+")
+
+
+def citations(parts: list) -> list:
+    """Every \\pv and \\claim in the prose of `parts` (comments skipped):
+    [(path in .papers, line number, "pv" or "claim", name, claimed text or None)]."""
+    out = []
+    for part in parts:
+        for path in file_door.paper_files(f"{part}/prose", "*.tex"):
+            text = path.read_text(encoding="utf-8")
+            for number, line in enumerate(text.splitlines(), 1):
+                for m in _CITE.finditer(_COMMENT.sub("", line)):
+                    out.append((f"{part}/prose/{path.name}", number, m.group(1), m.group(2),
+                                m.group(3) if m.group(1) == "claim" else None))
+    return out
+
+
+def value_changes(old: dict, new: dict, lang: str) -> tuple[list, set]:
+    """Plain-words lines for what differs between two {name: values.tex text},
+    and the names that differ. The data version's own values are left out
+    (they change with every move); a span is one line; the analysis is
+    counted per dataset."""
+    skip = f"{lang}.data."
+    changed = {k for k in set(old) | set(new) if not k.startswith(skip) and old.get(k) != new.get(k)}
+    lines, spans, analysis = [], {}, {}
+    for k in sorted(changed):
+        span, grouped = _SPAN.match(k), _ANALYSIS.match(k)
+        if span:
+            spans.setdefault(k.rsplit(".", 1)[0], span)
+        elif grouped:
+            analysis[grouped.group()] = analysis.get(grouped.group(), 0) + 1
+        elif k not in old:
+            lines.append(f"  new value {k}: {new[k]}")
+        elif k not in new:
+            lines.append(f"  value gone {k} (was {old[k]})")
+        else:
+            lines.append(f"  {k}: {old[k]} -> {new[k]}")
+    for base, m in spans.items():
+        what = (f"  {m['cls']} {m['con']}, {m['key'].replace('_', ' ')}")
+        was, now = old.get(f"{base}.range"), new.get(f"{base}.range")
+        lines.append(f"{what}: new, {now}" if was is None else f"{what}: gone (was {was})"
+                     if now is None else f"{what}: {was} -> {now}")
+    lines += [f"  {base}: {n} values changed" for base, n in analysis.items()]
+    return lines, changed
+
+
+def change_report(lang: str, lock: dict | None, old: dict | None, middle: dict | None,
+                  new: ChapterData) -> tuple[list, set]:
+    """What a build changes in `lang`'s chapter, by cause: the code (schemas,
+    span rules) and the annotation, one at a time. `old` is values.tex as it
+    is, `middle` the values at the old data version with today's code (only
+    when the data version moves). Returns lines and every changed name."""
+    if old is None:
+        return [], set()
+    now = {k: tex.value_text(v) for k, v in new.values.items()}
+    was, now_commit = (lock or {}).get("planars", ""), new.version["planars_commit"]
+    code = ("since the last build" if not lock else f"planars {now_commit[:12]}" if was == now_commit
+            else f"planars {was[:12]} -> {now_commit[:12]}")
+    data = (f"planars-data {lock['planars_data'][:12]} ({lock['date']}) -> "
+            f"{new.version['planars_data_commit'][:12]} ({new.version['date']})" if lock else "")
+    steps = ([("the code", code, old, middle), ("the annotation", data, middle, now)]
+             if middle is not None else [("the code" if lock else "the build", code, old, now)])
+    lines, changed = [], set()
+    for cause, between, before, after in steps:
+        said, names = value_changes(before, after, lang)
+        changed |= names
+        lines.append(f"Changes from {cause} ({between}): " + ("none" if not said else f"{len(names)} values"))
+        lines += said
+    return lines, changed
+
+
+def near_changes(lang: str, changed: set, fragments: dict, items: list, parts: list) -> list:
+    """The prose next to a change: each slot whose section's fragments
+    changed or cite a changed value, and each line of prose anywhere that
+    cites a changed value. Nothing for a chapter never built before."""
+    if file_door.read_paper(file_door.paper_built(f"{lang}/values.tex")) is None:
+        return []
+    lines = []
+    for item in items:
+        texts = [fragments.get(f"{f}.tex", "") for f in item["fragments"]]
+        cited = {m.group(2) for text in texts for m in _CITE.finditer(text)}
+        rewritten = any(file_door.read_paper(file_door.paper_built(f"{lang}/fragments/{f}.tex")) != text
+                        for f, text in zip(item["fragments"], texts))
+        if item["slot"] and (cited & changed or rewritten):
+            lines.append(f"  .papers/{lang}/prose/{item['slot']}.tex sits next to a change")
+    lines += [f"  .papers/{rel}:{number} cites {name}, which changed"
+              for rel, number, _kind, name, _said in citations(parts) if name in changed]
+    return (["Prose to reread:"] + lines) if lines else []
+
+
+def broken_claims(values: dict, langs: list, parts: list) -> list:
+    """Every \\claim, in the prose of `parts`, about a language in `langs`
+    that the data no longer bear out (or that names no value), with its file
+    and line."""
+    now = {k: tex.value_text(v) for k, v in values.items()}
+    lines = []
+    for rel, number, kind, name, said in citations(parts):
+        if kind != "claim" or name.split(".", 1)[0] not in langs:
+            continue
+        if name not in now:
+            lines.append(f"  .papers/{rel}:{number}: \\claim{{{name}}} names no value")
+        elif said != now[name]:
+            lines.append(f"  .papers/{rel}:{number}: \\claim{{{name}}} says {said}, the data now say {now[name]}")
+    return (["Claims that no longer hold:"] + lines) if lines else []
+
+
 # ── A part: its built files and its stubs ───────────────────────────────────
 
-def part_files(part: str, version: str | None = None) -> tuple[dict, dict, list]:
-    """({path in .papers: text} built, {path: text} stubs, lines to print)
-    for one part of the volume."""
+def part_files(part: str, version: str | None = None, update: bool = False,
+               parts: list | None = None) -> tuple[dict, dict, list, dict]:
+    """({path in .papers: text} built, {path: text} stubs, lines to print,
+    {name: value} the part's values) for one part of the volume. A language
+    is built from its pin (``pinned_version``); `update` moves the pin to
+    `version`. `parts` are the parts whose prose the report looks through."""
     entries = _class_entries()
+    changed, report = set(), []
     if part == INTRO:
-        fragments, L, built, said = intro_fragments(), None, {}, []
+        fragments, L, built, said, values = intro_fragments(), None, {}, [], {}
         classes = [(name, e["display_name"], e["domain_type"]) for name, e in entries.items()]
     else:
-        chapter = chapter_data(part, version=version)
+        lock = read_lock(part)
+        chapter = chapter_data(part, version=pinned_version(part, lock, version, update))
         if chapter.version["uncommitted_changes"]:
             raise ChapterDataError(
                 f"coded_data/{part} has uncommitted changes, so the chapter could not be "
                 f"rebuilt from the commit it names. Commit them, or pass --version COMMIT.")
-        fragments, L = language_fragments(chapter), part
-        built = {f"{part}/values.tex": tex.values_tex(chapter.values, VALUES_HEADER)}
+        fragments, L, values = language_fragments(chapter), part, chapter.values
+        built = {f"{part}/values.tex": tex.values_tex(chapter.values, VALUES_HEADER),
+                 f"{part}/{LOCK}": lock_text(chapter)}
         classes = [(c, entries[c]["display_name"], entries[c]["domain_type"])
                    for c in dict.fromkeys(chapter.tables["diagnostics"]["Class"])]
         said = [f"{get_display_name(part)}, planars-data "
-                f"{chapter.version['planars_data_commit'][:12]} ({chapter.version['date']})"]
+                f"{chapter.version['planars_data_commit'][:12]} ({chapter.version['date']})"
+                + (" (its pin)" if lock and not update else "")]
         said += [f"  missing: {line}" for line in chapter.missing]
+        old_text = file_door.read_paper(file_door.paper_built(f"{part}/values.tex"))
+        middle = None
+        if lock and old_text is not None and lock["planars_data"] != chapter.version["planars_data_commit"]:
+            middle = {k: tex.value_text(v)
+                      for k, v in chapter_data(part, version=lock["planars_data"]).values.items()}
+        report, changed = change_report(part, lock, tex.read_values_tex(old_text) if old_text else None,
+                                        middle, chapter)
     items = outline_items(INTRO if part == INTRO else "language", classes)
     placed = {f for item in items for f in item["fragments"]}
     made = {name.removesuffix(".tex") for name in fragments}
@@ -255,7 +446,9 @@ def part_files(part: str, version: str | None = None) -> tuple[dict, dict, list]
                  heading=item["heading"], in_domain=item.get("in_domain"),
                  who=item["who"], says=item["says"])
              for item in items if item["slot"]}
-    return built, stubs, said
+    if L:
+        said += report + near_changes(part, changed, fragments, items, parts or [part])
+    return built, stubs, said, values
 
 
 # ── The volume ──────────────────────────────────────────────────────────────
@@ -343,8 +536,11 @@ def build_parser() -> argparse.ArgumentParser:
     which.add_argument("--lang", help="Build only this language's chapter (Glottocode).")
     which.add_argument("--intro", action="store_true", help="Build only the introduction.")
     parser.add_argument("--version", default=None,
-                        help="With --lang: the planars-data commit to build from "
-                             "(default: coded_data/ as it is).")
+                        help="With --lang: the planars-data commit to build from: a chapter "
+                             "not built yet, or with --update (default: coded_data/ as it is).")
+    parser.add_argument("--update", action="store_true",
+                        help="Move each language chapter's pin to --version (default: coded_data/ "
+                             "as it is) and report what that changes.")
     parser.add_argument("--apply", action="store_true", help="Write (default: dry run).")
     return parser
 
@@ -361,10 +557,14 @@ def main(args: argparse.Namespace | None = None) -> None:
             "main.tex.j2", title=volume["title"], parts=volume["parts"],
             languages=[p for p in volume["parts"] if p != INTRO])}
         stubs = {VOLUME: volume_stub} if volume_stub else {}
+        prose_parts = list(dict.fromkeys(list(volume["parts"]) + parts))
+        values = {}
         for part in parts:
-            part_built, part_stubs, said = part_files(part, args.version)
+            part_built, part_stubs, said, part_values = part_files(part, args.version, args.update,
+                                                                   prose_parts)
             built.update(part_built)
             stubs.update(part_stubs)
+            values.update(part_values)
             for line in said:
                 print(line)
     except ChapterDataError as e:
@@ -372,6 +572,8 @@ def main(args: argparse.Namespace | None = None) -> None:
     report = write(built, stubs, parts, args.apply)
     print("\n".join(report) if report else "Nothing to change.")
     print("\n".join(slot_report(stubs, parts)))
+    for line in broken_claims(values, [p for p in parts if p != INTRO], prose_parts):
+        print(line)
     missing = [p for p in parts if p not in volume["parts"]]
     if missing:
         print(f"Not in .papers/volume.yaml, so main.tex leaves it out: {', '.join(missing)}. "

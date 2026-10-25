@@ -58,8 +58,9 @@ def test_every_span_has_its_edges(english):
     assert english.values[f"{base}.left"] == row["Left_Edge"]
     assert english.values[f"{base}.right"] == row["Right_Edge"]
     assert english.values[f"{base}.left_name"]
-    # Five values per span: span keys never collide across classes or constructions.
-    assert sum(k.startswith("stan1293.span.") for k in english.values) == 5 * len(spans)
+    assert english.values[f"{base}.range"] == f"{row['Left_Edge']}--{row['Right_Edge']}"
+    # Six values per span: span keys never collide across classes or constructions.
+    assert sum(k.startswith("stan1293.span.") for k in english.values) == 6 * len(spans)
 
 
 @needs_english

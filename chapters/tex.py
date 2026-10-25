@@ -18,8 +18,9 @@ instructions); ``path(text)`` for a file path in ``\\input``.
 
 The output is plain LaTeX tied to no document class (decision 1 of
 docs/chapter-generation-plan.md): ``booktabs`` and ``longtable`` tables,
-and the macros in ``planarschapter.sty`` (``STY``: ``\\pv``, and
-``\\proseslot`` for a slot nobody has written yet), which the build writes
+and the macros in ``planarschapter.sty`` (``STY``: ``\\pv``, ``\\claim``
+for a checked statement in prose, and ``\\proseslot`` for a slot nobody
+has written yet), which the build writes
 at the top of ``.papers/``.
 """
 
@@ -149,7 +150,15 @@ def values_tex(values: dict, header: str) -> str:
     return header + body
 
 
-STY = r"""% planarschapter.sty: macros the generated fragments use.
+_PVSET = re.compile(r"\\pvset\{([^}]*)\}\{(.*)\}$")
+
+
+def read_values_tex(text: str) -> dict:
+    """{name: value as values.tex writes it} from a values.tex values_tex wrote."""
+    return {m.group(1): m.group(2) for m in map(_PVSET.match, text.splitlines()) if m}
+
+
+STY =r"""% planarschapter.sty: macros the generated fragments use.
 % Written by `python -m coding build-chapters`; never edit it by hand.
 % Plain LaTeX, tied to no document class.
 \NeedsTeXFormat{LaTeX2e}
@@ -168,6 +177,20 @@ STY = r"""% planarschapter.sty: macros the generated fragments use.
 % Running heads are upper-cased (\MakeUppercase), which would upper-case
 % the value's name too; its argument is kept as written.
 \ifdefined\AddToNoCaseChangeList\AddToNoCaseChangeList{\pv}\fi
+% \claim{name}{text} prints text, a statement the prose argues from, and
+% checks it against the named value: one that no longer holds is boxed
+% with the value now, and warns. The build lists every such claim too.
+\DeclareRobustCommand{\claim}[2]{%
+  \ifcsname pv@#1\endcsname
+    \expandafter\let\expandafter\planars@value\csname pv@#1\endcsname
+    \edef\planars@now{\expandafter\detokenize\expandafter{\planars@value}}%
+    \edef\planars@said{\detokenize{#2}}%
+    \ifx\planars@now\planars@said#2%
+    \else\fbox{#2}\textsuperscript{\textbf{[now \pv{#1}]}}%
+      \PackageWarning{planarschapter}{Claim #1 no longer holds}\fi
+  \else\textbf{[\detokenize{#1}?]}%
+    \PackageWarning{planarschapter}{No value named #1}\fi}
+\ifdefined\AddToNoCaseChangeList\AddToNoCaseChangeList{\claim}\fi
 % \proseslot{name} stands in a prose slot nobody has written yet, so the
 % gap shows in the PDF.
 \newcommand{\proseslot}[1]{\par\noindent\fbox{\textit{Still to write: #1}}\par}

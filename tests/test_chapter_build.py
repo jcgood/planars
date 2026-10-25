@@ -13,7 +13,7 @@ import unicodedata
 import pytest
 
 from chapters import build, tex
-from chapters.data import ChapterDataError, chapter_data
+from chapters.data import ChapterDataError, chapter_data, commit_of
 from coding import drive_door, file_door, state_files
 from laminar import planars_language as pl
 
@@ -82,7 +82,7 @@ def test_intro_has_every_class_and_no_bare_math_symbols():
 
 
 def test_the_intro_outline_places_every_fragment_and_has_a_stub_per_slot():
-    built, stubs, _said = build.part_files(build.INTRO)
+    built, stubs, _said, _values = build.part_files(build.INTRO)
     outline = built["intro/chapter.tex"]
     for rel in built:
         if rel.startswith("intro/fragments/"):
@@ -159,6 +159,54 @@ def test_version_needs_a_language():
         _run("--version", "HEAD")
 
 
+def test_value_changes_says_each_span_once_and_counts_the_analysis():
+    base = "L.span.c.general.strict_complete_span"
+    old = {f"{base}.left": "9", f"{base}.right": "20", f"{base}.range": "9--20",
+           "L.analysis.types.all.families": "4", "L.data.commit": "a", "L.planar.positions": "38"}
+    new = {f"{base}.left": "9", f"{base}.right": "21", f"{base}.range": "9--21",
+           "L.analysis.types.all.families": "5", "L.data.commit": "b", "L.planar.positions": "39"}
+    lines, changed = build.value_changes(old, new, "L")
+    assert lines == ["  L.planar.positions: 38 -> 39",
+                     "  c general, strict complete span: 9--20 -> 9--21",
+                     "  L.analysis.types.all: 1 values changed"]
+    assert "L.data.commit" not in changed
+
+
+def _prose(part, name, text):
+    folder = state_files.PAPERS_DIR / part / "prose"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / name).write_text(text, encoding="utf-8")
+
+
+def test_claims_that_no_longer_hold_are_listed_with_file_and_line():
+    _prose("intro", "argument.tex",
+           "% \\claim{L.x}{1} in a comment is not a claim\n"
+           "It holds: \\claim{L.x}{1}.\n"
+           "It fails: \\claim{L.y}{NP\\{S\\}}, \\claim{L.gone}{2} and \\claim{M.z}{3}.\n")
+    lines = build.broken_claims({"L.x": 1, "L.y": "v:x"}, ["L"], ["intro"])
+    assert lines == ["Claims that no longer hold:",
+                     "  .papers/intro/prose/argument.tex:3: \\claim{L.y} says NP\\{S\\}, the data now say v:x",
+                     "  .papers/intro/prose/argument.tex:3: \\claim{L.gone} names no value"]
+
+
+@needs_english
+def test_a_chapter_is_pinned_and_moving_the_pin_reports_by_cause(capsys):
+    old = commit_of("HEAD~3")
+    _run("--lang", "stan1293", "--version", old, "--apply")
+    lock = build.read_lock("stan1293")
+    assert lock["planars_data"] == old
+    with pytest.raises(SystemExit, match="--update"):
+        _run("--lang", "stan1293", "--version", "HEAD")
+    capsys.readouterr()
+    _run("--lang", "stan1293", "--apply")
+    out = capsys.readouterr().out
+    assert "(its pin)" in out and "Changes from the code" in out
+    _run("--lang", "stan1293", "--update")
+    out = capsys.readouterr().out
+    assert "Changes from the code" in out and "Changes from the annotation" in out
+    assert build.read_lock("stan1293")["planars_data"] == old, "a dry run moved the pin"
+
+
 def _compile(folder):
     run = subprocess.run(["pdflatex", "-interaction=nonstopmode", "-halt-on-error", "main.tex"],
                          cwd=folder, capture_output=True, text=True)
@@ -166,13 +214,19 @@ def _compile(folder):
     assert run.returncode == 0, log[-3000:]
     assert "No value named" not in log
     assert not re.search(r"No file (?!main\.)", log), "an \\input or \\include found no file"
+    return log
 
 
 @needs_latex
 @needs_english
-def test_the_volume_compiles():
+def test_the_volume_compiles(english):
     _run("--intro", "--apply")
     volume = state_files.PAPERS_DIR / "volume.yaml"
     volume.write_text("title: A test volume\nparts: [intro, stan1293]\n", encoding="utf-8")
     _run("--apply")
-    _compile(state_files.PAPERS_DIR)
+    total = english.values["stan1293.planar.positions"]
+    _prose("intro", "argument.tex", f"English has \\claim{{stan1293.planar.positions}}{{{total}}} "
+                                    f"positions, not \\claim{{stan1293.planar.positions}}{{{total + 1}}}.\n")
+    log = _compile(state_files.PAPERS_DIR)
+    # TeX breaks log lines at 79 characters.
+    assert log.replace("\n", "").count("Claim stan1293.planar.positions no longer holds") == 1

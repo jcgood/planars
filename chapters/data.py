@@ -30,8 +30,9 @@ chapter citing several languages has one namespace. The groups:
   through planars.reports.completeness_summary);
 - ``<L>.spans.*``: total (span rows), distinct (distinct left/right pairs);
 - ``<L>.span.<class>.<construction>.<span_key>.*``: left, right, size,
-  left_name, right_name (planars.reports.language_spans; the span key is
-  the derive function's, e.g. ``strict_complete_span``);
+  left_name, right_name, and range (``9--20``, what a ``\\claim`` about a
+  span states) (planars.reports.language_spans; the span key is the derive
+  function's, e.g. ``strict_complete_span``);
 - ``<L>.analysis.<grouping>.<selection>.*``: positions, tests, spans,
   families, conflict_pairs, and for each permutation test in the bundle
   (fragmentation, span_placement, arbitrary_layers) and each group,
@@ -146,6 +147,15 @@ def data_at(version: Optional[str]) -> Iterator[Path]:
         yield root
 
 
+def commit_of(version: Optional[str]) -> str:
+    """The planars-data commit `version` names (None: the clone's HEAD)."""
+    try:
+        return _git(CODED_DATA, "rev-parse", "--verify", f"{version or 'HEAD'}^{{commit}}")
+    except subprocess.CalledProcessError:
+        raise ChapterDataError(f"planars-data has no version {version!r}. "
+                               f"Pull coded_data/ first if it is new.")
+
+
 def _version_record(lang_id: str, version: Optional[str]) -> dict:
     # A coded_data/ that is a plain copy, not a clone, would make git answer
     # for the planars repository around it, and the chapter would name a
@@ -158,7 +168,7 @@ def _version_record(lang_id: str, version: Optional[str]) -> dict:
         raise ChapterDataError(
             "coded_data/ is not a clone of planars-data, so its data version can't be "
             "named. Clone it there (docs/coordinator-guide.md, setup).")
-    commit =_git(CODED_DATA, "rev-parse", f"{version or 'HEAD'}^{{commit}}")
+    commit = commit_of(version)
     return {
         "planars_data_commit": commit,
         "date": _git(CODED_DATA, "log", "-1", "--format=%cs", commit),
@@ -276,6 +286,7 @@ def _span_values(spans: pd.DataFrame, pos_to_name: dict) -> dict:
         base = f"span.{row['Analysis']}.{row['Construction']}.{row['Span_Key']}"
         left, right = int(row["Left_Edge"]), int(row["Right_Edge"])
         values.update({f"{base}.left": left, f"{base}.right": right, f"{base}.size": int(row["Size"]),
+                       f"{base}.range": f"{left}--{right}",
                        f"{base}.left_name": pos_to_name.get(left, ""),
                        f"{base}.right_name": pos_to_name.get(right, "")})
     return values
