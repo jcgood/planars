@@ -1,9 +1,16 @@
-\#{ The volume, from volume.yaml. Context: title, parts (folder names, in
-   order), languages (the parts that are language chapters). }
+\#{ The volume, from volume.yaml, or one chapter of it on its own. Context:
+   file (this file's name), title, parts (folder names, in order: every
+   part for main.tex, one for a chapter's own file), languages (every
+   language chapter in the volume, whose values are loaded). }
+\BLOCK{if file == "main.tex"}
 % main.tex: the volume, from volume.yaml.
+\BLOCK{else}
+% \VAR{file}: the \VAR{parts[0]} chapter on its own, for whoever writes it;
+% main.tex is the whole volume.
+\BLOCK{endif}
 % Written by `python -m coding build-chapters`; never edit it by hand
 % (change the title or the parts in volume.yaml, then rebuild).
-% Compile it here, in .papers/: latexmk -pdf main.tex
+% Compile it here, in .papers/: latexmk -pdf \VAR{file}
 % The document class is a stand-in for the venue's (De Gruyter's dgruyter).
 \documentclass{book}
 \usepackage[T1]{fontenc}

@@ -302,13 +302,15 @@ def test_the_check_files_a_chapter_behind_and_closes_it_when_caught_up(capsys, g
     assert github.issue(issue["number"])["state"] == "CLOSED"
 
 
-def _compile(folder):
-    run = subprocess.run(["pdflatex", "-interaction=nonstopmode", "-halt-on-error", "main.tex"],
+def _compile(folder, file="main.tex"):
+    stem = file.removesuffix(".tex")
+    run = subprocess.run(["pdflatex", "-interaction=nonstopmode", "-halt-on-error", file],
                          cwd=folder, capture_output=True, text=True)
-    log = (folder / "main.log").read_text(encoding="utf-8", errors="replace")
+    log = (folder / f"{stem}.log").read_text(encoding="utf-8", errors="replace")
     assert run.returncode == 0, log[-3000:]
     assert "No value named" not in log
-    assert not re.search(r"No file (?!main\.)", log), "an \\input or \\include found no file"
+    assert not re.search(rf"No file (?!{re.escape(stem)}\.)", log), \
+        "an \\input or \\include found no file"
     return log
 
 
@@ -324,6 +326,8 @@ def test_the_volume_compiles(english):
                                     f"positions, not \\claim{{stan1293.planar.positions}}{{{total + 1}}}.\n"
                                     + tex.example("ema=ja kweti", "1SG=ERG go.PST", "I went", "p. 3",
                                                   True) + "\n")
+    for chapter in ("intro", "stan1293"):
+        _compile(state_files.PAPERS_DIR, f"{chapter}.tex")
     log = _compile(state_files.PAPERS_DIR)
     # TeX breaks log lines at 79 characters.
     assert log.replace("\n", "").count("Claim stan1293.planar.positions no longer holds") == 1

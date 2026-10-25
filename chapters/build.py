@@ -22,7 +22,9 @@ goes in this public repository):
   none, and checks every part is one it can build.
 - ``main.tex`` (from volume.yaml), ``planarschapter.sty`` (``\\pv``,
   ``\\proseslot``) and ``planarsvenue.sty`` (the venue's example macros,
-  chapters.tex): compile ``main.tex`` there.
+  chapters.tex): compile ``main.tex`` there for the volume. Each part
+  also gets ``<part>.tex`` (``stan1293.tex``, ``intro.tex``): that
+  chapter alone, so each writer compiles only their own.
 - one folder per part: ``chapter.tex`` (the outline: sections in the order
   of ``chapters/templates/outline.yaml``, each with its prose slot and
   then its fragments), ``fragments/``, ``prose/``, and for a language
@@ -778,9 +780,15 @@ def main(args: argparse.Namespace | None = None) -> None:
     try:
         volume, volume_stub = read_volume(args.lang)
         parts = [args.lang] if args.lang else [INTRO] if args.intro else list(volume["parts"])
+        languages = [p for p in volume["parts"] if p != INTRO]
         built = {STY_FILE: tex.STY, tex.VENUE_STY: tex.venue_sty(volume["venue"]), MAIN: tex.render(
-            "main.tex.j2", title=volume["title"], parts=volume["parts"],
-            languages=[p for p in volume["parts"] if p != INTRO])}
+            "main.tex.j2", file=MAIN, title=volume["title"], parts=volume["parts"],
+            languages=languages)}
+        # One file per chapter, so whoever writes it compiles only theirs;
+        # every language's values are loaded, as any chapter may cite them.
+        built.update({f"{p}.tex": tex.render("main.tex.j2", file=f"{p}.tex", title=volume["title"],
+                                             parts=[p], languages=languages)
+                      for p in volume["parts"]})
         stubs = {VOLUME: volume_stub} if volume_stub else {}
         prose_parts = list(dict.fromkeys(list(volume["parts"]) + parts))
         values = {}
