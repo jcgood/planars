@@ -30,9 +30,11 @@ its five decisions (2026-10-25; the plan's "Decisions" — don't re-ask): De
 Gruyter, class-neutral fragments; a private GitHub repo; a sentence per
 test plus tables; structured examples for every language but English (a
 per-language field, not a coded exception); mixed authorship.
-**Next action:** Phase 1 (the data layer for chapters). Depends on #318 (e)
-(construction descriptions), laminar plan 4d, and the span rules settled
-in #321.
+Phase 1 (the data layer, `chapters/data.py`) is built (2026-10-25; the
+plan's "Phase 1 as built"). **Next action:** Phase 2, fragments and
+values (templates, `values.tex`, `chapters build`), English first. Still
+waiting on #318 (e) (construction descriptions), laminar plan 4d (the
+permutation tests) and #321 (span rules), none of which blocks starting.
 
 ### Thread: the laminar analysis on English, for a paper (2026-10-24)
 

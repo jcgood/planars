@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "planars"
-version = "0.1.0a50"
+version = "0.1.0a51"
 requires-python = ">=3.9"
 dependencies = ["pandas", "pandera", "plotly", "pyyaml"]
 description = "Toolkit for deriving morphosyntactic constituency spans from annotated planar structures"
@@ -31,7 +31,7 @@ pdf = ["weasyprint>=70.0", "kaleido"]
 Repository = "https://github.com/jcgood/planars"
 
 [tool.setuptools.packages.find]
-include = ["planars*", "coding*", "schemas*", "laminar*"]
+include = ["planars*", "coding*", "schemas*", "laminar*", "chapters*"]
 
 [tool.setuptools.package-data]
 schemas = ["*.yaml"]

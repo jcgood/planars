@@ -748,6 +748,27 @@ def language_completeness(
         raise ValueError(f"Unknown source: {source!r}. Expected 'local' or 'sheets'.")
 
 
+def completeness_summary(completeness: Dict[str, Dict[str, dict]]) -> dict:
+    """language_completeness()'s result in brief, as the laminar bundles and
+    the chapters record it: ``{"filled": int, "total": int, "by_construction":
+    {"class/construction": "423/423 cells" | "not yet imported" |
+    "unreadable: …"}}``. A construction not yet imported or unreadable
+    counts towards neither total."""
+    by_construction = {}
+    filled = total = 0
+    for cls, constructions in completeness.items():
+        for construction, stats in constructions.items():
+            if stats.get("missing"):
+                by_construction[f"{cls}/{construction}"] = "not yet imported"
+            elif stats.get("error"):
+                by_construction[f"{cls}/{construction}"] = f"unreadable: {stats['error']}"
+            else:
+                by_construction[f"{cls}/{construction}"] = f"{stats['filled']}/{stats['total']} cells"
+                filled += stats["filled"]
+                total += stats["total"]
+    return {"filled": filled, "total": total, "by_construction": by_construction}
+
+
 def project_completeness(
     source: str = "local",
     repo_root=None,

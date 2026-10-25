@@ -67,7 +67,7 @@ import pandas as pd
 from laminar.datasets import REPO, repo_relative
 from laminar.planars_groupings import planars_domain_type
 from planars.languages import get_display_name
-from planars.reports import language_completeness, language_spans
+from planars.reports import completeness_summary, language_completeness, language_spans
 from planars.schema_values import class_domain_types, is_keystone
 
 CODED_DATA = REPO / "coded_data"
@@ -153,12 +153,14 @@ class NoSpansYet(SpanTableError):
     """The language's annotation gives no spans yet (nothing to chart)."""
 
 
-def span_table(lang_id: str) -> pd.DataFrame:
+def span_table(lang_id: str, repo_root: Path = REPO) -> pd.DataFrame:
     """Every span the language's annotation gives, one row per test, with
     both groupings' Domain_Type (``Domain_Type_types``, ``Domain_Type_classes``)
     and the record columns of DOMAIN_COLUMNS. Raises NoSpansYet when there
-    are none, SpanTableError when the spans can't be placed."""
-    spans, _meta = language_spans(lang_id, source="local", repo_root=REPO)
+    are none, SpanTableError when the spans can't be placed. ``repo_root``
+    is a folder whose ``coded_data/`` holds the annotation: the live clone,
+    or a past version of it (chapters.data reads one)."""
+    spans, _meta = language_spans(lang_id, source="local", repo_root=repo_root)
     if spans.empty:
         raise NoSpansYet(f"{get_display_name(lang_id)}: the annotation gives no spans yet.")
     types = class_domain_types()
@@ -230,18 +232,7 @@ def _git(*args: str) -> str:
 
 def source_record(lang_id: str, grouping: str, selection: str, table: pd.DataFrame) -> dict:
     completeness = language_completeness(lang_id, source="local", repo_root=REPO)
-    by_construction = {}
-    filled = total = 0
-    for cls, constructions in completeness.items():
-        for construction, stats in constructions.items():
-            if stats.get("missing"):
-                by_construction[f"{cls}/{construction}"] = "not yet imported"
-            elif stats.get("error"):
-                by_construction[f"{cls}/{construction}"] = f"unreadable: {stats['error']}"
-            else:
-                by_construction[f"{cls}/{construction}"] = f"{stats['filled']}/{stats['total']} cells"
-                filled += stats["filled"]
-                total += stats["total"]
+    summary = completeness_summary(completeness)
     return {
         "language": lang_id,
         "language_name": get_display_name(lang_id),
@@ -251,9 +242,9 @@ def source_record(lang_id: str, grouping: str, selection: str, table: pd.DataFra
         "planars_data_commit": _git("rev-parse", "HEAD"),
         "planars_data_uncommitted_changes": bool(_git("status", "--porcelain", "--", lang_id)),
         "planar_file": repo_relative(planar_file(lang_id)),
-        "annotation_cells_filled": filled,
-        "annotation_cells_total": total,
-        "annotation_by_construction": by_construction,
+        "annotation_cells_filled": summary["filled"],
+        "annotation_cells_total": summary["total"],
+        "annotation_by_construction": summary["by_construction"],
         "annotated_classes_without_spans": sorted(set(completeness) - set(table["Class"])),
     }
 

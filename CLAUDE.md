@@ -66,6 +66,7 @@ tab is each language's status sheet.
 | Tests and saved outputs | `docs/testing.md`; span snapshots in `tests/snapshots/` |
 | One-time migrations | `migrations/` — convention in `migrations/README.md` |
 | Laminar-family analysis and charts | `laminar/` (run `python -m laminar charts <dataset>`) and `planarsviz/` (R chart package); plan `docs/laminar-analysis-plan.md`, state `docs/laminar-analysis-progress.md` |
+| Chapters written from the annotation (generated values, later fragments) | `chapters/` (`python -m chapters values --lang <glottocode>`); plan and state `docs/chapter-generation-plan.md` |
 | Personal working area, not the pipeline | `NonCollaborative/` |
 
 ## Working rules for every Claude on this project

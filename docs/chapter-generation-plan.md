@@ -1,6 +1,7 @@
 # Plan: generating the data-driven parts of the chapters
 
-Jeff, 2026-10-25 (scoping; nothing built yet). Chapters are to be written
+Jeff, 2026-10-25. Phase 1 built 2026-10-25 (see "Phase 1 as built" at
+the end); the rest not started. Chapters are to be written
 from the annotation: an introduction chapter with shared conventions, one
 chapter per language with its own sections, and results sections. Most of
 the prose is written by people; what this plan covers is the part that can
@@ -199,3 +200,35 @@ states them.
    each annotator writes their language's background and analysis slots.
    So the slots carry short written instructions, and Word support (the
    placeholder path) is needed before the second language's chapter.
+
+## Phase 1 as built (2026-10-25)
+
+- **`chapters/data.py`, `chapter_data(lang_id, version=None)`**: a
+  language's named values and tables at one planars-data version. What
+  each value is called and where it comes from is the module docstring;
+  `python -m chapters values --lang stan1293 [--version COMMIT]` prints
+  them (English today: ~1,500 values, nearly all of them span edges and
+  per-group analysis results).
+- **A past version is read from a copy git writes into a temporary
+  folder** (`git archive`), so the clone is never touched. The schemas and
+  span rules are this checkout's, recorded as `planars_commit`.
+- **An analysis bundle is used only if it was drawn from the same spans
+  and planar file** as the version being read (the domains file rebuilt
+  here must have the hash the bundle records), not merely the same
+  commit: annotation that changes no span keeps its analysis. Otherwise
+  its values are left out and `missing` says which commit it came from.
+  Daily bundles carry no permutation tests, which `missing` also says.
+- **Started before its prerequisites, without them:** no construction
+  descriptions yet (#318 (e)); examples are the annotation's plain
+  `Example` column (English needs no more, decision 4); the analysis is
+  read from the working bundles in `.analysis/<lang>/chart_data/` until
+  4d decides where the weekly ones live (only `bundle_root` changes).
+- `completeness_summary` moved into `planars.reports`; the laminar
+  bundles' source record and the chapters both read it.
+- **Found, for Phase 4:** reading an old version with today's code is not
+  the same as reading it as it was. At the 2026-09-23 commit, English's
+  coreference gives no spans, because its constructions were renamed
+  since (#318 (d)) and today's schema knows only the new names. So
+  `data.lock` must record `planars_commit` as well, and `chapters update`
+  should say whether a change came from the annotation or from the rules
+  (move one pin at a time).
