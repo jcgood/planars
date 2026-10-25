@@ -388,6 +388,24 @@ def test_the_banner_links_each_chart_pdf_on_drive(env, monkeypatch):
     assert values[5][0] == ""
 
 
+def test_a_longer_banner_leaves_no_formatting_from_the_last_build(env, monkeypatch):
+    """2026-10-25: the chart links moved the header down two rows, and the
+    old header's bold stayed on the second link."""
+    doorway, run, _ = env
+    run(["gen", "--lang", "arao1248", "--apply"])
+    config = {"_planars_config_file_id": MANIFEST_FILE_ID, "_root_folder_id": ROOT_FOLDER_ID,
+              "arao1248": {"charts_classes_file_id": "CLS", "charts_types_file_id": "TYP"}}
+    monkeypatch.setattr(gen, "_load_drive_config", lambda: json.loads(json.dumps(config)))
+    run(["gen", "--lang", "arao1248", "--apply"])
+    ws = the_sheet(doorway, "status_arao1248").worksheet("Status")
+    values = ws.get_all_values()
+    header = values.index(list(gen._HEADER))
+    bold = [r for r in range(len(values)) if ws._cell(r, 0).bold]
+    assert bold == [0, header]
+    assert all(ws._cell(r, 2).background is None for r in range(header + 1))
+    assert all(len([m for m in ws.merges if m["startRowIndex"] == r]) <= 1 for r in range(header))
+
+
 def test_each_construction_cell_links_to_its_own_tab(env):
     doorway, run, _ = env
     run(["gen", "--lang", "arao1248", "--apply"])

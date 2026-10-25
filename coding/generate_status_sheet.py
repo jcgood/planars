@@ -394,6 +394,18 @@ def _write_status_sheet(
     ws.update(all_rows, "A1", raw=False)
 
     requests = [
+        # Start from no formatting: the rows below are set by position, and
+        # when the banner changes length (the chart links, 2026-10-25) an
+        # earlier run's bold header, merges and status colours would
+        # otherwise stay on whatever row now sits there.
+        {"unmergeCells": {"range": {"sheetId": ws.id}}},
+        # backgroundColor is named in `fields` but given no value: the API
+        # then clears it.
+        {"repeatCell": {
+            "range": {"sheetId": ws.id},
+            "cell": {"userEnteredFormat": {"textFormat": {"bold": False}}},
+            "fields": "userEnteredFormat.textFormat.bold,userEnteredFormat.backgroundColor",
+        }},
         # Freeze banner + header rows.
         {"updateSheetProperties": {
             "properties": {"sheetId": ws.id, "gridProperties": {"frozenRowCount": header_row_idx + 1}},

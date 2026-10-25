@@ -660,6 +660,9 @@ class FakeSpreadsheet:
         fmt = spec.get("userEnteredFormat", {})
         if selected("userEnteredFormat.backgroundColor") and "backgroundColor" in fmt:
             cell.background = fmt["backgroundColor"]
+        elif "userEnteredFormat.backgroundColor" in wanted:
+            # Named in the mask but given no value: the API clears it.
+            cell.background = None
         if selected("userEnteredFormat.textFormat.bold") and "bold" in fmt.get("textFormat", {}):
             cell.bold = fmt["textFormat"]["bold"]
         if selected("userEnteredFormat.wrapStrategy") and "wrapStrategy" in fmt:

@@ -189,7 +189,7 @@ TRASHABLE_KINDS: FrozenSet[str] = frozenset({"notebook"})
 REQUEST_TYPES = frozenset({
     "updateSheetProperties", "repeatCell", "setDataValidation", "insertDimension",
     "deleteDimension", "updateDimensionProperties", "updateCells", "mergeCells",
-    "addProtectedRange",
+    "unmergeCells", "addProtectedRange",
 })
 
 VIOLATION_LABEL = "door-violation"
@@ -1873,7 +1873,7 @@ class CheckedSpreadsheet:
                         changes[(r0 + i, c0 + j)] = _text(
                             entered.get("stringValue", entered.get("formulaValue", "")))
             return ws._value_problems(changes)
-        return []  # formatting: repeatCell, mergeCells, updateDimensionProperties
+        return []  # formatting: repeatCell, mergeCells, unmergeCells, updateDimensionProperties
 
 
 def _request_sheet_id(kind: str, payload: Mapping[str, Any]) -> Optional[int]:
