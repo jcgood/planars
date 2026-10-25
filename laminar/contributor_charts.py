@@ -13,13 +13,18 @@ renderer draws from such a bundle. Built from the annotation in a folder the
 caller gives (a temporary one): derived and redrawn, so nothing is stored.
 
 **One PDF per dataset.** The renderer writes one file per chart (about 300
-for English); a contributor gets them as one PDF instead, with a first page
-saying what it is, the charts in ``SECTIONS`` order, and a bookmark for
-each section and chart. Each page gets a strip added above it with the
-dataset, the date it was drawn and how complete the annotation was, so a
-page printed or shared alone still says so. The strip is added to the page,
-not drawn into the chart, so the charts themselves are the same as
-everywhere else (Chichewa's and CCDB's reference images are unaffected).
+for English); a contributor gets them as one PDF instead: a first page
+saying what it is and listing the chapters, then the chapters in ``PARTS``
+order, each opened by a divider page saying what its charts show and
+listing them with their page numbers, and a bookmark for each chapter and
+chart. Which chapter a chart is in and its title are the renderer's, set
+where it adds the chart (``render_planarsviz.R``'s chart_table(), the
+manifest's ``part`` and ``title`` columns); a part ``PARTS`` doesn't list
+fails. Each page gets a strip added above it with the chart's title, and
+the dataset, the date it was drawn and how complete the annotation was, so
+a page printed or shared alone still says what it is. The strip is added to
+the page, not drawn into the chart, so the charts themselves are the same
+as everywhere else (Chichewa's and CCDB's reference images are unaffected).
 
 **When to redraw** is ``fingerprint()``: the two domains files (the spans,
 which is all a chart is drawn from apart from the planar file) plus the
@@ -50,17 +55,38 @@ from planars.languages import get_display_name
 CONTRIBUTOR_DATASETS = {"classes": "all", "types": "all"}
 GROUPING_WORDS = {"classes": "by class", "types": "by domain type"}
 
-# The renderer's topic folders (render_planarsviz.R), in the order the PDF
-# shows them, with the section title a contributor reads. A topic not listed
-# here fails rather than being left out or put at the end unnamed.
-SECTIONS = {
-    "pooled": "Spans: every test's span over the planar structure",
-    "boundaries": "Boundaries: where spans start and stop",
-    "counts-and-chance": "Counts: how many families and trees",
-    "laminar-families": "Laminar families: forests and their trees",
+# The renderer's parts (render_planarsviz.R's chart_table()), in the order
+# the PDF shows them: (chapter title, what its charts show). A part not
+# listed here fails rather than being left out or put at the end unnamed.
+# The combined forest comes first: it is the one chart that shows every
+# test at once. Every family on its own comes last: there can be hundreds.
+PARTS = {
+    "overview": ("The combined forest",
+                 "Every family of every test drawn as one stacked forest (darker where more "
+                 "families share a branch, thicker where more tests give the span), the same "
+                 "coloured by domain type, and the single trees that sum it up."),
+    "spans": ("Spans",
+              "Each test's span over the planar structure: all tests together, grouped, "
+              "and one group at a time."),
+    "boundaries": ("Boundaries",
+                   "Where spans start and stop, and how strongly each position is an edge."),
+    "forests": ("Forests by group",
+                "The families of one group of tests at a time (a domain type, a class or a "
+                "bundle of them), each forest stacked like the combined one."),
+    "exemplary": ("Exemplary trees",
+                  "A handful of families chosen to differ from each other, each with the "
+                  "tests behind its spans."),
+    "counts": ("Counts",
+               "How many families the tests allow, by group and in all."),
+    "tests": ("Statistical tests",
+              "Whether the patterns could come about by chance."),
+    "families": ("Every family on its own",
+                 "Each family of each forest drawn by itself, in the order of the forests above."),
 }
 
-STRIP_POINTS = 22          # height of the strip added above each page
+STRIP_POINTS = 34          # height of the strip added above a page up to...
+STRIP_BASE_WIDTH = 600     # ...this wide (points); wider pages scale it up
+DIVIDER_LIST_MAX = 40      # a divider lists at most this many lines
 _CODE_FOLDERS = ("laminar", "planarsviz")
 
 
@@ -156,24 +182,62 @@ def _html_pdf(body: str, width: float, height: float | None, css: str = "") -> b
                        f"<body>{body}</body></html>").write_pdf()
 
 
-def _strip(width: float, text: str) -> bytes:
-    """A strip `width` points wide holding one line of text."""
-    css = (f"p {{ margin: 0; padding: 5pt 8pt; font-size: 10pt; white-space: nowrap; "
-           f"overflow: hidden; color: #444; }}")
-    return _html_pdf(f"<p>{html.escape(text)}</p>", width, STRIP_POINTS, css)
+def _strip_scale(width: float) -> float:
+    """Charts run from 7 to over 40 inches wide; the strip grows with the
+    page so its title reads at the chart's own scale."""
+    return max(1.0, width / STRIP_BASE_WIDTH)
 
 
-def _cover(title: str, stamp: str, sections: list[tuple[str, int]]) -> bytes:
-    rows = "".join(f"<li>{html.escape(name)} ({n} chart{'s' if n != 1 else ''})</li>"
-                   for name, n in sections)
+def _strip(width: float, chart_title: str, stamp: str) -> bytes:
+    """A strip `width` points wide: the chart's title, and under it the stamp."""
+    s = _strip_scale(width)
+    css = (f"p {{ margin: 0; padding: 0 {8 * s:.1f}pt; white-space: nowrap; overflow: hidden; }} "
+           f"p.t {{ padding-top: {4 * s:.1f}pt; font-size: {11 * s:.1f}pt; font-weight: bold; color: #222; }} "
+           f"p.s {{ font-size: {8 * s:.1f}pt; color: #666; }}")
+    return _html_pdf(f'<p class="t">{html.escape(chart_title)}</p>'
+                     f'<p class="s">{html.escape(stamp)}</p>', width, STRIP_POINTS * s, css)
+
+
+_PAGE_CSS = ("h1 { font-size: 20pt; } h2 { font-size: 14pt; } p { font-size: 11pt; } "
+             "table { border-collapse: collapse; font-size: 9.5pt; width: 100%; } "
+             "td { padding: 1pt 4pt; vertical-align: top; } td.n { text-align: right; width: 4em; }")
+
+
+def _contents(rows: list[tuple[str, int]]) -> str:
+    return ("<table>" + "".join(f'<tr><td>{html.escape(text)}</td><td class="n">{page}</td></tr>'
+                                for text, page in rows) + "</table>")
+
+
+def _cover(title: str, stamp: str, parts: list[tuple[str, int, int]]) -> bytes:
+    """parts: (chapter title, number of charts, first page)."""
     body = (f"<h1>{html.escape(title)}</h1><p>{html.escape(stamp)}</p>"
             "<p>These charts are drawn from the annotation by the project's tooling "
             "whenever the spans it gives change, to help you check your data: a span "
             "that looks wrong usually means a cell that needs another look. They leave "
             "out the statistical tests, which are run separately for the analysis.</p>"
-            "<p>Use the bookmarks to go to a section or chart.</p>"
-            f"<h2>Sections</h2><ul>{rows}</ul>")
-    return _html_pdf(body, 0, None, "h1 { font-size: 18pt; } p, li { font-size: 11pt; }")
+            "<p>Each chapter starts with a page listing its charts; the bookmarks go to any "
+            "chapter or chart.</p><h2>Chapters</h2>"
+            + _contents([(f"{i}. {name} ({n} chart{'s' if n != 1 else ''})", page)
+                         for i, (name, n, page) in enumerate(parts, start=1)]))
+    return _html_pdf(body, 0, None, _PAGE_CSS)
+
+
+def _divider(number: int, part: str, charts: list[tuple[str, int, int]]) -> bytes:
+    """A chapter's first page. charts: (title, first page, last page). Long
+    lists (every family on its own) are shown one line per group of titles
+    sharing what comes before their colon."""
+    name, what = PARTS[part]
+    lines = [(t, str(a)) for t, a, _b in charts]
+    if len(lines) > DIVIDER_LIST_MAX:
+        groups: dict[str, list[tuple[int, int]]] = {}
+        for t, a, b in charts:
+            groups.setdefault(t.split(":")[0], []).append((a, b))
+        lines = [(f"{g} ({len(p)} chart{'s' if len(p) != 1 else ''})",
+                  f"{p[0][0]}–{p[-1][1]}" if len(p) > 1 else str(p[0][0]))
+                 for g, p in groups.items()]
+    body = (f"<h1>{number}. {html.escape(name)}</h1><p>{html.escape(what)}</p>"
+            + _contents(lines))
+    return _html_pdf(body, 0, None, _PAGE_CSS)
 
 
 def _manifest(chart_dir: Path, dataset: str) -> list[dict[str, str]]:
@@ -184,46 +248,73 @@ def _manifest(chart_dir: Path, dataset: str) -> list[dict[str, str]]:
 
 def combine(chart_dir: Path, dataset: str, grouping: str, lang_id: str, date: str,
             source_json: str) -> tuple[bytes, int]:
-    """One PDF of every chart the renderer listed in its manifest, with a
-    first page, bookmarks and a strip above each page. Returns the PDF and
-    the number of charts."""
+    """One PDF of every chart the renderer listed in its manifest: a first
+    page, a divider opening each chapter, bookmarks, and a strip above each
+    chart page. Returns the PDF and the number of charts."""
     from pypdf import PdfReader, PdfWriter, Transformation
 
     rows = _manifest(chart_dir, dataset)
-    by_topic: dict[str, list[dict[str, str]]] = {topic: [] for topic in SECTIONS}
+    by_part: dict[str, list[dict[str, str]]] = {part: [] for part in PARTS}
     for row in rows:
-        topic = row["file"].split("/")[0]
-        if topic not in SECTIONS:
-            raise DrawingFailed(f"The renderer drew {row['file']} into a folder "
-                                f"laminar/contributor_charts.py's SECTIONS doesn't list "
-                                f"({topic!r}); add it there.")
-        by_topic[topic].append(row)
+        if not row.get("part") or not row.get("title"):
+            raise DrawingFailed(f"The renderer's manifest gives {row['chart']} no part or title; "
+                                "set both where render_planarsviz.R's chart_table() adds it.")
+        if row["part"] not in PARTS:
+            raise DrawingFailed(f"The renderer put {row['chart']} in part {row['part']!r}, which "
+                                "laminar/contributor_charts.py's PARTS doesn't list; add it there.")
+        by_part[row["part"]].append(row)
+    parts = [p for p, r in by_part.items() if r]
+    readers = {row["file"]: PdfReader(chart_dir / row["file"]) for row in rows}
 
     title = f"{get_display_name(lang_id)}: charts {GROUPING_WORDS[grouping]}"
     stamp = f"Drawn {date}; {_completeness(source_json)}"
-    strip_text = f"{title}  ·  {stamp}"
+
+    # Page numbers depend on how long the first page and the dividers come
+    # out, which depends on the numbers: lay out, measure, again until stable.
+    lengths = {"cover": 1, **{p: 1 for p in parts}}
+    for _ in range(5):
+        page = 1 + lengths["cover"]
+        part_start, ranges = {}, {}
+        for p in parts:
+            part_start[p] = page
+            page += lengths[p]
+            for row in by_part[p]:
+                n = len(readers[row["file"]].pages)
+                ranges[row["file"]] = (page, page + n - 1)
+                page += n
+        cover = _cover(title, stamp, [(PARTS[p][0], len(by_part[p]), part_start[p]) for p in parts])
+        dividers = {p: _divider(i, p, [(r["title"], *ranges[r["file"]]) for r in by_part[p]])
+                    for i, p in enumerate(parts, start=1)}
+        measured = {"cover": len(PdfReader(io.BytesIO(cover)).pages),
+                    **{p: len(PdfReader(io.BytesIO(d)).pages) for p, d in dividers.items()}}
+        if measured == lengths:
+            break
+        lengths = measured
+    else:
+        raise DrawingFailed("The contents pages' length would not settle.")
+
     writer = PdfWriter()
-    sections = [(SECTIONS[t], len(r)) for t, r in by_topic.items() if r]
-    writer.append(PdfReader(io.BytesIO(_cover(title, stamp, sections))))
-    strips: dict[int, object] = {}
-    for topic, topic_rows in by_topic.items():
-        if not topic_rows:
-            continue
-        parent = writer.add_outline_item(SECTIONS[topic], len(writer.pages))
-        for row in topic_rows:
+    # Without their own bookmarks: WeasyPrint makes one per heading.
+    writer.append(PdfReader(io.BytesIO(cover)), import_outline=False)
+    strips: dict[tuple[int, str], object] = {}
+    for i, p in enumerate(parts, start=1):
+        divider_page = len(writer.pages)
+        writer.append(PdfReader(io.BytesIO(dividers[p])), import_outline=False)
+        parent = writer.add_outline_item(f"{i}. {PARTS[p][0]}", divider_page)
+        for row in by_part[p]:
             first = len(writer.pages)
-            for page in PdfReader(chart_dir / row["file"]).pages:
-                box = page.mediabox
+            for chart_page in readers[row["file"]].pages:
+                box = chart_page.mediabox
                 width, top = float(box.width), float(box.top)
-                key = round(width)
+                key = (round(width), row["title"])
                 if key not in strips:
-                    strips[key] = PdfReader(io.BytesIO(_strip(width, strip_text))).pages[0]
-                box.upper_right = (float(box.right), top + STRIP_POINTS)
-                page.cropbox = box
-                page.merge_transformed_page(strips[key],
-                                            Transformation().translate(float(box.left), top))
-                writer.add_page(page)
-            writer.add_outline_item(row["chart"], first, parent=parent)
+                    strips[key] = PdfReader(io.BytesIO(_strip(width, row["title"], f"{title}  ·  {stamp}"))).pages[0]
+                box.upper_right = (float(box.right), top + STRIP_POINTS * _strip_scale(width))
+                chart_page.cropbox = box
+                added = writer.add_page(chart_page)
+                added.merge_transformed_page(strips[key],
+                                             Transformation().translate(float(box.left), top))
+            writer.add_outline_item(row["title"], first, parent=parent)
     writer.page_mode = "/UseOutlines"
     out = io.BytesIO()
     writer.write(out)

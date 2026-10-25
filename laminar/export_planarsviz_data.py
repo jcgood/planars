@@ -71,18 +71,28 @@ def _palette(style: Style | None) -> dict[str, str]:
     return {row["domain_type"]: row["colour"] for row in (style or Style(DOMAIN_TYPE_STYLE, [])).rows}
 
 
-def forest_variants(bundles: list, style: Style | None = None) -> list[tuple[str, list[str], str]]:
-    """(forest id, domain types, colour) for every per-class forest chart.
+def readable_type(domain_type: str) -> str:
+    """A domain type or class name as a person reads it: ``phonological-prosodic``
+    -> ``Phonological (prosodic)``, ``free_occurrence`` -> ``Free occurrence``."""
+    head, _, sub = domain_type.replace("_", " ").partition("-")
+    return head.capitalize() + (f" ({sub})" if sub else "")
+
+
+def forest_variants(bundles: list, style: Style | None = None) -> list[tuple[str, list[str], str, str]]:
+    """(forest id, domain types, colour, label) for every per-class forest chart.
 
     The per-domain-type groups come from the grouping's style (by default
     laminar_analysis.OVERLAY_GROUPS) and the bundles from the dataset's
     chosen grouping set (--groupings; see planars_groupings.GROUPINGS), so
     ids and colours match the charts that were previously drawn from
-    nyan1308_{id}_laminar_forest.r.
+    nyan1308_{id}_laminar_forest.r. The label, what a chart's title calls
+    the forest, is the bundle's display label, or the one type made readable.
     """
     overlay = style.overlay if style else OVERLAY_GROUPS
-    variants = [(short, list(types), colour) for types, colour, short in overlay]
-    variants += [(name, list(types), colour) for name, types, colour, _ in bundles]
+    variants = [(short, list(types), colour, readable_type(types[0]) if len(types) == 1
+                 else " + ".join(readable_type(t) for t in types))
+                for types, colour, short in overlay]
+    variants += [(name, list(types), colour, label) for name, types, colour, label in bundles]
     return variants
 
 
@@ -111,7 +121,7 @@ def export_forests(domain_file: Path, domains_dir: Path, data_dir: Path, bundles
         pd.read_csv(domain_file, sep="\t", dtype=str, comment="#")["Domain_Type"].dropna().str.strip()
     )
     index = []
-    for forest_id, types, colour in forest_variants(bundles, style):
+    for forest_id, types, colour, label in forest_variants(bundles, style):
         # Skip a forest none of whose domain types occur in this dataset:
         # load_spans() fails on an empty subset rather than returning nothing.
         # Found by the shifted test dataset, where tonosegmental is renamed.
@@ -148,6 +158,7 @@ def export_forests(domain_file: Path, domains_dir: Path, data_dir: Path, bundles
                   ["tree_number", "newick", "group_spans", "strengths"], rows)
         index.append({
             "forest_id": forest_id,
+            "label": label,
             "domain_types": types,
             "colour": colour,
             "n_positions": n_positions,

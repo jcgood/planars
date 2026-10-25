@@ -291,8 +291,9 @@ The reality-check charts are `python -m coding laminar-charts` (dry run;
 spans, planar or chart code changed since it last drew, it puts two PDFs in
 the language's Drive folder, `charts_by_class_{lang}.pdf` and
 `charts_by_type_{lang}.pdf`: every chart drawn without the permutation
-tests, with bookmarks, and the date and how complete the annotation was
-above each page. The `laminar-charts.yml` workflow runs it after each daily
+tests, in chapters (the combined forest first), each opened by a page
+listing its charts with page numbers, with bookmarks, and above each page
+the chart's title, the date and how complete the annotation was. The `laminar-charts.yml` workflow runs it after each daily
 refresh; run it yourself only to redraw at once (it needs R locally, as
 below). To look at the PDFs without uploading, or to see why a language
 failed:

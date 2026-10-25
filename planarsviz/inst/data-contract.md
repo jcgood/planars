@@ -209,7 +209,9 @@ band around the observed curve rather than a distribution shape.
 
 `forests.json` / `forests/<id>.tsv`: the trees of each per-class forest
 (Newick, span order, thickness), computed with the class's own position
-count. `overlay_groups.json` / `overlay_groups/<id>.tsv`: the trees of each
+count. Each forest's `label` is what a chart title calls it (a bundle's
+display label, or its one domain type made readable); bundles exported
+before 2026-10-25 have none, and the renderer then uses the forest id. `overlay_groups.json` / `overlay_groups/<id>.tsv`: the trees of each
 overlay group (Newick, span order, convergence), computed with the full
 dataset's position count.
 

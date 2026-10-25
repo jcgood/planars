@@ -152,7 +152,9 @@ named `<dataset>_<chart>.pdf`. It installs the package into a temporary
 library itself, reports every chart that fails, exits with an error if any
 did, and writes `<dataset>_planarsviz_manifest.tsv` into the dataset's own
 folder (`results/nyan1308/`), listing every chart file there by its path
-within that folder.
+within that folder, with its title and the chapter the contributor PDFs put
+it in (both set where `chart_table()` adds the chart; a new chart needs
+both).
 
 ---
 
