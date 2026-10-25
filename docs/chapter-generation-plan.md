@@ -39,8 +39,8 @@ Missing today, needed before a chapter can be generated:
   frame), already asked for (#318 (e)): `diagnostics_{lang}.yaml` gets a
   `description` per construction, written by the annotator through the
   proposal sheet. The chapters make this more pressing.
-- **Structured examples**, if generated example lists should be glossed
-  (decision 4).
+- **Structured examples** (form, gloss, translation, source) for every
+  language whose examples need glossing (decision 4).
 
 ## How it fits together
 
@@ -120,11 +120,21 @@ points at that private repository.
 
 ## LaTeX and Word
 
-- **LaTeX is the source for Jeff and Adam.** If the venue is Language
-  Science Press, fragments use its conventions (`langscibook`, `booktabs`
-  tables, `langsci-gb4e` examples, biblatex), so the volume builds with
-  their template unchanged.
-- **Word authors, later, in two steps:**
+- **LaTeX is the source for Jeff and Adam.** The venue is De Gruyter
+  (decision 1), whose LaTeX package is `dgruyter` (CC BY 4.0; on Overleaf
+  as "Manuscript Template for Walter de Gruyter Books and Journals"; built
+  on the standard `book` class, with a `\contribution` block for a chapter
+  in an edited volume). The current template comes from the editor after
+  the contract, and the final PDF needs De Gruyter's house font. So the
+  fragments are tied to no class: plain LaTeX that `dgruyter` and `book`
+  both take (`booktabs` tables, `graphicx` figures, biblatex citations),
+  and **every glossed example goes through one macro of our own**
+  (`\planarsex{form}{gloss}{translation}{source}`), defined in one file per
+  venue on top of whichever glossing package that venue wants (gb4e,
+  expex, langsci-gb4e). When the series editor sends the real template,
+  that file is the only thing that changes.
+- **Word authors, before the second language's chapter** (annotators write
+  their language's slots, decision 5), in two steps:
   - *reading and commenting:* `pandoc` turns a built chapter into .docx;
     prose, tables and figures come through well; glossed examples less so;
   - *writing:* a Word author writes their prose in a .docx with the same
@@ -151,31 +161,41 @@ points at that private repository.
 4. **The update report and checked claims**: `chapters update`, `\claim`.
 5. **The daily check**: the step after the refresh and its issue (a new
    label).
-6. **Word**: pandoc export for reading; later the placeholder path for
-   writing, when there is a Word author.
+6. **Structured examples**: the per-language `examples` field, the example
+   columns on the annotation sheets for glossed languages, the example
+   macro and its venue file. Can run alongside 2–5; must be done before a
+   glossed language's chapter.
+7. **Word**: pandoc export for reading, then the placeholder path for
+   writing; before the second language's chapter.
 
 Prerequisites from other threads: construction descriptions (#318 (e));
 the weekly full analysis (laminar plan 4d), whose results the results
 sections cite; the span rules settled with Adam (#321), since a chapter
 states them.
 
-## Decisions for Jeff
+## Decisions (Jeff, 2026-10-25; don't re-ask)
 
-1. **Venue and template.** A Language Science Press volume like the CCDB
-   book (then its template from the start), a journal paper, or both?
-   This sets the fragment conventions.
-2. **Where the manuscripts live**: a new private repository (recommended,
-   with Overleaf linked to it if wanted), or Overleaf alone (then the
-   fragments are pushed into it by the build).
-3. **How much the generated sentences say.** Recommended: one templated
-   sentence per test stating its span, plus tables; anything interpretive
-   stays prose.
-4. **Examples.** The `Example` column is free text. Generated example lists
-   either quote it as is (cheap, unglossed), or the annotation gains
-   structured examples (form, gloss, translation, source), which makes
-   generated glossed examples possible and is a schema change for every
-   language. Recommended: decide with Adam before English's chapter needs
-   examples.
-5. **Who writes the per-language prose**: the annotator (then the slots and
-   their stubs are written for them, and Word support moves earlier), or
-   Jeff and Adam.
+1. **Venue: De Gruyter.** Fragments are class-neutral, with one macro for
+   examples defined per venue (see "LaTeX and Word"). Ask the series editor
+   for the current template and any glossing convention once there is a
+   contract.
+2. **Manuscripts live in a new private GitHub repository** (Overleaf may
+   link to it). The generator writes fragments there with a commit each
+   time; the claim check runs there.
+3. **Generated text: one templated sentence per test stating its span,
+   plus tables.** Anything interpretive is prose.
+4. **Examples are structured** (form, gloss, translation, source) in the
+   annotation, for every language whose examples need a gloss and a
+   translation. **English is the exception**, because the metalanguage is
+   English: its examples are plain sentences. This is recorded per
+   language, not as a named exception in code: a field in
+   `schemas/languages.yaml` (working name `examples: unglossed` for
+   English, `glossed` for the rest), which the annotation sheets (which
+   columns an example has) and the example macro both read. A schema
+   change for the annotation sheets, so it goes through the usual schema
+   steps (`integrity-check`, `check-codebook`, `update-sheets`); Adam to be
+   told on an issue before the columns appear.
+5. **Prose is mixed:** Jeff and Adam write the introduction and results;
+   each annotator writes their language's background and analysis slots.
+   So the slots carry short written instructions, and Word support (the
+   placeholder path) is needed before the second language's chapter.

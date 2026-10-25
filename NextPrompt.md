@@ -25,11 +25,14 @@ Seven live threads. Read whichever matches what you're picking up.
 Jeff wants chapters written from the annotation (an introduction, one
 chapter per language, results), with what can be generated generated and
 kept current as the annotation changes; LaTeX now, Word authors later.
-**Scoping plan: `docs/chapter-generation-plan.md`** (nothing built).
-**Next action:** Jeff answers its five decisions (venue/template, where the
-manuscripts live, how much generated sentences say, examples, who writes
-per-language prose); then Phase 1. Depends on #318 (e) (construction
-descriptions), laminar plan 4d, and the span rules settled in #321.
+**Plan: `docs/chapter-generation-plan.md`** (nothing built). Jeff answered
+its five decisions (2026-10-25; the plan's "Decisions" — don't re-ask): De
+Gruyter, class-neutral fragments; a private GitHub repo; a sentence per
+test plus tables; structured examples for every language but English (a
+per-language field, not a coded exception); mixed authorship.
+**Next action:** Phase 1 (the data layer for chapters). Depends on #318 (e)
+(construction descriptions), laminar plan 4d, and the span rules settled
+in #321.
 
 ### Thread: the laminar analysis on English, for a paper (2026-10-24)
 
