@@ -74,6 +74,13 @@ def test_every_value_a_fragment_cites_exists(english):
 
 
 @needs_english
+def test_the_language_wide_span_table_has_every_span(english):
+    text = build.language_fragments(english)["spans_table.tex"]
+    rows = {m for m in PV.findall(text) if m.endswith(".size")}
+    assert len(rows) == english.values["stan1293.spans.total"]
+
+
+@needs_english
 def test_a_rebuild_changes_nothing_and_drops_retired_fragments(english, tmp_path):
     files = build.language_files(english)
     assert build.write(tmp_path, files, apply=False) and not (tmp_path / "values.tex").exists()

@@ -1,0 +1,30 @@
+\#{ Every span of the language in one table, grouped by domain type (in
+   the schema's class order). Context: L, groups (list of dicts: domain,
+   rows: list of dicts: class_name, construction, phrase, base). }
+\BLOCK{if groups}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.2\linewidth} >{\raggedright\arraybackslash}p{0.24\linewidth} >{\raggedright\arraybackslash}p{0.24\linewidth} r r r@{}}
+\caption{Every span of \pv{\VAR{L}.language.name} (\pv{\VAR{L}.spans.total} spans,
+\pv{\VAR{L}.spans.distinct} distinct)}\\
+\toprule
+Class & Construction & Span & Left & Right & Size \\
+\midrule
+\endfirsthead
+\toprule
+Class & Construction & Span & Left & Right & Size \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\BLOCK{for g in groups}
+\BLOCK{if not loop.first}
+\midrule
+\BLOCK{endif}
+\multicolumn{6}{@{}l}{\emph{\VAR{g.domain}}} \\
+\BLOCK{for r in g.rows}
+\VAR{r.class_name} & \texttt{\VAR{r.construction|name}} & \VAR{r.phrase} & \VAR{pv(r.base ~ ".left")} & \VAR{pv(r.base ~ ".right")} & \VAR{pv(r.base ~ ".size")} \\
+\BLOCK{endfor}
+\BLOCK{endfor}
+\end{longtable}
+\BLOCK{else}
+\pv{\VAR{L}.language.name} gives no spans yet.
+\BLOCK{endif}

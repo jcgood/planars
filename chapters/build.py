@@ -16,8 +16,10 @@ exactly from the commit it names):
 - ``DIR/planarschapter.sty``: the macros the fragments use (``\\pv``);
 - ``DIR/fragments/``: ``front_matter.tex`` (language, annotator, data
   version, how complete the annotation was), ``planar_table.tex``,
-  ``diagnostics_table.tex``, and ``class_<class>.tex`` for each class the
-  language has (one sentence per span, then the class's span table).
+  ``diagnostics_table.tex``, ``class_<class>.tex`` for each class the
+  language has (one sentence per span, then the class's span table), and
+  ``spans_table.tex`` (every span of the language in one table, grouped
+  by domain type in the schema's class order).
 
 **The introduction** (``--intro``), from the schemas alone:
 ``DIR/fragments/terms.tex`` (schemas/terms.yaml) and ``class_<class>.tex``
@@ -129,10 +131,18 @@ def language_fragments(chapter: ChapterData) -> dict:
             for _i, r in chapter.tables["diagnostics"].iterrows()]),
     }
     entries = _class_entries()
-    for cls in dict.fromkeys(chapter.tables["diagnostics"]["Class"]):
+    diagnostics = chapter.tables["diagnostics"]
+    groups = {}  # domain -> rows of the language-wide span table
+    for cls in dict.fromkeys(diagnostics["Class"]):
+        constructions = _class_context(chapter, cls)
         out[f"class_{cls}.tex"] = tex.render("class_section.tex.j2", L=L,
                                              display_name=entries[cls]["display_name"],
-                                             constructions=_class_context(chapter, cls))
+                                             constructions=constructions)
+        rows = groups.setdefault(_domain(entries[cls]), [])
+        rows.extend({"class_name": entries[cls]["display_name"], "construction": c["name"], **s}
+                    for c in constructions for s in c["spans"])
+    out["spans_table.tex"] = tex.render("spans_table.tex.j2", L=L, groups=[
+        {"domain": domain, "rows": rows} for domain, rows in groups.items() if rows])
     return out
 
 

@@ -256,10 +256,14 @@ states them.
   data change that moves a span changes `values.tex` only; a change in
   shape (a span becoming one position, a new construction) changes the
   fragment too.
-- **One span table per class**, inside the class's fragment. **To fix
-  (Jeff, 2026-10-25): a language-wide span table is needed as well**
-  (`spans_table.tex`, every span of the language in one table), keeping
-  the per-class ones.
+- **One span table per class**, inside the class's fragment, and **a
+  language-wide one** (`spans_table.tex`, Jeff, 2026-10-25): every span of
+  the language, grouped by domain type in the schema's class order.
+- **`coded_data/` must be its own clone** of planars-data, or the data
+  version can't be named (git would answer for the planars repository
+  around it); `chapter_data` refuses otherwise. CI now checks planars-data
+  out as a clone into `coded_data/` (it used to copy it without `.git`,
+  which failed the pinned-version test three times on 2026-10-25).
 - **Refusals:** a language chapter's DIR may not be inside this public
   repository (it holds unpublished annotation; `coded_data/.papers/` is set
   up in Phase 3), and coded_data/ with uncommitted changes for the language is
