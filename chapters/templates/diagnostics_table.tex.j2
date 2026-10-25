@@ -1,0 +1,20 @@
+\#{ Which diagnostics apply to the language. Context: L, rows (list of
+   dicts: class_name, construction, criteria: list of (name, values)). }
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.23\linewidth} >{\raggedright\arraybackslash}p{0.27\linewidth} >{\raggedright\arraybackslash}p{0.4\linewidth}@{}}
+\caption{The diagnostics applied to \pv{\VAR{L}.language.name}
+(\pv{\VAR{L}.diagnostics.classes} classes, \pv{\VAR{L}.diagnostics.constructions}
+constructions)}\\
+\toprule
+Class & Construction & Criteria (values) \\
+\midrule
+\endfirsthead
+\toprule
+Class & Construction & Criteria (values) \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\BLOCK{for r in rows}
+\VAR{r.class_name} & \texttt{\VAR{r.construction|name}} & \BLOCK{for criterion, values in r.criteria}\texttt{\VAR{criterion|name}} (\VAR{values|join(", ")})\BLOCK{if not loop.last}; \BLOCK{endif}\BLOCK{endfor} \\
+\BLOCK{endfor}
+\end{longtable}

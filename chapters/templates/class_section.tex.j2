@@ -1,0 +1,46 @@
+\#{ One diagnostic class in a language chapter: one sentence per span
+   (decision 3), then the class's span table. Context: L, display_name,
+   constructions (list of dicts: name, feeder, spans: list of dicts:
+   phrase, base, single). }
+\BLOCK{for c in constructions}
+\BLOCK{if c.feeder}
+The \texttt{\VAR{c.name|name}} tab decides what the other constructions of this
+class test; it gives no spans of its own.
+\BLOCK{elif not c.spans}
+The \texttt{\VAR{c.name|name}} construction gives no spans yet.
+\BLOCK{else}
+The \texttt{\VAR{c.name|name}} construction gives \VAR{c.spans|length} spans.
+\BLOCK{for s in c.spans}
+\BLOCK{if s.single}
+Its \emph{\VAR{s.phrase}} is position \VAR{pv(s.base ~ ".left")}
+(\texttt{\VAR{pv(s.base ~ ".left_name")}}) alone.
+\BLOCK{else}
+Its \emph{\VAR{s.phrase}} runs from position \VAR{pv(s.base ~ ".left")}
+(\texttt{\VAR{pv(s.base ~ ".left_name")}}) to position \VAR{pv(s.base ~ ".right")}
+(\texttt{\VAR{pv(s.base ~ ".right_name")}}), \VAR{pv(s.base ~ ".size")} positions.
+\BLOCK{endif}
+\BLOCK{endfor}
+\BLOCK{endif}
+
+\BLOCK{endfor}
+\BLOCK{set rows = constructions|selectattr("spans")|list}
+\BLOCK{if rows}
+\begin{longtable}{@{}l >{\raggedright\arraybackslash}p{0.36\linewidth} r r r@{}}
+\caption{\VAR{display_name}: the spans of \pv{\VAR{L}.language.name}}\\
+\toprule
+Construction & Span & Left & Right & Size \\
+\midrule
+\endfirsthead
+\toprule
+Construction & Span & Left & Right & Size \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\BLOCK{for c in rows}
+\BLOCK{for s in c.spans}
+\texttt{\VAR{c.name|name}} & \VAR{s.phrase} & \VAR{pv(s.base ~ ".left")} & \VAR{pv(s.base ~ ".right")} & \VAR{pv(s.base ~ ".size")} \\
+\BLOCK{endfor}
+\BLOCK{endfor}
+\end{longtable}
+\BLOCK{endif}

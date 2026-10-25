@@ -20,6 +20,9 @@ pillow           # planarsviz image checks
 pypdf            # laminar-charts: one PDF per contributor chart set, with bookmarks
 scipy            # checks laminar's weighted density against scipy's (verify_boundary_density.py)
 
+# chapters/ (the chapters' generated parts)
+jinja2           # the templates that hold the wording of generated sentences and tables
+
 # Needed at runtime but not directly imported
 kaleido          # plotly image/PDF export backend
 

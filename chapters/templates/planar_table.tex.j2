@@ -1,0 +1,20 @@
+\#{ The planar structure. Context: L, positions (list of dicts: number,
+   type, name, elements, keystone). }
+\begin{longtable}{@{}r l >{\raggedright\arraybackslash}p{0.3\linewidth} >{\raggedright\arraybackslash}p{0.4\linewidth}@{}}
+\caption{The \pv{\VAR{L}.planar.type} planar structure of \pv{\VAR{L}.language.name}
+(\pv{\VAR{L}.planar.positions} positions; the keystone is position
+\pv{\VAR{L}.planar.keystone})}\\
+\toprule
+& Type & Name & Elements \\
+\midrule
+\endfirsthead
+\toprule
+& Type & Name & Elements \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\BLOCK{for p in positions}
+\VAR{p.number} & \VAR{p.type} & \texttt{\VAR{p.name|name}}\BLOCK{if p.keystone} (keystone)\BLOCK{endif} & \VAR{p.elements} \\
+\BLOCK{endfor}
+\end{longtable}

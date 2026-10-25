@@ -1,0 +1,7 @@
+\#{ The framework's terms, from schemas/terms.yaml. Context: terms (list
+   of dicts: term, definition). }
+\begin{description}
+\BLOCK{for t in terms}
+\item[\VAR{t.term}] \VAR{lines(t.definition)}
+\BLOCK{endfor}
+\end{description}

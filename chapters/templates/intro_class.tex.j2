@@ -1,0 +1,17 @@
+\#{ One diagnostic class in the introduction: what it tests, its criteria,
+   its span rule. Context: display_name, domain (e.g. "phonological,
+   prosodic"), applicability, description, criteria (list of dicts: name,
+   values, description), span_rule. }
+\noindent\textit{Domain type:} \VAR{domain}. \textit{Applies:} \VAR{applicability}.
+
+\VAR{lines(description)}
+
+\BLOCK{if criteria}
+\begin{description}
+\BLOCK{for c in criteria}
+\item[\texttt{\VAR{c.name|name}}] (\VAR{c["values"]|join(", ")}) \VAR{lines(c.description)}
+\BLOCK{endfor}
+\end{description}
+\BLOCK{endif}
+
+\noindent\textit{Span rule.} \VAR{lines(span_rule)}

@@ -67,6 +67,8 @@ idna==3.18
     # via requests
 iniconfig==2.3.0
     # via pytest
+jinja2==3.1.6
+    # via -r requirements.in
 jsonschema==4.26.0
     # via -r requirements.in
 jsonschema-specifications==2025.9.1
@@ -77,6 +79,8 @@ logistro==2.0.1
     # via
     #   choreographer
     #   kaleido
+markupsafe==3.0.4
+    # via jinja2
 mypy-extensions==1.1.0
     # via typing-inspect
 narwhals==2.18.0

@@ -1,7 +1,7 @@
 # Plan: generating the data-driven parts of the chapters
 
-Jeff, 2026-10-25. Phase 1 built 2026-10-25 (see "Phase 1 as built" at
-the end); the rest not started. Chapters are to be written
+Jeff, 2026-10-25. Phases 1 and 2 built 2026-10-25 (see "Phase 1 as
+built" and "Phase 2 as built" at the end); the rest not started. Chapters are to be written
 from the annotation: an introduction chapter with shared conventions, one
 chapter per language with its own sections, and results sections. Most of
 the prose is written by people; what this plan covers is the part that can
@@ -232,3 +232,35 @@ states them.
   `data.lock` must record `planars_commit` as well, and `chapters update`
   should say whether a change came from the annotation or from the rules
   (move one pin at a time).
+
+## Phase 2 as built (2026-10-25)
+
+- **`python -m chapters build --lang LANG --out DIR [--version COMMIT]
+  [--apply]`** and **`--intro --out DIR`** (`chapters/build.py`; what each
+  writes is its docstring). Dry run by default; writes only what changed
+  and deletes a fragment it no longer makes.
+- **Wording lives in `chapters/templates/`** (Jinja2 with LaTeX-safe
+  delimiters, `chapters/tex.py`). Everything a template prints is escaped
+  unless it is already LaTeX, so a template can't forget to.
+- **Generated sentences cite values, not numbers:** "Its *strict complete
+  span* runs from position `\pv{…left}` (`\pv{…left_name}`) to …". A
+  data change that moves a span changes `values.tex` only; a change in
+  shape (a span becoming one position, a new construction) changes the
+  fragment too.
+- **One span table per class**, inside the class's fragment, rather than
+  one table for the whole language (the plan's "span table"): a chapter
+  is laid out by class.
+- **Refusals:** a language chapter's DIR may not be inside this public
+  repository (it holds unpublished annotation; the private repository is
+  Phase 3), and coded_data/ with uncommitted changes for the language is
+  refused unless `--version` is given, so every chapter names a commit it
+  can be rebuilt from.
+- **Checked:** English and the introduction compile with pdflatex in the
+  book class with no errors and no undefined values (also a test, skipped
+  without pdflatex). Math symbols in schema prose (∈, →, ×) are escaped;
+  a test fails if the schemas start using one that isn't. Long typewriter
+  names may break after `_ : -`. A few sentences still run slightly into
+  the margin where a position name sits in a sentence; leave until the
+  venue's class is known.
+- **Not in Phase 2:** examples (Phase 6 decides glossed or not per
+  language) and construction descriptions (#318 (e)).

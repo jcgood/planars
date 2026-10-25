@@ -10,6 +10,7 @@ import sys
 
 # command -> (module, one line for the list)
 COMMANDS = {
+    "build": ("chapters.build", "Write a language chapter's (or the introduction's) generated fragments."),
     "values": ("chapters.show_values", "Print every value a language's chapter can cite, and what is missing."),
 }
 
