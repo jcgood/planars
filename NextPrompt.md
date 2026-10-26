@@ -39,11 +39,15 @@ chapter (`data.lock`; `--update` moves it and reports) and checks
 `chapter-behind` issue per chapter (Phase 5); examples are structured per
 language (`examples: glossed|unglossed` in languages.yaml; Araona's sheets
 got Gloss and Translation live 2026-10-25, Adam told on #326) and printed
-through the venue file `chapters/venues/book.sty` (Phase 6). **Next
-action:** the first real `build-chapters --apply` (creates and pushes
-`.papers/` in planars-data), after which the daily check has something to
-check; then Phase 7 (Word). Check the 2026-10-26 refresh: its `chapters`
-step is green and files nothing unexpected. Still waiting on
+through the venue file `chapters/venues/book.sty` (Phase 6). `.papers/`
+is built and pushed, and synced both ways with Jeff's Overleaf project
+by `sync-overleaf` (the plan's "Overleaf" section; first sync
+2026-10-25). **Next action:** Jeff stores the `OVERLEAF_TOKEN` secret
+(until then the refresh's `overleaf` step fails and files `overleaf-sync`);
+Jeff picks the volume title (`volume.yaml`); then Phase 7 (Word). Open
+with Jeff: where annotators' drafts live, and @-mentioning a chapter's
+annotator on `chapter-behind`. Check the 2026-10-26 refresh: its
+`chapters` and `overleaf` steps. Still waiting on
 #318 (e) (construction descriptions), laminar plan 4d (the permutation
 tests) and #321 (span rules).
 
