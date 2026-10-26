@@ -31,12 +31,15 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # Its whole history: the chapters' check reads each chapter at the
+      # planars-data version it is pinned to.
       - name: Check out planars-data
         uses: actions/checkout@v5
         with:
           repository: jcgood/planars-data
           token: ${{ secrets.PLANARS_DATA_TOKEN }}
           path: coded_data
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v6

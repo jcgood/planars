@@ -146,7 +146,7 @@ def data_at(version: Optional[str]) -> Iterator[Path]:
     except subprocess.CalledProcessError as e:
         raise ChapterDataError(
             f"planars-data has no version {version!r} (git said: "
-            f"{e.stderr.decode(errors='replace').strip()}). Pull coded_data/ first if it is new.")
+            f"{e.stderr.decode(errors='replace').strip()}). {_fetch_advice()}")
     with tempfile.TemporaryDirectory(prefix="chapter_data_") as tmp:
         root = Path(tmp)
         with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
@@ -159,8 +159,21 @@ def commit_of(version: Optional[str]) -> str:
     try:
         return _git(CODED_DATA, "rev-parse", "--verify", f"{version or 'HEAD'}^{{commit}}")
     except subprocess.CalledProcessError:
-        raise ChapterDataError(f"planars-data has no version {version!r}. "
-                               f"Pull coded_data/ first if it is new.")
+        raise ChapterDataError(f"planars-data has no version {version!r}. {_fetch_advice()}")
+
+
+def _fetch_advice() -> str:
+    """What to do about a missing version: a shallow copy (a GitHub
+    checkout without fetch-depth: 0) has no older versions at all."""
+    try:
+        shallow = _git(CODED_DATA, "rev-parse", "--is-shallow-repository") == "true"
+    except subprocess.CalledProcessError:
+        shallow = False
+    if shallow:
+        return ("coded_data/ is a shallow copy holding only recent versions: fetch its whole "
+                "history (git -C coded_data fetch --unshallow; on GitHub, check it out with "
+                "fetch-depth: 0).")
+    return "Pull coded_data/ first if it is new."
 
 
 def _version_record(lang_id: str, version: Optional[str]) -> dict:

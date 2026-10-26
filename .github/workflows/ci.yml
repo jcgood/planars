@@ -18,13 +18,15 @@ jobs:
       - uses: actions/checkout@v5
 
       # Checked out as its own clone, as it is locally: chapters.data reads
-      # planars-data's commits with git -C coded_data.
+      # planars-data's commits with git -C coded_data, so its whole history
+      # (a chapter is built from the version it is pinned to).
       - name: Check out planars-data
         uses: actions/checkout@v5
         with:
           repository: jcgood/planars-data
           token: ${{ secrets.PLANARS_DATA_TOKEN }}
           path: coded_data
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v6
