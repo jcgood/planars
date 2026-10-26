@@ -926,6 +926,25 @@
   cascades_triggered: []
   modes: []
 
+- id: set_tab_status
+  cli_command: set-tab-status
+  writes_to_drive: true
+  writes_locally: false
+  description: >-
+    Sets one tab's status (in-progress or ready-for-review) in a class
+    sheet's Status tab, for an annotator who finished a tab but did not mark
+    it. By hand, by the coordinator.
+  side_effects:
+    - "rewrites one cell of a class sheet's Status tab"
+  idempotent: true
+  idempotency_note: >-
+    Writes nothing when the tab already has the status asked for.
+  apply_gate: "--apply"
+  preconditions: []
+  facts_touched: []
+  cascades_triggered: []
+  modes: []
+
 - id: sync_planar
   cli_command: sync-planar
   writes_to_drive: true

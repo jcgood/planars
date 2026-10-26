@@ -227,6 +227,10 @@ The blank/`?` distinction matters for data quality: a `?` is a positive annotati
 The `NA`/`untestable` distinction also matters: `NA` means the criterion is inapplicable *by design* for that position (e.g. the keystone), whereas `untestable` means annotation was *attempted* but the required construction cannot appear for independent grammatical reasons. `untestable` is opt-in — it appears in a criterion's dropdown only when listed in that criterion's `values` in `diagnostics_{lang_id}.yaml` (currently: coreference pair criteria). `NA` does not appear in any dropdown (annotators type it manually for keystone rows).
 
 When a construction is complete, the collaborator sets its row in the **Status tab** to `ready-for-review`. This signals to the coordinator that the construction is ready to import.
+If an annotator says a tab is done but forgot to mark it, mark it for them:
+`python -m coding set-tab-status --lang LANG_ID --class CLASS --construction TAB --apply`
+(`--status in-progress` sets it back). A tab built from it is filled at the next
+daily refresh, or at once with `generate-sheets --lang LANG_ID --regen-construction CLASS:DEPENDENT`.
 
 From then on, an invalid value on that tab is an error, not just a pink cell (issue #309; the rule is `validate_coding.needs_fixing`). `validate-coding` (daily, `sheet-validation.yml`, and at the end of `import-sheets --apply`) lists each one in the Status tab's **Needs fixing** column, one line per cell naming the row, element, column, value and what it should be, and blanks the cell once the tab is clean; the `sheet-validation` issue reports them to the coordinator. `update-sheets --apply` adds the column to a sheet that predates it. An invalid value is never an `import-error`: that issue means the import itself broke.
 
