@@ -147,7 +147,7 @@ own hand edits (to the YAML or the planar) still need committing by hand.
      email: annotator@example.org
      github: their-username   # leave out if they have none
    ```
-   With a GitHub username, they hear about values to fix by an @-mention on a `needs-fixing` issue. Without one, they hear by a comment on their spreadsheet that names their address, which makes Google email them (`coding/annotator_notices.py`, issue #309). **That second route has not yet been tried live**: for the first annotator without GitHub, check with them that the email arrives the first time they have something to fix.
+   With a GitHub username, they hear about values to fix, and about in-progress tabs with every cell answered (probably finished but not marked), by an @-mention on a `needs-fixing` issue. Without one, they hear by a comment on their spreadsheet that names their address, which makes Google email them (`coding/annotator_notices.py`, issue #309). **That second route has not yet been tried live**: for the first annotator without GitHub, check with them that the email arrives the first time they have something to fix.
 
    Commit `schemas/languages.yaml` to the `planars` repo before running `generate-sheets` — this ensures display names appear correctly in notebooks and charts:
    ```bash
@@ -227,7 +227,10 @@ The blank/`?` distinction matters for data quality: a `?` is a positive annotati
 The `NA`/`untestable` distinction also matters: `NA` means the criterion is inapplicable *by design* for that position (e.g. the keystone), whereas `untestable` means annotation was *attempted* but the required construction cannot appear for independent grammatical reasons. `untestable` is opt-in — it appears in a criterion's dropdown only when listed in that criterion's `values` in `diagnostics_{lang_id}.yaml` (currently: coreference pair criteria). `NA` does not appear in any dropdown (annotators type it manually for keystone rows).
 
 When a construction is complete, the collaborator sets its row in the **Status tab** to `ready-for-review`. This signals to the coordinator that the construction is ready to import.
-If an annotator says a tab is done but forgot to mark it, mark it for them:
+An in-progress tab with every cell answered is probably finished: the daily
+validation says so in its Status row and on the annotator's `needs-fixing`
+issue, which also gives you the command below. If an annotator says a tab is
+done but forgot to mark it, mark it for them:
 `python -m coding set-tab-status --lang LANG_ID --class CLASS --construction TAB --apply`
 (`--status in-progress` sets it back). A tab built from it is filled at the next
 daily refresh, or at once with `generate-sheets --lang LANG_ID --regen-construction CLASS:DEPENDENT`.

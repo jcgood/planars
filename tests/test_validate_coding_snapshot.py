@@ -339,12 +339,15 @@ def test_notify_mentions_an_annotator_with_github_once_per_new_problem(env, gith
     doorway, coded, run_main = env
     _with_github(monkeypatch, "annotator-gh")
     _break_a_ready_tab(doorway, coded)
+    # Marked, so only the bad value keeps the issue open.
+    for t in ("auxiliary_construction", "tso_clause_linkage"):
+        set_status(doorway, "arao1248", "subspanrepetition", t, vc.STATUS_READY)
 
     out, _ = run_main(["validate-coding", "--lang", "arao1248", "--notify"])
     [issue] = [i for i in github.issues if "needs-fixing" in i["labels"]]
-    assert issue["title"] == "Values to fix in the Araona [arao1248] sheets"
+    assert issue["title"] == "To do in the Araona [arao1248] sheets"
     assert "@annotator-gh" in issue["body"]
-    assert "**ciscategorial**: 1 cell" in issue["body"]
+    assert "**ciscategorial**: 1 cell to fix" in issue["body"]
     assert "Status tab" in issue["body"]
     assert f"arao1248: filed #{issue['number']}" in out
     assert not doorway.list_comments(sheet_id(doorway, "arao1248", "ciscategorial"))
@@ -359,7 +362,7 @@ def test_notify_mentions_an_annotator_with_github_once_per_new_problem(env, gith
             "Element", "ADVERBIALS", "V-combines", "perhaps")
     run_main(["validate-coding", "--lang", "arao1248", "--notify"])
     [comment] = github.comments[issue["number"]]
-    assert comment.startswith("@annotator-gh something new needs fixing")
+    assert comment.startswith("@annotator-gh something new on your sheets")
 
     # Fixed: the issue closes.
     set_cell(coded, "arao1248", "ciscategorial", "general",
@@ -367,6 +370,31 @@ def test_notify_mentions_an_annotator_with_github_once_per_new_problem(env, gith
     out, _ = run_main(["validate-coding", "--lang", "arao1248", "--notify"])
     assert github.issue(issue["number"])["state"] == "CLOSED"
     assert f"arao1248: closed #{issue['number']}" in out
+
+
+def test_a_finished_tab_not_marked_is_flagged_everywhere(env, github, monkeypatch):
+    """arao1248's two subspanrepetition tabs have every cell answered but are
+    still in-progress: the Status tab says to mark them, the issue tells the
+    annotator and gives the coordinator the command; marking them closes it."""
+    doorway, coded, run_main = env
+    _with_github(monkeypatch, "annotator-gh")
+    add_problems_column(doorway, "arao1248", "subspanrepetition")
+    tabs = ["auxiliary_construction", "tso_clause_linkage"]
+
+    out, _ = run_main(["validate-coding", "--lang", "arao1248", "--notify"])
+    assert f"every cell answered but not marked {vc.STATUS_READY}: {', '.join(tabs)}" in out
+    for t in tabs:
+        assert problems_cell(doorway, "arao1248", "subspanrepetition", t) == vc.FINISHED_TEXT
+    [issue] = [i for i in github.issues if "needs-fixing" in i["labels"]]
+    assert f"{', '.join(tabs)} look finished: set them to {vc.STATUS_READY}" in issue["body"]
+    assert ("python -m coding set-tab-status --lang arao1248 --class subspanrepetition "
+            "--construction tso_clause_linkage --apply") in issue["body"]
+
+    for t in tabs:
+        set_status(doorway, "arao1248", "subspanrepetition", t, vc.STATUS_READY)
+    run_main(["validate-coding", "--lang", "arao1248", "--notify"])
+    assert github.issue(issue["number"])["state"] == "CLOSED"
+    assert problems_cell(doorway, "arao1248", "subspanrepetition", tabs[0]) == ""
 
 
 def test_notify_comments_on_the_sheet_for_an_annotator_without_github(env, github):

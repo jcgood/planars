@@ -85,7 +85,7 @@ from .schemas import (
 
 from planars.position_cells import as_names, position_numbers  # noqa: E402
 from planars.schema_values import (  # noqa: E402
-    ELEMENT_ROW_COLUMNS, PAIR_ROW_SHAPES, TRAILING_COLUMNS,
+    ELEMENT_ROW_COLUMNS, PAIR_ROW_SHAPES, STATUS_READY, TRAILING_COLUMNS,
 )
 
 # Row-identifying and trailing columns, read from schemas/planar.yaml.
@@ -253,6 +253,20 @@ def problems_text(issues: List[ValidationIssue]) -> str:
         rest = len(lines) - _MAX_PROBLEM_LINES
         lines = lines[:_MAX_PROBLEM_LINES] + [f"…and {rest} more (the pink cells on the tab)"]
     return "\n".join(lines)
+
+
+FINISHED_TEXT = f"Every cell is answered: set Status to {STATUS_READY}."
+
+
+def looks_finished(issues: List[ValidationIssue], tab_status: str, lang_id: str,
+                   class_name: str, construction: str) -> bool:
+    """A tab its annotator has probably finished but not marked: still
+    in-progress, at least one row, and nothing blank, invalid or misshapen.
+    Annotators forget to mark tabs, and a tab built from this one waits until
+    it is marked; the Status tab and the needs-fixing issue say so."""
+    if tab_status == STATUS_READY or issues:
+        return False
+    return len(_read_tsv_rows(lang_id, class_name, construction)) > 1
 
 
 def write_problems(ws, rows: List[List[str]], problems: Dict[str, str]) -> Optional[str]:
@@ -1013,6 +1027,7 @@ def revalidate_sheets(
             statuses = status_map(status_rows)
             problems: Dict[str, str] = {}
             notice_lines: List[str] = []
+            finished: List[str] = []
             system_tabs = set(system_tab_titles())
             for ws in ss.worksheets():
                 construction = ws.title
@@ -1062,8 +1077,12 @@ def revalidate_sheets(
                     lang_notices = None
                     continue
                 total_sheets += 1
-                issues = grade(issues, statuses.get(construction, STATUS_IN_PROGRESS))
+                tab_status = statuses.get(construction, STATUS_IN_PROGRESS)
+                issues = grade(issues, tab_status)
                 problems[construction] = problems_text(issues)
+                if looks_finished(issues, tab_status, lang_id, class_name, construction):
+                    problems[construction] = FINISHED_TEXT
+                    finished.append(construction)
                 notice_lines += [f"{construction}: {i.fix}" for i in issues
                                  if i.level == "error" and i.fix]
 
@@ -1100,8 +1119,12 @@ def revalidate_sheets(
                 note = write_problems(status_ws, status_rows, problems)
                 if note:
                     print(f"  [{class_name}] {note}")
-            if lang_notices is not None and notice_lines:
-                lang_notices.append(SheetProblems(class_name, sid, ss.url, tuple(notice_lines)))
+            if finished:
+                print(f"  [{class_name}] every cell answered but not marked "
+                      f"{STATUS_READY}: {', '.join(finished)}")
+            if lang_notices is not None and (notice_lines or finished):
+                lang_notices.append(SheetProblems(class_name, sid, ss.url, tuple(notice_lines),
+                                                  tuple(finished)))
 
         if notices is not None:
             notices[lang_id] = lang_notices
