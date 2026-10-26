@@ -420,3 +420,13 @@ states them.
   `volume.yaml` only (planars-data is private; this repository is not).
   The daily refresh needs the `OVERLEAF_TOKEN` secret; locally, git's
   stored Overleaf login is used.
+- **Next (Jeff, 2026-10-25: the one shared project is fine while it is
+  only Adam and English; not the setup for more contributors):** one
+  Overleaf project per chapter, owned by the coordinator's account (git
+  access needs a paid plan; collaborators don't), each shared with its
+  writer's own account. volume.yaml's `overleaf` becomes a map (`volume:`
+  plus one ID per part); each chapter's project holds only that part's
+  folder, the .sty files and `<part>.tex`, which then loads only that
+  part's values (today every chapter file loads every language's, so a
+  writer would see other languages' unpublished values). Sync settles each
+  project against its own subset, with its own record in the state file.
