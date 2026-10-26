@@ -63,6 +63,10 @@ NOT_THROUGH_THE_DOOR: Dict[Site, str] = {
         "not in planars-data: schemas/diagnostic_classes_status.yaml",
     ("issues.py", "_run", "unlink"): "not in planars-data: a temporary issue-body file",
     ("issues.py", "main", "write_text"): "not in planars-data: CLAUDE.md's Labels table",
+    ("sync_overleaf.py", "_push", "unlink"):
+        "not in planars-data: sync-overleaf's temporary clone of the Overleaf project",
+    ("sync_overleaf.py", "_push", "write_bytes"):
+        "not in planars-data: sync-overleaf's temporary clone of the Overleaf project",
     ("validation_report.py", "main", "write_text"):
         "not in planars-data: the issue body file the workflow asked for (--out)",
 }

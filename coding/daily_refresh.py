@@ -21,7 +21,7 @@ overwrite check, committing the snapshots), as the workflow's
 
 Exit status: 1 if the refresh itself failed, or if a step with no issue of
 its own failed (label sync, collaborator notes, criterion columns,
-chapters, dropdowns, snapshots), so the workflow run shows red; 0 otherwise. On GitHub Actions
+chapters, Overleaf, dropdowns, snapshots), so the workflow run shows red; 0 otherwise. On GitHub Actions
 each command's output also goes to the run's summary page
 (``GITHUB_STEP_SUMMARY``).
 
@@ -554,6 +554,11 @@ def chapters(r: Refresh) -> None:
     r.unreported("chapters", run("build-chapters", "--check", "--apply"))
 
 
+def overleaf(r: Refresh) -> None:
+    """Files its own overleaf-sync issue; a failure also shows the run red."""
+    r.unreported("overleaf", run("sync-overleaf", "--apply"))
+
+
 def snapshots(r: Refresh) -> None:
     r.unreported("snapshots", regenerate_snapshots())
 
@@ -683,6 +688,7 @@ STEPS: List[Step] = [
     Step("integrity", "integrity-check → integrity-error", integrity),
     Step("chapters", "build-chapters --check --apply (files its own chapter-behind issues)",
          chapters),
+    Step("overleaf", "sync-overleaf --apply (files its own overleaf-sync issue)", overleaf),
     Step("snapshots", "generate_snapshots.py", snapshots, always=True),
     Step("overwrite", "change log: did the refresh replace someone's change? → data-overwrite",
          overwrite_check, always=True),

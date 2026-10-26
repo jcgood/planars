@@ -29,6 +29,9 @@ both went when those Sheets became read-only copies, unit 11b, 2026-10-24.)
 - ``LAMINAR_CHARTS_STATE_PATH``: what each language's contributor charts
   were last drawn from (laminar-charts), so they are redrawn only when that
   changes.
+- ``OVERLEAF_STATE_PATH``: the Overleaf project ``.papers/`` was last
+  synced with and its version then (sync-overleaf), the common ground its
+  next sync compares both sides with.
 
 and, at planars-data's top level, ``ID_FILE`` (``drive_config.json``): the
 Drive IDs of the files the tooling made; and ``PAPERS_DIR``
@@ -63,6 +66,7 @@ NOTES_STATE_PATH = STATE_DIR / "notes_state.json"
 COMMENTS_STATE_PATH = STATE_DIR / "comments_state.json"
 RENUMBERING_PATH = STATE_DIR / "renumbering.json"
 LAMINAR_CHARTS_STATE_PATH = STATE_DIR / "laminar_charts_state.json"
+OVERLEAF_STATE_PATH = STATE_DIR / "overleaf_state.json"
 ID_FILE = CODED_DATA / "drive_config.json"
 PAPERS_DIR = CODED_DATA / ".papers"
 

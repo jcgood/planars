@@ -18,8 +18,9 @@ goes in this public repository):
 
 - ``volume.yaml``: the volume's title, its venue (a file in
   ``chapters/venues/``) and its parts in order (``intro``, or a language's
-  Glottocode). Hand-edited; the build makes a starting one if there is
-  none, and checks every part is one it can build.
+  Glottocode); optionally the Overleaf project ``.papers/`` is synced with
+  (``overleaf``, coding/sync_overleaf.py). Hand-edited; the build makes a
+  starting one if there is none, and checks every part is one it can build.
 - ``main.tex`` (from volume.yaml), ``planarschapter.sty`` (``\\pv``,
   ``\\proseslot``) and ``planarsvenue.sty`` (the venue's example macros,
   chapters.tex): compile ``main.tex`` there for the volume. Each part
@@ -31,12 +32,13 @@ goes in this public repository):
   ``values.tex`` (every named value, ``\\pvset{name}{value}``) and
   ``data.lock`` (its pin, below).
 
-**Built and hand-written files never share a file.** Everything except
-``volume.yaml`` and ``prose/`` is rebuilt every time; a fragment no longer
+**Built and hand-written files never share a file.** Everything
+``is_built`` names is rebuilt every time; a fragment no longer
 made (a class retired) is deleted. ``volume.yaml`` and each
 ``prose/<slot>.tex`` are stubs: made once, with the slot's instructions
 (who writes it, what it should say) as comments, and never written over
-(the door refuses). A prose file whose slot has left the outline is
+(the door refuses; only sync-overleaf, carrying an edit made in Overleaf,
+replaces one). Any other file a writer adds is theirs too. A prose file whose slot has left the outline is
 listed, never deleted; a slot still holding its ``\\proseslot`` line is
 counted as not yet written.
 
@@ -527,9 +529,38 @@ def read_volume(lang: str | None = None) -> tuple[dict, str | None]:
 
 # ── Writing ─────────────────────────────────────────────────────────────────
 
+PART_BUILT = {"chapter.tex", "values.tex", LOCK}
+
+
+def _is_part(name: str) -> bool:
+    return name == INTRO or get_entry(name) is not None
+
+
+def is_built(rel: str) -> bool:
+    """Whether the build makes the file at ``rel`` (a path in .papers/):
+    the top level's main.tex, its .sty files and ``<part>.tex``, and in a
+    part's folder chapter.tex, values.tex, data.lock and fragments/.
+    Everything else is a person's: volume.yaml, prose/, and any file a
+    writer adds (a figure, a .bib), which sync-overleaf carries both ways.
+    ``write`` refuses a build that disagrees, so this can't drift."""
+    parts = rel.split("/")
+    if len(parts) == 1:
+        return rel in (MAIN, STY_FILE, tex.VENUE_STY) or (
+            rel.endswith(".tex") and _is_part(rel.removesuffix(".tex")))
+    if not _is_part(parts[0]):
+        return False
+    if len(parts) == 2:
+        return parts[1] in PART_BUILT
+    return parts[1] == "fragments"
+
+
 def write(built: dict, stubs: dict, parts: list, apply: bool) -> list:
     """Write each built file whose text differs, each stub that does not
     exist yet, and delete fragments no longer made; one line per change."""
+    misplaced = sorted([rel for rel in built if not is_built(rel)]
+                       + [rel for rel in stubs if is_built(rel)])
+    if misplaced:
+        raise ValueError(f"is_built() disagrees with what the build makes: {misplaced}")
     did = "wrote" if apply else "would write"
     report = []
     for rel, text in sorted(built.items()):

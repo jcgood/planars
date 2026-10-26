@@ -42,6 +42,7 @@ _COMMANDS = {
     # The chapters package's one writer, run here so its writes go through
     # the local-file door (docs/chapter-generation-plan.md, Phase 3).
     "build-chapters":              "chapters.build",
+    "sync-overleaf":               "coding.sync_overleaf",
     "sync-params":                 "coding.sync_params",
     "sync-diagnostics-yaml":       "coding.sync_diagnostics_yaml",
     "sync-span-rule-hashes":       "coding.sync_span_rule_hashes",

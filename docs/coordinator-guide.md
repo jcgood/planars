@@ -377,6 +377,21 @@ generated files or claims would change, and closes it once the chapter
 catches up. The issue says what to run. Design and state:
 `docs/chapter-generation-plan.md`.
 
+**Overleaf.** `.papers/` can be co-written in an Overleaf project, kept in
+step both ways by `python -m coding sync-overleaf --apply`, which the daily
+refresh also runs. Setup, once: make an empty Overleaf project, put its ID
+(the end of its address) in `.papers/volume.yaml` as `overleaf: <ID>`, and
+store an Overleaf git token (Overleaf → Account settings → Git
+integration) as this repository's `OVERLEAF_TOKEN` secret
+(`gh secret set OVERLEAF_TOKEN`). Run it by hand whenever you want the two
+sides to meet sooner; on your own machine git's stored Overleaf login is
+used. Anyone added to the project can read and edit every chapter, nothing
+else in planars-data. In Overleaf, write only in `prose/`, `volume.yaml`
+and files you add (figures, a `.bib`): an edit to a generated file is kept
+only as a copy. So is an edit made in Overleaf and locally to the same file
+between two syncs. Copies go under `conflicts/` and an `overleaf-sync`
+issue lists them; merge each into its file and delete it.
+
 #### Cross-sheet criterion consistency
 
 Some criteria appear in more than one sheet. Currently:

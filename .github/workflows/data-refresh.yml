@@ -66,4 +66,7 @@ jobs:
       - name: Run the daily refresh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # sync-overleaf's login to the chapters' Overleaf project (an
+          # Overleaf git token: Account settings → Git integration).
+          OVERLEAF_TOKEN: ${{ secrets.OVERLEAF_TOKEN }}
         run: python -m coding daily-refresh --apply

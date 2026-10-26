@@ -191,7 +191,8 @@ states them.
    local-file door (`coding/file_door.py`, a new kind) like every other;
    the daily refresh commits to the same repository, so pull before
    writing; Overleaf's GitHub sync takes a whole repository, so co-writing
-   in Overleaf would need another route (decide if it is wanted).
+   in Overleaf goes through the project's own git repository instead
+   (`sync-overleaf`, below).
 3. **Generated text: one templated sentence per test stating its span,
    plus tables.** Anything interpretive is prose.
 4. **Examples are structured** (form, gloss, translation, source) in the
@@ -315,7 +316,7 @@ states them.
 - **Not done, deliberately:** the real `.papers/` in planars-data is not
   created yet; the first `build-chapters --apply` makes it and pushes it
   (a write to planars-data, Jeff's go-ahead). Overleaf co-writing (decision
-  2) is still open.
+  2): see "Overleaf" below.
 
 ## Phase 4 as built (2026-10-25)
 
@@ -399,3 +400,23 @@ states them.
   annotation's examples by construction and row (outline.yaml's
   `class_fragments`). English prints all of its examples plain; the
   volume compiles with a glossed example too (a test).
+
+## Overleaf (2026-10-25)
+
+- **`python -m coding sync-overleaf`** (`coding/sync_overleaf.py`, in the
+  daily refresh after the chapters' check) keeps `.papers/` and the
+  Overleaf project `volume.yaml` names (`overleaf: <ID>`) the same, both
+  ways, through the project's git repository. It compares each file with
+  the version both sides had at the last sync (`.state/overleaf_state.json`):
+  one side's change goes to the other; a change on both sides, or an edit
+  in Overleaf to a file the build makes (`build.is_built`, which `write`
+  checks against what the build makes), keeps planars-data's version and
+  Overleaf's as a copy under `conflicts/<date>/`, listed in the
+  `overleaf-sync` issue. Not live: as often as it runs.
+- **The door** writes over a person's file only when the caller names the
+  exact content it replaces (`write_paper(..., replaces=)`), and accepts
+  bytes (figures added in Overleaf).
+- **Setup:** Jeff made the project on 2026-10-25; its ID is in
+  `volume.yaml` only (planars-data is private; this repository is not).
+  The daily refresh needs the `OVERLEAF_TOKEN` secret; locally, git's
+  stored Overleaf login is used.

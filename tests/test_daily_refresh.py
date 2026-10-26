@@ -100,6 +100,7 @@ def test_a_clean_run_runs_every_command_in_order_and_closes_every_issue(refresh_
         "integrity-check --check-manifest",
         "integrity-check",
         "build-chapters --check --apply",
+        "sync-overleaf --apply",
         "update-sheets --apply",
         "refresh-dropdowns --apply",
         "generate-status-sheet --apply",

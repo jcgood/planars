@@ -57,7 +57,7 @@ test's own temporary folder.
 **The tooling's own files** (unit 6b; ``STATE_KINDS``): the state files in
 ``.state/`` (the provenance log, regen snapshots, the restructure journal,
 check-notes' and check-comments' state, sync-planar's renumbering record,
-laminar-charts' record of what it drew) and the ID file,
+laminar-charts' record of what it drew, sync-overleaf's last sync) and the ID file,
 ``drive_config.json``. Where each lives is ``coding/state_files.py``'s. They
 are written with ``write_state``, ``append_state`` (the provenance log) and
 ``remove_state``, which check rule 1 (a dry run writes none, except the
@@ -70,9 +70,11 @@ keeps their history.
 Phase 3): files under ``.papers/`` (``state_files.PAPERS_DIR``), written
 by build-chapters with ``write_paper`` and ``remove_paper``. Two kinds: a
 *built* file (fragments, values, outlines), rewritten by every build, and
-a *stub* (a prose slot, ``volume.yaml``), made once for a person to write
-in. The door refuses to write over or remove an existing stub, so what
-someone wrote is never overwritten. Like the state files: rule 1 checked,
+a *stub* (a prose slot, ``volume.yaml``, or any file a writer adds), made
+once for a person to write in. The door refuses to write over or remove an
+existing stub unless the caller names exactly the content it replaces
+(``replaces=``: sync-overleaf carrying an edit made in Overleaf on top of
+it), so what someone wrote is never lost. Like the state files: rule 1 checked,
 only what differs written, committed with the rest, no archive copy or
 change-log line.
 
@@ -249,6 +251,7 @@ NOTES_STATE = "notes_state"
 COMMENTS_STATE = "comments_state"
 RENUMBERING = "renumbering"
 LAMINAR_CHARTS_STATE = "laminar_charts_state"
+OVERLEAF_STATE = "overleaf_state"
 ID_FILE = "id_file"
 
 # Where each lives is coding/state_files.py's (read at call time: tests move
@@ -270,7 +273,10 @@ STATE_KINDS: Dict[str, Dict[str, object]] = {
     LAMINAR_CHARTS_STATE: {"path": lambda f: state_files.LAMINAR_CHARTS_STATE_PATH,
                           "what": "what each language's contributor charts were last "
                                   "drawn from"},
-    ID_FILE:            {"path": lambda f: state_files.ID_FILE,
+    OVERLEAF_STATE:      {"path": lambda f: state_files.OVERLEAF_STATE_PATH,
+                          "what": "the Overleaf project and version the chapters were "
+                                  "last synced with"},
+    ID_FILE:           {"path": lambda f: state_files.ID_FILE,
                           "what": "the Drive IDs of the files the tooling made"},
 }
 # The Drive door's records of writes it let through. They are written
@@ -337,6 +343,10 @@ def laminar_charts_state() -> StateFile:
     return StateFile(LAMINAR_CHARTS_STATE)
 
 
+def overleaf_state() -> StateFile:
+    return StateFile(OVERLEAF_STATE)
+
+
 def id_file() -> StateFile:
     return StateFile(ID_FILE)
 
@@ -347,13 +357,16 @@ def id_file() -> StateFile:
 
 # A file build-chapters makes and rewrites each time (fragments, values,
 # outlines, main.tex), and a stub it makes once for a person to write in (a
-# prose slot, volume.yaml) and never touches again: the door refuses to
-# write over a stub kind, so no bug can overwrite what someone wrote.
+# prose slot, volume.yaml; or a file a writer adds in Overleaf) and never
+# touches again: the door refuses to write over a stub kind unless the
+# caller names the exact text it replaces, so no bug can overwrite what
+# someone wrote.
 PAPER_BUILT = "paper_built"
 PAPER_STUB = "paper_stub"
 PAPER_KINDS: Dict[str, str] = {
     PAPER_BUILT: "a file the chapter build makes, rewritten by every build",
-    PAPER_STUB: "a starting stub for a person to write in, never written over",
+    PAPER_STUB: "a person's file (a stub to write in, or one they added), never written over "
+                "blind",
 }
 
 
@@ -649,38 +662,58 @@ def _note_state(run: Optional[_Run], target: Union[StateFile, "PaperFile"], path
         run.state[_where(target)] = action
 
 
-def write_paper(target: PaperFile, text: str) -> bool:
-    """Write a file under .papers/ if ``text`` differs from what is there.
-    True if written. A stub that already exists is refused, whatever its
-    text: it belongs to the person writing in it."""
+def _bytes(content: Union[str, bytes, None]) -> Optional[bytes]:
+    return content.encode("utf-8") if isinstance(content, str) else content
+
+
+def _stub_problems(target: PaperFile, old: Optional[bytes],
+                   replaces: Union[str, bytes, None], action: str) -> List[str]:
+    """A stub that exists is written over or removed only by a caller that
+    names exactly what it replaces (sync-overleaf, carrying a person's edit
+    made on top of that text); anything else is refused."""
+    if target.kind != PAPER_STUB or old is None:
+        return []
+    if replaces is not None and _bytes(replaces) == old:
+        return []
+    if replaces is not None:
+        return [f"the caller would {action} this file in place of a version that is no longer "
+                f"there (it changed in the meantime), so it would lose an edit"]
+    verb = {"write over": "writes over", "remove": "removes"}[action]
+    return [f"this is a stub someone may have written in; the tooling never {verb} "
+            f"one unless it names the text it replaces"]
+
+
+def write_paper(target: PaperFile, text: Union[str, bytes],
+                replaces: Union[str, bytes, None] = None) -> bool:
+    """Write a file under .papers/ if ``text`` (or bytes: a figure) differs
+    from what is there. True if written. A stub that already exists is
+    refused unless ``replaces`` is exactly its content: it belongs to the
+    person writing in it."""
     path = target.path
-    old = _read(path)
-    if old == text:
+    old = path.read_bytes() if path.exists() else None
+    new = _bytes(text)
+    if old == new:
         return False
     run = _runs[-1] if _runs else None
     problems = _paper_problems(run, target, "write")
-    if target.kind == PAPER_STUB and old is not None:
-        problems.append("this is a stub someone may have written in; the tooling never "
-                        "writes over one")
+    problems += _stub_problems(target, old, replaces, "write over")
     _act(run, target, problems)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", encoding="utf-8", newline="") as f:
-        f.write(text)
+    path.write_bytes(new)
     _note_state(run, target, path, "created" if old is None else "rebuilt")
     return True
 
 
-def remove_paper(target: PaperFile) -> bool:
-    """Delete a built file under .papers/ (a fragment no longer made). True
-    if there was one. A stub is never removed."""
+def remove_paper(target: PaperFile, replaces: Union[str, bytes, None] = None) -> bool:
+    """Delete a file under .papers/: a built one (a fragment no longer
+    made), or a stub whose content is exactly ``replaces`` (a file deleted
+    in Overleaf). True if there was one."""
     path = target.path
     if not path.exists():
         return False
     run = _runs[-1] if _runs else None
     problems = _paper_problems(run, target, "remove")
-    if target.kind != PAPER_BUILT:
-        problems.append("only a built file may be removed; a stub belongs to the person "
-                        "writing in it")
+    problems += _stub_problems(target, path.read_bytes(), replaces, "remove")
     _act(run, target, problems)
     path.unlink()
     _note_state(run, target, path, "removed")

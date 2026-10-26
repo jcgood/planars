@@ -287,6 +287,21 @@ labels:
       data again.
     filed_by: build-chapters --check --apply (data-refresh.yml)
 
+  - name: overleaf-sync
+    color: "fbca04"
+    description: "The chapters' Overleaf project needs a person: two edits met, or the sync failed."
+    meaning: >-
+      One issue ("Overleaf sync — chapters"): `sync-overleaf --apply` found
+      a file in planars-data's `.papers/` changed both in Overleaf and in
+      planars-data since the last sync, or a file the chapter build makes
+      edited in Overleaf, and kept the other version as a copy under
+      `conflicts/` (on both sides); or the sync failed. The issue names the
+      files, never their text (the repository is public). Resolve: merge
+      each copy into its file (in Overleaf or locally), delete the copy;
+      for a failure, fix its cause. Rewritten in place while open;
+      auto-closed when `conflicts/` is empty and the sync succeeds.
+    filed_by: sync-overleaf --apply (data-refresh.yml)
+
   - name: collaborator-notes
     color: "0075ca"
     description: "Collaborator notes need coordinator triage. Review, file warranted issues, close."
