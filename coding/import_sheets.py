@@ -494,6 +494,11 @@ def main(args: argparse.Namespace | None = None) -> None:
                 if not ignore_status and status_map:
                     tab_status = status_map.get(construction, STATUS_IN_PROGRESS)
                 in_progress = (tab_status != STATUS_READY)
+                # What the annotator's Status tab says, for the change log:
+                # --ignore-status must not record a tab as ready-for-review
+                # when its annotator has not marked it so.
+                sheet_status = (status_map.get(construction, STATUS_IN_PROGRESS)
+                                if status_map else "no Status tab")
 
                 rows = ws.get_all_values()
 
@@ -604,7 +609,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                 # logs the change in the language's changes.tsv.
                 file_door.write(file_door.annotation(lang_id, class_name, construction),
                                 file_door.tsv_text(header, records),
-                                why=f"imported from the annotator's sheet ({tab_status})")
+                                why=f"imported from the annotator's sheet ({sheet_status})")
 
                 # Count rows with at least one blank param cell (for status line).
                 # Pair-row and keyed-row sheets have no keystone; element-row
