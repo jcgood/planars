@@ -1,6 +1,140 @@
 English Biuniqueness Deviations Morphs
 ======================================
 
+NOTE: Some form rows could not be placed and were skipped:
+  and / and at v:leftedge: occurs_here is '', expected y or n
+  and / ænd at v:leftedge: occurs_here is '', expected y or n
+  and / nd at v:leftedge: occurs_here is '', expected y or n
+  be / be at v:frontedauxiliary: occurs_here is '', expected y or n
+  be / æm at v:frontedauxiliary: occurs_here is '', expected y or n
+  be / aɹ at v:frontedauxiliary: occurs_here is '', expected y or n
+  be / ɪz at v:frontedauxiliary: occurs_here is '', expected y or n
+  be / am at v:frontedauxiliary: occurs_here is '', expected y or n
+  be / are at v:frontedauxiliary: occurs_here is '', expected y or n
+  be / is at v:frontedauxiliary: occurs_here is '', expected y or n
+  be / been at v:frontedauxiliary: occurs_here is '', expected y or n
+  be / be at v:progressive: occurs_here is '', expected y or n
+  be / æm at v:progressive: occurs_here is '', expected y or n
+  be / aɹ at v:progressive: occurs_here is '', expected y or n
+  be / ɪz at v:progressive: occurs_here is '', expected y or n
+  be / am at v:progressive: occurs_here is '', expected y or n
+  be / are at v:progressive: occurs_here is '', expected y or n
+  be / is at v:progressive: occurs_here is '', expected y or n
+  be / been at v:progressive: occurs_here is '', expected y or n
+  do / do at v:frontedauxiliary: occurs_here is '', expected y or n
+  do / du at v:frontedauxiliary: occurs_here is '', expected y or n
+  do / daz at v:frontedauxiliary: occurs_here is '', expected y or n
+  have / have at v:frontedauxiliary: occurs_here is '', expected y or n
+  have / hæv at v:frontedauxiliary: occurs_here is '', expected y or n
+  have / hæz at v:frontedauxiliary: occurs_here is '', expected y or n
+  have / v at v:frontedauxiliary: occurs_here is '', expected y or n
+  have / z at v:frontedauxiliary: occurs_here is '', expected y or n
+  will / will at v:frontedauxiliary: occurs_here is '', expected y or n
+  will / wɪl at v:frontedauxiliary: occurs_here is '', expected y or n
+  will / l at v:frontedauxiliary: occurs_here is '', expected y or n
+  will / ll at v:frontedauxiliary: occurs_here is '', expected y or n
+  will / will at v:modal1: occurs_here is '', expected y or n
+  will / wɪl at v:modal1: occurs_here is '', expected y or n
+  will / l at v:modal1: occurs_here is '', expected y or n
+  will / ll at v:modal1: occurs_here is '', expected y or n
+  would / would at v:frontedauxiliary: occurs_here is '', expected y or n
+  would / wʊd at v:frontedauxiliary: occurs_here is '', expected y or n
+  would / d at v:frontedauxiliary: occurs_here is '', expected y or n
+  would / ld at v:frontedauxiliary: occurs_here is '', expected y or n
+  would / would at v:modal1: occurs_here is '', expected y or n
+  would / wʊd at v:modal1: occurs_here is '', expected y or n
+  would / d at v:modal1: occurs_here is '', expected y or n
+  would / ld at v:modal1: occurs_here is '', expected y or n
+  not / not at v:neg1: occurs_here is '', expected y or n
+  not / nt at v:neg1: occurs_here is '', expected y or n
+  not / nat at v:neg1: occurs_here is '', expected y or n
+  not / not at v:neg2: occurs_here is '', expected y or n
+  not / nt at v:neg2: occurs_here is '', expected y or n
+  not / nat at v:neg2: occurs_here is '', expected y or n
+  not / not at v:neg3: occurs_here is '', expected y or n
+  not / nt at v:neg3: occurs_here is '', expected y or n
+  not / nat at v:neg3: occurs_here is '', expected y or n
+  not / not at v:neg4: occurs_here is '', expected y or n
+  not / nt at v:neg4: occurs_here is '', expected y or n
+  not / nat at v:neg4: occurs_here is '', expected y or n
+  [-s] / [-s] at v:frontedauxiliaryinflection: occurs_here is '', expected y or n
+  [-s] / s at v:frontedauxiliaryinflection: occurs_here is '', expected y or n
+  [-s] / z at v:frontedauxiliaryinflection: occurs_here is '', expected y or n
+  [-s] / əz at v:frontedauxiliaryinflection: occurs_here is '', expected y or n
+  [-s] / [-s] at v:perfectinflection: occurs_here is '', expected y or n
+  [-s] / s at v:perfectinflection: occurs_here is '', expected y or n
+  [-s] / z at v:perfectinflection: occurs_here is '', expected y or n
+  [-s] / əz at v:perfectinflection: occurs_here is '', expected y or n
+  [-s] / [-s] at v:verbinflection: occurs_here is '', expected y or n
+  [-s] / s at v:verbinflection: occurs_here is '', expected y or n
+  [-s] / z at v:verbinflection: occurs_here is '', expected y or n
+  [-s] / əz at v:verbinflection: occurs_here is '', expected y or n
+  [-ve] / [-ve] at v:perfectinflection: occurs_here is '', expected y or n
+  [be-] / [be-] at v:passive: occurs_here is '', expected y or n
+  [be-] / am at v:passive: occurs_here is '', expected y or n
+  [be-] / are at v:passive: occurs_here is '', expected y or n
+  [be-] / is at v:passive: occurs_here is '', expected y or n
+  [be-] / been at v:passive: occurs_here is '', expected y or n
+  [be-] / [be-] at v:latinprefix: occurs_here is '', expected y or n
+  [be-] / am at v:latinprefix: occurs_here is '', expected y or n
+  [be-] / are at v:latinprefix: occurs_here is '', expected y or n
+  [be-] / is at v:latinprefix: occurs_here is '', expected y or n
+  [be-] / been at v:latinprefix: occurs_here is '', expected y or n
+  [-ed] / [-ed] at v:verbinflection: occurs_here is '', expected y or n
+  [-ed] / t at v:verbinflection: occurs_here is '', expected y or n
+  [-ed] / d at v:verbinflection: occurs_here is '', expected y or n
+  [-ed] / əd at v:verbinflection: occurs_here is '', expected y or n
+  them / them at v:obj-part: occurs_here is '', expected y or n
+  them / θɛm at v:obj-part: occurs_here is '', expected y or n
+  them / əm at v:obj-part: occurs_here is '', expected y or n
+  be + v:verbinflection / be at v:progressive: occurs_here is '', expected y or n
+  be + v:verbinflection / [-ed] at v:verbinflection: occurs_here is '', expected y or n
+  be + v:verbinflection / [-s] at v:verbinflection: occurs_here is '', expected y or n
+  be + v:verbinflection / [-ing] at v:verbinflection: occurs_here is '', expected y or n
+  have + v:verbinflection / have at v:frontedauxiliary: occurs_here is '', expected y or n
+  have + v:verbinflection / [-ed] at v:verbinflection: occurs_here is '', expected y or n
+  have + v:verbinflection / [-s] at v:verbinflection: occurs_here is '', expected y or n
+  have + v:verbinflection / [-ing] at v:verbinflection: occurs_here is '', expected y or n
+  ha + v:verbinflection / ha at v:perfect: occurs_here is '', expected y or n
+  ha + v:verbinflection / [-ed] at v:verbinflection: occurs_here is '', expected y or n
+  ha + v:verbinflection / [-s] at v:verbinflection: occurs_here is '', expected y or n
+  ha + v:verbinflection / [-ing] at v:verbinflection: occurs_here is '', expected y or n
+  [be-] + v:verbinflection / [be-] at v:passive: occurs_here is '', expected y or n
+  [be-] + v:verbinflection / [-ed] at v:verbinflection: occurs_here is '', expected y or n
+  [be-] + v:verbinflection / [-s] at v:verbinflection: occurs_here is '', expected y or n
+  [be-] + v:verbinflection / [-ing] at v:verbinflection: occurs_here is '', expected y or n
+  [-ed] + v:frontedauxiliary, v:perfect, v:passive / [-ed] at v:verbinflection: occurs_here is '', expected y or n
+  [-ed] + v:frontedauxiliary, v:perfect, v:passive / be at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ed] + v:frontedauxiliary, v:perfect, v:passive / have at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ed] + v:frontedauxiliary, v:perfect, v:passive / do at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ed] + v:frontedauxiliary, v:perfect, v:passive / can at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ed] + v:frontedauxiliary, v:perfect, v:passive / could at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ed] + v:frontedauxiliary, v:perfect, v:passive / may at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ed] + v:frontedauxiliary, v:perfect, v:passive / might at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ed] + v:frontedauxiliary, v:perfect, v:passive / must at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ed] + v:frontedauxiliary, v:perfect, v:passive / shall at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ed] + v:frontedauxiliary, v:perfect, v:passive / should at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ed] + v:frontedauxiliary, v:perfect, v:passive / will at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ed] + v:frontedauxiliary, v:perfect, v:passive / would at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ed] + v:frontedauxiliary, v:perfect, v:passive / ought at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ed] + v:frontedauxiliary, v:perfect, v:passive / ha at v:perfect: occurs_here is '', expected y or n
+  [-ed] + v:frontedauxiliary, v:perfect, v:passive / [be-] at v:passive: occurs_here is '', expected y or n
+  [-ing] + v:frontedauxiliary, v:progressive / [-ing] at v:verbinflection: occurs_here is '', expected y or n
+  [-ing] + v:frontedauxiliary, v:progressive / be at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ing] + v:frontedauxiliary, v:progressive / have at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ing] + v:frontedauxiliary, v:progressive / do at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ing] + v:frontedauxiliary, v:progressive / can at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ing] + v:frontedauxiliary, v:progressive / could at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ing] + v:frontedauxiliary, v:progressive / may at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ing] + v:frontedauxiliary, v:progressive / might at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ing] + v:frontedauxiliary, v:progressive / must at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ing] + v:frontedauxiliary, v:progressive / shall at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ing] + v:frontedauxiliary, v:progressive / should at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ing] + v:frontedauxiliary, v:progressive / will at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ing] + v:frontedauxiliary, v:progressive / would at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ing] + v:frontedauxiliary, v:progressive / ought at v:frontedauxiliary: occurs_here is '', expected y or n
+  [-ing] + v:frontedauxiliary, v:progressive / be at v:progressive: occurs_here is '', expected y or n
+
 Keystone position: 30 (v:verbstem)
 
 No biuniqueness deviations found.
