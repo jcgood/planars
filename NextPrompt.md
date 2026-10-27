@@ -30,7 +30,8 @@ Status tab's Marked by column records who marked each ready tab
 (`people.yaml`). `set-tab-status` is for any other case. **Next action:**
 check the next Sheet validation run (09:00 UTC) and refresh are green and
 that the coordinators' comment appears when a tab is marked. Adam's
-question (ii), relayed by Jeff, was never given: ask Jeff for it.
+request (ii), relayed by Jeff, was the biuniqueness morphs tab: built
+2026-10-26, done.
 
 ### Thread: generating the chapters' data-driven parts (2026-10-25)
 
