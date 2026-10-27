@@ -20,6 +20,12 @@ this project is trying to remove.
 
 Eight live threads. Read whichever matches what you're picking up.
 
+**Hold (2026-10-27):** Adam reworked `phrasal_accent_stan1293` by hand
+(deleted `prescreening` and `general`, added `general_filled` with 1,417
+new answers and two Example columns, set link sharing to anyone-writer);
+that is the whole of #328, #329 and #330. Jeff is asking Adam why. Don't
+touch the Sheet until Jeff relays the answer.
+
 ### Thread: tabs marked ready-for-review (2026-10-26)
 
 Jeff's rule: a tab with every cell answered and no errors is ready for
