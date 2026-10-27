@@ -40,7 +40,7 @@ A day later, look at that row's **Needs fixing** column. It lists every value on
 
 Correct each one on the construction's tab (the cell is also pink there). The line disappears within a day of the fix, and the column is blank when nothing needs fixing. You do not need to change the Status back while you fix things.
 
-While a construction is still `in-progress`, wrong values are only highlighted pink, not listed. If every cell of an `in-progress` construction is answered, that column says *Every cell is answered: set Status to ready-for-review*, and you are told on GitHub (or by a comment on the sheet). Set the Status if you're done: a tab built from it, such as the pairs after a prescreening tab, is only filled after that.
+While a construction is still `in-progress`, wrong values are only highlighted pink, not listed. Once every cell of a construction is answered and nothing needs fixing, it is set to `ready-for-review` for you within a day, and you are told on GitHub (or by a comment on the sheet). A tab built from it, such as the pairs after a prescreening tab, is then filled. You can keep editing a `ready-for-review` construction.
 
 Your language's read-only status page (`status_{lang_id}`, in the "Annotation Status" folder shared with you) shows how much of each construction is filled in. It is rebuilt once a day, and its second line says when, so edits you made after that time aren't counted yet.
 

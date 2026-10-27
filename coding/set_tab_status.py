@@ -3,9 +3,10 @@
 
 An annotator marks a tab ready-for-review in the Status tab of a class sheet
 when it is finished; a tab that depends on it (e.g. phrasal_accent's general
-pairs, built from prescreening) is only filled after that. When an annotator
-says a tab is done but forgot to mark it, the coordinator marks it with this
-command rather than by hand in the sheet.
+pairs, built from prescreening) is only filled after that. The daily check
+marks a tab with every cell answered and no errors itself
+(validate_coding.looks_finished); this command is for any other case, such
+as a tab done with some cells deliberately blank, or setting one back.
 
     python -m coding set-tab-status --lang stan1293 --class phrasal_accent \\
         --construction prescreening                       # dry run
@@ -13,8 +14,8 @@ command rather than by hand in the sheet.
         --construction prescreening --apply               # write it
 
 --status defaults to ready-for-review; --status in-progress sets it back.
-The cell is written through the Drive door, declared as replacing the
-annotator's value (drive_door.replacing). When the tab now ready has a tab
+The cell is written by validate_coding.write_status, through the Drive door
+as replacing the annotator's value. When the tab now ready has a tab
 built from it, the command prints the generate-sheets command that builds
 that tab now (the daily refresh also does, at its next run, if it is empty).
 """
@@ -29,11 +30,10 @@ from planars.schema_values import (
     STATUS_VALUES,
 )
 
-from . import drive_door
 from .drive import load_manifest
 from .drive_doorway import get_doorway
 from .schemas import load_diagnostic_classes
-from .validate_coding import read_status_tab
+from .validate_coding import read_status_tab, write_status
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -73,14 +73,12 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
                  f"python -m coding update-sheets --apply adds it.")
     header = [h.strip() for h in rows[0]]
     ci, si = header.index(STATUS_CONSTRUCTION_COLUMN), header.index(STATUS_STATUS_COLUMN)
-    found = [(r, row) for r, row in enumerate(rows[1:], start=2)
-             if ci < len(row) and row[ci].strip() == args.construction]
+    found = [row for row in rows[1:] if ci < len(row) and row[ci].strip() == args.construction]
     if not found:
         names = [row[ci].strip() for row in rows[1:] if ci < len(row) and row[ci].strip()]
         sys.exit(f"The {STATUS_TAB} tab has no '{args.construction}' row "
                  f"(its tabs: {', '.join(names)}).")
-    r, row = found[0]
-    current = row[si].strip() if si < len(row) else ""
+    current = found[0][si].strip() if si < len(found[0]) else ""
     where = f"{args.lang} {args.class_name}/{args.construction}"
     if current == args.status:
         print(f"{where} is already {args.status}; nothing to do.")
@@ -89,8 +87,8 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
         print(f"Would set {where}: {current or '(blank)'} -> {args.status}. "
               f"Add --apply to write it.")
         return
-    with drive_door.replacing(ws, f"coordinator set {args.construction} to {args.status}"):
-        ws.update_cell(r, si + 1, args.status)
+    write_status(ws, rows, args.construction, args.status,
+                 f"coordinator set {args.construction} to {args.status}")
     print(f"Set {where}: {current or '(blank)'} -> {args.status}.")
     if args.status == STATUS_READY:
         for dep in _waiting_dependents(args.class_name, args.construction):

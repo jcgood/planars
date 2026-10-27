@@ -113,17 +113,16 @@ labels:
 
   - name: needs-fixing
     color: "f9d0c4"
-    description: "An annotator has values to fix, or finished tabs to mark ready-for-review"
+    description: "An annotator has values to fix, or finished tabs were marked ready-for-review"
     meaning: >-
       One issue per language, for its annotator (issue #309; "To do in the
       {Name [glottocode]} sheets"): how many cells need fixing in which sheet
-      (on tabs marked ready-for-review), and which in-progress tabs have
-      every cell answered and so probably only need marking, pointing to
-      each sheet's Status tab, where both are listed. Mentions the annotator
-      when people.yaml has their GitHub username; otherwise a comment on the
+      (on tabs marked ready-for-review, listed in each sheet's Status tab),
+      and which in-progress tabs the check marked ready-for-review because
+      every cell was answered with no errors. Mentions the annotator when
+      people.yaml has their GitHub username; otherwise a comment on the
       spreadsheet emails them. A new notice is posted only when the list
-      changes, not daily. For a finished tab the body gives the coordinator
-      the `set-tab-status` command. Auto-closed when nothing is left.
+      changes, not daily. Auto-closed when nothing is left.
     filed_by: validate-coding --notify (sheet-validation.yml)
 
   - name: sheet-drift

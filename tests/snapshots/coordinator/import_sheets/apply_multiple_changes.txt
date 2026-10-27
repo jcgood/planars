@@ -163,19 +163,19 @@ arao1248
   [nonpermutability/general] 253 blank cell(s) — annotation in progress
   [subspanrepetition/auxiliary_construction] no issues
   [subspanrepetition/tso_clause_linkage] no issues
-  [subspanrepetition] every cell answered but not marked ready-for-review: auxiliary_construction, tso_clause_linkage
+  [subspanrepetition] every cell answered with no errors, so marked ready-for-review: auxiliary_construction, tso_clause_linkage
 
 stan1293
   [biuniqueness_deviations/elements] no issues
   [biuniqueness_deviations/morphemes] 12 blank cell(s) — annotation in progress
   [biuniqueness_deviations/morphs] no issues
   [ciscategorial/general] no issues
-  [ciscategorial] every cell answered but not marked ready-for-review: general
+  [ciscategorial] every cell answered with no errors, so marked ready-for-review: general
   [coreference/prescreening] no issues
   [coreference/reflexive_coreference] no issues
   [coreference/pronoun_coreference] no issues
   [coreference/np_coreference] no issues
-  [coreference] every cell answered but not marked ready-for-review: prescreening, reflexive_coreference, pronoun_coreference, np_coreference
+  [coreference] every cell answered with no errors, so marked ready-for-review: prescreening, reflexive_coreference, pronoun_coreference, np_coreference
   [free_occurrence/general] 10 issue(s):
     [WARNING] general row 24 'he': unexpected value '3,4' in 'dependent-on-left' (write 3|4, not commas: | between positions means any one of them is enough)
     [WARNING] general row 24 'he': unexpected value '8, 12, 18, 22, 31' in 'dependent-on-right' (write 8|12|18|22|31, not commas: | between positions means any one of them is enough)
@@ -192,10 +192,10 @@ stan1293
   [noninterruption/general] no issues
   [nonpermutability/element_prescreening] no issues
   [nonpermutability/general] no issues
-  [nonpermutability] every cell answered but not marked ready-for-review: general
+  [nonpermutability] every cell answered with no errors, so marked ready-for-review: general
   [phrasal_accent/prescreening] no issues
   [phrasal_accent/general] no issues
-  [phrasal_accent] every cell answered but not marked ready-for-review: prescreening
+  [phrasal_accent] every cell answered with no errors, so marked ready-for-review: prescreening
   [proform/do_so_substitution] no issues
   [proform/vp_ellipsis] 4 issue(s):
     [WARNING] vp_ellipsis row 6 'NP{S,A,P}': unexpected value 'y/unclear' in 'shareable_proform_replace' (should be one of: ?, both, n, na, unclear, y)
@@ -203,7 +203,7 @@ stan1293
     [WARNING] vp_ellipsis row 22 '[-s]': unexpected value 'both/unclear' in 'shareable_proform_replace' (should be one of: ?, both, n, na, unclear, y)
     [WARNING] vp_ellipsis row 23 '[-v]': unexpected value 'both/unclear' in 'shareable_proform_replace' (should be one of: ?, both, n, na, unclear, y)
     (118 blank cell(s) — annotation in progress; use --verbose to list)
-  [proform] every cell answered but not marked ready-for-review: do_so_substitution
+  [proform] every cell answered with no errors, so marked ready-for-review: do_so_substitution
   [segmental/aspiration_prominence] no issues
   [segmental/flapping] no issues
   [subspanrepetition/andCoordination] no issues

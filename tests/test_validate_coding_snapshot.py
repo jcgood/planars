@@ -372,29 +372,43 @@ def test_notify_mentions_an_annotator_with_github_once_per_new_problem(env, gith
     assert f"arao1248: closed #{issue['number']}" in out
 
 
-def test_a_finished_tab_not_marked_is_flagged_everywhere(env, github, monkeypatch):
-    """arao1248's two subspanrepetition tabs have every cell answered but are
-    still in-progress: the Status tab says to mark them, the issue tells the
-    annotator and gives the coordinator the command; marking them closes it."""
+def test_a_finished_tab_is_marked_ready_and_the_annotator_told(env, github, monkeypatch):
+    """arao1248's two subspanrepetition tabs have every cell answered and no
+    errors but are still in-progress: the check marks them ready-for-review
+    and the issue tells the annotator; the next day nothing is left."""
     doorway, coded, run_main = env
     _with_github(monkeypatch, "annotator-gh")
     add_problems_column(doorway, "arao1248", "subspanrepetition")
     tabs = ["auxiliary_construction", "tso_clause_linkage"]
 
     out, _ = run_main(["validate-coding", "--lang", "arao1248", "--notify"])
-    assert f"every cell answered but not marked {vc.STATUS_READY}: {', '.join(tabs)}" in out
+    assert (f"every cell answered with no errors, so marked {vc.STATUS_READY}: "
+            f"{', '.join(tabs)}") in out
+    ss = doorway.spreadsheet(sheet_id(doorway, "arao1248", "subspanrepetition"))
+    statuses = vc.tab_statuses(ss)
     for t in tabs:
-        assert problems_cell(doorway, "arao1248", "subspanrepetition", t) == vc.FINISHED_TEXT
+        assert statuses[t] == vc.STATUS_READY
+        assert problems_cell(doorway, "arao1248", "subspanrepetition", t) == ""
     [issue] = [i for i in github.issues if "needs-fixing" in i["labels"]]
-    assert f"{', '.join(tabs)} look finished: set them to {vc.STATUS_READY}" in issue["body"]
-    assert ("python -m coding set-tab-status --lang arao1248 --class subspanrepetition "
-            "--construction tso_clause_linkage --apply") in issue["body"]
+    assert f"{', '.join(tabs)} finished, so marked {vc.STATUS_READY}" in issue["body"]
 
-    for t in tabs:
-        set_status(doorway, "arao1248", "subspanrepetition", t, vc.STATUS_READY)
     run_main(["validate-coding", "--lang", "arao1248", "--notify"])
     assert github.issue(issue["number"])["state"] == "CLOSED"
-    assert problems_cell(doorway, "arao1248", "subspanrepetition", tabs[0]) == ""
+
+
+def test_a_tab_with_a_blank_cell_is_not_marked(env):
+    doorway, coded, run_main = env
+    add_problems_column(doorway, "arao1248", "subspanrepetition")
+    path = coded / "arao1248" / "subspanrepetition" / "tso_clause_linkage.tsv"
+    df = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)
+    row = df[df["Position_Name"] != vc._KEYSTONE_NAME].iloc[0]
+    criterion = next(c for c in df.columns if c not in vc.ELEMENT_ROW_COLUMNS
+                     and c not in vc.TRAILING_COLUMNS)
+    set_cell(coded, "arao1248", "subspanrepetition", "tso_clause_linkage",
+             "Element", row["Element"], criterion, "")
+    run_main(["validate-coding", "--lang", "arao1248"])
+    ss = doorway.spreadsheet(sheet_id(doorway, "arao1248", "subspanrepetition"))
+    assert vc.tab_statuses(ss).get("tso_clause_linkage") != vc.STATUS_READY
 
 
 def test_notify_comments_on_the_sheet_for_an_annotator_without_github(env, github):

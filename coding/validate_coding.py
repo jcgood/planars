@@ -255,18 +255,37 @@ def problems_text(issues: List[ValidationIssue]) -> str:
     return "\n".join(lines)
 
 
-FINISHED_TEXT = f"Every cell is answered: set Status to {STATUS_READY}."
-
-
 def looks_finished(issues: List[ValidationIssue], tab_status: str, lang_id: str,
                    class_name: str, construction: str) -> bool:
-    """A tab its annotator has probably finished but not marked: still
-    in-progress, at least one row, and nothing blank, invalid or misshapen.
-    Annotators forget to mark tabs, and a tab built from this one waits until
-    it is marked; the Status tab and the needs-fixing issue say so."""
+    """A finished tab not yet marked: still in-progress, at least one row,
+    and nothing blank, invalid or misshapen. Such a tab counts as
+    ready-for-review (Jeff, 2026-10-26): annotators forget to mark tabs, and
+    a tab built from this one waits until it is marked, so
+    `revalidate_sheets` marks it and the needs-fixing issue tells the
+    annotator."""
     if tab_status == STATUS_READY or issues:
         return False
     return len(_read_tsv_rows(lang_id, class_name, construction)) > 1
+
+
+def write_status(ws, rows: List[List[str]], construction: str, status: str,
+                 reason: str) -> Optional[str]:
+    """Set ``construction``'s Status in the Status tab (``ws``, whose cells
+    are ``rows``), through the Drive door as replacing the annotator's value.
+    Returns the previous status ('' if blank), or None if the tab has no row
+    for ``construction``. Writes nothing if it already has ``status``."""
+    header = [h.strip() for h in rows[0]] if rows else []
+    if STATUS_CONSTRUCTION_COLUMN not in header or STATUS_STATUS_COLUMN not in header:
+        return None
+    ci, si = header.index(STATUS_CONSTRUCTION_COLUMN), header.index(STATUS_STATUS_COLUMN)
+    for r, row in enumerate(rows[1:], start=2):
+        if ci < len(row) and row[ci].strip() == construction:
+            current = row[si].strip() if si < len(row) else ""
+            if current != status:
+                with drive_door.replacing(ws, reason):
+                    ws.update_cell(r, si + 1, status)
+            return current
+    return None
 
 
 def write_problems(ws, rows: List[List[str]], problems: Dict[str, str]) -> Optional[str]:
@@ -313,7 +332,7 @@ _WHITE = {"red": 1.0, "green": 1.0, "blue": 1.0}
 from planars.schema_values import KEYSTONE_NAME as _KEYSTONE_NAME  # noqa: E402
 from planars.schema_values import (  # noqa: E402
     STATUS_CONSTRUCTION_COLUMN, STATUS_IN_PROGRESS, STATUS_PROBLEMS_COLUMN, STATUS_READY,
-    STATUS_TAB, status_map,
+    STATUS_STATUS_COLUMN, STATUS_TAB, status_map,
 )
 
 # ---------------------------------------------------------------------------
@@ -1080,8 +1099,10 @@ def revalidate_sheets(
                 tab_status = statuses.get(construction, STATUS_IN_PROGRESS)
                 issues = grade(issues, tab_status)
                 problems[construction] = problems_text(issues)
-                if looks_finished(issues, tab_status, lang_id, class_name, construction):
-                    problems[construction] = FINISHED_TEXT
+                if (status_ws is not None
+                        and looks_finished(issues, tab_status, lang_id, class_name, construction)
+                        and write_status(status_ws, status_rows, construction, STATUS_READY,
+                                         "every cell answered with no errors") is not None):
                     finished.append(construction)
                 notice_lines += [f"{construction}: {i.fix}" for i in issues
                                  if i.level == "error" and i.fix]
@@ -1120,7 +1141,7 @@ def revalidate_sheets(
                 if note:
                     print(f"  [{class_name}] {note}")
             if finished:
-                print(f"  [{class_name}] every cell answered but not marked "
+                print(f"  [{class_name}] every cell answered with no errors, so marked "
                       f"{STATUS_READY}: {', '.join(finished)}")
             if lang_notices is not None and (notice_lines or finished):
                 lang_notices.append(SheetProblems(class_name, sid, ss.url, tuple(notice_lines),

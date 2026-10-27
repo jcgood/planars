@@ -1,15 +1,14 @@
 """Telling an annotator that values on their ready-for-review tabs need
-fixing, or that a tab looks finished but is not marked ready-for-review.
+fixing, or that a finished tab was marked ready-for-review for them.
 
 Issue #309, step 3. ``validate-coding --notify`` (daily, in
 sheet-validation.yml) calls ``notify`` once for each language it checked
 completely. The details live in one place, each sheet's Status tab
 (``validate_coding.write_problems``); a notice says only how many cells need
-fixing in which sheet, and which tabs look finished
-(``validate_coding.looks_finished``: every cell answered, still in-progress;
-a tab built from it waits until it is marked), with a link. For a finished
-tab the issue also gives the coordinator the set-tab-status command, in
-case the annotator meant it as done.
+fixing in which sheet, and which tabs the check marked ready-for-review
+because every cell was answered with no errors
+(``validate_coding.looks_finished``), with a link. A marked tab is reported
+once, on the day it is marked.
 
 One ``needs-fixing`` issue per language, titled with the language's name. It
 is the coordinator's record and holds, in a hidden marker, a short code for
@@ -48,7 +47,7 @@ _MARKER = re.compile(r"<!-- needs-fixing: ([0-9a-f,]*) -->")
 @dataclass(frozen=True)
 class SheetProblems:
     """One class sheet's cells that need fixing on its ready-for-review tabs,
-    and its tabs that look finished but are still in-progress."""
+    and its tabs marked ready-for-review today because they were finished."""
     class_name: str
     spreadsheet_id: str
     url: str
@@ -89,12 +88,11 @@ def _count(n: int) -> str:
 
 def _finished_text(sheet: SheetProblems) -> str:
     tabs = ", ".join(sheet.finished)
-    return (f"{tabs} {'looks' if len(sheet.finished) == 1 else 'look'} finished: "
-            f"set {'it' if len(sheet.finished) == 1 else 'them'} to {STATUS_READY}")
+    return f"{tabs} finished, so marked {STATUS_READY}"
 
 
 def summary(sheets: Sequence[SheetProblems]) -> str:
-    """One line per sheet: how many cells to fix, which tabs look finished,
+    """One line per sheet: how many cells to fix, which tabs were marked,
     and where to look."""
     out = []
     for s in sheets:
@@ -108,26 +106,14 @@ def summary(sheets: Sequence[SheetProblems]) -> str:
     return "\n".join(out)
 
 
-def _mark_commands(lang_id: str, sheets: Sequence[SheetProblems]) -> str:
-    """For the coordinator: the command that marks each finished tab, for an
-    annotator who said it is done but did not mark it."""
-    lines = [f"    python -m coding set-tab-status --lang {lang_id} --class {s.class_name} "
-             f"--construction {c} --apply"
-             for s in sheets for c in s.finished]
-    if not lines:
-        return ""
-    return ("Coordinator, if the annotator says a tab is done:\n\n" + "\n".join(lines) + "\n\n")
-
-
 def body_for(lang_id: str, sheets: Sequence[SheetProblems], told: str) -> str:
     # Short: an annotator reads it, and reading comes out of annotation time
     # (Adam, #318).
     return (
         f"{summary(sheets)}\n\n"
-        f"Fix the pink cells; mark a finished tab {STATUS_READY} in the Status column "
-        f"(a tab built from it is filled the next day). This issue closes by itself "
-        f"when nothing is left. {told}\n\n"
-        f"{_mark_commands(lang_id, sheets)}"
+        f"Fix the pink cells. A tab with every cell answered and nothing to fix is "
+        f"marked {STATUS_READY} for you, and a tab built from it is filled. This issue "
+        f"closes by itself when nothing is left. {told}\n\n"
         f"<!-- needs-fixing: {','.join(sorted(codes(sheets)))} -->\n")
 
 
@@ -145,7 +131,7 @@ def drive_comment(email: str, sheet: SheetProblems) -> str:
 def notify(lang_id: str, sheets: Sequence[SheetProblems], doorway=None) -> str:
     """File, update or close the language's needs-fixing issue, and tell the
     annotator about anything new. ``sheets``: every class sheet with at least
-    one cell to fix or one finished tab; empty means nothing. Returns what it did."""
+    one cell to fix or one tab marked today; empty means nothing. Returns what it did."""
     sheets = [s for s in sheets if s.lines or s.finished]
     title = title_for(lang_id)
     number = issues.find_open(LABEL, title=title)

@@ -8,7 +8,7 @@ arao1248
   [nonpermutability/general] 253 blank cell(s) — annotation in progress
   [subspanrepetition/auxiliary_construction] no issues
   [subspanrepetition/tso_clause_linkage] no issues
-  [subspanrepetition] every cell answered but not marked ready-for-review: auxiliary_construction, tso_clause_linkage
+  [subspanrepetition] every cell answered with no errors, so marked ready-for-review: auxiliary_construction, tso_clause_linkage
 
 ──────────────────────────────────────────────────
 Validated 7 sheet(s).  Errors: 0
