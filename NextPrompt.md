@@ -18,7 +18,19 @@ this project is trying to remove.
 
 ## Now
 
-Seven live threads. Read whichever matches what you're picking up.
+Eight live threads. Read whichever matches what you're picking up.
+
+### Thread: tabs marked ready-for-review (2026-10-26)
+
+Jeff's rule: a tab with every cell answered and no errors is ready for
+review. The daily check marks it (`validate_coding.looks_finished`), the
+Status tab's Marked by column records who marked each ready tab
+(annotator, coordinator, check), and a comment on the language's
+`needs-fixing` issue @-mentions the coordinators and the owner
+(`people.yaml`). `set-tab-status` is for any other case. **Next action:**
+check the next Sheet validation run (09:00 UTC) and refresh are green and
+that the coordinators' comment appears when a tab is marked. Adam's
+question (ii), relayed by Jeff, was never given: ask Jeff for it.
 
 ### Thread: generating the chapters' data-driven parts (2026-10-25)
 
@@ -229,11 +241,9 @@ and synth0001's copy is archived read-only.
 
 **Next action:** waiting on Adam — (1) review of the span definition and type
 rules (#254 design comment; the class stays `[AUTO-DERIVED]` until he does);
-(2) filling the morphemes tab (built 2026-10-22 at Jeff's request, 18 rows;
-elements marked ready-for-review for him by
-`migrations/mark_biuniqueness_elements_ready_stan1293.py`) and marking it
-ready-for-review; the daily refresh then fills morphs by itself — check it
-did. Adam was told on #318 (2026-10-22). Positions may be typed as numbers since 2026-10-22
+(2) filling the morphs tab (built 2026-10-26, 132 rows, after morphemes
+was marked ready-for-review for him with `set-tab-status`). Adam was told
+on #318 (2026-10-22). Positions may be typed as numbers since 2026-10-22
 (`planars/position_cells.py`; sync-planar renumbers them when the
 planar's numbers shift); (3) #298 (what `-n` at
 `v:frontedauxiliaryinflection` is — fronted *won't* waits on it).
