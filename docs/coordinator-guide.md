@@ -233,7 +233,10 @@ validation marks it `ready-for-review` itself and tells the annotator on their
 For any other case (a tab done with cells deliberately blank, or one to set
 back), use
 `python -m coding set-tab-status --lang LANG_ID --class CLASS --construction TAB --apply`
-(`--status in-progress` sets it back). A tab built from it is filled at the next
+(`--status in-progress` sets it back). The Status tab's **Marked by** column
+records who marked each ready tab and when: `annotator` (by hand), `coordinator`
+(set-tab-status, which also re-marks a tab already ready) or the check; the
+import's change log copies it. A tab built from it is filled at the next
 daily refresh, or at once with `generate-sheets --lang LANG_ID --regen-construction CLASS:DEPENDENT`.
 
 From then on, an invalid value on that tab is an error, not just a pink cell (issue #309; the rule is `validate_coding.needs_fixing`). `validate-coding` (daily, `sheet-validation.yml`, and at the end of `import-sheets --apply`) lists each one in the Status tab's **Needs fixing** column, one line per cell naming the row, element, column, value and what it should be, and blanks the cell once the tab is clean; the `sheet-validation` issue reports them to the coordinator. `update-sheets --apply` adds the column to a sheet that predates it. An invalid value is never an `import-error`: that issue means the import itself broke.

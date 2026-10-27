@@ -157,15 +157,26 @@ example_separator: ";"
 #                 ready-for-review tab, one per line; blank when there are
 #                 none (issue #309). Added to existing sheets by
 #                 update-sheets --apply.
+#   marked_by     who set a ready-for-review status, one of marked_by below
+#                 and the date; blank while in-progress. Written with the
+#                 status by the daily check (validate_coding.write_status)
+#                 or set-tab-status; a ready tab the tooling didn't mark was
+#                 marked by its annotator, and the daily check writes so.
+#                 Added to existing sheets by update-sheets --apply.
 status_tab:
   title: Status
   columns:
     - {name: Construction, role: construction, owner: tooling}
     - {name: Status, role: status, owner: annotator}
     - {name: Needs fixing, role: problems, owner: tooling}
+    - {name: Marked by, role: marked_by, owner: tooling}
   values:
     in_progress: in-progress
     ready: ready-for-review
+  marked_by:
+    annotator: annotator
+    coordinator: coordinator
+    check: "check: every cell answered, no errors"
 
 # Locked tabs: tabs on a class sheet that the tooling writes and nobody else
 # edits. coding/locked_tabs.py runs from this list: every create, restructure

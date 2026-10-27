@@ -100,11 +100,15 @@ DRY RUN — Refreshing sheet dropdowns
 
   [stan1293] phrasal_accent
     prescreening 'accented': no dropdown → y, n, both
+    general 'joint_accent': no dropdown → always, sometimes, never
     Status 'Status': no dropdown → in-progress, ready-for-review
 
   [stan1293] biuniqueness_deviations
     elements 'has_allomorphs': no dropdown → y, n
     morphemes 'forms_relation': no dropdown → alternate, co-occur
+    morphs 'occurs_here': no dropdown → y, n
+    morphs 'conditioning_type': no dropdown → phonological, morphosyntactic, lexico-constructional, prosodic
+    morphs 'trigger_filled': no dropdown → y, n
     Status 'Status': no dropdown → in-progress, ready-for-review
 
   [synth0001] ciscategorial

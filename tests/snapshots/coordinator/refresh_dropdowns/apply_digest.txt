@@ -1,6 +1,6 @@
 SUMMARY
-   121  batch_request
-   121    └─ setDataValidation
+   125  batch_request
+   125    └─ setDataValidation
 
 SHEET OPERATIONS
 
@@ -153,6 +153,9 @@ SHEET OPERATIONS
   stan1293/class:phrasal_accent  tab=prescreening
     setDataValidation: col 3 (accented) rows 1-143 -> ['y', 'n', 'both'] (strict=False)
 
+  stan1293/class:phrasal_accent  tab=general
+    setDataValidation: col 2 (joint_accent) rows 1-2269 -> ['always', 'sometimes', 'never'] (strict=False)
+
   stan1293/class:phrasal_accent  tab=Status
     setDataValidation: col 1 (Status) rows 1-4 -> ['in-progress', 'ready-for-review'] (strict=True)
 
@@ -161,6 +164,11 @@ SHEET OPERATIONS
 
   stan1293/class:biuniqueness_deviations  tab=morphemes
     setDataValidation: col 4 (forms_relation) rows 1-19 -> ['alternate', 'co-occur'] (strict=False)
+
+  stan1293/class:biuniqueness_deviations  tab=morphs
+    setDataValidation: col 4 (occurs_here) rows 1-133 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (conditioning_type) rows 1-133 -> ['phonological', 'morphosyntactic', 'lexico-constructional', 'prosodic'] (strict=False)
+    setDataValidation: col 8 (trigger_filled) rows 1-133 -> ['y', 'n'] (strict=False)
 
   stan1293/class:biuniqueness_deviations  tab=Status
     setDataValidation: col 1 (Status) rows 1-5 -> ['in-progress', 'ready-for-review'] (strict=True)

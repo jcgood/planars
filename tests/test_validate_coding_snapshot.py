@@ -258,12 +258,16 @@ def remove_problems_column(doorway, lang: str, class_name: str) -> None:
     ws.update([r[:drop] + r[drop + 1:] for r in rows], "A1")
 
 
-def problems_cell(doorway, lang: str, class_name: str, construction: str) -> str:
+def status_cell(doorway, lang: str, class_name: str, construction: str, column: str) -> str:
     rows = doorway.spreadsheet(sheet_id(doorway, lang, class_name)).worksheet(
         vc.STATUS_TAB).get_all_values()
-    col = rows[0].index(vc.STATUS_PROBLEMS_COLUMN)
+    col = rows[0].index(column)
     row = next(r for r in rows if r and r[0] == construction)
     return row[col] if col < len(row) else ""
+
+
+def problems_cell(doorway, lang: str, class_name: str, construction: str) -> str:
+    return status_cell(doorway, lang, class_name, construction, vc.STATUS_PROBLEMS_COLUMN)
 
 
 def test_an_invalid_value_on_an_in_progress_tab_is_only_a_warning(env):
@@ -380,6 +384,8 @@ def test_a_finished_tab_is_marked_ready_and_the_annotator_told(env, github, monk
     _with_github(monkeypatch, "annotator-gh")
     add_problems_column(doorway, "arao1248", "subspanrepetition")
     tabs = ["auxiliary_construction", "tso_clause_linkage"]
+    for t in tabs:
+        set_status(doorway, "arao1248", "subspanrepetition", t, vc.STATUS_IN_PROGRESS)
 
     out, _ = run_main(["validate-coding", "--lang", "arao1248", "--notify"])
     assert (f"every cell answered with no errors, so marked {vc.STATUS_READY}: "
@@ -389,6 +395,9 @@ def test_a_finished_tab_is_marked_ready_and_the_annotator_told(env, github, monk
     for t in tabs:
         assert statuses[t] == vc.STATUS_READY
         assert problems_cell(doorway, "arao1248", "subspanrepetition", t) == ""
+        assert (status_cell(doorway, "arao1248", "subspanrepetition", t,
+                            vc.STATUS_MARKED_BY_COLUMN)
+                == vc.marked_by_text(vc.MARKED_BY_CHECK))
     [issue] = [i for i in github.issues if "needs-fixing" in i["labels"]]
     assert f"{', '.join(tabs)} finished, so marked {vc.STATUS_READY}" in issue["body"]
 
@@ -396,9 +405,26 @@ def test_a_finished_tab_is_marked_ready_and_the_annotator_told(env, github, monk
     assert github.issue(issue["number"])["state"] == "CLOSED"
 
 
+def test_marked_by_records_the_annotator_and_clears_when_set_back(env):
+    """A ready tab the tooling didn't mark was marked by hand; a tab set back
+    to in-progress loses its Marked by, so a later hand mark reads right."""
+    doorway, coded, run_main = env
+    set_status(doorway, "arao1248", "ciscategorial", "general", vc.STATUS_READY)
+    run_main(["validate-coding", "--lang", "arao1248"])
+    assert (status_cell(doorway, "arao1248", "ciscategorial", "general",
+                        vc.STATUS_MARKED_BY_COLUMN)
+            == vc.marked_by_text(vc.MARKED_BY_ANNOTATOR))
+    set_status(doorway, "arao1248", "ciscategorial", "general", vc.STATUS_IN_PROGRESS)
+    run_main(["validate-coding", "--lang", "arao1248"])
+    assert status_cell(doorway, "arao1248", "ciscategorial", "general",
+                       vc.STATUS_MARKED_BY_COLUMN) == ""
+
+
 def test_a_tab_with_a_blank_cell_is_not_marked(env):
     doorway, coded, run_main = env
     add_problems_column(doorway, "arao1248", "subspanrepetition")
+    set_status(doorway, "arao1248", "subspanrepetition", "tso_clause_linkage",
+               vc.STATUS_IN_PROGRESS)
     path = coded / "arao1248" / "subspanrepetition" / "tso_clause_linkage.tsv"
     df = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)
     row = df[df["Position_Name"] != vc._KEYSTONE_NAME].iloc[0]

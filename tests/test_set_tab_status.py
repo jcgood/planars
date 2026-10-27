@@ -13,8 +13,10 @@ from coding import drive_doorway
 from coding import set_tab_status as sts
 from command_runner import run_command
 from fake_drive import MANIFEST_FILE_ID, FakeDriveDoorway, use_frozen_coded_data
+from coding.validate_coding import marked_by_text
 from planars.schema_values import (
-    STATUS_CONSTRUCTION_COLUMN, STATUS_IN_PROGRESS, STATUS_READY, STATUS_STATUS_COLUMN,
+    MARKED_BY_ANNOTATOR, MARKED_BY_COORDINATOR, STATUS_CONSTRUCTION_COLUMN,
+    STATUS_IN_PROGRESS, STATUS_MARKED_BY_COLUMN, STATUS_READY, STATUS_STATUS_COLUMN,
     STATUS_TAB,
 )
 
@@ -31,10 +33,14 @@ def _status_ws(doorway):
     return doorway.spreadsheet(info["spreadsheet_id"]).worksheet(STATUS_TAB)
 
 
-def _status(doorway) -> str:
+def _cell(doorway, column: str) -> str:
     rows = _status_ws(doorway).get_all_values()
-    ci, si = rows[0].index(STATUS_CONSTRUCTION_COLUMN), rows[0].index(STATUS_STATUS_COLUMN)
-    return next(r[si] for r in rows[1:] if r[ci] == TAB)
+    ci, xi = rows[0].index(STATUS_CONSTRUCTION_COLUMN), rows[0].index(column)
+    return next(r[xi] if xi < len(r) else "" for r in rows[1:] if r[ci] == TAB)
+
+
+def _status(doorway) -> str:
+    return _cell(doorway, STATUS_STATUS_COLUMN)
 
 
 @pytest.fixture()
@@ -75,8 +81,29 @@ def test_apply_marks_it_ready_and_names_the_tab_waiting_on_it(env):
     doorway, run = env
     out = run(*ARGS, "--apply")
     assert _status(doorway) == STATUS_READY
+    assert _cell(doorway, STATUS_MARKED_BY_COLUMN) == marked_by_text(MARKED_BY_COORDINATOR)
     assert "general is built from it" in out
     assert "already" in run(*ARGS, "--apply")
+
+
+def test_a_tab_the_annotator_marked_is_re_marked_as_the_coordinators(env):
+    doorway, run = env
+    run(*ARGS, "--status", STATUS_READY, "--apply")
+    ws = _status_ws(doorway)
+    rows = ws.get_all_values()
+    ci, mi = rows[0].index(STATUS_CONSTRUCTION_COLUMN), rows[0].index(STATUS_MARKED_BY_COLUMN)
+    r = next(i for i, row in enumerate(rows[1:], start=2) if row[ci] == TAB)
+    ws.update([[marked_by_text(MARKED_BY_ANNOTATOR)]], f"{chr(ord('A') + mi)}{r}")
+    out = run(*ARGS, "--apply")
+    assert f"-> {MARKED_BY_COORDINATOR}" in out
+    assert _cell(doorway, STATUS_MARKED_BY_COLUMN) == marked_by_text(MARKED_BY_COORDINATOR)
+
+
+def test_setting_it_back_clears_marked_by(env):
+    doorway, run = env
+    run(*ARGS, "--apply")
+    run(*ARGS, "--status", STATUS_IN_PROGRESS, "--apply")
+    assert _cell(doorway, STATUS_MARKED_BY_COLUMN) == ""
 
 
 def test_an_unknown_tab_says_which_tabs_there_are(env):

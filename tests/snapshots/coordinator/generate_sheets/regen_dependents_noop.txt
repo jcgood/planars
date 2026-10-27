@@ -19,6 +19,8 @@ Connecting to Google APIs...
     python -m coding generate-sheets --lang synth0001 --regen-construction coreference:np_coreference
   [stan1293/biuniqueness_deviations/morphemes] already has rows — skipping auto-regeneration. Run:
     python -m coding generate-sheets --lang stan1293 --regen-construction biuniqueness_deviations:morphemes
-  [stan1293/biuniqueness_deviations/morphs] empty — waiting for 'morphemes' to be marked ready-for-review (now: in-progress)
-  [stan1293/phrasal_accent/general] empty — waiting for 'prescreening' to be marked ready-for-review (now: in-progress)
+  [stan1293/biuniqueness_deviations/morphs] already has rows — skipping auto-regeneration. Run:
+    python -m coding generate-sheets --lang stan1293 --regen-construction biuniqueness_deviations:morphs
+  [stan1293/phrasal_accent/general] already has rows — skipping auto-regeneration. Run:
+    python -m coding generate-sheets --lang stan1293 --regen-construction phrasal_accent:general
   [synth0001/phrasal_accent/general] empty — waiting for 'prescreening' to be marked ready-for-review (now: in-progress)

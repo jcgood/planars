@@ -491,28 +491,30 @@ def test_the_status_tab_stays_last(env):
 
 
 def test_the_status_tab_gets_the_problems_column_and_keeps_its_answers(env):
-    """#309: a sheet made before the problems column existed gets it from
-    update-sheets, at the right, after saying so on a dry run, and every
-    annotator's Status answer stays where it was."""
+    """#309: a sheet made before the problems column existed (and so before
+    every column after it) gets them from update-sheets, at the right, in the
+    schema's order, after saying so on a dry run, and every annotator's
+    Status answer stays where it was."""
     from planars.schema_values import STATUS_COLUMNS, STATUS_PROBLEMS_COLUMN
     ss = env.doorway.spreadsheet(env.sheet_id("stan1293", "metrical"))
     status = ss.worksheet("Status")
     rows = status.get_all_values()
     drop = rows[0].index(STATUS_PROBLEMS_COLUMN)
     status.clear()
-    status.update([r[:drop] + r[drop + 1:] for r in rows], "A1")
+    status.resize(cols=drop)
+    status.update([r[:drop] for r in rows], "A1")
     before = status.get_all_values()
     assert STATUS_PROBLEMS_COLUMN not in before[0]
 
     out = env.run(["update-sheets"])
-    assert f"would Status tab: add column(s) ['{STATUS_PROBLEMS_COLUMN}']" in out
+    assert f"would Status tab: add column(s) {STATUS_COLUMNS[drop:]}" in out
     assert ss.worksheet("Status").get_all_values() == before
 
     out = env.run(["update-sheets", "--apply"])
     after = ss.worksheet("Status").get_all_values()
     assert after[0] == STATUS_COLUMNS
     assert [r[:len(before[0])] for r in after] == before
-    assert all(r[len(before[0]):] == [""] for r in after[1:])
+    assert all(set(r[len(before[0]):]) == {""} for r in after[1:])
 
     out = env.run(["update-sheets"])
     assert "Status tab: add" not in out

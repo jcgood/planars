@@ -129,7 +129,7 @@ Language: stan1293
     [prescreening] carry over 140; rename 1; new blank 1; drop 1 (NP{P,T}@v:obj-part)
     Archived to _archived/phrasal_accent_stan1293_v1
     [prescreening] wrote: carried 141, new blank 1, dropped 1
-    [general] (pair tab) copied 0 rows, 0 cell(s) renamed
+    [general] (pair tab) copied 2268 rows, 0 cell(s) renamed
     Locked tab Instructions: create
     Locked tab Instructions: protect
     Status tab created (2 construction(s))
@@ -143,7 +143,7 @@ Language: stan1293
     Archived to _archived/biuniqueness_deviations_stan1293_v1
     [elements] wrote: carried 135, new blank 0, dropped 0
     [morphemes] (keyed tab) copied 18 rows, 0 cell(s) renamed
-    [morphs] (keyed tab) copied 0 rows, 0 cell(s) renamed
+    [morphs] (keyed tab) copied 132 rows, 0 cell(s) renamed
     Locked tab Instructions: create
     Locked tab Instructions: protect
     Locked tab Planar Structure: create

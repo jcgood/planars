@@ -41,7 +41,10 @@ STATUS_IN_PROGRESS: str = _require("status_tab", "values", "in_progress")
 STATUS_READY: str = _require("status_tab", "values", "ready")
 STATUS_VALUES = [STATUS_IN_PROGRESS, STATUS_READY]
 
-_STATUS_ROLES = ("construction", "status", "problems")
+_STATUS_ROLES = ("construction", "status", "problems", "marked_by")
+MARKED_BY_ANNOTATOR: str = _require("status_tab", "marked_by", "annotator")
+MARKED_BY_COORDINATOR: str = _require("status_tab", "marked_by", "coordinator")
+MARKED_BY_CHECK: str = _require("status_tab", "marked_by", "check")
 _STATUS_OWNERS = ("tooling", "annotator")
 
 
@@ -64,6 +67,7 @@ _status_by_role = {c["role"]: c["name"] for c in _STATUS_COLUMN_SPECS}
 STATUS_CONSTRUCTION_COLUMN: str = _status_by_role["construction"]
 STATUS_STATUS_COLUMN: str = _status_by_role["status"]
 STATUS_PROBLEMS_COLUMN: str = _status_by_role["problems"]
+STATUS_MARKED_BY_COLUMN: str = _status_by_role["marked_by"]
 STATUS_TOOLING_COLUMNS = frozenset(c["name"] for c in _STATUS_COLUMN_SPECS
                                    if c["owner"] == "tooling")
 

@@ -8,9 +8,8 @@ arao1248
   [nonpermutability/general] 253 blank cell(s) — annotation in progress
   [subspanrepetition/auxiliary_construction] no issues
   [subspanrepetition/tso_clause_linkage] no issues
-  [subspanrepetition] every cell answered with no errors, so marked ready-for-review: auxiliary_construction, tso_clause_linkage
 
 ──────────────────────────────────────────────────
 Validated 7 sheet(s).  Errors: 0
 No errors. (Pink highlighting for blank cells, and for invalid values on in-progress tabs, preserved.)
-Drive door (enforce): checked 14 write(s) to 8 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 12 write(s) to 7 tab(s) or file(s); 0 broke a rule.

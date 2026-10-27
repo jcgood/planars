@@ -21,9 +21,9 @@ DRY RUN — Generating Annotation Status sheet(s)
     proform/do_so_substitution: 141/141 filled (100%)
     proform/vp_ellipsis: 23/141 filled (16%)
     phrasal_accent/prescreening: 142/142 filled (100%)
-    phrasal_accent/general (pair-row tab): 0/0 filled (n/a)
+    phrasal_accent/general (pair-row tab): 0/2268 filled (0%)
     biuniqueness_deviations/elements: 135/135 filled (100%)
-    biuniqueness_deviations/morphemes: 6/18 filled (33%)
-    biuniqueness_deviations/morphs: 0/0 filled (n/a)
+    biuniqueness_deviations/morphemes: 18/18 filled (100%)
+    biuniqueness_deviations/morphs: 0/396 filled (0%)
 
 Run with --apply to create/update the sheet(s) on Drive.

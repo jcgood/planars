@@ -48,6 +48,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import datetime
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -245,6 +246,16 @@ def tab_statuses(ss) -> Dict[str, str]:
     return status_map(read_status_tab(ss)[1])
 
 
+def marked_by_map(rows: List[List[str]]) -> Dict[str, str]:
+    """{construction: its Marked by cell} from a Status tab's cells, for the
+    rows that have one ({} for a tab without the column)."""
+    header = [h.strip() for h in rows[0]] if rows else []
+    if STATUS_CONSTRUCTION_COLUMN not in header or STATUS_MARKED_BY_COLUMN not in header:
+        return {}
+    ci, mi = header.index(STATUS_CONSTRUCTION_COLUMN), header.index(STATUS_MARKED_BY_COLUMN)
+    return {_cell(r, ci): _cell(r, mi) for r in rows[1:] if _cell(r, ci) and _cell(r, mi)}
+
+
 def problems_text(issues: List[ValidationIssue]) -> str:
     """What the Status tab says needs fixing on one tab: one line per error
     an annotator can fix, blank when there are none."""
@@ -268,24 +279,73 @@ def looks_finished(issues: List[ValidationIssue], tab_status: str, lang_id: str,
     return len(_read_tsv_rows(lang_id, class_name, construction)) > 1
 
 
+def marked_by_text(by: str, when: Optional[datetime.date] = None) -> str:
+    """The Marked by cell: who (a planar.yaml status_tab.marked_by value) and when."""
+    return f"{by}, {(when or datetime.date.today()).isoformat()}"
+
+
+def _cell(row: List[str], i: Optional[int]) -> str:
+    return row[i].strip() if i is not None and i < len(row) else ""
+
+
 def write_status(ws, rows: List[List[str]], construction: str, status: str,
-                 reason: str) -> Optional[str]:
+                 reason: str, by: str) -> Optional[str]:
     """Set ``construction``'s Status in the Status tab (``ws``, whose cells
-    are ``rows``), through the Drive door as replacing the annotator's value.
-    Returns the previous status ('' if blank), or None if the tab has no row
-    for ``construction``. Writes nothing if it already has ``status``."""
+    are ``rows``), through the Drive door as replacing the annotator's value,
+    and its Marked by cell: ``by`` (a planar.yaml status_tab.marked_by value)
+    and today's date when ready-for-review, blank otherwise. Returns the
+    previous status ('' if blank), or None if the tab has no row for
+    ``construction``. Writes only cells that change; ``rows`` is updated to
+    match."""
     header = [h.strip() for h in rows[0]] if rows else []
     if STATUS_CONSTRUCTION_COLUMN not in header or STATUS_STATUS_COLUMN not in header:
         return None
     ci, si = header.index(STATUS_CONSTRUCTION_COLUMN), header.index(STATUS_STATUS_COLUMN)
+    mi = (header.index(STATUS_MARKED_BY_COLUMN) if STATUS_MARKED_BY_COLUMN in header
+          else None)
     for r, row in enumerate(rows[1:], start=2):
-        if ci < len(row) and row[ci].strip() == construction:
-            current = row[si].strip() if si < len(row) else ""
-            if current != status:
-                with drive_door.replacing(ws, reason):
-                    ws.update_cell(r, si + 1, status)
-            return current
+        if _cell(row, ci) != construction:
+            continue
+        current = _cell(row, si)
+        if current != status:
+            with drive_door.replacing(ws, reason):
+                ws.update_cell(r, si + 1, status)
+        marked = marked_by_text(by) if status == STATUS_READY else ""
+        # An unchanged ready tab keeps its date unless someone else marked it.
+        if (mi is not None and _cell(row, mi) != marked
+                and (current != status or not _cell(row, mi).startswith(f"{by},"))):
+            ws.update_cell(r, mi + 1, marked)
+        row.extend([""] * (max(si, mi or 0) + 1 - len(row)))
+        row[si] = status
+        if mi is not None:
+            row[mi] = marked
+        return current
     return None
+
+
+def record_marked_by(ws, rows: List[List[str]]) -> None:
+    """Keep the Status tab's Marked by column true to its Status column: a
+    ready-for-review tab with no Marked by was marked by its annotator (the
+    tooling writes the cell whenever it marks one), so it gets
+    MARKED_BY_ANNOTATOR and today's date; a tab no longer ready has its
+    Marked by cleared, so a later hand mark is read as the annotator's.
+    ``rows`` is updated to match. Does nothing on a tab without the column."""
+    header = [h.strip() for h in rows[0]] if rows else []
+    if not {STATUS_CONSTRUCTION_COLUMN, STATUS_STATUS_COLUMN,
+            STATUS_MARKED_BY_COLUMN} <= set(header):
+        return
+    ci, si = header.index(STATUS_CONSTRUCTION_COLUMN), header.index(STATUS_STATUS_COLUMN)
+    mi = header.index(STATUS_MARKED_BY_COLUMN)
+    for r, row in enumerate(rows[1:], start=2):
+        if not _cell(row, ci):
+            continue
+        ready, marked = _cell(row, si) == STATUS_READY, _cell(row, mi)
+        want = (marked_by_text(MARKED_BY_ANNOTATOR) if ready and not marked
+                else "" if not ready and marked else None)
+        if want is not None:
+            ws.update_cell(r, mi + 1, want)
+            row.extend([""] * (mi + 1 - len(row)))
+            row[mi] = want
 
 
 def write_problems(ws, rows: List[List[str]], problems: Dict[str, str]) -> Optional[str]:
@@ -331,7 +391,8 @@ _WHITE = {"red": 1.0, "green": 1.0, "blue": 1.0}
 
 from planars.schema_values import KEYSTONE_NAME as _KEYSTONE_NAME  # noqa: E402
 from planars.schema_values import (  # noqa: E402
-    STATUS_CONSTRUCTION_COLUMN, STATUS_IN_PROGRESS, STATUS_PROBLEMS_COLUMN, STATUS_READY,
+    MARKED_BY_ANNOTATOR, MARKED_BY_CHECK, STATUS_CONSTRUCTION_COLUMN, STATUS_IN_PROGRESS,
+    STATUS_MARKED_BY_COLUMN, STATUS_PROBLEMS_COLUMN, STATUS_READY,
     STATUS_STATUS_COLUMN, STATUS_TAB, status_map,
 )
 
@@ -1043,6 +1104,8 @@ def revalidate_sheets(
                 continue
 
             status_ws, status_rows = read_status_tab(ss)
+            if status_ws is not None:
+                record_marked_by(status_ws, status_rows)
             statuses = status_map(status_rows)
             problems: Dict[str, str] = {}
             notice_lines: List[str] = []
@@ -1102,7 +1165,8 @@ def revalidate_sheets(
                 if (status_ws is not None
                         and looks_finished(issues, tab_status, lang_id, class_name, construction)
                         and write_status(status_ws, status_rows, construction, STATUS_READY,
-                                         "every cell answered with no errors") is not None):
+                                         "every cell answered with no errors",
+                                         MARKED_BY_CHECK) is not None):
                     finished.append(construction)
                 notice_lines += [f"{construction}: {i.fix}" for i in issues
                                  if i.level == "error" and i.fix]

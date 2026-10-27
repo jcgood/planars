@@ -13,10 +13,8 @@ Language: arao1248
     [general] [backup] No changes → coded_data/arao1248/noninterruption/general.tsv
 
   subspanrepetition
-    [auxiliary_construction] status: 'in-progress' — importing for backup
-    [auxiliary_construction] [backup] No changes → coded_data/arao1248/subspanrepetition/auxiliary_construction.tsv
-    [tso_clause_linkage] status: 'in-progress' — importing for backup
-    [tso_clause_linkage] [backup] No changes → coded_data/arao1248/subspanrepetition/tso_clause_linkage.tsv
+    [auxiliary_construction] No changes → coded_data/arao1248/subspanrepetition/auxiliary_construction.tsv
+    [tso_clause_linkage] No changes → coded_data/arao1248/subspanrepetition/tso_clause_linkage.tsv
 
   nonpermutability
     [element_prescreening] status: 'in-progress' — importing for backup
@@ -31,8 +29,7 @@ Language: arao1248
 Language: stan1293
 
   ciscategorial
-    [general] status: 'in-progress' — importing for backup
-    [general] [backup] No changes → coded_data/stan1293/ciscategorial/general.tsv
+    [general] No changes → coded_data/stan1293/ciscategorial/general.tsv
 
   subspanrepetition
     [andCoordination] No changes → coded_data/stan1293/subspanrepetition/andCoordination.tsv
@@ -57,35 +54,27 @@ Language: stan1293
 
   nonpermutability
     [element_prescreening] No changes → coded_data/stan1293/nonpermutability/element_prescreening.tsv
-    [general] status: 'in-progress' — importing for backup
-    [general] [backup] No changes → coded_data/stan1293/nonpermutability/general.tsv
+    [general] No changes → coded_data/stan1293/nonpermutability/general.tsv
 
   coreference
-    [prescreening] status: 'in-progress' — importing for backup
-    [prescreening] [backup] No changes → coded_data/stan1293/coreference/prescreening.tsv
-    [reflexive_coreference] status: 'in-progress' — importing for backup
-    [reflexive_coreference] [backup] No changes → coded_data/stan1293/coreference/reflexive_coreference.tsv
-    [pronoun_coreference] status: 'in-progress' — importing for backup
-    [pronoun_coreference] [backup] No changes → coded_data/stan1293/coreference/pronoun_coreference.tsv
-    [np_coreference] status: 'in-progress' — importing for backup
-    [np_coreference] [backup] No changes → coded_data/stan1293/coreference/np_coreference.tsv
+    [prescreening] No changes → coded_data/stan1293/coreference/prescreening.tsv
+    [reflexive_coreference] No changes → coded_data/stan1293/coreference/reflexive_coreference.tsv
+    [pronoun_coreference] No changes → coded_data/stan1293/coreference/pronoun_coreference.tsv
+    [np_coreference] No changes → coded_data/stan1293/coreference/np_coreference.tsv
 
   proform
-    [do_so_substitution] status: 'in-progress' — importing for backup
-    [do_so_substitution] [backup] No changes → coded_data/stan1293/proform/do_so_substitution.tsv
+    [do_so_substitution] No changes → coded_data/stan1293/proform/do_so_substitution.tsv
     [vp_ellipsis] status: 'in-progress' — importing for backup
     [vp_ellipsis] [backup] No changes → coded_data/stan1293/proform/vp_ellipsis.tsv
 
   phrasal_accent
-    [prescreening] status: 'in-progress' — importing for backup
-    [prescreening] [backup] No changes → coded_data/stan1293/phrasal_accent/prescreening.tsv
+    [prescreening] No changes → coded_data/stan1293/phrasal_accent/prescreening.tsv
     [general] status: 'in-progress' — importing for backup
     [general] [backup] No changes → coded_data/stan1293/phrasal_accent/general.tsv
 
   biuniqueness_deviations
     [elements] No changes → coded_data/stan1293/biuniqueness_deviations/elements.tsv
-    [morphemes] status: 'in-progress' — importing for backup
-    [morphemes] [backup] No changes → coded_data/stan1293/biuniqueness_deviations/morphemes.tsv
+    [morphemes] No changes → coded_data/stan1293/biuniqueness_deviations/morphemes.tsv
     [morphs] status: 'in-progress' — importing for backup
     [morphs] [backup] No changes → coded_data/stan1293/biuniqueness_deviations/morphs.tsv
 
@@ -154,4 +143,4 @@ Language: synth0001
     [general] [backup] No changes → coded_data/synth0001/phrasal_accent/general.tsv
 
 Done. 0 file(s) written, 1 warning(s).
-Drive door (enforce): checked 28 write(s) to 28 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 29 write(s) to 29 tab(s) or file(s); 0 broke a rule.

@@ -472,7 +472,9 @@ def main(args: argparse.Namespace | None = None) -> None:
                 total_import_errors += 1
                 continue
 
-            status_map = _val.tab_statuses(ss)
+            status_rows = _val.read_status_tab(ss)[1]
+            status_map = _val.status_map(status_rows)
+            marked_by = _val.marked_by_map(status_rows)
             if not status_map and not ignore_status:
                 print(f"    (no Status tab found — importing all constructions)")
 
@@ -496,9 +498,12 @@ def main(args: argparse.Namespace | None = None) -> None:
                 in_progress = (tab_status != STATUS_READY)
                 # What the annotator's Status tab says, for the change log:
                 # --ignore-status must not record a tab as ready-for-review
-                # when its annotator has not marked it so.
+                # when its annotator has not marked it so. Who marked a
+                # ready tab is recorded with it.
                 sheet_status = (status_map.get(construction, STATUS_IN_PROGRESS)
                                 if status_map else "no Status tab")
+                if marked_by.get(construction):
+                    sheet_status += f", marked by {marked_by[construction]}"
 
                 rows = ws.get_all_values()
 

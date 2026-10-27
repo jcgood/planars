@@ -49,6 +49,7 @@ OWNED_VALUES = {
     schema_values.KEYSTONE_NAME: "planars.schema_values.KEYSTONE_NAME (or is_keystone)",
     schema_values.STATUS_IN_PROGRESS: "planars.schema_values.STATUS_IN_PROGRESS",
     schema_values.STATUS_READY: "planars.schema_values.STATUS_READY",
+    schema_values.MARKED_BY_CHECK: "planars.schema_values.MARKED_BY_CHECK",
     schema_values.ZONE: "planars.schema_values.ZONE",
     schema_values.SLOT: "planars.schema_values.SLOT",
 }

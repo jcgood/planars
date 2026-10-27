@@ -2084,6 +2084,38 @@
     "request_type": "setDataValidation",
     "payload": {
       "range": {
+        "sheetId": 2121472220,
+        "startRowIndex": 1,
+        "endRowIndex": 2269,
+        "startColumnIndex": 2,
+        "endColumnIndex": 3
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "always"
+            },
+            {
+              "userEnteredValue": "sometimes"
+            },
+            {
+              "userEnteredValue": "never"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "12f_cgmKuKNEnHWUJGQX5QiaHeAVCIxMyYMS3mFe-mVs",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
         "sheetId": 601657411,
         "startRowIndex": 1,
         "endRowIndex": 4,
@@ -2157,6 +2189,99 @@
             },
             {
               "userEnteredValue": "co-occur"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1Xz8_4aMFr4xfkNrlomiURODtbUuFFEmkMTr9WO6_5aI",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1239789786,
+        "startRowIndex": 1,
+        "endRowIndex": 133,
+        "startColumnIndex": 4,
+        "endColumnIndex": 5
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1Xz8_4aMFr4xfkNrlomiURODtbUuFFEmkMTr9WO6_5aI",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1239789786,
+        "startRowIndex": 1,
+        "endRowIndex": 133,
+        "startColumnIndex": 5,
+        "endColumnIndex": 6
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "phonological"
+            },
+            {
+              "userEnteredValue": "morphosyntactic"
+            },
+            {
+              "userEnteredValue": "lexico-constructional"
+            },
+            {
+              "userEnteredValue": "prosodic"
+            }
+          ]
+        },
+        "showCustomUi": true,
+        "strict": false
+      }
+    }
+  },
+  {
+    "op": "batch_request",
+    "spreadsheet": "1Xz8_4aMFr4xfkNrlomiURODtbUuFFEmkMTr9WO6_5aI",
+    "request_type": "setDataValidation",
+    "payload": {
+      "range": {
+        "sheetId": 1239789786,
+        "startRowIndex": 1,
+        "endRowIndex": 133,
+        "startColumnIndex": 8,
+        "endColumnIndex": 9
+      },
+      "rule": {
+        "condition": {
+          "type": "ONE_OF_LIST",
+          "values": [
+            {
+              "userEnteredValue": "y"
+            },
+            {
+              "userEnteredValue": "n"
             }
           ]
         },

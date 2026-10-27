@@ -148,10 +148,10 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 2}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0002  tab=Status
-    add_worksheet: rows=3, cols=3, index=None, sheet_id=3
-    update: anchor A1 raw=True 2x3
-      | ['Construction', 'Status', 'Needs fixing']
-      | ['general', 'in-progress', '']
+    add_worksheet: rows=3, cols=4, index=None, sheet_id=3
+    update: anchor A1 raw=True 2x4
+      | ['Construction', 'Status', 'Needs fixing', 'Marked by']
+      | ['general', 'in-progress', '', '']
 
   fake_ss_0002  tab=sheetId=3
     updateSheetProperties: (whole sheet)
@@ -267,11 +267,11 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 5}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0004  tab=Status
-    add_worksheet: rows=6, cols=3, index=None, sheet_id=6
-    update: anchor A1 raw=True 5x3
-      | ['Construction', 'Status', 'Needs fixing']
-      | ['andCoordination', 'in-progress', '']
-      | ['control', 'in-progress', '']
+    add_worksheet: rows=6, cols=4, index=None, sheet_id=6
+    update: anchor A1 raw=True 5x4
+      | ['Construction', 'Status', 'Needs fixing', 'Marked by']
+      | ['andCoordination', 'in-progress', '', '']
+      | ['control', 'in-progress', '', '']
       | ...
 
   fake_ss_0004  tab=sheetId=6
@@ -326,10 +326,10 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 2}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0006  tab=Status
-    add_worksheet: rows=3, cols=3, index=None, sheet_id=3
-    update: anchor A1 raw=True 2x3
-      | ['Construction', 'Status', 'Needs fixing']
-      | ['general', 'in-progress', '']
+    add_worksheet: rows=3, cols=4, index=None, sheet_id=3
+    update: anchor A1 raw=True 2x4
+      | ['Construction', 'Status', 'Needs fixing', 'Marked by']
+      | ['general', 'in-progress', '', '']
 
   fake_ss_0006  tab=sheetId=3
     updateSheetProperties: (whole sheet)
@@ -389,10 +389,10 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 2}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0008  tab=Status
-    add_worksheet: rows=3, cols=3, index=None, sheet_id=3
-    update: anchor A1 raw=True 2x3
-      | ['Construction', 'Status', 'Needs fixing']
-      | ['stress_domain', 'in-progress', '']
+    add_worksheet: rows=3, cols=4, index=None, sheet_id=3
+    update: anchor A1 raw=True 2x4
+      | ['Construction', 'Status', 'Needs fixing', 'Marked by']
+      | ['stress_domain', 'in-progress', '', '']
 
   fake_ss_0008  tab=sheetId=3
     updateSheetProperties: (whole sheet)
@@ -478,11 +478,11 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 4}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0010  tab=Status
-    add_worksheet: rows=4, cols=3, index=None, sheet_id=5
-    update: anchor A1 raw=True 3x3
-      | ['Construction', 'Status', 'Needs fixing']
-      | ['element_prescreening', 'in-progress', '']
-      | ['general', 'in-progress', '']
+    add_worksheet: rows=4, cols=4, index=None, sheet_id=5
+    update: anchor A1 raw=True 3x4
+      | ['Construction', 'Status', 'Needs fixing', 'Marked by']
+      | ['element_prescreening', 'in-progress', '', '']
+      | ['general', 'in-progress', '', '']
 
   fake_ss_0010  tab=sheetId=5
     updateSheetProperties: (whole sheet)
@@ -554,11 +554,11 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 3}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0012  tab=Status
-    add_worksheet: rows=4, cols=3, index=None, sheet_id=4
-    update: anchor A1 raw=True 3x3
-      | ['Construction', 'Status', 'Needs fixing']
-      | ['aspiration_prominence', 'in-progress', '']
-      | ['flapping', 'in-progress', '']
+    add_worksheet: rows=4, cols=4, index=None, sheet_id=4
+    update: anchor A1 raw=True 3x4
+      | ['Construction', 'Status', 'Needs fixing', 'Marked by']
+      | ['aspiration_prominence', 'in-progress', '', '']
+      | ['flapping', 'in-progress', '', '']
 
   fake_ss_0012  tab=sheetId=4
     updateSheetProperties: (whole sheet)
@@ -618,10 +618,10 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 2}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0014  tab=Status
-    add_worksheet: rows=3, cols=3, index=None, sheet_id=3
-    update: anchor A1 raw=True 2x3
-      | ['Construction', 'Status', 'Needs fixing']
-      | ['general', 'in-progress', '']
+    add_worksheet: rows=3, cols=4, index=None, sheet_id=3
+    update: anchor A1 raw=True 2x4
+      | ['Construction', 'Status', 'Needs fixing', 'Marked by']
+      | ['general', 'in-progress', '', '']
 
   fake_ss_0014  tab=sheetId=3
     updateSheetProperties: (whole sheet)
@@ -739,11 +739,11 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 6}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0016  tab=Status
-    add_worksheet: rows=6, cols=3, index=None, sheet_id=7
-    update: anchor A1 raw=True 5x3
-      | ['Construction', 'Status', 'Needs fixing']
-      | ['prescreening', 'in-progress', '']
-      | ['reflexive_coreference', 'in-progress', '']
+    add_worksheet: rows=6, cols=4, index=None, sheet_id=7
+    update: anchor A1 raw=True 5x4
+      | ['Construction', 'Status', 'Needs fixing', 'Marked by']
+      | ['prescreening', 'in-progress', '', '']
+      | ['reflexive_coreference', 'in-progress', '', '']
       | ...
 
   fake_ss_0016  tab=sheetId=7
@@ -812,11 +812,11 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 3}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0018  tab=Status
-    add_worksheet: rows=4, cols=3, index=None, sheet_id=4
-    update: anchor A1 raw=True 3x3
-      | ['Construction', 'Status', 'Needs fixing']
-      | ['do_so_substitution', 'in-progress', '']
-      | ['vp_ellipsis', 'in-progress', '']
+    add_worksheet: rows=4, cols=4, index=None, sheet_id=4
+    update: anchor A1 raw=True 3x4
+      | ['Construction', 'Status', 'Needs fixing', 'Marked by']
+      | ['do_so_substitution', 'in-progress', '', '']
+      | ['vp_ellipsis', 'in-progress', '', '']
 
   fake_ss_0018  tab=sheetId=4
     updateSheetProperties: (whole sheet)
@@ -851,14 +851,17 @@ SHEET OPERATIONS
     repeatCell: col 3 (BEYOND HEADER) rows 0-1
 
   fake_ss_0020  tab=general
-    add_worksheet: rows=3, cols=8, index=None, sheet_id=2
-    update: anchor A1 raw=True 1x6
+    add_worksheet: rows=2271, cols=8, index=None, sheet_id=2
+    update: anchor A1 raw=True 2269x6
       | ['Element_A', 'Element_B', 'joint_accent', 'Example', 'Source', 'Comments']
+      | ['AD-S', 'AD-V', '', '', '', '']
+      | ['AD-S', 'AD-VP', '', '', '', '']
+      | ...
 
   fake_ss_0020  tab=sheetId=2
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
-    setDataValidation: col 2 (BEYOND HEADER) rows 1-1 -> ['always', 'sometimes', 'never'] (strict=False)
+    setDataValidation: col 2 (BEYOND HEADER) rows 1-2269 -> ['always', 'sometimes', 'never'] (strict=False)
 
   fake_ss_0020  tab=Sheet1
     del_worksheet: 
@@ -884,11 +887,11 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 3}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0020  tab=Status
-    add_worksheet: rows=4, cols=3, index=None, sheet_id=4
-    update: anchor A1 raw=True 3x3
-      | ['Construction', 'Status', 'Needs fixing']
-      | ['prescreening', 'in-progress', '']
-      | ['general', 'in-progress', '']
+    add_worksheet: rows=4, cols=4, index=None, sheet_id=4
+    update: anchor A1 raw=True 3x4
+      | ['Construction', 'Status', 'Needs fixing', 'Marked by']
+      | ['prescreening', 'in-progress', '', '']
+      | ['general', 'in-progress', '', '']
 
   fake_ss_0020  tab=sheetId=4
     updateSheetProperties: (whole sheet)
@@ -934,8 +937,8 @@ SHEET OPERATIONS
     add_worksheet: rows=20, cols=8, index=None, sheet_id=2
     update: anchor A1 raw=True 19x8
       | ['Morpheme', 'Origin', 'Found_At', 'morpheme_class', 'forms_relation', 'Example', 'Source', 'Comments']
-      | ['and', 'filled', 'v:leftedge', '', '', '', '', '']
-      | ['be', 'filled', 'v:frontedauxiliary', '', '', '', '', '']
+      | ['and', 'filled', 'v:leftedge', '', 'alternate', '', '', '']
+      | ['be', 'filled', 'v:frontedauxiliary', '', 'alternate', '', '', '']
       | ...
 
   fake_ss_0022  tab=sheetId=2
@@ -947,18 +950,21 @@ SHEET OPERATIONS
     repeatCell: col 4 (BEYOND HEADER) rows 0-1
 
   fake_ss_0022  tab=morphs
-    add_worksheet: rows=2, cols=12, index=None, sheet_id=3
-    update: anchor A1 raw=True 1x12
+    add_worksheet: rows=134, cols=12, index=None, sheet_id=3
+    update: anchor A1 raw=True 133x12
       | ['Morpheme', 'Position_Name', 'Form', 'Origin', 'occurs_here', 'conditioning_type', 'conditioning_features', 'conditioned_by', 'trigger_filled', 'Example', 'Source', 'Comments']
+      | ['and', 'v:leftedge', 'and', 'filled', '', '', '', '', '', '', '', '']
+      | ['and', 'v:leftedge', 'ænd', 'filled', '', '', '', '', '', '', '', '']
+      | ...
 
   fake_ss_0022  tab=sheetId=3
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
-    setDataValidation: col 4 (BEYOND HEADER) rows 1-1 -> ['y', 'n'] (strict=False)
-    setDataValidation: col 5 (BEYOND HEADER) rows 1-1 -> ['phonological', 'morphosyntactic', 'lexico-constructional', 'prosodic'] (strict=False)
-    setDataValidation: col 6 (BEYOND HEADER) rows 1-1 -> no dropdown
-    setDataValidation: col 7 (BEYOND HEADER) rows 1-1 -> no dropdown
-    setDataValidation: col 8 (BEYOND HEADER) rows 1-1 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-133 -> ['y', 'n'] (strict=False)
+    setDataValidation: col 5 (BEYOND HEADER) rows 1-133 -> ['phonological', 'morphosyntactic', 'lexico-constructional', 'prosodic'] (strict=False)
+    setDataValidation: col 6 (BEYOND HEADER) rows 1-133 -> no dropdown
+    setDataValidation: col 7 (BEYOND HEADER) rows 1-133 -> no dropdown
+    setDataValidation: col 8 (BEYOND HEADER) rows 1-133 -> ['y', 'n'] (strict=False)
     repeatCell: col 4 (BEYOND HEADER) rows 0-1
     repeatCell: col 5 (BEYOND HEADER) rows 0-1
     repeatCell: col 6 (BEYOND HEADER) rows 0-1
@@ -1001,11 +1007,11 @@ SHEET OPERATIONS
     addProtectedRange: {"protectedRange": {"range": {"sheetId": 5}, "description": "Written by the planars tooling and rebuilt every day; edits here would be overwritten.", "warningOn
 
   fake_ss_0022  tab=Status
-    add_worksheet: rows=5, cols=3, index=None, sheet_id=6
-    update: anchor A1 raw=True 4x3
-      | ['Construction', 'Status', 'Needs fixing']
-      | ['elements', 'in-progress', '']
-      | ['morphemes', 'in-progress', '']
+    add_worksheet: rows=5, cols=4, index=None, sheet_id=6
+    update: anchor A1 raw=True 4x4
+      | ['Construction', 'Status', 'Needs fixing', 'Marked by']
+      | ['elements', 'in-progress', '', '']
+      | ['morphemes', 'in-progress', '', '']
       | ...
 
   fake_ss_0022  tab=sheetId=6

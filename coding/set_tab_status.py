@@ -15,7 +15,10 @@ as a tab done with some cells deliberately blank, or setting one back.
 
 --status defaults to ready-for-review; --status in-progress sets it back.
 The cell is written by validate_coding.write_status, through the Drive door
-as replacing the annotator's value. When the tab now ready has a tab
+as replacing the annotator's value, with the row's Marked by cell set to
+'coordinator' and the date (blank for in-progress). Run on a tab already
+ready-for-review but marked by someone else, it records the coordinator as
+having marked it. When the tab now ready has a tab
 built from it, the command prints the generate-sheets command that builds
 that tab now (the daily refresh also does, at its next run, if it is empty).
 """
@@ -26,8 +29,8 @@ import sys
 from typing import List, Optional
 
 from planars.schema_values import (
-    STATUS_CONSTRUCTION_COLUMN, STATUS_READY, STATUS_STATUS_COLUMN, STATUS_TAB,
-    STATUS_VALUES,
+    MARKED_BY_COORDINATOR, STATUS_CONSTRUCTION_COLUMN, STATUS_MARKED_BY_COLUMN, STATUS_READY,
+    STATUS_STATUS_COLUMN, STATUS_TAB, STATUS_VALUES,
 )
 
 from .drive import load_manifest
@@ -79,17 +82,23 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
         sys.exit(f"The {STATUS_TAB} tab has no '{args.construction}' row "
                  f"(its tabs: {', '.join(names)}).")
     current = found[0][si].strip() if si < len(found[0]) else ""
+    mi = header.index(STATUS_MARKED_BY_COLUMN) if STATUS_MARKED_BY_COLUMN in header else None
+    marked = found[0][mi].strip() if mi is not None and mi < len(found[0]) else ""
     where = f"{args.lang} {args.class_name}/{args.construction}"
-    if current == args.status:
+    # A tab already ready but marked by someone else is re-marked as the
+    # coordinator's: the command is how a coordinator says they marked it.
+    if current == args.status and (args.status != STATUS_READY or mi is None
+                                   or marked.startswith(f"{MARKED_BY_COORDINATOR},")):
         print(f"{where} is already {args.status}; nothing to do.")
         return
+    change = (f"{current or '(blank)'} -> {args.status}" if current != args.status
+              else f"Marked by '{marked or '(blank)'}' -> {MARKED_BY_COORDINATOR}")
     if not args.apply:
-        print(f"Would set {where}: {current or '(blank)'} -> {args.status}. "
-              f"Add --apply to write it.")
+        print(f"Would set {where}: {change}. Add --apply to write it.")
         return
     write_status(ws, rows, args.construction, args.status,
-                 f"coordinator set {args.construction} to {args.status}")
-    print(f"Set {where}: {current or '(blank)'} -> {args.status}.")
+                 f"coordinator set {args.construction} to {args.status}", MARKED_BY_COORDINATOR)
+    print(f"Set {where}: {change}.")
     if args.status == STATUS_READY:
         for dep in _waiting_dependents(args.class_name, args.construction):
             print(f"  {dep} is built from it at the next daily refresh; to build it now:\n"
