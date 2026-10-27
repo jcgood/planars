@@ -1667,7 +1667,7 @@ def _create_analysis_sheet(
     # Add the locked tabs and Status, then put every tab in its place.
     _refresh_locked_tabs(spreadsheet, class_name, lang_id, planar_path)
     _create_status_tab(spreadsheet, tab_names)
-    reorder_tabs(spreadsheet)
+    reorder_tabs(spreadsheet, tab_names)
 
     # Each construction's criteria, for the manifest (the analysis notebooks
     # read them). Their allowed values stay in the diagnostics YAML only.
@@ -1942,7 +1942,12 @@ def _add_constructions_to_existing_sheet(
     system = set(system_tab_titles())
     all_ws = ss.worksheets()
     _create_status_tab(ss, [ws.title for ws in all_ws if ws.title not in system])
-    reorder_tabs(ss)
+    # The diagnostics file's order, not the order the tabs happen to be in: a
+    # tab added (or rebuilt) here may belong before an existing one.
+    order = [con for cls, con, _n, _v in
+             _read_diagnostics_for_language(lang_id, CODED_DATA / lang_id / "lang_setup")
+             if cls == class_name]
+    reorder_tabs(ss, order)
 
     return construction_params
 

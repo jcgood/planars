@@ -33,7 +33,7 @@ content is new. An unknown builder name, place or include rule hard-fails.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, List, Sequence, Tuple
 
 import pandas as pd
 
@@ -342,18 +342,24 @@ def _write(spreadsheet: SpreadsheetHandle, ws, rows: List[List[str]], build_form
     spreadsheet.batch_update({"requests": build_format(ws.id, rows)})
 
 
-def reorder_tabs(spreadsheet: SpreadsheetHandle) -> None:
+def reorder_tabs(spreadsheet: SpreadsheetHandle, constructions: Sequence[str]) -> None:
     """Locked tabs placed `first` lead (Instructions is the annotator's landing
-    tab, easy to miss if buried at the end); then the construction tabs; then
-    the locked tabs placed `last`; then Status. Each group in registry order."""
+    tab, easy to miss if buried at the end); then the construction tabs, in the
+    order of `constructions` (the diagnostics file's order, which the Drive
+    door's sheet spec checks); then the locked tabs placed `last`; then Status.
+    Locked tabs in registry order. A tab in none of these groups keeps its
+    place after the constructions (the door reports it as one the class does
+    not have)."""
     all_ws = spreadsheet.worksheets()
     by_title = {ws.title: ws for ws in all_ws}
     specs = locked_tab_specs()
     first = [s["title"] for s in specs if s["place"] == "first"]
     last = [s["title"] for s in specs if s["place"] == "last"] + [STATUS_TAB]
     system = set(first) | set(last)
+    listed = [c for c in constructions if c in by_title and c not in system]
     ordered = ([by_title[t] for t in first if t in by_title]
-               + [ws for ws in all_ws if ws.title not in system]
+               + [by_title[c] for c in listed]
+               + [ws for ws in all_ws if ws.title not in system and ws.title not in listed]
                + [by_title[t] for t in last if t in by_title])
     if [ws.title for ws in all_ws] != [ws.title for ws in ordered]:
         spreadsheet.reorder_worksheets(ordered)

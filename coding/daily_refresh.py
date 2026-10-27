@@ -274,7 +274,12 @@ def import_error_body(text: str) -> str:
     out.append("Common causes:\n")
     out.append('- **OAuth token expired** — re-authorize credentials (see `docs/coordinator-guide.md § "OAuth setup"`)\n')
     out.append("- **A sheet can't be opened** — check it still exists and is shared with the tooling's account\n")
-    out.append("- **A tab is missing from a sheet** — run `python -m coding update-sheets --apply`\n")
+    out.append("- **A tab is missing from a sheet** (`tab not found`) — someone renamed or deleted "
+               "it on the sheet; nothing in the tooling removes a construction tab. Open the sheet's "
+               "File → Version history to see who and when. If it was renamed, rename it back; if "
+               "deleted, restore that version of the sheet. Its last imported answers are in "
+               "`coded_data/{lang_id}/{class}/{construction}.tsv` (planars-data). "
+               "`update-sheets` does not recreate it.\n")
     out.append("- **Uncommitted `coded_data/` changes** — commit or discard them locally, then re-trigger this workflow\n")
     out.append("- **API quota exhausted** — transient; the issue will close automatically when the next run succeeds\n")
     out.append("\nInvalid values in the sheets are not reported here: they are listed in each "

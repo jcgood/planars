@@ -1307,7 +1307,7 @@ def _rename_class_for_language(
     _create_status_tab(new_ss, tab_names)   # the main restructure path's Status, as on every class sheet
     if planar_path:
         _refresh_locked_tabs(new_ss, new_class, lang_id, planar_path)
-    reorder_tabs(new_ss)
+    reorder_tabs(new_ss, tab_names)
 
     # Checkpoint here, before the local dir rename / manifest update below --
     # a real replacement sheet with real carried-over data exists as of this
@@ -1881,7 +1881,7 @@ def main(args: argparse.Namespace | None = None) -> None:
             planar_path = planar_file.parent / f"planar_{lang_id}.tsv"
             _refresh_locked_tabs(new_ss, class_name, lang_id, planar_path)
             _create_status_tab(new_ss, tab_names)
-            reorder_tabs(new_ss)
+            reorder_tabs(new_ss, tab_names)
 
             restructured_classes.add((lang_id, class_name))
             restructure_journal.record_checkpoint(

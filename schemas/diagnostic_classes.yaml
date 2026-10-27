@@ -99,7 +99,9 @@
 #                                               keyed row matching any of them may leave its
 #                                               other criteria blank without a warning
 #                              depends_on       name of the construction this depends on
-#                              staleness_check  element_set (compare element sets to detect drift)
+#                              staleness_check  element_set (a pair tab: compare its rows with
+#                                               the ones pair_rows would build now; the name
+#                                               predates that and is kept)
 #                                               | keyed_source (regenerate the tab from its
 #                                               source and compare keys)
 #                              produces_spans   false on a feeder tab: one that only decides

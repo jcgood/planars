@@ -70,10 +70,19 @@ def test_unknown_include_hard_fails(monkeypatch):
         lt.locked_tab_specs()
 
 
+def test_construction_tabs_follow_the_given_order(sheet):
+    """A tab added after another still goes where the diagnostics file puts
+    it (2026-10-27: prescreening rebuilt after general was left behind it)."""
+    _doorway, ss = sheet
+    ss.add_worksheet("prescreening", rows=5, cols=2)
+    lt.reorder_tabs(ss, ["prescreening", "general"])
+    assert _titles(ss) == ["prescreening", "general", STATUS_TAB]
+
+
 def test_creates_protects_and_orders(classes, sheet, tmp_path):
     doorway, ss = sheet
     changes = lt.rebuild_locked_tabs(ss, "withref", LANG, _planar(tmp_path))
-    lt.reorder_tabs(ss)
+    lt.reorder_tabs(ss, ["general"])
     assert _titles(ss) == ["Instructions", "general", "Planar Structure", STATUS_TAB]
     ref = ss.worksheet("Planar Structure").get_all_values()
     assert ref[0] == ["Position", "Position_Name", "Position_Type", "Elements"]

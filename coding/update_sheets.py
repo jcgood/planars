@@ -715,7 +715,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                 any_changes = True
                 print(f"    {'' if apply else 'would '}{change}")
             if apply:
-                reorder_tabs(ss)
+                reorder_tabs(ss, list(yaml_constructions))
 
     if manifest_modified:
         drive_config = _load_drive_config()

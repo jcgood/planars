@@ -9,19 +9,16 @@ Runs ten sections of checks and prints a structured report:
   ANALYSIS CONSISTENCY           — validates analysis modules match diagnostic_criteria.yaml
   CROSS-SHEET CONSISTENCY        — checks free values agree across related annotation sheets
   DEPENDENT CONSTRUCTION STALENESS — pair-row constructions (nonpermutability/general,
-                                    coreference's three) checked against their prescreening
-                                    source by element identity AND, since issue #241, by
-                                    position number: a pair-row can be element-identity-correct
-                                    and still reference a position number superseded by a
-                                    structural change elsewhere in the planar (see
-                                    _find_stale_position_cells/_suggest_position_remap) --
-                                    invisible to element-set comparison alone. When recoverable,
-                                    prints ready-to-use --pos-remap flags. For
-                                    nonpermutability and coreference the "in scope"
-                                    element set is worked out element-level (an
-                                    element marked `n` at any position is out
-                                    everywhere), matching generate_sheets.py's real
-                                    filters exactly (#285). Keyed tabs
+                                    coreference's three, phrasal_accent/general) compared
+                                    by row key with the rows the generator would make now
+                                    (sheet_spec.expected_row_keys -> generate_sheets.pair_rows,
+                                    the builder regeneration and the Drive door use; no copy
+                                    of any class's scope rule lives here), AND, since issue
+                                    #241, by position number: a pair-row can name a position
+                                    number superseded by a structural change elsewhere in
+                                    the planar (see _find_stale_position_cells/
+                                    _suggest_position_remap). When recoverable, prints
+                                    ready-to-use --pos-remap flags. Keyed tabs
                                     (biuniqueness_deviations' morphemes/morphs) are
                                     compared by row key (_keyed_staleness).
   ANNOTATION SHEETS             — checks live sheet structure and dropdown drift (requires --sheets)
@@ -65,7 +62,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
-from .sheet_spec import parked_operation
+from .sheet_spec import class_sheet_spec, expected_row_keys, parked_operation
 from .validate import ValidationIssue
 from .validate_planar import validate_planar_df
 from .validate_diagnostics import validate_diagnostics_df
@@ -629,12 +626,13 @@ def _section_dependent_construction_staleness(
     """Check for stale dependent constructions.
 
     First, keyed_source dependents (biuniqueness_deviations' morphemes/morphs)
-    are compared by row key (_keyed_staleness). Then, by element-set comparison:
-    for each class with constructions[].depends_on and staleness_check=element_set:
-    compare the in-scope element set from the source TSV against the element set
-    in the dependent (pair-row) TSV. Any difference means the dependent needs
-    to be regenerated — either because an element was promoted (n→y) or demoted
-    (y→n) in the source sheet since the dependent was last generated.
+    are compared by row key (_keyed_staleness). Then, for each class with
+    constructions[].depends_on and staleness_check=element_set (the pair tabs):
+    compare the rows the generator would make now (sheet_spec.expected_row_keys,
+    i.e. generate_sheets.pair_rows) with the imported dependent TSV's rows, by
+    the tab's row key. Any difference means regeneration would add or drop rows
+    — e.g. an element was promoted (n→y) or demoted (y→n) in the source sheet
+    since the dependent was last generated.
     """
     print(_section("DEPENDENT CONSTRUCTION STALENESS"))
 
@@ -684,18 +682,8 @@ def _section_dependent_construction_staleness(
         if not deps:
             continue
 
-        required_criteria = cls_entry.get("required_criteria", [])
-        filter_crit = required_criteria[0] if required_criteria else None
-
         for lang_id in lang_ids:
             for source_name, dep_name in deps:
-                # For coreference, prescreening uses 'referential', not the
-                # class-level required_criteria (reflexive_allowed etc.).
-                _eff_filter = (
-                    "referential"
-                    if cls_name == "coreference" and source_name == "prescreening"
-                    else filter_crit
-                )
                 source_path = CODED_DATA / lang_id / cls_name / f"{source_name}.tsv"
                 dep_path    = CODED_DATA / lang_id / cls_name / f"{dep_name}.tsv"
 
@@ -706,78 +694,37 @@ def _section_dependent_construction_staleness(
                 label = f"{_lang_label(lang_id)}: {cls_name}/{source_name} → {dep_name}"
 
                 try:
-                    src_df = pd.read_csv(source_path, sep="\t", dtype=str, keep_default_na=False)
-                    dep_df = pd.read_csv(dep_path,    sep="\t", dtype=str, keep_default_na=False)
+                    dep_df = pd.read_csv(dep_path, sep="\t", dtype=str, keep_default_na=False)
                 except Exception as exc:
                     print(_warn(f"{label} — could not load: {exc}"))
                     total_e += 1
                     continue
-
-                # Source set: elements where the filter criterion is not excluded.
-                # nonpermutability and coreference both use element-level
-                # aggregation, matching _filter_nonperm_pairs_by_prescreening's
-                # `excluded`/_filter_reflex_pairs_by_prescreening's
-                # `excluded_elements` respectively: an element is excluded from
-                # the whole set (not just the one position) if ANY of its
-                # occurrences was marked 'n', even when another occurrence was
-                # marked 'y'. This file used to approximate coreference
-                # differently -- any single non-'n'/'na' row was enough to
-                # count an element as in-scope, a union rather than the real
-                # filter's exclusion -- which produced a false "stale" report
-                # for synth0001, whose synthetic data has several elements
-                # marked both referential=y and referential=n at different
-                # positions. See issue #285, which also adds the real filter a
-                # divergence guard instead of resolving that ambiguity
-                # silently either way.
-                # Also filter nonpermutability to structurally reachable elements.
-                if _eff_filter and _eff_filter in src_df.columns and "Element" in src_df.columns:
-                    if cls_name in ("nonpermutability", "coreference"):
-                        from collections import defaultdict as _dd
-                        _elem_vals: dict = _dd(set)
-                        for _, _r in src_df.iterrows():
-                            _elem_vals[_r["Element"].strip()].add(
-                                _r.get(_eff_filter, "").strip()
-                            )
-                        source_set = {
-                            elem for elem, vals in _elem_vals.items()
-                            if "n" not in vals
-                        }
-                    else:
-                        source_set = {
-                            r["Element"].strip()
-                            for _, r in src_df.iterrows()
-                            if r.get(_eff_filter, "").strip() not in ("n", "na")
-                        }
-                    if cls_name == "nonpermutability":
-                        try:
-                            from planars.nonpermutability import structurally_expected_pair_elements
-                            from .make_forms import resolve_keystone_active
-                            planar_path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
-                            ka = resolve_keystone_active(lang_id, cls_name, source_name) or False
-                            source_set &= structurally_expected_pair_elements(
-                                planar_path, lang_id, keystone_active=ka
-                            )
-                        except Exception:
-                            pass
-                elif "Element" in src_df.columns:
-                    source_set = set(src_df["Element"].str.strip())
-                else:
-                    print(_warn(f"{label} — source TSV missing Element column"))
-                    total_e += 1
-                    continue
-
-                # Dependent set: all elements appearing in pair columns.
-                dep_set: set = set()
-                for col in PAIR_ROW_SHAPES["element_pairs"]:
-                    if col in dep_df.columns:
-                        dep_set.update(dep_df[col].str.strip())
-                dep_set.discard("")
-
-                if not dep_set:
+                if dep_df.empty:
                     continue  # dependent not yet populated; skip
 
-                removed = dep_set - source_set
-                added   = source_set - dep_set
+                # The rows the tab should have come from the generator itself
+                # (sheet_spec.expected_row_keys -> generate_sheets.pair_rows),
+                # the same builder regeneration and the Drive door use. This
+                # check used to keep its own copy of each class's scope rule,
+                # which went wrong whenever the generator's rule moved on
+                # (#285 for coreference; 2026-10-27 for phrasal_accent, whose
+                # adjacency step it never had).
+                spec_tab = class_sheet_spec(lang_id, cls_name, CODED_DATA).tab(dep_name)
+                want = expected_row_keys(lang_id, cls_name, spec_tab, CODED_DATA)
+                if want is None:
+                    print(_warn(f"{label} — not compared: an element's answer in "
+                                f"{source_name} differs by position, so the generator "
+                                f"won't guess which pairs this tab should have"))
+                    continue
+                missing_cols = [k for k in spec_tab.row_key if k not in dep_df.columns]
+                if missing_cols:
+                    print(_warn(f"{label} — imported TSV lacks {missing_cols}"))
+                    total_e += 1
+                    continue
+                have = {tuple(str(r[k]).strip() for k in spec_tab.row_key)
+                        for _, r in dep_df.iterrows()}
+                removed = {" / ".join(k) for k in have - want}
+                added   = {" / ".join(k) for k in want - have}
 
                 # Position-number drift: independent of element-identity comparison
                 # above (see _find_stale_position_cells's docstring) -- a pair-row
@@ -793,11 +740,11 @@ def _section_dependent_construction_staleness(
                     if removed:
                         preview = sorted(removed)[:5]
                         suffix = " …" if len(removed) > 5 else ""
-                        print(_sub(f"now excluded but still in pairs ({len(removed)}): {preview}{suffix}"))
+                        print(_sub(f"pairs the source no longer calls for ({len(removed)}): {preview}{suffix}"))
                     if added:
                         preview = sorted(added)[:5]
                         suffix = " …" if len(added) > 5 else ""
-                        print(_sub(f"now in scope but absent from pairs ({len(added)}): {preview}{suffix}"))
+                        print(_sub(f"pairs the source now calls for ({len(added)}): {preview}{suffix}"))
                     if pos_remap:
                         remap_preview = ", ".join(f"{o}→{n}" for o, n in sorted(pos_remap.items())[:5])
                         suffix = " …" if len(pos_remap) > 5 else ""
