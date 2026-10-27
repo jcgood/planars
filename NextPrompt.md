@@ -20,11 +20,19 @@ this project is trying to remove.
 
 Eight live threads. Read whichever matches what you're picking up.
 
-**Hold (2026-10-27):** Adam reworked `phrasal_accent_stan1293` by hand
-(deleted `prescreening` and `general`, added `general_filled` with 1,417
-new answers and two Example columns, set link sharing to anyone-writer);
-that is the whole of #328, #329 and #330. Jeff is asking Adam why. Don't
-touch the Sheet until Jeff relays the answer.
+**2026-10-27, English phrasal_accent:** Adam's Claude filled the
+2,268-row pair tab (1,415 answers) and left the sheet reshaped; repaired
+the same day with Jeff's go-ahead (`migrations/repair_phrasal_accent_stan1293.py`
+says what was done) and imported. Open with Jeff: whether to mark those
+answers as Claude drafts in Source; whether the two Example columns
+(shared/independent, folded into one as "shared: … | independent: …")
+should be official for this class; #318 point 8 (drop impossible pairs)
+now that a pair tab is a week of Adam's time; #232 (`untestable`, 8 cells).
+The integrity check's pair comparison now asks the generator, and shows
+English's three coreference tabs each missing 38 pairs at v:obj-R
+(NP{R} answered referential there 2026-10-22): `--regen-construction`
+adds them blank and drops nothing — a live change to Adam's sheets, so
+Jeff's call.
 
 ### Thread: tabs marked ready-for-review (2026-10-26)
 
