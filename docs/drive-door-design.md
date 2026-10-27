@@ -712,3 +712,8 @@ Q7: generate-status-sheet rebuilt every status sheet on the 2026-10-20 and
 issue has ever been filed). Both kinds are added to `LIVE_ENFORCED_KINDS`.
 Still in watch, each waiting on its first real write: the planar Sheet,
 notes Docs, notebooks, reports, the manifest and folders.
+
+**Contributor charts enforced (2026-10-27).** The `charts` kind (added
+with `laminar-charts`, laminar plan 4b) met Q7: the 2026-10-26 run
+uploaded six chart PDFs, three languages × two groupings, through the door
+with no violation. It is added to `LIVE_ENFORCED_KINDS`.

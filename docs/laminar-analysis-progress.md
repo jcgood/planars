@@ -217,7 +217,9 @@ by workflows. Plan decision 6 and Phase 4a–e have the design.
   PDFs in its Drive folder, `charts_by_class_{lang}.pdf` and
   `charts_by_type_{lang}.pdf` (datasets `<lang>_classes_all`,
   `<lang>_types_all`), uploaded through the doorway as a new Drive kind,
-  `charts` (`drive_door.KINDS`, `sheet_spec.file_spec`), in watch mode.
+  `charts` (`drive_door.KINDS`, `sheet_spec.file_spec`), in watch mode
+  until its first clean real write; enforced since 2026-10-27
+  (`drive_door.LIVE_ENFORCED_KINDS`).
   Updated in place, so the links stay; IDs in `drive_config.json`.
 - **One PDF per dataset, not a folder of charts** (Claude's call, not in
   the plan): the renderer draws ~300 files per English dataset. Each PDF

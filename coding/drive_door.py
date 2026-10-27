@@ -118,7 +118,8 @@ command the door files or updates one ``door-violation`` GitHub issue (the
 terminal reaches no one). Tests use enforce for everything. Live runs use
 ``LIVE_MODE`` (watch), except that a broken rule on a file whose kind is in
 ``LIVE_ENFORCED_KINDS`` (class sheets since 2026-10-19; status sheets and
-the diagnostics Sheet since 2026-10-21) raises: each check
+the diagnostics Sheet since 2026-10-21; contributor charts since 2026-10-27)
+raises: each check
 is told which file it is for, and its kind decides.
 
 **Tests.** A test's provenance log and snapshots go to its own temporary
@@ -154,7 +155,8 @@ WATCH = "watch"
 # too. Class sheets since 2026-10-19 (Jeff dropped the one-week minimum);
 # status sheets and the diagnostics Sheet since 2026-10-21 (clean real writes:
 # every status sheet rebuilt 2026-10-20 and -21, the diagnostics push of
-# 2026-10-19). Everything else stays in LIVE_MODE, watch.
+# 2026-10-19); contributor charts since 2026-10-27 (six uploads by
+# laminar-charts on 2026-10-26). Everything else stays in LIVE_MODE, watch.
 LIVE_MODE = WATCH
 CLASS_SHEET = "class_sheet"
 PLANAR_SHEET = "planar_sheet"
@@ -163,7 +165,8 @@ STATUS_SHEET = "status_sheet"
 # A language's proposal sheet (unit 11a; ownership-design § 3.2): where its
 # annotator proposes changes to the planar and the diagnostics file.
 PROPOSAL_SHEET = "proposal_sheet"
-LIVE_ENFORCED_KINDS: FrozenSet[str] = frozenset({CLASS_SHEET, STATUS_SHEET, DIAGNOSTICS_SHEET})
+LIVE_ENFORCED_KINDS: FrozenSet[str] = frozenset({CLASS_SHEET, STATUS_SHEET, DIAGNOSTICS_SHEET,
+                                                 "charts"})
 # The Sheets that are a one-tab copy of one file, and what the door calls
 # that file and the Sheet in what it reports (sheet_spec.copy_sheet_spec).
 COPY_SHEETS: Dict[str, Tuple[str, str]] = {

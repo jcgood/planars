@@ -59,8 +59,8 @@ stopgap while it is only Adam and English: one project per chapter is
 planned (the plan's "Overleaf" section). **Next action:** Phase 7 (Word),
 or the per-chapter projects when a second contributor comes. Open
 with Jeff: where annotators' drafts live, and @-mentioning a chapter's
-annotator on `chapter-behind`. Check the 2026-10-26 refresh: its
-`chapters` and `overleaf` steps. Still waiting on
+annotator on `chapter-behind`. (The 2026-10-26 refresh's `chapters` and
+`overleaf` steps were clean.) Still waiting on
 #318 (e) (construction descriptions), laminar plan 4d (the permutation
 tests) and #321 (span rules).
 
@@ -82,10 +82,11 @@ locally in `coded_data/.analysis/stan1293/charts/` (not committed).
 4b, `python -m coding laminar-charts`, is built (2026-10-24; progress doc
 "4b as built"). 4c, the workflow `laminar-charts.yml`, is built and
 live (2026-10-25; "4c as built"): the first run drew all three languages,
-put the PDFs on Drive and linked them on each status sheet. **Next
-action:** check the next daily run is green and draws nothing (no span
-change) or only what changed, and that the `charts` Drive kind can now be
-enforced (its first clean real write); then 4d, the weekly full analysis.
+put the PDFs on Drive and linked them on each status sheet. The `charts`
+Drive kind is enforced since 2026-10-27 (clean writes on 2026-10-26).
+**Next action:** check a daily run draws nothing when no span changed
+(10-26 redrew all three, "spans, planar or chart code changed"); then 4d,
+the weekly full analysis.
 Don't re-ask decision 6's choices. Jeff's cuts to the cross-language
 charts (CCDB thread below) come after Phase 2 (his call, 2026-10-24), so
 they can go in now or between later phases, not in the middle of one.
@@ -207,7 +208,7 @@ order is 11b's second part, 11c–d, then 16–18.
 **Waits on watching:** enforce for each kind still in watch (planar
 Sheet, notes Docs, notebooks, reports, manifest, folders: its own first
 clean real write, then added to `LIVE_ENFORCED_KINDS`; class sheets,
-status sheets and the diagnostics Sheet are enforced), and refusing
+status sheets, the diagnostics Sheet and charts are enforced), and refusing
 unlabelled targets (last). **11a is live** (2026-10-22: the three
 proposal sheets, the refresh step, the collaborator guide section); 11b's
 first part is live (2026-10-24). Then the rest of 11b, 11c–d, 16–18.
