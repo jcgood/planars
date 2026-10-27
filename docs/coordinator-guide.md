@@ -230,6 +230,9 @@ When a construction is complete, the collaborator sets its row in the **Status t
 A tab with every cell answered and no errors counts as finished: the daily
 validation marks it `ready-for-review` itself and tells the annotator on their
 `needs-fixing` issue, and the daily refresh then fills any tab built from it.
+A comment on that issue @-mentions every coordinator (`coordinator: true`) and
+the owner (`owner: true`) in `coded_data/people.yaml` who has a `github:`,
+besides the annotator, so you hear about each tab marked for an annotator.
 For any other case (a tab done with cells deliberately blank, or one to set
 back), use
 `python -m coding set-tab-status --lang LANG_ID --class CLASS --construction TAB --apply`

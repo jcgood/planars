@@ -333,10 +333,12 @@ def _break_a_ready_tab(doorway, coded, value="maybe"):
             "Element", "ADVERBIALS", "V-combines", value)
 
 
-def _with_github(monkeypatch, username):
+def _with_github(monkeypatch, username, owner_github=None):
     import coding.people
-    monkeypatch.setattr(coding.people, "_load_people", lambda: {
-        "Adam Tallman": {"email": "annotator@example.org", "github": username}})
+    people = {"Adam Tallman": {"email": "annotator@example.org", "github": username}}
+    if owner_github:
+        people["Owner"] = {"email": "owner@example.org", "github": owner_github, "owner": True}
+    monkeypatch.setattr(coding.people, "_load_people", lambda: people)
 
 
 def test_notify_mentions_an_annotator_with_github_once_per_new_problem(env, github, monkeypatch):
@@ -379,9 +381,10 @@ def test_notify_mentions_an_annotator_with_github_once_per_new_problem(env, gith
 def test_a_finished_tab_is_marked_ready_and_the_annotator_told(env, github, monkeypatch):
     """arao1248's two subspanrepetition tabs have every cell answered and no
     errors but are still in-progress: the check marks them ready-for-review
-    and the issue tells the annotator; the next day nothing is left."""
+    and the issue tells the annotator and, by a comment, the owner; the next
+    day nothing is left."""
     doorway, coded, run_main = env
-    _with_github(monkeypatch, "annotator-gh")
+    _with_github(monkeypatch, "annotator-gh", owner_github="owner-gh")
     add_problems_column(doorway, "arao1248", "subspanrepetition")
     tabs = ["auxiliary_construction", "tso_clause_linkage"]
     for t in tabs:
@@ -400,8 +403,12 @@ def test_a_finished_tab_is_marked_ready_and_the_annotator_told(env, github, monk
                 == vc.marked_by_text(vc.MARKED_BY_CHECK))
     [issue] = [i for i in github.issues if "needs-fixing" in i["labels"]]
     assert f"{', '.join(tabs)} finished, so marked {vc.STATUS_READY}" in issue["body"]
+    [comment] = github.comments[issue["number"]]
+    assert comment.startswith("@owner-gh the daily check marked")
+    assert "@annotator-gh" not in comment and ", ".join(tabs) in comment
 
     run_main(["validate-coding", "--lang", "arao1248", "--notify"])
+    assert sum("@owner-gh" in c for c in github.comments[issue["number"]]) == 1
     assert github.issue(issue["number"])["state"] == "CLOSED"
 
 

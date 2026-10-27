@@ -121,8 +121,10 @@ labels:
       and which in-progress tabs the check marked ready-for-review because
       every cell was answered with no errors. Mentions the annotator when
       people.yaml has their GitHub username; otherwise a comment on the
-      spreadsheet emails them. A new notice is posted only when the list
-      changes, not daily. Auto-closed when nothing is left.
+      spreadsheet emails them. When the check marks a tab, a comment also
+      mentions the other coordinators and the owner (people.yaml). A new
+      notice is posted only when the list changes, not daily. Auto-closed
+      when nothing is left.
     filed_by: validate-coding --notify (sheet-validation.yml)
 
   - name: sheet-drift

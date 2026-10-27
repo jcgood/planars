@@ -23,6 +23,10 @@ when the list only shrinks:
   their email address, and Google emails them. The Drive door lets such a
   comment mention only that sheet's annotator (rule 7).
 
+When the check marks a tab, the coordinators are told too, by a comment on
+the issue mentioning each one with a GitHub username in people.yaml
+(``coordinator: true`` or ``owner: true``) other than the annotator.
+
 When nothing needs fixing, the issue is closed. A language with no
 annotator named in languages.yaml gets the issue, and the issue says nobody
 was told.
@@ -32,13 +36,15 @@ from __future__ import annotations
 import hashlib
 import re
 from dataclasses import dataclass
-from typing import List, Sequence, Set, Tuple
+from typing import List, Optional, Sequence, Set, Tuple
 
 from planars.languages import get_display_name
-from planars.schema_values import STATUS_PROBLEMS_COLUMN, STATUS_READY, STATUS_TAB
+from planars.schema_values import (
+    STATUS_MARKED_BY_COLUMN, STATUS_PROBLEMS_COLUMN, STATUS_READY, STATUS_TAB,
+)
 
 from . import issues
-from .people import annotator_name, email_for, github_for
+from .people import annotator_name, coordinator_githubs, email_for, github_for
 
 LABEL = "needs-fixing"
 _MARKER = re.compile(r"<!-- needs-fixing: ([0-9a-f,]*) -->")
@@ -128,6 +134,27 @@ def drive_comment(email: str, sheet: SheetProblems) -> str:
             f"tab, column '{STATUS_PROBLEMS_COLUMN}'.")
 
 
+def _marked_comment(lang_id: str, sheets: Sequence[SheetProblems], told_before: Set[str],
+                    annotator_github: Optional[str]) -> Optional[str]:
+    """The comment that tells the coordinators which tabs the check marked
+    ready-for-review today, mentioning each (people.coordinator_githubs) but
+    the annotator, who is told by the notice itself; None when no tab was
+    newly marked or there is nobody to mention. Posted whichever way the
+    annotator is told, since an edited issue body notifies nobody."""
+    coordinators = [g for g in coordinator_githubs() if g != annotator_github]
+    lines = []
+    for s in sheets:
+        tabs = [c for c in s.finished if _code(s, f"finished: {c}") not in told_before]
+        if tabs:
+            lines.append(f"- **{s.class_name}**: {', '.join(tabs)} — [open the sheet]({s.url})")
+    if not coordinators or not lines:
+        return None
+    mentions = " ".join(f"@{g}" for g in coordinators)
+    return (f"{mentions} the daily check marked these {get_display_name(lang_id)} tabs "
+            f"{STATUS_READY} (every cell answered, no errors); the Status tab's "
+            f"'{STATUS_MARKED_BY_COLUMN}' column records it:\n\n" + "\n".join(lines))
+
+
 def notify(lang_id: str, sheets: Sequence[SheetProblems], doorway=None) -> str:
     """File, update or close the language's needs-fixing issue, and tell the
     annotator about anything new. ``sheets``: every class sheet with at least
@@ -165,6 +192,10 @@ def notify(lang_id: str, sheets: Sequence[SheetProblems], doorway=None) -> str:
     else:
         issues.get_github().edit_issue(number, title, body)
         action = f"updated #{number}"
+    marked = _marked_comment(lang_id, sheets, told_before, github)
+    if marked:
+        issues.comment(number, marked)
+        action += "; told the coordinators what was marked"
     if not new:
         return f"{action} (nothing new to tell the annotator)"
     if github and action.startswith("updated"):

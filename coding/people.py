@@ -62,18 +62,28 @@ def every_annotator_email() -> List[str]:
                    if isinstance(entry, dict) and annotator_name(lang_id)})
 
 
+def _flag(name: str, entry: Optional[dict], key: str) -> bool:
+    flag = (entry or {}).get(key, False)
+    if not isinstance(flag, bool):
+        raise ValueError(f"{key}: for {name!r} in coded_data/people.yaml is "
+                         f"{flag!r}; write true or false.")
+    return flag
+
+
 def coordinator_emails() -> List[str]:
     """The address of every coordinator besides the Drive files' owner
     (``coordinator: true`` in people.yaml), who gets writer on the root folder."""
-    emails = []
-    for name, entry in _load_people().items():
-        flag = (entry or {}).get("coordinator", False)
-        if not isinstance(flag, bool):
-            raise ValueError(f"coordinator: for {name!r} in coded_data/people.yaml is "
-                             f"{flag!r}; write true or false.")
-        if flag:
-            emails.append(email_for(name))
-    return sorted(emails)
+    return sorted(email_for(name) for name, entry in _load_people().items()
+                  if _flag(name, entry, "coordinator"))
+
+
+def coordinator_githubs() -> List[str]:
+    """The GitHub username of every coordinator and of the owner
+    (``coordinator: true`` or ``owner: true`` in people.yaml) who has one,
+    for notices meant for the coordinators."""
+    return sorted(github_for(name) for name, entry in _load_people().items()
+                  if (_flag(name, entry, "coordinator") or _flag(name, entry, "owner"))
+                  and github_for(name))
 
 
 def name_for_email(email: Optional[str]) -> Optional[str]:
