@@ -182,6 +182,10 @@ should make sense to someone who has never written a test.
   lines, give the one next step, and don't recap their points; the time
   spent reading comes out of annotation time. This includes text the
   tooling writes for them.
+- **Name who must answer.** Claude's comments post under Jeff's account, so
+  a question with no name reads as Jeff thinking aloud. Open with the person
+  ("Adam — …"), and separate what needs their answer from what is only
+  for their information (Adam, #318, 2026-10-28).
 - **Cut narration of your own process.** Report findings and decisions, not
   method. This is about register, not depth: the coordinator engages closely
   with substance stated plainly.
