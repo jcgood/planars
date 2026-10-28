@@ -3,7 +3,6 @@ Connecting to Google APIs...
   [arao1248] YAML updated → diagnostics_arao1248.yaml
   [arao1248] WARNING diagnostics_arao1248.yaml [noninterruption]: Diagnostic criterion 'free_form' is not defined in diagnostic_criteria.yaml
   [arao1248] WARNING diagnostics_arao1248.yaml [noninterruption]: Diagnostic criterion 'free_form' is not in the allowed set for class 'noninterruption' in diagnostic_classes.yaml (allowed: ['free', 'multiple'])
-  [arao1248] Updated → diagnostics_arao1248.tsv
 
 Language: arao1248
 Mode:     apply
@@ -14,7 +13,6 @@ Renames:  ['noninterruption:free:free_form']
   [stan1293] YAML updated → diagnostics_stan1293.yaml
   [stan1293] WARNING diagnostics_stan1293.yaml [noninterruption]: Diagnostic criterion 'free_form' is not defined in diagnostic_criteria.yaml
   [stan1293] WARNING diagnostics_stan1293.yaml [noninterruption]: Diagnostic criterion 'free_form' is not in the allowed set for class 'noninterruption' in diagnostic_classes.yaml (allowed: ['free', 'multiple'])
-  [stan1293] Updated → diagnostics_stan1293.tsv
 
 Language: stan1293
 Mode:     apply
@@ -25,7 +23,6 @@ Renames:  ['noninterruption:free:free_form']
   [synth0001] YAML updated → diagnostics_synth0001.yaml
   [synth0001] WARNING diagnostics_synth0001.yaml [noninterruption]: Diagnostic criterion 'free_form' is not defined in diagnostic_criteria.yaml
   [synth0001] WARNING diagnostics_synth0001.yaml [noninterruption]: Diagnostic criterion 'free_form' is not in the allowed set for class 'noninterruption' in diagnostic_classes.yaml (allowed: ['free', 'multiple'])
-  [synth0001] Updated → diagnostics_synth0001.tsv
 
 Language: synth0001
 Mode:     apply
@@ -36,4 +33,4 @@ Renames:  ['noninterruption:free:free_form']
 Manifest updated on Drive.
 
 Drive door (enforce): checked 4 write(s) to 4 tab(s) or file(s); 0 broke a rule.
-Local-file door: changed 6 file(s), previous versions archived and logged.
+Local-file door: changed 3 file(s), previous versions archived and logged.

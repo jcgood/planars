@@ -867,8 +867,8 @@ SHEET OPERATIONS
     del_worksheet: 
 
   fake_ss_0020  tab=Instructions
-    add_worksheet: rows=29, cols=2, index=None, sheet_id=3
-    update: anchor A1 raw=True 27x1
+    add_worksheet: rows=30, cols=2, index=None, sheet_id=3
+    update: anchor A1 raw=True 28x1
       | ['PHRASAL (PITCH) ACCENT GROUPING — ANNOTATION INSTRUCTIONS']
       | ['']
       | ['WHAT THIS TESTS']

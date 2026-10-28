@@ -56,7 +56,7 @@ tab is each language's status sheet.
 | Coordinator tooling (`python -m coding …`) | `coding/` — see `coding/CLAUDE.md`; full command list `python -m coding registry` |
 | Annotation data | private repo `planars-data`, cloned into `coded_data/` (ignored by this repo; setup in `docs/coordinator-guide.md`) |
 | Schemas (the definition files) | `schemas/` — what each file owns: `schemas/__init__.py` |
-| Per-language sources | `coded_data/{lang_id}/lang_setup/`: `planar_{lang_id}.tsv`, `diagnostics_{lang_id}.yaml` (the TSV beside it is generated) |
+| Per-language sources | `coded_data/{lang_id}/lang_setup/`: `planar_{lang_id}.tsv`, `diagnostics_{lang_id}.yaml` (the one diagnostics file; every command reads it) |
 | Facts kept in two places, shared preconditions, what each command does | `data_dependency_schema/` — see its `SCHEMA.md` |
 | Commands, workflows, setup | `docs/coordinator-guide.md` |
 | Annotators' guide | `docs/collaborator-guide.md` |
@@ -235,8 +235,8 @@ should make sense to someone who has never written a test.
   reserved for synthetic test languages (`synth0001`, built by
   `tests/make_synthetic_lang.py`) and skip Glottocode checks.
 - **Edit sources, never their copies:** `schemas/languages.yaml`, not the
-  manifest; `diagnostics_{lang_id}.yaml`, not its TSV (then
-  `sync-diagnostics-yaml --apply`). Rules for the YAML: `schemas/__init__.py`.
+  manifest; `diagnostics_{lang_id}.yaml`, not the diagnostics Sheet (the
+  daily refresh copies it there). Rules for the YAML: `schemas/__init__.py`.
 - **Imported TSVs** are `coded_data/{lang_id}/{class_name}/{construction}.tsv`;
   archives go under `coded_data/{lang_id}/archive/{class_name}/`.
 - **The keystone** is the row with `Position_Name == 'v:verbstem'`; it anchors
@@ -345,7 +345,7 @@ least one label from the table below (`gh issue create --label …`).
 | `sheet-validation` | validation-report --apply (sheet-validation.yml) | Filed when `validate-coding` finds **errors** (or crashes). Advisory warnings never file or hold open an issue — they appear as context only. One open issue per *problem*, not per label: a later run reporting the same problem rewrites its body in place, notifying nobody, and a run reporting a different one closes it as superseded and files a new one. Auto-closed when no errors remain. |
 | `needs-fixing` | validate-coding --notify (sheet-validation.yml) | One issue per language, for its annotator (issue #309; "To do in the {Name [glottocode]} sheets"): how many cells need fixing in which sheet (on tabs marked ready-for-review, listed in each sheet's Status tab), and which in-progress tabs the check marked ready-for-review because every cell was answered with no errors. Mentions the annotator when people.yaml has their GitHub username; otherwise a comment on the spreadsheet emails them. When the check marks a tab, a comment also mentions the other coordinators and the owner (people.yaml). A new notice is posted only when the list changes, not daily. Auto-closed when nothing is left. |
 | `sheet-drift` | data-refresh.yml | Sheets are out of sync with the data model. Resolve: `update-sheets --apply`. Auto-closed when clean. |
-| `diagnostics-yaml-error` | data-refresh.yml | `sync-diagnostics-yaml` (either direction) found a blocking `diagnostics_{lang_id}.yaml` validation error — a malformed YAML, not schema inconsistency (`codebook-error`). A non-blocking error (e.g. a required class not yet drafted) does not trigger this. Resolve: fix the YAML, run `sync-diagnostics-yaml --apply` (and `--to-sheet --apply` if the Sheet needs it too). Auto-closed when clean. |
+| `diagnostics-yaml-error` | data-refresh.yml | `sync-diagnostics-yaml` found a blocking `diagnostics_{lang_id}.yaml` validation error — a malformed YAML, not schema inconsistency (`codebook-error`) — so the diagnostics Sheet was not updated. A non-blocking error (e.g. a required class not yet drafted) does not trigger this. Resolve: fix the YAML, run `sync-diagnostics-yaml --apply`. Auto-closed when clean. |
 | `import-error` | data-refresh.yml | `import-sheets --apply` exited non-zero. The issue body contains the failure output. Auto-closed when import succeeds. |
 | `codebook-error` | data-refresh.yml | `check-codebook` found schema inconsistencies in the daily refresh (CI also runs the check on every push, but files nothing). Auto-closed when the check passes. |
 | `data-overwrite` | daily-refresh --apply (data-refresh.yml) | Today's refresh replaced a file whose last change, in the language's change log (`changes.tsv`), was made by a different command someone ran (a migration, restructure-sheets). The issue names each file and the archive copy holding the replaced version; compare it with the current file. Auto-closed when clean. |

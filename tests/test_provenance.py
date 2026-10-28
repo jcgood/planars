@@ -34,16 +34,10 @@ def test_update_sheets_dry_run_does_not_write_to_drive():
     assert provenance.writes_to_drive("update_sheets", _ns(apply=False)) is False
 
 
-def test_sync_diagnostics_yaml_default_direction_does_not_write_to_drive():
-    """The default (YAML -> TSV) direction only touches local files; only
-    --to-sheet reaches the live Sheet."""
-    args = _ns(apply=True, to_sheet=False)
-    assert provenance.writes_to_drive("sync_diagnostics_yaml", args) is False
-
-
-def test_sync_diagnostics_yaml_to_sheet_writes_to_drive():
-    args = _ns(apply=True, to_sheet=True)
-    assert provenance.writes_to_drive("sync_diagnostics_yaml", args) is True
+def test_sync_diagnostics_yaml_writes_to_drive_only_with_apply():
+    """Its one job, since the TSV copy went (2026-10-27), is the diagnostics Sheet."""
+    assert provenance.writes_to_drive("sync_diagnostics_yaml", _ns(apply=True)) is True
+    assert provenance.writes_to_drive("sync_diagnostics_yaml", _ns(apply=False)) is False
 
 
 def test_sync_planar_writes_to_drive_only_with_apply():

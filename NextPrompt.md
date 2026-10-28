@@ -100,9 +100,8 @@ locally in `coded_data/.analysis/stan1293/charts/` (not committed).
 live (2026-10-25; "4c as built"): the first run drew all three languages,
 put the PDFs on Drive and linked them on each status sheet. The `charts`
 Drive kind is enforced since 2026-10-27 (clean writes on 2026-10-26).
-**Next action:** check a daily run draws nothing when no span changed
-(10-26 redrew all three, "spans, planar or chart code changed"); then 4d,
-the weekly full analysis.
+A daily run draws nothing when no span changed (checked 2026-10-27: all
+three "up to date"). **Next action:** 4d, the weekly full analysis.
 Don't re-ask decision 6's choices. Jeff's cuts to the cross-language
 charts (CCDB thread below) come after Phase 2 (his call, 2026-10-24), so
 they can go in now or between later phases, not in the middle of one.
@@ -200,10 +199,13 @@ Sheets are read-only, protected copies; `import-planar` is now
 Jeff dropped the wait for Adam to use a proposal sheet and the issue to
 him — don't re-ask. Check the 2026-10-25 refresh: green, its `planar`
 step says "up to date" for all three languages, and no step protects a
-Sheet again. **Next:** 11b's second part, deleting the diagnostics TSV
-(its readers — check-codebook, integrity-check, validate-coding,
-`planars/reports.py`, prune-manifest, make_forms' fallback — read the YAML
-instead; sync-diagnostics-yaml then has one job, the Sheet).
+Sheet again. **11b's second part is done (2026-10-27):** the diagnostics
+TSV is deleted and every reader reads the YAML; `sync-diagnostics-yaml`
+pushes to the Sheet only (`--to-sheet` retired). Check the 2026-10-28
+refresh: green, its "diagnostics sheet" step clean, and no
+`diagnostics_*.tsv` back in planars-data (check-codebook check 7). Adam's
+clone must be pulled before his Claude runs the tooling, or it writes the
+TSV again. **Next:** 11c–d.
 
 **Where it stands:** class sheets are enforced live (2026-10-19, Jeff;
 `drive_door.LIVE_ENFORCED_KINDS`); every other kind now has its spec and is
@@ -219,15 +221,15 @@ the `overwrite` step now says how many changes it checked) and enforce
 each kind in watch once it has had a clean real write (below). The
 2026-10-23 refresh was the first with the proposal step and the local-file
 door enforcing: both clean. Unit 9 is done (2026-10-23). After that the
-order is 11b's second part, 11c–d, then 16–18.
+order is 11c–d, then 16–18.
 
 **Waits on watching:** enforce for each kind still in watch (planar
 Sheet, notes Docs, notebooks, reports, manifest, folders: its own first
 clean real write, then added to `LIVE_ENFORCED_KINDS`; class sheets,
 status sheets, the diagnostics Sheet and charts are enforced), and refusing
 unlabelled targets (last). **11a is live** (2026-10-22: the three
-proposal sheets, the refresh step, the collaborator guide section); 11b's
-first part is live (2026-10-24). Then the rest of 11b, 11c–d, 16–18.
+proposal sheets, the refresh step, the collaborator guide section); 11b is
+done (2026-10-24, 2026-10-27). Then 11c–d, 16–18.
 
 **Live steps — name each to Jeff for approval first:** 5f's one-notebook
 sharing test and Q7's Colab label-search test (both need an annotator's

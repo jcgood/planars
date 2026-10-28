@@ -3,14 +3,14 @@
 Checks:
   1. Every class's required_criteria, and every criterion a module's _REQUIRED_CRITERIA
      names, is defined in diagnostic_criteria.yaml
-  2. Criterion names in diagnostics_{lang_id}.tsv are defined in diagnostic_criteria.yaml
+  2. Criterion names in diagnostics_{lang_id}.yaml are defined in diagnostic_criteria.yaml
   3. Chart span label keys match the keys returned by each derive function
-  4. diagnostics_{lang_id}.tsv class names and required criteria match diagnostic_classes.yaml
+  4. diagnostics_{lang_id}.yaml class names and required criteria match diagnostic_classes.yaml
   5. Span rule drift: bidirectional module/YAML correspondence, hash sentinel, docstring mirror
   6. Per-language criterion value sets vs global schema (hard error: lang declares unknown value;
      warning: schema allows a value the language YAML doesn't declare — may mean the YAML was not
      updated after a new value was added to the schema)
-  7. Every diagnostics_{lang_id}.tsv has a matching .yaml
+  7. No diagnostics_{lang_id}.tsv copy has come back (the YAML is the one file since 2026-10-27)
   7b. Feeder constructions are marked produces_spans: false
   7c. Every construction declares its row shape
   7d. Every <placeholder> value is declared
@@ -37,7 +37,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-import pandas as pd
+import yaml as _yaml
 
 from .schemas import load_diagnostic_classes as _load_dc, load_diagnostic_criteria as _load_crit
 from planars.schema_values import (ELEMENT_ROW_COLUMNS, KEYSTONE_NAME, SLOT, TRAILING_COLUMNS,
@@ -180,30 +180,35 @@ def _check_required_criteria(codebook: dict) -> List[str]:
     return errors
 
 
+def _diagnostics_rows(root: Path = ROOT):
+    """(lang_id, class_name, constructions, criterion names) for each row
+    every language's diagnostics_{lang_id}.yaml renders to (one per class,
+    or one per construction for a class with construction_criteria:
+    ``make_forms._yaml_to_grid_df``, the rows the diagnostics Sheet shows)."""
+    from .make_forms import _yaml_to_grid_df
+    for yaml_path in sorted((root / "coded_data").glob("*/lang_setup/diagnostics_*.yaml")):
+        lang = yaml_path.parent.parent.name
+        data = _yaml.safe_load(yaml_path.read_text(encoding="utf-8")) or {}
+        for _, row in _yaml_to_grid_df(data, lang).iterrows():
+            names = {spec.strip().split("{", 1)[0].strip()
+                     for spec in str(row["Criteria"]).split(",") if spec.strip()}
+            yield lang, str(row["Class"]).strip(), str(row["Constructions"]).strip(), names
+
+
 def _check_diagnostics(codebook: dict) -> List[str]:
-    """Check that criterion names in all diagnostics_{lang_id}.tsv files are in diagnostic_criteria.yaml."""
+    """Check that criterion names in every diagnostics_{lang_id}.yaml are in diagnostic_criteria.yaml."""
     cb = _codebook_criteria(codebook)
-    diag_files = sorted(CODED_DATA.glob("*/lang_setup/diagnostics_*.tsv"))
-    if not diag_files:
-        return ["No diagnostics_*.tsv files found under coded_data/"]
+    if not any(CODED_DATA.glob("*/lang_setup/diagnostics_*.yaml")):
+        return ["No diagnostics_*.yaml files found under coded_data/"]
 
     errors = []
-    for diag_path in diag_files:
-        lang = diag_path.parent.parent.name
-        df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
-        for _, row in df.iterrows():
-            class_name = row.get("Class", "").strip()
-            params_raw = row.get("Criteria", "").strip()
-            if not params_raw:
-                continue
-            for spec in params_raw.split(","):
-                spec = spec.strip()
-                name = spec[: spec.index("{")] .strip() if "{" in spec else spec
-                if name and name not in cb.get(class_name, set()):
-                    errors.append(
-                        f"[{lang}/{class_name}] diagnostics_{lang}.tsv criterion '{name}' "
-                        f"not found in codebook"
-                    )
+    for lang, class_name, _constructions, names in _diagnostics_rows():
+        for name in sorted(names):
+            if name not in cb.get(class_name, set()):
+                errors.append(
+                    f"[{lang}/{class_name}] diagnostics_{lang}.yaml criterion '{name}' "
+                    f"not found in codebook"
+                )
     return errors
 
 
@@ -230,9 +235,9 @@ def _make_minimal_tsv(params: list[str], extra_params: list[str] = None) -> io.S
 
 
 def _check_diagnostics_vs_classes(diag_classes: dict) -> List[str]:
-    """Check diagnostics_{lang_id}.tsv entries against diagnostic_classes.yaml.
+    """Check each language's diagnostics_{lang_id}.yaml against diagnostic_classes.yaml.
 
-    For each row in every diagnostics_{lang_id}.tsv:
+    For each row it renders to (``_diagnostics_rows``):
       - The class name must appear in diagnostic_classes.yaml.
       - All required_criteria listed for that class must be present as criterion columns.
       - No criterion may appear that is outside the allowed set
@@ -241,54 +246,35 @@ def _check_diagnostics_vs_classes(diag_classes: dict) -> List[str]:
     if not diag_classes:
         return ["diagnostic_classes.yaml not found — skipping class schema check"]
 
-    diag_files = sorted(CODED_DATA.glob("*/lang_setup/diagnostics_*.tsv"))
-    if not diag_files:
-        return []
-
     errors = []
-    for diag_path in diag_files:
-        lang = diag_path.parent.parent.name
-        df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
-        for _, row in df.iterrows():
-            class_name = row.get("Class", "").strip()
-            if not class_name:
-                continue
+    for lang, class_name, construction, present in _diagnostics_rows():
+        if not class_name:
+            continue
 
-            if class_name not in diag_classes:
-                errors.append(
-                    f"[{lang}] diagnostics_{lang}.tsv class '{class_name}' not in "
-                    f"diagnostic_classes.yaml"
-                )
-                continue
+        if class_name not in diag_classes:
+            errors.append(
+                f"[{lang}] diagnostics_{lang}.yaml class '{class_name}' not in "
+                f"diagnostic_classes.yaml"
+            )
+            continue
 
-            # Check required criteria are present
-            params_raw = row.get("Criteria", "").strip()
-            present = set()
-            for spec in params_raw.split(","):
-                spec = spec.strip()
-                name = spec[: spec.index("{")].strip() if "{" in spec else spec
-                if name:
-                    present.add(name)
+        required = diag_classes[class_name].get("required_criteria", [])
+        missing = [p for p in required if p not in present]
+        if missing:
+            errors.append(
+                f"[{lang}/{class_name}/{construction}] missing required "
+                f"diagnostic criterion(ia) from diagnostic_classes.yaml: {missing}"
+            )
 
-            construction = row.get("Constructions", "").strip()
-
-            required = diag_classes[class_name].get("required_criteria", [])
-            missing = [p for p in required if p not in present]
-            if missing:
-                errors.append(
-                    f"[{lang}/{class_name}/{construction}] missing required "
-                    f"diagnostic criterion(ia) from diagnostic_classes.yaml: {missing}"
-                )
-
-            # Check no undeclared criteria are used (opt-in model)
-            optional = diag_classes[class_name].get("optional_criteria", [])
-            allowed = set(required) | set(optional)
-            extra = sorted(present - allowed)
-            if extra:
-                errors.append(
-                    f"[{lang}/{class_name}/{construction}] diagnostic criterion(ia) not in "
-                    f"diagnostic_classes.yaml allowed set: {extra}"
-                )
+        # Check no undeclared criteria are used (opt-in model)
+        optional = diag_classes[class_name].get("optional_criteria", [])
+        allowed = set(required) | set(optional)
+        extra = sorted(present - allowed)
+        if extra:
+            errors.append(
+                f"[{lang}/{class_name}/{construction}] diagnostic criterion(ia) not in "
+                f"diagnostic_classes.yaml allowed set: {extra}"
+            )
 
     return errors
 
@@ -623,32 +609,23 @@ def _check_lang_yaml_criterion_values(codebook: dict) -> List[str]:
     return errors
 
 
-def _check_diagnostics_yaml_exists(root: Path = ROOT) -> List[str]:
-    """Every language with a diagnostics_{lang_id}.tsv must have a matching
-    diagnostics_{lang_id}.yaml.
+def _check_no_diagnostics_tsv(root: Path = ROOT) -> List[str]:
+    """No diagnostics_{lang_id}.tsv is left beside the YAML.
 
-    diagnostics_{lang_id}.yaml is the coordinator-facing source of truth;
-    diagnostics_{lang_id}.tsv is a derived artifact regenerated from it by
-    sync-diagnostics-yaml (data_dependency_schema's diagnostics_scope fact).
-    A TSV with no backing YAML has no source of truth behind it -- it could
-    be legitimately hand-derived once and never touched again, or it could
-    be silently stale, and there is no way to tell the difference. Hard
-    error, not a warning: this is a total loss of provenance, not drift in
-    an otherwise-intact relationship.
+    diagnostics_{lang_id}.yaml is the one diagnostics file; the TSV copy that
+    sync-diagnostics-yaml used to write was deleted 2026-10-27
+    (ownership-design Q5) and nothing reads it. One that reappears was
+    written by a copy of the tooling from before then; left alone, it would
+    look like a second source. (Until 2026-10-27 this check asked that every
+    TSV have a YAML behind it.)
     """
-    errors = []
-    for tsv_path in sorted((root / "coded_data").glob("*/lang_setup/diagnostics_*.tsv")):
-        lang = tsv_path.parent.parent.name
-        yaml_path = tsv_path.with_suffix(".yaml")
-        if not yaml_path.exists():
-            errors.append(
-                f"[{lang}] diagnostics_{lang}.tsv exists but diagnostics_{lang}.yaml "
-                f"does not — the TSV is a derived artifact with no source of truth "
-                f"backing it. Restore the YAML from planars-data's history "
-                f"(git -C coded_data log -- {lang}/lang_setup/), or write one by hand, "
-                f"then run: python -m coding sync-diagnostics-yaml --lang {lang} --apply"
-            )
-    return errors
+    return [
+        f"[{p.parent.parent.name}] {p.name} is back, but the diagnostics YAML is the one "
+        f"diagnostics file and nothing reads the TSV: an older copy of the tooling wrote "
+        f"it. Pull the planars repository wherever the tooling ran, then delete the file "
+        f"(git -C coded_data rm {p.parent.parent.name}/lang_setup/{p.name})"
+        for p in sorted((root / "coded_data").glob("*/lang_setup/diagnostics_*.tsv"))
+    ]
 
 
 def _report_keystone_active_unresolved(
@@ -752,19 +729,17 @@ def _report_needs_review(codebook: dict, diag_classes: dict) -> int:
 
 
 def _collect_coverage(root: Path = ROOT) -> dict[str, list[str]]:
-    """Return {class_name: [lang_id, ...]} for all active classes across all diagnostics TSVs.
+    """Return {class_name: [lang_id, ...]} for all active classes across the diagnostics YAMLs.
 
     Args:
         root: repository root to search under (default ROOT; tests pass tmp_path here).
     """
     coverage: dict[str, list[str]] = {}
-    for diag_path in sorted((root / "coded_data").glob("*/lang_setup/diagnostics_*.tsv")):
-        lang = diag_path.parent.parent.name
-        df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
-        for _, row in df.iterrows():
-            class_name = row.get("Class", "").strip()
-            if class_name:
-                coverage.setdefault(class_name, []).append(lang)
+    for yaml_path in sorted((root / "coded_data").glob("*/lang_setup/diagnostics_*.yaml")):
+        lang = yaml_path.parent.parent.name
+        data = _yaml.safe_load(yaml_path.read_text(encoding="utf-8")) or {}
+        for class_name in (data.get("classes") or {}):
+            coverage.setdefault(class_name, []).append(lang)
     return coverage
 
 
@@ -776,8 +751,8 @@ def _report_schema_stubs(
     A schema stub is the ready-to-paste diagnostics_{lang_id}.yaml entry derived from the
     schema definition (constructions, required criteria and their values from
     diagnostic_criteria.yaml) — the minimal instantiation before language-specific
-    choices are made. Until 2026-10-18 it printed a TSV row, though the TSV is
-    generated from the YAML and never edited. Distinct from 'planar template',
+    choices are made. Until 2026-10-18 it printed a row of the diagnostics TSV
+    (deleted 2026-10-27). Distinct from 'planar template',
     which refers to the planar structure.
 
     Returns the count of uncovered classes (informational, not an error).
@@ -796,8 +771,8 @@ def _report_schema_stubs(
     }
 
     print(f"  {len(uncovered)} class(es) with no language coverage.")
-    print("  Paste under `classes:` in diagnostics_{lang_id}.yaml, adjust, then run")
-    print("  python -m coding sync-diagnostics-yaml --lang {lang_id} --apply:\n")
+    print("  Paste under `classes:` in diagnostics_{lang_id}.yaml and adjust (the daily")
+    print("  refresh then carries it to the language's sheets):\n")
     for name in uncovered:
         cls = diag_classes[name]
         if cls.get("specificity", "general") == "general":
@@ -884,19 +859,18 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     Runs eight consistency checks (exit 1 if any fail) then three informational reports:
     1. Every _REQUIRED_CRITERIA criterion in each analysis module is in diagnostic_criteria.yaml.
-    2. Every criterion name in diagnostics_{lang_id}.tsv files is in diagnostic_criteria.yaml.
+    2. Every criterion name in the diagnostics_{lang_id}.yaml files is in diagnostic_criteria.yaml.
     3. Every span key referenced in charts.py exists in the corresponding derive result.
-    4. diagnostics_{lang_id}.tsv class names and required criteria match diagnostic_classes.yaml.
+    4. diagnostics_{lang_id}.yaml class names and required criteria match diagnostic_classes.yaml.
     5. Span rule drift: bidirectional module/YAML correspondence, hash sentinel,
        docstring mirror.
     6. Per-language criterion value sets vs global schema (hard error: unknown value declared;
        warning: schema has values not declared in language YAML).
-    7. Every diagnostics_{lang_id}.tsv has a matching diagnostics_{lang_id}.yaml (the source
-       of truth it's derived from) — hard error if the YAML is missing entirely.
+    7. No diagnostics_{lang_id}.tsv copy has come back beside the YAML (deleted 2026-10-27).
     7b. Every construction another one depends_on says produces_spans: false.
     7c. Every construction declares its row shape (row_type, pair_shape, keyed_columns/key).
     8. keystone_active_default "[NEEDS REVIEW]" for active classes with no language override.
-    9. Schema stubs: classes with no language coverage (ready-to-paste TSV rows).
+    9. Schema stubs: classes with no language coverage (ready-to-paste YAML entries).
     10. Coverage matrix: language × class grid.
     """
     if args is None:
@@ -908,13 +882,13 @@ def main(args: argparse.Namespace | None = None) -> None:
     print("1. Checking _REQUIRED_CRITERIA vs diagnostic_criteria.yaml ...")
     all_errors.extend(_check_required_criteria(codebook))
 
-    print("2. Checking diagnostics_{lang_id}.tsv vs diagnostic_criteria.yaml ...")
+    print("2. Checking diagnostics_{lang_id}.yaml vs diagnostic_criteria.yaml ...")
     all_errors.extend(_check_diagnostics(codebook))
 
     print("3. Checking chart span keys vs derive function result dicts ...")
     all_errors.extend(_check_chart_keys())
 
-    print("4. Checking diagnostics_{lang_id}.tsv criteria vs diagnostic_classes.yaml ...")
+    print("4. Checking diagnostics_{lang_id}.yaml criteria vs diagnostic_classes.yaml ...")
     all_errors.extend(_check_diagnostics_vs_classes(diag_classes))
 
     print("5. Checking span rule drift (hash sentinel + docstring) ...")
@@ -923,8 +897,8 @@ def main(args: argparse.Namespace | None = None) -> None:
     print("6. Checking per-language criterion value sets vs global schema ...")
     all_errors.extend(_check_lang_yaml_criterion_values(codebook))
 
-    print("7. Checking every diagnostics_{lang_id}.tsv has a matching .yaml ...")
-    all_errors.extend(_check_diagnostics_yaml_exists())
+    print("7. Checking no diagnostics_{lang_id}.tsv copy has come back ...")
+    all_errors.extend(_check_no_diagnostics_tsv())
 
     print("7b. Checking feeder constructions are marked produces_spans: false ...")
     all_errors.extend(_check_feeder_constructions(diag_classes))

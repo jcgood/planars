@@ -12,8 +12,8 @@ Then, for each language whose diagnostics file has CLASS with OLD, ``--apply``:
 
   1. renames it in ``diagnostics_{lang_id}.yaml`` (its ``constructions``, and
      the ``construction_criteria`` / ``keystone_active`` keys; comments and
-     layout kept), then regenerates the diagnostics TSV and pushes the file
-     to the language's diagnostics Sheet, as ``sync-diagnostics-yaml`` does;
+     layout kept), then pushes the file to the language's diagnostics Sheet,
+     as ``sync-diagnostics-yaml`` does;
   2. renames the tab on the class sheet in place, and its row on the Status
      tab — the sheet and its link stay the same, and so do the answers;
   3. renames the construction in the manifest (its ``constructions`` list and
@@ -49,7 +49,7 @@ from . import check_comments, file_door
 from .drive import _load_drive_config, _save_drive_config, load_manifest, upload_manifest
 from .drive_doorway import WorksheetNotFound, get_doorway
 from .make_forms import _dump_diagnostics_yaml, _load_diagnostics_yaml_for_edit
-from .sync_diagnostics_yaml import _sync_to_sheet, _sync_to_tsv
+from .sync_diagnostics_yaml import _sync_to_sheet
 from .validate_diagnostics import validate_diagnostics_yaml
 
 Rename = Tuple[str, str, str]  # (class, old, new)
@@ -147,7 +147,6 @@ def _rename_yaml(lang_id: str, renames: List[Rename],
                          f"not pass validation (above); nothing was written for {lang_id}")
     file_door.write(file_door.diagnostics_yaml(lang_id), _dump_diagnostics_yaml(data),
                     why="rename-construction: " + "; ".join(changes))
-    _sync_to_tsv(lang_id, apply=True, error_langs=[])
     return mine, True
 
 

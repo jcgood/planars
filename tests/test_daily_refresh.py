@@ -91,7 +91,6 @@ def test_a_clean_run_runs_every_command_in_order_and_closes_every_issue(refresh_
         "check-notes --apply",
         "check-comments --apply",
         "sync-diagnostics-yaml --apply",
-        "sync-diagnostics-yaml --to-sheet --apply",
         "proposal-sheets --apply",
         "sync-params --apply",
         "generate-sheets --regen-dependents",

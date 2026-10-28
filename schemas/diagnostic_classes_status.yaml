@@ -39,7 +39,7 @@
 #                               languages are analyzed; note explains known gaps or
 #                               open questions)
 #   collection_required         "[NEEDS COORDINATOR INPUT]" until coordinator decides;
-#                               "y" = must appear in diagnostics_{lang_id}.tsv for every
+#                               "y" = must appear in diagnostics_{lang_id}.yaml for every
 #                               language; "n" = optional (conditional on language-specific
 #                               phenomena)
 #   span_rule_hash              SHA-256[:8] of the whitespace-normalised

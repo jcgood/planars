@@ -10,10 +10,10 @@ import yaml
 
 from coding.make_forms import (
     _read_diagnostics_for_language,
-    _yaml_to_tsv_df,
+    _yaml_to_grid_df,
     _dump_diagnostics_yaml,
     _load_diagnostics_yaml_for_edit,
-    _diff_diagnostics_tsv_yaml,
+    _diff_diagnostics_grid_yaml,
     _apply_yaml_diff,
     build_element_index,
     classify_element,
@@ -41,13 +41,6 @@ YAML_CONTENT = textwrap.dedent("""\
         notes: "test notes"
 """)
 
-TSV_CONTENT = textwrap.dedent("""\
-    Class\tLanguage\tConstructions\tCriteria
-    ciscategorial\tlang0001\tgeneral\tV-combines{y/n}, N-combines{y/n}
-    metrical\tlang0001\tstress_domain\taccented{y/n/both}, obligatory{y/n}
-""")
-
-
 @pytest.fixture()
 def planar_dir(tmp_path):
     d = tmp_path / "coded_data" / "lang0001" / "lang_setup"
@@ -59,10 +52,8 @@ def planar_dir(tmp_path):
 # _read_diagnostics_for_language — YAML path
 # ---------------------------------------------------------------------------
 
-def test_read_diagnostics_prefers_yaml(planar_dir):
-    """When YAML is present it is used; the TSV is ignored even if it exists."""
+def test_read_diagnostics_reads_the_yaml(planar_dir):
     (planar_dir / "diagnostics_lang0001.yaml").write_text(YAML_CONTENT)
-    (planar_dir / "diagnostics_lang0001.tsv").write_text(TSV_CONTENT)
 
     rows = _read_diagnostics_for_language("lang0001", planar_dir)
     classes = [r[0] for r in rows]
@@ -83,42 +74,41 @@ def test_read_diagnostics_yaml_criteria(planar_dir):
     assert crit_values["obligatory"] == ["y", "n"]
 
 
-def test_read_diagnostics_falls_back_to_tsv(planar_dir):
-    """When no YAML is present, TSV is read as before."""
-    (planar_dir / "diagnostics_lang0001.tsv").write_text(TSV_CONTENT)
-
-    rows = _read_diagnostics_for_language("lang0001", planar_dir)
-    classes = [r[0] for r in rows]
-    assert "ciscategorial" in classes
-    assert "metrical" in classes
+def test_a_missing_yaml_is_an_error_even_beside_a_tsv(planar_dir):
+    """The TSV copy, deleted 2026-10-27, is never read: until then the reader
+    fell back to it when the YAML was missing, so a lost YAML went unnoticed."""
+    (planar_dir / "diagnostics_lang0001.tsv").write_text(
+        "Class\tLanguage\tConstructions\tCriteria\n"
+        "ciscategorial\tlang0001\tgeneral\tV-combines{y/n}\n")
+    with pytest.raises(FileNotFoundError, match="diagnostics_lang0001.yaml"):
+        _read_diagnostics_for_language("lang0001", planar_dir)
 
 
 # ---------------------------------------------------------------------------
-# _yaml_to_tsv_df
+# _yaml_to_grid_df
 # ---------------------------------------------------------------------------
 
-def test_yaml_to_tsv_df_writes_every_criterions_values():
+def test_yaml_to_grid_df_writes_every_criterions_values():
     """Even [y, n] criteria are written with their values: there is no bare-name
     default any more (removed 2026-10-12, Phase 10)."""
     data = yaml.safe_load(YAML_CONTENT)
-    df = _yaml_to_tsv_df(data, "lang0001")
+    df = _yaml_to_grid_df(data, "lang0001")
     cisc_row = df[df["Class"] == "ciscategorial"].iloc[0]
     assert "V-combines{y/n}" in cisc_row["Criteria"]
 
 
-def test_a_bare_criterion_name_is_an_error_not_y_n(planar_dir):
-    """A criterion written without values is refused, naming the fix."""
-    (planar_dir / "diagnostics_lang0001.tsv").write_text(
-        "Class\tLanguage\tConstructions\tCriteria\n"
-        "ciscategorial\tlang0001\tgeneral\tV-combines\n")
+def test_a_bare_criterion_name_on_a_proposal_grid_is_an_error_not_y_n():
+    """A criterion written without values (on a proposal sheet's Diagnostics
+    tab) is refused, naming the fix."""
+    grid = _make_grid_df([("ciscategorial", "general", "V-combines")])
     with pytest.raises(ValueError, match="lists no values"):
-        _read_diagnostics_for_language("lang0001", planar_dir)
+        _diff_diagnostics_grid_yaml(grid, yaml.safe_load(YAML_CONTENT), "lang0001")
 
 
-def test_yaml_to_tsv_df_non_default_values():
+def test_yaml_to_grid_df_non_default_values():
     """Criteria with non-default values use brace syntax."""
     data = yaml.safe_load(YAML_CONTENT)
-    df = _yaml_to_tsv_df(data, "lang0001")
+    df = _yaml_to_grid_df(data, "lang0001")
     met_row = df[df["Class"] == "metrical"].iloc[0]
     assert "accented{y/n/both}" in met_row["Criteria"]
 
@@ -149,11 +139,11 @@ def test_every_language_yaml_survives_load_and_dump_unchanged(path):
 
 
 # ---------------------------------------------------------------------------
-# _diff_diagnostics_tsv_yaml
+# _diff_diagnostics_grid_yaml
 # ---------------------------------------------------------------------------
 
-def _make_tsv_df(rows):
-    """Build a diagnostics TSV DataFrame from a list of (Class, Constructions, Criteria) tuples."""
+def _make_grid_df(rows):
+    """Build diagnostics grid rows from a list of (Class, Constructions, Criteria) tuples."""
     return pd.DataFrame(
         [{"Class": c, "Language": "lang0001", "Constructions": cons, "Criteria": crit}
          for c, cons, crit in rows],
@@ -162,25 +152,25 @@ def _make_tsv_df(rows):
 
 
 def test_diff_no_changes():
-    """Identical TSV and YAML produce empty diff lists."""
+    """Identical grid and YAML produce empty diff lists."""
     yaml_data = yaml.safe_load(YAML_CONTENT)
-    tsv_df = _make_tsv_df([
+    grid_df = _make_grid_df([
         ("ciscategorial", "general", "V-combines{y/n}, N-combines{y/n}"),
         ("metrical",      "stress_domain", "accented{y/n/both}, obligatory{y/n}"),
     ])
-    det, amb = _diff_diagnostics_tsv_yaml(tsv_df, yaml_data, "lang0001")
+    det, amb = _diff_diagnostics_grid_yaml(grid_df, yaml_data, "lang0001")
     assert det == []
     assert amb == []
 
 
 def test_diff_criterion_added():
-    """A new criterion in the TSV (matching the schema) is deterministic."""
+    """A new criterion in the grid (matching the schema) is deterministic."""
     yaml_data = yaml.safe_load(YAML_CONTENT)
-    tsv_df = _make_tsv_df([
+    grid_df = _make_grid_df([
         ("ciscategorial", "general", "V-combines{y/n}, N-combines{y/n}, A-combines{y/n}"),
         ("metrical",      "stress_domain", "accented{y/n/both}, obligatory{y/n}"),
     ])
-    det, amb = _diff_diagnostics_tsv_yaml(tsv_df, yaml_data, "lang0001")
+    det, amb = _diff_diagnostics_grid_yaml(grid_df, yaml_data, "lang0001")
     kinds = [c["kind"] for c in det]
     assert "criterion_added" in kinds
     added = next(c for c in det if c["kind"] == "criterion_added")
@@ -189,14 +179,14 @@ def test_diff_criterion_added():
 
 
 def test_diff_construction_removed():
-    """A construction missing from a class still present in TSV is a deterministic removal."""
+    """A construction missing from a class still present in the grid is a deterministic removal."""
     yaml_data = yaml.safe_load(YAML_CONTENT)
-    # metrical in YAML has stress_domain; TSV has metrical with a different construction
-    tsv_df = _make_tsv_df([
+    # metrical in YAML has stress_domain; the grid has metrical with a different construction
+    grid_df = _make_grid_df([
         ("ciscategorial", "general", "V-combines{y/n}, N-combines{y/n}"),
         ("metrical",      "other_construction", "accented{y/n/both}, obligatory{y/n}"),
     ])
-    det, amb = _diff_diagnostics_tsv_yaml(tsv_df, yaml_data, "lang0001")
+    det, amb = _diff_diagnostics_grid_yaml(grid_df, yaml_data, "lang0001")
     kinds = [c["kind"] for c in det]
     assert "construction_removed" in kinds
     removed = next(c for c in det if c["kind"] == "construction_removed")
@@ -204,24 +194,24 @@ def test_diff_construction_removed():
 
 
 def test_diff_class_removed_is_ambiguous():
-    """A class entirely absent from the TSV is flagged as ambiguous (may be intentional)."""
+    """A class entirely absent from the grid is flagged as ambiguous (may be intentional)."""
     yaml_data = yaml.safe_load(YAML_CONTENT)
-    # metrical class absent entirely from TSV
-    tsv_df = _make_tsv_df([
+    # metrical class absent entirely from the grid
+    grid_df = _make_grid_df([
         ("ciscategorial", "general", "V-combines{y/n}, N-combines{y/n}"),
     ])
-    _det, amb = _diff_diagnostics_tsv_yaml(tsv_df, yaml_data, "lang0001")
+    _det, amb = _diff_diagnostics_grid_yaml(grid_df, yaml_data, "lang0001")
     assert any(c["kind"] == "class_removed" for c in amb)
 
 
 def test_diff_unknown_criterion_flagged():
     """A criterion not in diagnostic_criteria.yaml is flagged as ambiguous."""
     yaml_data = yaml.safe_load(YAML_CONTENT)
-    tsv_df = _make_tsv_df([
+    grid_df = _make_grid_df([
         ("ciscategorial", "general", "V-combines{y/n}, N-combines{y/n}, totally_made_up_criterion_xyz{y/n}"),
         ("metrical",      "stress_domain", "accented{y/n/both}, obligatory{y/n}"),
     ])
-    det, amb = _diff_diagnostics_tsv_yaml(tsv_df, yaml_data, "lang0001")
+    det, amb = _diff_diagnostics_grid_yaml(grid_df, yaml_data, "lang0001")
     assert any(c["kind"] == "unknown_criterion" for c in amb)
 
 
@@ -229,11 +219,11 @@ def test_diff_criterion_values_changed():
     """Changed criterion value list is a deterministic change."""
     yaml_data = yaml.safe_load(YAML_CONTENT)
     # Change accented from [y,n,both] to [y,n]
-    tsv_df = _make_tsv_df([
+    grid_df = _make_grid_df([
         ("ciscategorial", "general", "V-combines{y/n}, N-combines{y/n}"),
         ("metrical",      "stress_domain", "accented{y/n}, obligatory{y/n}"),
     ])
-    det, amb = _diff_diagnostics_tsv_yaml(tsv_df, yaml_data, "lang0001")
+    det, amb = _diff_diagnostics_grid_yaml(grid_df, yaml_data, "lang0001")
     kinds = [c["kind"] for c in det]
     assert "criterion_values_changed" in kinds
     changed = next(c for c in det if c["kind"] == "criterion_values_changed")

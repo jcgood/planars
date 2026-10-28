@@ -477,6 +477,3 @@ def test_an_accepted_diagnostics_change_reaches_the_yaml(env, monkeypatch):
     data = yaml.safe_load(file_door.diagnostics_yaml(LANG).path.read_text(encoding="utf-8"))
     criteria = data["classes"]["ciscategorial"]["criteria"]
     assert "A-combines" not in criteria and "V-combines" in criteria
-    # The TSV copy is rebuilt from it.
-    tsv = file_door.diagnostics_tsv(LANG).path.read_text(encoding="utf-8")
-    assert "A-combines" not in tsv.split("ciscategorial")[1].splitlines()[0]

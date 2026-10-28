@@ -15,7 +15,7 @@ from coding.check_codebook import (
     _check_span_rule_drift,
     _discover_analysis_modules,
     _report_keystone_active_unresolved,
-    _check_diagnostics_yaml_exists,
+    _check_no_diagnostics_tsv,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -26,43 +26,35 @@ ROOT = Path(__file__).resolve().parent.parent
 # ---------------------------------------------------------------------------
 
 def _write_diagnostics(tmp_path, lang_id: str, classes: list[str]) -> None:
-    """Write a minimal diagnostics_{lang_id}.tsv under tmp_path/coded_data/{lang_id}/lang_setup/."""
+    """Write a minimal diagnostics_{lang_id}.yaml under tmp_path/coded_data/{lang_id}/lang_setup/."""
     d = tmp_path / "coded_data" / lang_id / "lang_setup"
     d.mkdir(parents=True)
-    lines = ["Class\tLanguage\tConstructions\tCriteria"]
+    lines = [f"language: {lang_id}", "classes:"]
     for cls in classes:
-        lines.append(f"{cls}\t{lang_id}\tgeneral\tfree")
-    (d / f"diagnostics_{lang_id}.tsv").write_text("\n".join(lines) + "\n")
+        lines += [f"  {cls}:", "    constructions: [general]", "    criteria:",
+                  "      free: [y, n]"]
+    (d / f"diagnostics_{lang_id}.yaml").write_text("\n".join(lines) + "\n")
 
 
 # ---------------------------------------------------------------------------
-# _check_diagnostics_yaml_exists
+# _check_no_diagnostics_tsv
 # ---------------------------------------------------------------------------
 
-def test_diagnostics_yaml_exists_no_error(tmp_path):
+def test_no_diagnostics_tsv_no_error(tmp_path):
     _write_diagnostics(tmp_path, "lang0001", ["ciscategorial"])
-    yaml_path = tmp_path / "coded_data" / "lang0001" / "lang_setup" / "diagnostics_lang0001.yaml"
-    yaml_path.write_text("language: lang0001\nclasses: {}\n")
-    assert _check_diagnostics_yaml_exists(tmp_path) == []
+    assert _check_no_diagnostics_tsv(tmp_path) == []
 
 
-def test_diagnostics_yaml_missing_is_hard_error(tmp_path):
-    _write_diagnostics(tmp_path, "lang0001", ["ciscategorial"])
-    errors = _check_diagnostics_yaml_exists(tmp_path)
-    assert len(errors) == 1
-    assert "lang0001" in errors[0]
-    assert "diagnostics_lang0001.yaml" in errors[0]
-
-
-def test_diagnostics_yaml_missing_for_one_of_several_langs(tmp_path):
+def test_a_diagnostics_tsv_that_comes_back_is_an_error(tmp_path):
+    """Written by a copy of the tooling from before 2026-10-27; it says how to clear it."""
     _write_diagnostics(tmp_path, "lang0001", ["ciscategorial"])
     _write_diagnostics(tmp_path, "lang0002", ["ciscategorial"])
-    (tmp_path / "coded_data" / "lang0002" / "lang_setup" / "diagnostics_lang0002.yaml").write_text(
-        "language: lang0002\nclasses: {}\n"
-    )
-    errors = _check_diagnostics_yaml_exists(tmp_path)
+    (tmp_path / "coded_data" / "lang0001" / "lang_setup" / "diagnostics_lang0001.tsv").write_text(
+        "Class\tLanguage\tConstructions\tCriteria\n")
+    errors = _check_no_diagnostics_tsv(tmp_path)
     assert len(errors) == 1
-    assert "lang0001" in errors[0]
+    assert errors[0].startswith("[lang0001] diagnostics_lang0001.tsv is back")
+    assert "git -C coded_data rm lang0001/lang_setup/diagnostics_lang0001.tsv" in errors[0]
 
 
 # ---------------------------------------------------------------------------
@@ -162,7 +154,7 @@ def test_report_schema_stubs_construction_specific(capsys):
 
 
 def test_report_schema_stubs_are_yaml_with_the_criterion_values(capsys):
-    """The stub goes into diagnostics_{lang_id}.yaml (the TSV is generated), values included."""
+    """The stub goes into diagnostics_{lang_id}.yaml, values included."""
     diag_classes = _minimal_diag_classes("repair")
     codebook = {"analyses": [{"name": "repair", "diagnostic_criteria": [
         {"name": crit, "values": ["y", "n", "na", "?"]}

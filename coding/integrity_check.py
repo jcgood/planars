@@ -4,8 +4,8 @@
 Runs ten sections of checks and prints a structured report:
 
   PLANAR STRUCTURE               — validates planar_*.tsv for each language
-  DIAGNOSTICS                    — validates diagnostics_*.tsv for each language
-  CODEBOOK CONSISTENCY           — cross-checks diagnostics TSVs against schema files
+  DIAGNOSTICS                    — validates diagnostics_*.yaml for each language
+  CODEBOOK CONSISTENCY           — cross-checks the diagnostics files against schema files
   ANALYSIS CONSISTENCY           — validates analysis modules match diagnostic_criteria.yaml
   CROSS-SHEET CONSISTENCY        — checks free values agree across related annotation sheets
   DEPENDENT CONSTRUCTION STALENESS — pair-row constructions (nonpermutability/general,
@@ -65,7 +65,7 @@ CODED_DATA = ROOT / "coded_data"
 from .sheet_spec import class_sheet_spec, expected_row_keys, parked_operation
 from .validate import ValidationIssue
 from .validate_planar import validate_planar_df
-from .validate_diagnostics import validate_diagnostics_df
+from .validate_diagnostics import validate_diagnostics_yaml
 from .check_codebook import (
     _load_codebook,
     _load_diagnostic_classes,
@@ -218,32 +218,27 @@ def _section_diagnostics(lang_ids: List[str]) -> Tuple[int, int]:
     total_e = total_w = 0
 
     for lang_id in lang_ids:
-        diag_path = CODED_DATA / lang_id / "lang_setup" / f"diagnostics_{lang_id}.tsv"
+        diag_path = CODED_DATA / lang_id / "lang_setup" / f"diagnostics_{lang_id}.yaml"
         lang = _lang_label(lang_id)
 
         if not diag_path.exists():
-            print(_fail(f"{lang}  —  diagnostics_{lang_id}.tsv not found"))
-            yaml_path = CODED_DATA / lang_id / "lang_setup" / f"diagnostics_{lang_id}.yaml"
-            if yaml_path.exists():
-                print(_sub(f"→ YAML exists but TSV has not been generated."))
-                print(_sub(f"  run: python -m coding sync-diagnostics-yaml --apply --lang {lang_id}"))
-            else:
-                print(_sub(f"→ Neither YAML nor TSV found — language onboarding is incomplete."))
-                print(_sub(f"  Create coded_data/{lang_id}/lang_setup/diagnostics_{lang_id}.yaml,"))
-                print(_sub(f"  then run: python -m coding sync-diagnostics-yaml --apply --lang {lang_id}"))
-                print(_sub(f"  See docs/coordinator-guide.md § 'Onboarding a new language'."))
+            print(_fail(f"{lang}  —  diagnostics_{lang_id}.yaml not found"))
+            print(_sub("→ Language onboarding is incomplete."))
+            print(_sub(f"  Create coded_data/{lang_id}/lang_setup/diagnostics_{lang_id}.yaml."))
+            print(_sub("  See docs/coordinator-guide.md § 'Onboarding a new language'."))
             total_e += 1
             continue
 
         try:
-            df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
+            with open(diag_path, encoding="utf-8") as f:
+                data = _yaml.safe_load(f)
         except Exception as exc:
             print(_fail(f"{lang}  —  could not read diagnostics file: {exc}"))
             total_e += 1
             continue
 
-        issues = validate_diagnostics_df(df, lang_id)
-        label = f"{lang:<34}  diagnostics_{lang_id}.tsv"
+        issues = validate_diagnostics_yaml(data, lang_id)
+        label = f"{lang:<34}  diagnostics_{lang_id}.yaml"
         e, w = _print_issues(issues, label)
         total_e += e
         total_w += w
@@ -257,11 +252,11 @@ def _section_codebook(diag_classes: dict) -> Tuple[int, int]:
     errs_classes = _check_diagnostics_vs_classes(diag_classes)
 
     if errs_classes:
-        print(_fail("diagnostics TSVs vs. diagnostic_classes.yaml"))
+        print(_fail("diagnostics files vs. diagnostic_classes.yaml"))
         for e in errs_classes:
             print(_sub(e))
     else:
-        print(_ok("diagnostics TSVs match diagnostic_classes.yaml"))
+        print(_ok("diagnostics files match diagnostic_classes.yaml"))
 
     return len(errs_classes), 0
 
@@ -296,7 +291,8 @@ def _section_analysis(codebook: dict) -> Tuple[int, int]:
 def _stale_manifest_classes(manifest: dict, lang_ids: List[str]) -> List[Tuple[str, str]]:
     """Return (lang_id, class_name) pairs that are in the manifest but absent from diagnostics.
 
-    Reads local diagnostics_{lang}.yaml (or .tsv fallback) — no Sheet API calls.
+    Reads local diagnostics_{lang}.yaml — no Sheet API calls. A language
+    without one is skipped (the DIAGNOSTICS section reports it).
     """
     stale = []
     for lang_id in lang_ids:
@@ -304,16 +300,11 @@ def _stale_manifest_classes(manifest: dict, lang_ids: List[str]) -> List[Tuple[s
         if not sheets_info:
             continue
         yaml_path = CODED_DATA / lang_id / "lang_setup" / f"diagnostics_{lang_id}.yaml"
-        tsv_path  = CODED_DATA / lang_id / "lang_setup" / f"diagnostics_{lang_id}.tsv"
-        if yaml_path.exists():
-            with open(yaml_path, encoding="utf-8") as _f:
-                _diag = _yaml.safe_load(_f)
-            active = set((_diag or {}).get("classes", {}).keys())
-        elif tsv_path.exists():
-            _df = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
-            active = set(_df["Class"].unique()) if "Class" in _df.columns else set()
-        else:
+        if not yaml_path.exists():
             continue
+        with open(yaml_path, encoding="utf-8") as _f:
+            _diag = _yaml.safe_load(_f)
+        active = set(((_diag or {}).get("classes") or {}).keys())
         for cls in sorted(set(sheets_info.keys()) - active):
             stale.append((lang_id, cls))
     return stale

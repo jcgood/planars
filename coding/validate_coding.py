@@ -54,6 +54,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
+import yaml
 from gspread.utils import rowcol_to_a1
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -72,7 +73,7 @@ from .make_forms import (
 )
 from .validate import ValidationIssue
 from .validate_planar import validate_planar_df
-from .validate_diagnostics import validate_diagnostics_df
+from .validate_diagnostics import validate_diagnostics_yaml
 from .schemas import (
     criteria_for,
     free_entry_kind,
@@ -1072,7 +1073,7 @@ def revalidate_sheets(
 
         print(f"\n{lang_id}")
 
-        # Validate planar structure and diagnostics_{lang_id}.tsv.
+        # Validate planar structure and diagnostics_{lang_id}.yaml.
         planar_files = sorted((CODED_DATA / lang_id / "lang_setup").glob("planar_*.tsv"))
         if planar_files:
             planar_df = pd.read_csv(planar_files[0], sep="\t")
@@ -1082,10 +1083,10 @@ def revalidate_sheets(
                 for issue in planar_issues:
                     print(f"    {issue}")
 
-            diag_path = planar_files[0].parent / f"diagnostics_{lang_id}.tsv"
+            diag_path = planar_files[0].parent / f"diagnostics_{lang_id}.yaml"
             if diag_path.exists():
-                diag_df = pd.read_csv(diag_path, sep="\t")
-                diag_issues = validate_diagnostics_df(diag_df, lang_id)
+                with open(diag_path, encoding="utf-8") as f:
+                    diag_issues = validate_diagnostics_yaml(yaml.safe_load(f), lang_id)
                 if diag_issues:
                     print(f"  Diagnostics validation ({len(diag_issues)} issue(s)):")
                     for issue in diag_issues:

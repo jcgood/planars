@@ -7,7 +7,7 @@
 - id: coded_data_clean_tree
   description: >-
     coded_data/ has no uncommitted changes before a command reads/writes it
-    as ground truth (planar TSVs, diagnostics TSVs/YAML, construction TSVs).
+    as ground truth (planar TSVs, diagnostics YAMLs, construction TSVs).
   required_by:
     - "import_sheets.py (import-sheets --apply)"
     - "update_sheets.py (update-sheets --apply)"
@@ -15,13 +15,14 @@
     - "generate_sheets.py (--regen-dependents)"
     - "restructure_sheets.py (restructure-sheets --apply)"
     - "prune_manifest.py (prune-manifest --apply)"
-    - "sync_diagnostics_yaml.py (sync-diagnostics-yaml --apply, both directions)"
+    - "sync_diagnostics_yaml.py (sync-diagnostics-yaml --apply)"
     - "daily_refresh.py (daily-refresh --apply, before its first step)"
   enforced_by: >-
     drive._check_coded_data_clean() -- called at the top of each apply path
     above; raises SystemExit(1) if coded_data/ has uncommitted changes
-    matching the given extensions (default: .tsv; sync_diagnostics_yaml.py
-    passes (".yaml", ".tsv") since it reads/writes both).
+    matching the given extensions (default: .tsv; per command in
+    coding/preconditions.py's _CODED_DATA_CLEAN_EXTENSIONS, e.g.
+    sync_diagnostics_yaml.py checks .yaml, the file it reads).
   failure_symptom: >-
     a command reads a stale/reverted file as current and acts on it -- e.g.
     update-sheets wrote a blank retired-element row to 16 live sheets on
@@ -77,6 +78,7 @@
     not to write to coded_data/ on its automated bare --apply invocation
     (no --rename/--split/--merge), so it was not given the same treatment
     -- but is worth re-checking if this pattern surfaces a third time.
+    (The TSV direction, and so this step, went on 2026-10-27 with the TSV.)
 
     Since 2026-10-17 (Phase 10 unit 8) these commits are steps of
     coding/daily_refresh.py (commit_data), in the same places. Since Phase

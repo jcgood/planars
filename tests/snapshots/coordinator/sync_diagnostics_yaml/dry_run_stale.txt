@@ -8,4 +8,4 @@ Connecting to Google APIs...
   [stan1293] Would update → diagnostics Sheet
 
 Dry run complete: 1 Sheet(s) would be updated.
-  → run: python -m coding sync-diagnostics-yaml --to-sheet --lang stan1293 --apply
+  → run: python -m coding sync-diagnostics-yaml --lang stan1293 --apply

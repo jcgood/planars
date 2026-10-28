@@ -31,7 +31,7 @@ coding/                         Google Sheets workflow tools (python -m coding <
                                 every file: its module docstring;
                                 rules: coding/CLAUDE.md)
 coded_data/{lang_id}/           Annotation data per language (in planars-data repo)
-  lang_setup/                 Planar structure TSV + diagnostics_{lang_id}.tsv
+  lang_setup/                 Planar structure TSV + diagnostics_{lang_id}.yaml
   {class_name}/                 Filled TSVs per analysis class
   archive/{class_name}/         Superseded TSVs (after import-sheets --overwrite-existing or prune-manifest)
 coded_data/synth0001/           Synthetic second-language dataset (not real data)
@@ -56,7 +56,7 @@ docs/                           Documentation (this directory)
 Each language has a `lang_setup/` directory containing:
 
 - `planar_{lang_id}.tsv` — the planar structure (archived versions: `planar_{lang_id}_{date}.tsv`, date = when superseded)
-- `diagnostics_{lang_id}.tsv` — which analyses to run and with which diagnostic criteria
+- `diagnostics_{lang_id}.yaml` — which analyses to run and with which diagnostic criteria
 
 The language ID is inferred from the planar filename: `planar_stan1293.tsv` → `stan1293`. Archived planar files carry a datestamp suffix; the inference handles both forms.
 
@@ -78,26 +78,25 @@ The **keystone position** (`v:verbstem`) is the anchor for all span computations
 
 ---
 
-## diagnostics_{lang_id}.tsv
+## diagnostics_{lang_id}.yaml
 
-Controls which analyses and constructions are run for a language. Required columns:
+Controls which analyses and constructions are run for a language. It is the language's one diagnostics file: every command reads it (through `make_forms._read_diagnostics_for_language`), and the language's diagnostics Google Sheet is a read-only copy of it. (Until 2026-10-27 a `diagnostics_{lang_id}.tsv` copy sat beside it; `check-codebook` check 7 reports one that comes back.) The rules for writing it are in `schemas/__init__.py`. In outline:
 
-| Column | Contents |
-|---|---|
-| `Language` | Language ID (must match the planar filename) |
-| `Class` | Name of the analysis module (e.g., `ciscategorial`) |
-| `Constructions` | Tab name(s) in Google Sheets; comma-separated list for construction-specific classes |
-| `Criteria` | Comma-separated list of diagnostic criteria for this analysis |
-
-Every criterion lists its allowed values in brace syntax; there is no `y/n` default, and a bare name is an error:
-
-```
-accented{y/n/both}, independence{y/n/na}, left-interaction{y/n}, right-interaction{y/n}
+```yaml
+language: stan1293                 # must match the planar filename
+classes:
+  metrical:                        # the analysis module (and class sheet)
+    constructions: [stress_domain] # the sheet's tabs
+    criteria:                      # every criterion lists its allowed values
+      accented: [y, n, both]
+      independence: [y, n, na]
 ```
 
-`coding/generate_sheets.py` applies per-column dropdown validation using these values. `coding/import-sheets` validates each cell against its allowed set (always also accepts `na` and `?`).
+There is no `y/n` default: a criterion with no values is an error. A class whose constructions ask different questions lists them under `construction_criteria` instead. `coding/generate_sheets.py` applies per-column dropdown validation using these values. `coding/import-sheets` validates each cell against its allowed set (always also accepts `na` and `?`).
 
-`diagnostics_{lang_id}.yaml` is also what notebook generation reads — `generate-notebooks` takes each language's analysis classes from it. Adding a class there and running `generate-notebooks --apply` includes it in the notebooks; its section header is the class's `display_name` in `schemas/diagnostic_classes.yaml`.
+On the diagnostics Sheet and the proposal sheet the same file is shown as rows (`Class`, `Language`, `Constructions`, `Criteria`), criteria in brace syntax, e.g. `accented{y/n/both}, independence{y/n/na}`.
+
+It is also what notebook generation reads — `generate-notebooks` takes each language's analysis classes from it. Adding a class there and running `generate-notebooks --apply` includes it in the notebooks; its section header is the class's `display_name` in `schemas/diagnostic_classes.yaml`.
 
 ---
 
@@ -108,7 +107,7 @@ coded_data/
   {lang_id}/
     lang_setup/
       planar_{lang_id}-{date}.tsv
-      diagnostics_{lang_id}.tsv
+      diagnostics_{lang_id}.yaml
     {class_name}/
       {construction}.tsv              ← imported from Google Sheets
       archive/                        ← old sheets archived to Drive (not local files)

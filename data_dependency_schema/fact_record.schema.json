@@ -16,7 +16,6 @@
         "collaborator_doc",
         "planar_tsv",
         "diagnostics_yaml",
-        "diagnostics_tsv",
         "construction_tsv",
         "schema_yaml",
         "derived_artifact",

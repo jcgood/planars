@@ -6,10 +6,10 @@
   ✓  Araona [arao1248]                   planar_arao1248.tsv
 
 ── DIAGNOSTICS ─────────────────────────────────────────────────────────
-  ✓  Araona [arao1248]                   diagnostics_arao1248.tsv
+  ✓  Araona [arao1248]                   diagnostics_arao1248.yaml
 
 ── CODEBOOK CONSISTENCY ────────────────────────────────────────────────
-  ✓  diagnostics TSVs match diagnostic_classes.yaml
+  ✓  diagnostics files match diagnostic_classes.yaml
 
 ── ANALYSIS CONSISTENCY ────────────────────────────────────────────────
   ✓  Module _REQUIRED_CRITERIA all defined in diagnostic_criteria.yaml

@@ -47,40 +47,31 @@
   description: which classes/constructions/criteria are in scope for a language's diagnostics
   locations:
     - {entity: diagnostics_yaml, detail: "coded_data/{lang}/lang_setup/diagnostics_{lang_id}.yaml -- coordinator-facing source of truth"}
-    - {entity: diagnostics_tsv, detail: "coded_data/{lang}/lang_setup/diagnostics_{lang_id}.tsv"}
     - {entity: diagnostics_sheet, detail: "the live diagnostics spreadsheet (diagnostics_spreadsheet_id)"}
   authoritative: diagnostics_yaml
   cascade:
     direction: automatic
     mechanism: >-
-      sync-diagnostics-yaml (default) regenerates diagnostics_tsv from
-      diagnostics_yaml; sync-diagnostics-yaml --to-sheet pushes the same
-      content to diagnostics_sheet. Both run automatically in data-refresh.yml.
+      sync-diagnostics-yaml --apply pushes diagnostics_yaml's content to
+      diagnostics_sheet, in data-refresh.yml every day. Every command reads
+      diagnostics_yaml itself (make_forms._read_diagnostics_for_language).
   drift_risk:
     possible: true
     note: >-
-      A coordinator can edit diagnostics_yaml locally and forget to run
-      sync-diagnostics-yaml --apply before committing. (A collaborator's edit
-      to diagnostics_sheet used to be silently overwritten by the next
-      --to-sheet push; since unit 11b, 2026-10-24, the Sheet is read-only for
-      them, and changes are proposed on the proposal sheet.) A third, more severe case: diagnostics_yaml can go
-      missing entirely while diagnostics_tsv survives -- not drift between two
-      live copies, but total loss of the authoritative source with the
-      derived artifact left behind as if nothing were wrong.
-      coding.make_forms._read_diagnostics_for_language() falls back to
-      reading diagnostics_tsv directly whenever diagnostics_yaml.exists() is
-      false (originally meant only for languages never migrated to the
-      YAML-first workflow), so this failure mode produces no error anywhere
-      in the ordinary pipeline -- it was only found because a test-fixture
-      regeneration (tests/make_synthetic_lang.py --clean --apply) deleted
-      synth0001's YAML and the script never regenerated one (see #254).
+      The Sheet lags a YAML edit until the next refresh (or a by-hand
+      sync-diagnostics-yaml --apply); it is read-only for annotators since
+      unit 11b, 2026-10-24, so nothing on it is lost. Until 2026-10-27 a
+      third copy, diagnostics_{lang_id}.tsv, was regenerated from the YAML,
+      and the reader fell back to it when the YAML was missing: a lost YAML
+      then produced no error anywhere (found when tests/make_synthetic_lang.py
+      --clean --apply deleted synth0001's YAML, #254). The TSV was deleted
+      (ownership-design Q5); a missing YAML is now an error in every reader.
     caught_by: >-
-      the daily refresh's sync-diagnostics-yaml --apply step catches
-      the first case. The third case (missing YAML)
-      is now caught by check-codebook's check 7
-      (_check_diagnostics_yaml_exists): hard error if any
-      diagnostics_{lang_id}.tsv has no matching .yaml. Runs in CI on every
-      push per check-codebook's own invocation.
+      the daily refresh's sync-diagnostics-yaml --apply step (a YAML that
+      fails validation files diagnostics-yaml-error); integrity-check's
+      DIAGNOSTICS section (a missing YAML); check-codebook's check 7
+      (_check_no_diagnostics_tsv: a TSV copy written again by an older copy
+      of the tooling).
 
 - id: languages_metadata
   description: a language's Glottolog metadata plus project metadata (source, author, annotation_status)

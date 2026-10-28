@@ -33,7 +33,8 @@ Run: 2026-10-13, in this order:
         (since 2026-10-24: python -m coding sync-planar --lang stan1293 --apply)
     (add the class to diagnostics_stan1293.yaml)
     python -m coding sync-diagnostics-yaml --lang stan1293 --apply
-    python -m coding sync-diagnostics-yaml --to-sheet --lang stan1293 --apply
+        (then the same with the Sheet flag, retired 2026-10-27: the
+        command now does only the Sheet, and there is no TSV copy)
     python -m coding generate-sheets --lang stan1293 --apply
     python migrations/move_biuniqueness_to_stan1293.py copy --apply
     (remove the class from diagnostics_synth0001.yaml, sync it the same way)

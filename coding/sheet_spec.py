@@ -49,8 +49,8 @@ in the form check-notes strips before looking for new notes.
 The planar Sheet is one tab holding exactly ``planar_{lang_id}.tsv``, the
 source: its header, then its rows. The diagnostics Sheet is one tab holding
 exactly what ``diagnostics_{lang_id}.yaml``, its source, renders to
-(``make_forms._yaml_to_tsv_df``, which also writes the TSV copy and is what
-``sync-diagnostics-yaml --to-sheet`` pushes). Both are read-only copies
+(``make_forms._yaml_to_grid_df``, what ``sync-diagnostics-yaml`` pushes).
+Both are read-only copies
 (Phase 10 unit 11b, docs/ownership-design.md § 3.1): every cell is the
 tooling's, the annotator is a reader by sharing, the tab is protected (the
 coordinators are writers on the root folder, which every file inherits), no
@@ -345,9 +345,9 @@ def copy_sheet_spec(kind: str, lang_id: str, data_dir: Path) -> CopySheetSpec:
                          keep_default_na=False)
     elif kind == DIAGNOSTICS_SHEET:
         import yaml
-        from .make_forms import _yaml_to_tsv_df
+        from .make_forms import _yaml_to_grid_df
         with open(lang_setup / f"diagnostics_{lang_id}.yaml", encoding="utf-8") as f:
-            df = _yaml_to_tsv_df(yaml.safe_load(f), lang_id)
+            df = _yaml_to_grid_df(yaml.safe_load(f), lang_id)
     else:
         raise ValueError(f"a {kind} is not a copy of one file")
     columns = tuple(ColumnSpec(str(c), TOOLING, None) for c in df.columns)

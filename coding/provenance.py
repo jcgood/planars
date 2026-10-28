@@ -13,8 +13,8 @@ ends, however it ends).
 ``writes_to_drive`` stays here: the door asks it whether an invocation may
 write at all. It is driven by each command's operations.yaml
 `writes_to_drive` field, gated per actual invocation, not per command --
-e.g. sync-diagnostics-yaml --apply (the default direction, local TSV only)
-may not write to Drive, but sync-diagnostics-yaml --to-sheet --apply may.
+e.g. generate-sheets with no flags may not write to Drive, but
+generate-sheets --regen-dependents may (a mode with no --apply gate).
 See coding/gating.py's gate_satisfied() for how a record's or mode's gate
 is matched against real args. A write a command makes on every run, a dry
 run included, is declared in its record's `always_on_writes` (import-sheets'

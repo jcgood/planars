@@ -290,23 +290,18 @@ def import_error_body(text: str) -> str:
     return "".join(out)
 
 
-def diagnostics_yaml_error_body(tsv_output: Optional[str], sheet_output: Optional[str]) -> str:
-    out = [
+def diagnostics_yaml_error_body(output: str) -> str:
+    return "".join([
         f"## Diagnostics YAML validation errors — {today()}\n\n",
         "One or more languages' `diagnostics_{lang_id}.yaml` failed validation\n"
-        "during the daily data refresh, so their TSV and/or diagnostics Google Sheet\n"
-        "were not updated.\n\n",
+        "during the daily data refresh, so their diagnostics Google Sheet\n"
+        "was not updated.\n\n",
         "## What to do\n\n",
         "Fix the errors named below in the language's `diagnostics_{lang_id}.yaml`,\n"
-        "then run `python -m coding sync-diagnostics-yaml --apply` (and\n"
-        "`--to-sheet --apply` if the Sheet also needs updating).\n\n",
-        "The issue closes automatically once both directions run clean.\n",
-    ]
-    if tsv_output is not None:
-        out.append("\n## YAML → TSV direction\n\n" + _details("Show full output", tsv_output))
-    if sheet_output is not None:
-        out.append("\n## YAML → Sheet direction\n\n" + _details("Show full output", sheet_output))
-    return "".join(out)
+        "then run `python -m coding sync-diagnostics-yaml --apply`.\n\n",
+        "The issue closes automatically once it runs clean.\n",
+        "\n## Full log\n\n" + _details("Show full output", output),
+    ])
 
 
 def regen_dependents_body(output: str) -> str:
@@ -359,7 +354,7 @@ def codebook_error_body(report: str, prompts: str) -> str:
     out.append("What to do depends on the specific error:\n")
     out.append("- **Span rule hash mismatch** — paste the Claude prompt below into a new conversation, review the proposed changes, then run `python -m coding sync-span-rule-hashes --apply`\n")
     out.append("- **Criterion missing from `diagnostic_criteria.yaml`** — add an entry to `schemas/diagnostic_criteria.yaml`\n")
-    out.append("- **TSV class/criteria mismatch** — update `diagnostics_{lang_id}.yaml` and run `python -m coding sync-diagnostics-yaml --apply`\n")
+    out.append("- **Diagnostics class/criteria mismatch** — update `diagnostics_{lang_id}.yaml` (the daily refresh carries it to the sheets)\n")
     out.append("\nThe issue closes automatically when `check-codebook` passes.\n")
     out.append("\n## Full log\n\n" + _details("Show full codebook check output", report))
     if prompts.strip():
@@ -423,7 +418,6 @@ class Refresh:
     outcomes: List[tuple] = field(default_factory=list)   # (step, outcome)
     uncovered_failures: List[str] = field(default_factory=list)
     started: Optional[str] = None            # change-log time the run began
-    diag_tsv: Optional[Result] = None
 
     def summary(self, title: str, text: str) -> None:
         """Add a section to the Actions run's summary page, when there is one."""
@@ -495,17 +489,11 @@ def check_comments(r: Refresh) -> None:
     r.unreported("collaborator comments", run("check-comments", "--apply"))
 
 
-def diagnostics_to_tsv(r: Refresh) -> None:
-    r.diag_tsv = run("sync-diagnostics-yaml", "--apply")
-
-
 def diagnostics_to_sheet(r: Refresh) -> None:
-    sheet = run("sync-diagnostics-yaml", "--to-sheet", "--apply")
-    tsv = r.diag_tsv
-    r.summary("Diagnostics YAML sync", ((tsv.output if tsv else "") + sheet.output) or "(no output)")
-    failed = (tsv is not None and not tsv.ok) or not sheet.ok
-    r.report("diagnostics-yaml-error", failed, "Diagnostics YAML validation errors",
-             lambda: diagnostics_yaml_error_body(tsv.output if tsv else None, sheet.output),
+    sheet = run("sync-diagnostics-yaml", "--apply")
+    r.summary("Diagnostics YAML sync", sheet.output or "(no output)")
+    r.report("diagnostics-yaml-error", not sheet.ok, "Diagnostics YAML validation errors",
+             lambda: diagnostics_yaml_error_body(sheet.output),
              "Diagnostics YAML validation passed")
 
 
@@ -679,8 +667,7 @@ STEPS: List[Step] = [
     Step("notes", "check-notes --apply (files its own collaborator-notes issues)", check_notes),
     Step("comments", "check-comments --apply (files its own collaborator-comments issues)",
          check_comments),
-    Step("diagnostics tsv", "sync-diagnostics-yaml --apply", diagnostics_to_tsv),
-    Step("diagnostics sheet", "sync-diagnostics-yaml --to-sheet --apply → diagnostics-yaml-error",
+    Step("diagnostics sheet", "sync-diagnostics-yaml --apply → diagnostics-yaml-error",
          diagnostics_to_sheet),
     Step("proposal sheets", "proposal-sheets --apply (files its own proposal issues)",
          proposal_sheets),

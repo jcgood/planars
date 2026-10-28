@@ -1,6 +1,6 @@
 # Diagnostic Classes
 # Normative schema for the linguistic content of analysis classes used in
-# diagnostics_{lang_id}.tsv: what each class is, when it applies, and how it
+# diagnostics_{lang_id}.yaml: what each class is, when it applies, and how it
 # derives spans. Process/tracking state for the same classes (review status,
 # whether collection is required, the sheet-facing instructions, the
 # span_rule integrity hash) lives in schemas/diagnostic_classes_status.yaml
@@ -28,7 +28,7 @@
 #   - Planar structure concepts (what positions, elements, keystone are)
 #     → see schemas/planar.yaml
 #   - Per-language instances of these classes
-#     → see coded_data/{lang_id}/lang_setup/diagnostics_{lang_id}.tsv
+#     → see coded_data/{lang_id}/lang_setup/diagnostics_{lang_id}.yaml
 #   - Review status, collection requirement, sheet instructions, or the
 #     span_rule_hash integrity check for these classes
 #     → see schemas/diagnostic_classes_status.yaml
@@ -39,16 +39,16 @@
 #   schemas/diagnostic_classes_status.yaml — process/tracking state for the same classes
 #   schemas/planar.yaml                    — planar structure ontology (positions, elements, columns)
 #   schemas/terms.yaml                     — analytical vocabulary (strict/loose span, partial/complete)
-#   diagnostics_{lang_id}.tsv              — per-language instance of these classes, validated against this file
+#   diagnostics_{lang_id}.yaml             — per-language instance of these classes, validated against this file
 #   docs/analyses.md                       — human reader's guide pointing to all schema files
 #
-# check-codebook validates diagnostics_{lang_id}.tsv against this file:
+# check-codebook validates diagnostics_{lang_id}.yaml against this file:
 #   - required diagnostic criteria must be present as columns
 #   - conditional classes should have applicability_conditions met
 #   - construction names follow the naming rules for each specificity type
 #
 # Human-editable workflow: edit this file, then ask Claude to propagate changes
-# to diagnostics_{lang_id}.tsv and scaffold any new analysis modules.
+# to diagnostics_{lang_id}.yaml and scaffold any new analysis modules.
 #
 # Fields:
 #   name                     machine name (matches planars/ module and coded_data/ folder;
@@ -60,7 +60,7 @@
 #   applicability_conditions prose description of when a conditional class applies
 #   specificity              general | construction_specific
 #   known_constructions      non-exhaustive examples (construction_specific classes only)
-#   required_criteria        diagnostic criterion columns that must appear in diagnostics_{lang_id}.tsv for this class
+#   required_criteria        diagnostic criterion columns that must appear in diagnostics_{lang_id}.yaml for this class
 #   optional_criteria        diagnostic criterion columns that may appear but are not required
 #   keystone_active_default  true | false | "[NEEDS REVIEW]"
 #                            Whether the keystone position (v:verbstem) is an active

@@ -119,9 +119,6 @@ class Env:
     def planar_path(self, lang: str) -> Path:
         return self.coded / lang / "lang_setup" / f"planar_{lang}.tsv"
 
-    def diagnostics_tsv_path(self, lang: str) -> Path:
-        return self.coded / lang / "lang_setup" / f"diagnostics_{lang}.tsv"
-
     def diagnostics_yaml_path(self, lang: str) -> Path:
         return self.coded / lang / "lang_setup" / f"diagnostics_{lang}.yaml"
 
@@ -152,9 +149,6 @@ class Env:
         self._edit_elements(lang, old, news)
 
     def rename_class_in_diagnostics(self, lang: str, old: str, new: str) -> None:
-        tsv_path = self.diagnostics_tsv_path(lang)
-        tsv_path.write_text(
-            tsv_path.read_text(encoding="utf-8").replace(old, new), encoding="utf-8")
         yaml_path = self.diagnostics_yaml_path(lang)
         yaml_path.write_text(
             yaml_path.read_text(encoding="utf-8").replace(f"{old}:", f"{new}:"),
@@ -480,7 +474,7 @@ def test_rename_class_dry_run_does_not_write_even_after_preflight_passes(env):
 # Finding 17: --apply must refuse to run against a dirty coded_data/ tree,
 # same as import-sheets/update-sheets/sync-params/generate-sheets
 # --regen-dependents -- this file reads planar_{lang_id}.tsv and
-# diagnostics_{lang_id}.tsv from coded_data/ as its source of truth for the
+# diagnostics_{lang_id}.yaml from coded_data/ as its source of truth for the
 # new sheet structure just like those commands do, and is the single most
 # destructive command in the project (archive-then-recreate, no rollback).
 # coded_data_clean_tree is enforced centrally at the python -m coding

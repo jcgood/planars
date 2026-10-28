@@ -546,30 +546,27 @@ def _collect_spans_sheets(gc, manifest, lang_id: Optional[str] = None):
 # ---------------------------------------------------------------------------
 
 def _read_expected_constructions(lang_dir: Path) -> Dict[str, list]:
-    """Read diagnostics_{lang_id}.tsv and return {class_name: [constructions]}.
+    """Read diagnostics_{lang_id}.yaml and return {class_name: [constructions]}.
 
-    Returns {} if the diagnostics file is absent or cannot be parsed.
-    Used by language_completeness to determine Layer 1 completeness: which
-    constructions are expected but not yet present in coded_data/.
+    Returns {} if the language has no diagnostics file yet; a file that
+    cannot be read raises (a broken file is never reported as "nothing
+    expected"). Used by language_completeness to determine Layer 1
+    completeness: which constructions are expected but not yet present in
+    coded_data/.
     """
     lang_id = lang_dir.name
-    diag_path = lang_dir / "lang_setup" / f"diagnostics_{lang_id}.tsv"
+    diag_path = lang_dir / "lang_setup" / f"diagnostics_{lang_id}.yaml"
     if not diag_path.exists():
         return {}
-    try:
-        df = pd.read_csv(diag_path, sep="\t", dtype=str, keep_default_na=False)
-        result: Dict[str, list] = {}
-        for _, row in df.iterrows():
-            class_name = str(row.get("Class", "")).strip()
-            constructions_raw = str(row.get("Constructions", "")).strip()
-            if not class_name or not constructions_raw:
-                continue
-            constructions = [c.strip() for c in constructions_raw.split(",") if c.strip()]
-            if constructions:
-                result.setdefault(class_name, []).extend(constructions)
-        return result
-    except Exception:
-        return {}
+    with open(diag_path, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    result: Dict[str, list] = {}
+    for class_name, class_data in (data.get("classes") or {}).items():
+        constructions = [str(c).strip() for c in (class_data or {}).get("constructions") or []
+                         if str(c).strip()]
+        if constructions:
+            result[class_name] = constructions
+    return result
 
 # Trailing sheet columns that are not annotation criteria (e.g. free-text notes),
 # from schemas/planar.yaml.
@@ -645,7 +642,7 @@ def language_completeness(
 
     Covers three layers for source="local":
       Layer 1 — construction completeness: constructions declared in
-        diagnostics_{lang_id}.tsv but not yet present in coded_data/ are
+        diagnostics_{lang_id}.yaml but not yet present in coded_data/ are
         included with {"total": 0, "filled": 0, "blank": 0, "missing": True}.
       Layer 2 — cell completeness: for present TSVs, counts filled vs. blank
         criterion cells (excluding Comments and structural columns).
@@ -663,7 +660,7 @@ def language_completeness(
             raise ValueError("repo_root is required when source='local'")
         lang_dir = Path(repo_root) / "coded_data" / lang_id
 
-        # Layer 1: expected constructions from diagnostics_{lang_id}.tsv.
+        # Layer 1: expected constructions from diagnostics_{lang_id}.yaml.
         expected = _read_expected_constructions(lang_dir)
 
         # Collect all class names: declared in diagnostics + present in coded_data.

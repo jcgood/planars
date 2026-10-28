@@ -1,4 +1,5 @@
-"""Snapshot tests for `python -m coding sync-diagnostics-yaml --to-sheet`.
+"""Snapshot tests for `python -m coding sync-diagnostics-yaml` (the
+diagnostics Sheet push; `--to-sheet` until the TSV copy went, 2026-10-27).
 
 File 8 of 18 migrated to the Drive doorway (#271), and the first that writes to
 a *reference* sheet — one nobody annotates, holding the list of classes,
@@ -41,7 +42,7 @@ from coding import drive as drive_module
 from coding import drive_doorway
 from coding import sync_diagnostics_yaml as sdy
 from coding.locked_tabs import PROTECTION_DESCRIPTION, protect
-from coding.make_forms import _yaml_to_tsv_df
+from coding.make_forms import _yaml_to_grid_df
 from command_runner import run_command
 from fake_drive import (MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway,
                         use_frozen_coded_data)
@@ -115,7 +116,7 @@ def sheet(doorway, lang=LANG):
 def yaml_rows(lang=LANG) -> List[List[str]]:
     """What the sheet should say, straight from the language's YAML."""
     path = sdy.CODED_DATA / lang / "lang_setup" / f"diagnostics_{lang}.yaml"
-    df = _yaml_to_tsv_df(yaml.safe_load(path.read_text(encoding="utf-8")), lang)
+    df = _yaml_to_grid_df(yaml.safe_load(path.read_text(encoding="utf-8")), lang)
     return [list(df.columns)] + [[str(v) for v in row] for _, row in df.iterrows()]
 
 
@@ -137,28 +138,28 @@ def make_stale(doorway, lang=LANG) -> None:
 def test_dry_run_transcript(env):
     """Every language, sheets as recorded — the ordinary "nothing to do" run."""
     _, run = env
-    check_snapshot("dry_run.txt", run(["sdy", "--to-sheet"]))
+    check_snapshot("dry_run.txt", run(["sdy"]))
 
 
 def test_dry_run_against_a_stale_sheet_transcript(env):
     """Names the classes that would be removed, added and changed."""
     doorway, run = env
     make_stale(doorway)
-    check_snapshot("dry_run_stale.txt", run(["sdy", "--to-sheet", "--lang", LANG]))
+    check_snapshot("dry_run_stale.txt", run(["sdy", "--lang", LANG]))
 
 
 def test_apply_transcript(env):
     doorway, run = env
     make_stale(doorway)
     check_snapshot("apply_stale.txt",
-                   run(["sdy", "--to-sheet", "--lang", LANG, "--apply"]))
+                   run(["sdy", "--lang", LANG, "--apply"]))
 
 
-# coded_data_clean_tree (all three directions) is enforced centrally at the
-# python -m coding dispatch chokepoint now, not inside sdy.main() itself --
-# see coding/preconditions.py and tests/test_preconditions.py, which cover
-# this command's precise gating (including its (".yaml", ".tsv") extensions
-# exception) directly against the real operations.yaml record.
+# coded_data_clean_tree is enforced centrally at the python -m coding
+# dispatch chokepoint, not inside sdy.main() itself -- see
+# coding/preconditions.py and tests/test_preconditions.py, which cover this
+# command's precise gating (including its extensions exception) directly
+# against the real operations.yaml record.
 
 # ---------------------------------------------------------------------------
 # The dry run is a dry run
@@ -168,21 +169,21 @@ def test_dry_run_touches_nothing(env):
     doorway, run = env
     make_stale(doorway)
     before = sheet(doorway).get_all_values()
-    out = run(["sdy", "--to-sheet", "--lang", LANG])
+    out = run(["sdy", "--lang", LANG])
 
     assert doorway.mutations == []
     assert sheet(doorway).get_all_values() == before
     # And it ends with the exact line to copy — flags included, so nobody has
     # to reassemble the invocation they just made.
     assert ("  → run: python -m coding sync-diagnostics-yaml "
-            f"--to-sheet --lang {LANG} --apply") in out
+            f"--lang {LANG} --apply") in out
 
 
 @pytest.mark.parametrize("argv, expected", [
-    (["sdy", "--to-sheet"],
-     "python -m coding sync-diagnostics-yaml --to-sheet --apply"),
-    (["sdy", "--to-sheet", "--lang", LANG],
-     f"python -m coding sync-diagnostics-yaml --to-sheet --lang {LANG} --apply"),
+    (["sdy"],
+     "python -m coding sync-diagnostics-yaml --apply"),
+    (["sdy", "--lang", LANG],
+     f"python -m coding sync-diagnostics-yaml --lang {LANG} --apply"),
 ])
 def test_the_next_step_is_the_same_run_with_apply(env, argv, expected):
     doorway, run = env
@@ -193,7 +194,7 @@ def test_the_next_step_is_the_same_run_with_apply(env, argv, expected):
 def test_a_dry_run_with_nothing_to_do_offers_no_next_step(env):
     """A `→ run:` line that changes nothing would be an instruction to churn."""
     _, run = env
-    out = run(["sdy", "--to-sheet", "--lang", LANG])
+    out = run(["sdy", "--lang", LANG])
     assert "→ run:" not in out
 
 
@@ -204,7 +205,7 @@ def test_a_dry_run_with_nothing_to_do_offers_no_next_step(env):
 def test_apply_makes_the_sheet_match_the_yaml(env):
     doorway, run = env
     make_stale(doorway)
-    run(["sdy", "--to-sheet", "--lang", LANG, "--apply"])
+    run(["sdy", "--lang", LANG, "--apply"])
     assert sheet(doorway).get_all_values() == yaml_rows()
 
 
@@ -215,14 +216,14 @@ def test_a_shrunk_yaml_leaves_no_rows_behind(env):
     ws.update([["a_retired_class", LANG, "general", "V-combines"]],
               f"A{len(ws.get_all_values()) + 1}")
 
-    run(["sdy", "--to-sheet", "--lang", LANG, "--apply"])
+    run(["sdy", "--lang", LANG, "--apply"])
     assert sheet(doorway).get_all_values() == yaml_rows()
 
 
 def test_a_sheet_that_already_agrees_is_not_rewritten(env):
     """No churn, and no revision in the Sheet's history saying nothing changed."""
     doorway, run = env
-    out = run(["sdy", "--to-sheet", "--lang", LANG, "--apply"])
+    out = run(["sdy", "--lang", LANG, "--apply"])
     assert "already up to date" in out
     assert doorway.mutations == []
 
@@ -230,10 +231,10 @@ def test_a_sheet_that_already_agrees_is_not_rewritten(env):
 def test_a_second_apply_is_a_no_op(env):
     doorway, run = env
     make_stale(doorway)
-    run(["sdy", "--to-sheet", "--lang", LANG, "--apply"])
+    run(["sdy", "--lang", LANG, "--apply"])
     doorway.clear_mutations()
 
-    out = run(["sdy", "--to-sheet", "--lang", LANG, "--apply"])
+    out = run(["sdy", "--lang", LANG, "--apply"])
     assert "already up to date" in out
     assert doorway.mutations == []
 
@@ -261,7 +262,7 @@ def test_a_change_to_a_second_row_of_a_class_names_the_construction(env):
     ws.clear()
     ws.update(rows, "A1")
 
-    out = run(["sdy", "--to-sheet", "--lang", LANG, "--apply"])
+    out = run(["sdy", "--lang", LANG, "--apply"])
     assert "~ changed: phrasal_accent / general" in out
     assert "prescreening" not in out                  # the untouched row stays quiet
     assert sheet(doorway).get_all_values() == yaml_rows()
@@ -276,7 +277,7 @@ def test_a_whole_row_removed_from_a_two_row_class_is_named(env):
     ws.clear()
     ws.update(rows[:general] + rows[general + 1:], "A1")   # drop phrasal_accent / general
 
-    out = run(["sdy", "--to-sheet", "--lang", LANG])
+    out = run(["sdy", "--lang", LANG])
     assert "+ added:   phrasal_accent / general" in out
 
 
@@ -290,7 +291,7 @@ def test_a_one_row_class_is_still_reported_by_class_alone(env):
     ws.clear()
     ws.update(rows, "A1")
 
-    out = run(["sdy", "--to-sheet", "--lang", LANG])
+    out = run(["sdy", "--lang", LANG])
     assert "~ changed: ciscategorial\n" in out
 
 
@@ -302,7 +303,7 @@ def test_a_sheet_missing_the_constructions_column_still_gets_a_report(env):
     ws.clear()
     ws.update(rows, "A1")
 
-    out = run(["sdy", "--to-sheet", "--lang", LANG])
+    out = run(["sdy", "--lang", LANG])
     assert "~ changed: ciscategorial" in out
     assert "Would update → diagnostics Sheet" in out
 
@@ -326,7 +327,7 @@ def test_a_yaml_with_errors_never_reaches_the_sheet(env, monkeypatch, tmp_path):
     monkeypatch.setattr(sdy, "CODED_DATA", tmp_path)
     before = sheet(doorway).get_all_values()
 
-    out = run(["sdy", "--to-sheet", "--lang", LANG, "--apply"])
+    out = run(["sdy", "--lang", LANG, "--apply"])
     assert "ERROR" in out
     assert "fix errors above before uploading" in out
     assert doorway.mutations == []
@@ -337,44 +338,29 @@ def test_a_yaml_with_errors_never_reaches_the_sheet(env, monkeypatch, tmp_path):
     assert "[SystemExit: 1]" in out
 
 
-def test_the_default_direction_also_exits_non_zero_on_a_blocking_error(env, monkeypatch, tmp_path):
-    """Same issue #283 fix, the other direction: --to-sheet isn't the only
-    place this command silently swallowed a blocking validation error --
-    the default YAML-to-TSV direction had the identical gap, in the sibling
-    function one screen down in the same file.
-    """
-    _, run = env
-    lang_setup = tmp_path / LANG / "lang_setup"
+def test_a_language_with_no_yaml_is_skipped(env, monkeypatch, tmp_path):
+    doorway, run = env
+    monkeypatch.setattr(sdy, "CODED_DATA", tmp_path)
+    out = run(["sdy", "--lang", LANG, "--apply"])
+    assert "No YAML found" in out
+    assert doorway.mutations == []
+
+
+def test_a_language_with_no_sheet_recorded_is_skipped_not_created(env):
+    """It only updates; making the sheet is generate-sheets' job. The
+    language has a sound YAML, so the skip is the manifest's."""
+    doorway, run = env
+    lang_setup = sdy.CODED_DATA / "nyan1308" / "lang_setup"
     lang_setup.mkdir(parents=True)
-    (lang_setup / f"diagnostics_{LANG}.yaml").write_text(textwrap.dedent("""\
-        language: some_other_language
+    (lang_setup / "diagnostics_nyan1308.yaml").write_text(textwrap.dedent("""\
+        language: nyan1308
         classes:
           ciscategorial:
             constructions: [general]
             criteria:
               V-combines: [y, n]
         """), encoding="utf-8")
-    monkeypatch.setattr(sdy, "CODED_DATA", tmp_path)
-
-    out = run(["sdy", "--lang", LANG, "--apply"])
-    assert "ERROR" in out
-    assert "fix errors above before applying" in out
-    assert not (lang_setup / f"diagnostics_{LANG}.tsv").exists()
-    assert "[SystemExit: 1]" in out
-
-
-def test_a_language_with_no_yaml_is_skipped(env, monkeypatch, tmp_path):
-    doorway, run = env
-    monkeypatch.setattr(sdy, "CODED_DATA", tmp_path)
-    out = run(["sdy", "--to-sheet", "--lang", LANG, "--apply"])
-    assert "No YAML found" in out
-    assert doorway.mutations == []
-
-
-def test_a_language_with_no_sheet_recorded_is_skipped_not_created(env):
-    """`--to-sheet` only updates; making the sheet is generate-sheets' job."""
-    doorway, run = env
-    out = run(["sdy", "--to-sheet", "--lang", "nyan1308", "--apply"])
+    out = run(["sdy", "--lang", "nyan1308", "--apply"])
     assert "No diagnostics_spreadsheet_id in manifest" in out
     assert doorway.mutations == []
 
@@ -385,7 +371,7 @@ def test_one_unreachable_sheet_does_not_stop_the_others(env):
     make_stale(doorway, "arao1248")
     del doorway._spreadsheets[DIAG_ID[LANG]]
 
-    out = run(["sdy", "--to-sheet", "--apply"])
+    out = run(["sdy", "--apply"])
     assert f"[{LANG}] Could not read Sheet" in out
     assert sheet(doorway, "synth0001").get_all_values() == yaml_rows("synth0001")
     # arao1248 also updates: its own non-blocking error (missing proform
@@ -403,20 +389,10 @@ def test_an_unprotected_sheet_is_protected_once(env):
     ws = ss.sheet1
     ss._protected_ranges.clear()      # as recorded, before unit 11b
 
-    out = run(["sdy", "--to-sheet", "--lang", LANG, "--apply"])
+    out = run(["sdy", "--lang", LANG, "--apply"])
     assert f"[{LANG}] Protected the diagnostics Sheet" in out
     assert any(p.get("description") == PROTECTION_DESCRIPTION
                for p in ss.list_protected_ranges(ws.id))
     doorway.clear_mutations()
-    run(["sdy", "--to-sheet", "--lang", LANG, "--apply"])
-    assert doorway.mutations == []
-
-
-# ---------------------------------------------------------------------------
-# The other direction does not go near Drive
-# ---------------------------------------------------------------------------
-
-def test_the_local_direction_touches_no_sheet(env):
-    doorway, run = env
-    run(["sdy"])
+    run(["sdy", "--lang", LANG, "--apply"])
     assert doorway.mutations == []

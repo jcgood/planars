@@ -105,13 +105,13 @@ def test_no_schema_owned_value_is_typed_into_code():
 def _declared_column_groups() -> List[Tuple[str, frozenset]]:
     """Each group of columns the schemas declare together, with where to read it."""
     from coding.schemas import load_diagnostic_classes
-    from coding.make_forms import DIAGNOSTICS_TSV_COLUMNS
+    from coding.make_forms import DIAGNOSTICS_GRID_COLUMNS
     groups = [
         ("planars.schema_values.ELEMENT_ROW_COLUMNS (or row_columns)",
          frozenset(schema_values.ELEMENT_ROW_COLUMNS)),
         ("planars.schema_values.TRAILING_COLUMNS", frozenset(schema_values.TRAILING_COLUMNS)),
         ("planars.schema_values.STATUS_COLUMNS", frozenset(schema_values.STATUS_COLUMNS)),
-        ("coding.make_forms.DIAGNOSTICS_TSV_COLUMNS", frozenset(DIAGNOSTICS_TSV_COLUMNS)),
+        ("coding.make_forms.DIAGNOSTICS_GRID_COLUMNS", frozenset(DIAGNOSTICS_GRID_COLUMNS)),
     ]
     groups += [(f"planars.schema_values.PAIR_ROW_SHAPES[{name!r}] (or row_columns/row_key)",
                 frozenset(cols)) for name, cols in schema_values.PAIR_ROW_SHAPES.items()]

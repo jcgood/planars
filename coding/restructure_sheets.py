@@ -50,9 +50,7 @@ Run from the repo root:
     Without these flags, renamed positions/elements are treated as drops + new blank rows.
 
     IMPORTANT for --rename-class: update diagnostics_{lang_id}.yaml to use the new class name
-    BEFORE running this command, then run
-        python -m coding sync-diagnostics-yaml --apply
-    to regenerate the TSV.
+    BEFORE running this command.
     The pre-flight check will abort if the old name is still present in any language's
     diagnostics file, or if the new name is absent.
 
@@ -1103,9 +1101,9 @@ def _preflight_rename_class(
     For each rename pair (old_class -> new_class), every language that has
     old_class in the manifest must also have new_class in its diagnostics file
     (and must NOT have old_class in it).  This enforces the required
-    ordering: edit diagnostics_{lang_id}.yaml first (and run
-    sync-diagnostics-yaml --apply), then rename.  The file is read the way
-    every command reads it: the YAML, or the TSV only if there is no YAML.
+    ordering: edit diagnostics_{lang_id}.yaml first, then rename.  The file
+    is read the way every command reads it
+    (``make_forms._read_diagnostics_for_language``).
     """
     errors = []
     for planar_file in planar_files:
@@ -1570,7 +1568,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     # coded_data_clean_tree is enforced centrally at the python -m coding
     # dispatch chokepoint now -- see coding/preconditions.py -- not here. It
     # still guards against exactly what it always has: this command reads
-    # planar_{lang_id}.tsv/diagnostics_{lang_id}.tsv from coded_data/ as its
+    # planar_{lang_id}.tsv/diagnostics_{lang_id}.yaml from coded_data/ as its
     # source of truth for the new sheet structure, and is the single most
     # destructive command in the project (archive-then-recreate). Phase 7 of
     # the data layer redesign (issue #271) closed the "no rollback" half of

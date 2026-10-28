@@ -286,11 +286,12 @@ def _make_planar_file(tmp_path, lang_id: str) -> "Path":
 
 
 def _make_diagnostics(tmp_path, lang_id: str, classes: list[str]) -> None:
-    """Write a minimal diagnostics_{lang_id}.tsv with the given class names."""
-    lines = ["Class\tLanguage\tConstructions\tCriteria"]
+    """Write a minimal diagnostics_{lang_id}.yaml with the given class names."""
+    lines = [f"language: {lang_id}", "classes:"]
     for cls in classes:
-        lines.append(f"{cls}\t{lang_id}\tgeneral\tfree{{y/n}}")
-    (tmp_path / f"diagnostics_{lang_id}.tsv").write_text("\n".join(lines) + "\n")
+        lines += [f"  {cls}:", "    constructions: [general]", "    criteria:",
+                  "      free: [y, n]"]
+    (tmp_path / f"diagnostics_{lang_id}.yaml").write_text("\n".join(lines) + "\n")
 
 
 @pytest.fixture

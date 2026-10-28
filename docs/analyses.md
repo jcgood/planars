@@ -25,7 +25,7 @@ Each entry contains:
 | `applicability_conditions` | Prose description of when a conditional class applies |
 | `specificity` | `general` (one TSV per language) or `construction_specific` (one TSV per construction) |
 | `known_constructions` | Non-exhaustive examples for construction-specific classes |
-| `required_criteria` | Diagnostic criterion columns that must appear in `diagnostics_{lang_id}.tsv` |
+| `required_criteria` | Diagnostic criterion columns that must appear in `diagnostics_{lang_id}.yaml` |
 | `span_rule` | How the code decides which positions are inside the span — complete vs. partial, blocking conditions, etc. |
 
 `schemas/diagnostic_classes_status.yaml` carries each class's `status` (`stable`, `[NEEDS REVIEW]`, `[PLACEHOLDER]`, or `[AUTO-DERIVED]`), `criterion_set_status`, `collection_required`, `span_rule_hash`, `sheet_instructions`, and `include_planar_reference_tab` — see that file's own header for field docs.

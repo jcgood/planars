@@ -393,8 +393,8 @@ def build_plan(
 
     # Every other lang_setup/*.tsv — discovered generically rather than by
     # hardcoded filename, so a new file type
-    # doesn't require touching this script again. diagnostics_{lang_id}.tsv
-    # falls through to plain lang-ID substitution, same as before.
+    # doesn't require touching this script again. A file with no Element
+    # column falls through to plain lang-ID substitution.
     for tsv in sorted(src_pi.glob("*.tsv")):
         if tsv.name.startswith("planar_"):
             continue  # already handled above
@@ -411,12 +411,11 @@ def build_plan(
         else:
             plan.append((dst_path, text.replace(SRC_LANG, DST_LANG)))
 
-    # lang_setup/*.yaml — e.g. diagnostics_{lang_id}.yaml, the coordinator-
-    # facing source of truth diagnostics_{lang_id}.tsv is derived from
-    # (data_dependency_schema's diagnostics_scope fact). Plain lang-ID
-    # substitution, same as non-Element-keyed TSVs above -- copying the TSV
-    # without also copying the YAML it's derived from would leave synth0001
-    # with a derived artifact and no source of truth backing it.
+    # lang_setup/*.yaml — e.g. diagnostics_{lang_id}.yaml, the language's one
+    # diagnostics file (data_dependency_schema's diagnostics_scope fact).
+    # Plain lang-ID substitution, same as non-Element-keyed TSVs above.
+    # (Until 2026-10-27 a TSV copy of it was copied here too; leaving the
+    # YAML behind left synth0001 with the copy and no source, #254.)
     for yml in sorted(src_pi.glob("*.yaml")):
         dst_path = dst_pi / yml.name.replace(SRC_LANG, DST_LANG)
         plan.append((dst_path, yml.read_text().replace(SRC_LANG, DST_LANG)))

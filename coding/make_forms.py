@@ -8,13 +8,14 @@ expect). The language ID comes from
 the filename, with or without a hyphenated datestamp (``planar_stan1293.tsv``,
 ``planar_stan1293-20260209.tsv``).
 
-``_read_diagnostics_for_language`` reads ``diagnostics_{lang_id}.yaml``, and
-falls back to the TSV only for a language that has no YAML yet. Every
-criterion lists its values (``free{y/n}`` in the TSV); one written without
+``_read_diagnostics_for_language`` reads ``diagnostics_{lang_id}.yaml``, the
+one diagnostics file (the TSV copy beside it was deleted 2026-10-27,
+ownership-design Q5); a language without one is an error. Every
+criterion lists its values (``free{y/n}`` in the grid); one written without
 values is an error, never a default. A class using ``construction_criteria``
 gives one row per construction, so each tab shows only its own criteria.
-``_yaml_to_tsv_df`` renders the YAML as rows (the TSV, the diagnostics
-Sheet and the proposal sheet's Diagnostics tab); ``_diff_diagnostics_tsv_yaml``
+``_yaml_to_grid_df`` renders the YAML as rows (the diagnostics Sheet and the
+proposal sheet's Diagnostics tab); ``_diff_diagnostics_grid_yaml``
 / ``_apply_yaml_diff`` turn rows edited on the proposal sheet back into YAML
 edits (accept-proposal). Nothing rebuilds the YAML from rows: a command that
 changes the YAML loads it with
@@ -334,17 +335,6 @@ def planar_to_manifest_dict(planar_path: Path, lang_id: str) -> dict:
     return {"keystone_pos": keystone_pos, "positions": positions}
 
 
-def _resolve_diagnostics_path(lang_id: str, data_dir: Path | str) -> Path:
-    """Find the language-specific diagnostics file in the lang_setup folder.
-
-    Expected name: diagnostics_{lang_id}.tsv
-    """
-    p = Path(data_dir) / f"diagnostics_{lang_id}.tsv"
-    if p.exists():
-        return p
-    raise FileNotFoundError(f"Could not find diagnostics_{lang_id}.tsv in {data_dir}")
-
-
 def _resolve_diagnostics_yaml_path(lang_id: str, data_dir: Path | str) -> Path:
     """Return the path for diagnostics_{lang_id}.yaml (may not exist yet)."""
     return Path(data_dir) / f"diagnostics_{lang_id}.yaml"
@@ -508,7 +498,7 @@ def resolve_keystone_na_criteria(
 
 
 # ---------------------------------------------------------------------------
-# TSV ↔ YAML serializers
+# YAML ↔ grid rows (the diagnostics Sheet, the proposal sheet's tab)
 # ---------------------------------------------------------------------------
 
 def _encode_criteria_dict(criteria_dict: Dict[str, List[str]]) -> List[str]:
@@ -526,16 +516,17 @@ def _encode_criteria_dict(criteria_dict: Dict[str, List[str]]) -> List[str]:
     return parts
 
 
-# The columns of diagnostics_{lang_id}.tsv, in order. The TSV is generated from
-# the YAML by _yaml_to_tsv_df below, so this, its writer, is the one statement
-# of its shape; readers and validators import it (hidden-facts R0).
-DIAGNOSTICS_TSV_COLUMNS = ["Class", "Language", "Constructions", "Criteria"]
+# The columns of the diagnostics grid (the diagnostics Sheet and the proposal
+# sheet's Diagnostics tab), in order. The grid is generated from the YAML by
+# _yaml_to_grid_df below, so this, its writer, is the one statement of its
+# shape; readers and validators import it (hidden-facts R0).
+DIAGNOSTICS_GRID_COLUMNS = ["Class", "Language", "Constructions", "Criteria"]
 
 
-def _yaml_to_tsv_df(yaml_data: dict, lang_id: str) -> pd.DataFrame:
-    """Convert a diagnostics YAML dict to a TSV-format DataFrame.
+def _yaml_to_grid_df(yaml_data: dict, lang_id: str) -> pd.DataFrame:
+    """Convert a diagnostics YAML dict to grid rows.
 
-    The returned DataFrame has the DIAGNOSTICS_TSV_COLUMNS.
+    The returned DataFrame has the DIAGNOSTICS_GRID_COLUMNS.
     Every criterion is encoded with its values in brace syntax (e.g.
     ``accented{y/n/both}``, ``free{y/n}``).
 
@@ -571,7 +562,7 @@ def _yaml_to_tsv_df(yaml_data: dict, lang_id: str) -> pd.DataFrame:
                 "Constructions": ", ".join(constructions),
                 "Criteria": ", ".join(_encode_criteria_dict(criteria_dict)),
             })
-    return pd.DataFrame(rows, columns=DIAGNOSTICS_TSV_COLUMNS)
+    return pd.DataFrame(rows, columns=DIAGNOSTICS_GRID_COLUMNS)
 
 
 def _parse_csv_list(value: str) -> List[str]:
@@ -599,8 +590,7 @@ def _parse_criterion_spec(spec: str) -> Tuple[str, List[str]]:
         return name.strip(), values
     raise ValueError(
         f"Criterion '{spec}' lists no values. Write it as {spec}{{v1/v2/...}} — "
-        f"there is no [y, n] default. (A diagnostics TSV is generated from the "
-        f"YAML: run python -m coding sync-diagnostics-yaml --apply to rewrite it.)")
+        f"there is no [y, n] default.")
 
 
 def _parse_criterion_specs(value: str) -> Tuple[List[str], Dict[str, List[str]]]:
@@ -622,26 +612,18 @@ def _read_diagnostics_for_language(
     language_id: str,
     data_dir: Path | str,
 ) -> List[Tuple[str, str, List[str], Dict[str, List[str]]]]:
-    """Read diagnostics for a language, preferring YAML over TSV.
-
-    Checks for diagnostics_{lang_id}.yaml first; falls back to
-    diagnostics_{lang_id}.tsv if the YAML is absent.
+    """Read a language's diagnostics from diagnostics_{lang_id}.yaml.
 
     Each row is (class_name, construction, criterion_names, criterion_values) where
     criterion_values maps each criterion name to its list of allowed values.
+    A missing YAML raises FileNotFoundError.
     """
     yaml_path = _resolve_diagnostics_yaml_path(language_id, data_dir)
-    if yaml_path.exists():
-        with open(yaml_path, encoding="utf-8") as f:
-            yaml_data = yaml.safe_load(f)
-        df = _yaml_to_tsv_df(yaml_data, language_id)
-    else:
-        diag_path = _resolve_diagnostics_path(language_id, data_dir)
-        df = pd.read_csv(diag_path, sep="\t", header=0, dtype=str, keep_default_na=False)
-
-    missing = set(DIAGNOSTICS_TSV_COLUMNS) - set(df.columns)
-    if missing:
-        raise ValueError(f"Diagnostics file missing required columns: {sorted(missing)}")
+    if not yaml_path.exists():
+        raise FileNotFoundError(f"Could not find diagnostics_{language_id}.yaml in {data_dir}")
+    with open(yaml_path, encoding="utf-8") as f:
+        yaml_data = yaml.safe_load(f) or {}
+    df = _yaml_to_grid_df(yaml_data, language_id)
 
     out: List[Tuple[str, str, List[str], Dict[str, List[str]]]] = []
 
@@ -666,15 +648,15 @@ def _read_diagnostics_for_language(
 
 
 # ---------------------------------------------------------------------------
-# TSV → YAML diff and apply
+# Grid → YAML diff and apply (accept-proposal)
 # ---------------------------------------------------------------------------
 
-def _diff_diagnostics_tsv_yaml(
-    tsv_df: pd.DataFrame,
+def _diff_diagnostics_grid_yaml(
+    grid_df: pd.DataFrame,
     yaml_data: dict,
     lang_id: str,
 ) -> "Tuple[List[Dict], List[Dict]]":
-    """Diff a diagnostics TSV DataFrame against a YAML dict.
+    """Diff diagnostics grid rows (a proposal sheet's tab) against a YAML dict.
 
     Parses both into a normalized structure and categorises each difference
     as deterministic (safe to auto-apply) or ambiguous (requires coordinator
@@ -685,12 +667,12 @@ def _diff_diagnostics_tsv_yaml(
         criterion_added, criterion_removed, criterion_values_changed
 
     Ambiguous changes:
-        unknown_class   — class in TSV not in YAML and no close match in schema
-        class_removed   — class in YAML absent from TSV (may be intentional)
+        unknown_class   — class in the grid not in YAML and no close match in schema
+        class_removed   — class in YAML absent from the grid (may be intentional)
         unknown_criterion — criterion not in diagnostic_criteria.yaml
 
     Args:
-        tsv_df: DataFrame with columns Class, Language, Constructions, Criteria.
+        grid_df: DataFrame with the DIAGNOSTICS_GRID_COLUMNS.
         yaml_data: dict loaded from diagnostics_{lang_id}.yaml.
         lang_id: language ID string.
 
@@ -713,11 +695,11 @@ def _diff_diagnostics_tsv_yaml(
             elif isinstance(crit, dict) and "name" in crit:
                 known_criteria.add(crit["name"])
 
-    # --- parse TSV into normalised structure ---
+    # --- parse the grid into normalised structure ---
     # Multiple rows for the same class (produced by construction_criteria classes) are
     # merged: constructions are unioned and criteria are aggregated into a flat dict.
-    tsv_classes: Dict[str, Dict] = {}
-    for _, row in tsv_df.iterrows():
+    grid_classes: Dict[str, Dict] = {}
+    for _, row in grid_df.iterrows():
         lang = str(row.get("Language", "")).strip()
         if lang != lang_id:
             continue
@@ -725,14 +707,14 @@ def _diff_diagnostics_tsv_yaml(
         constructions = set(_parse_csv_list(str(row.get("Constructions", ""))))
         crit_names, crit_values = _parse_criterion_specs(str(row.get("Criteria", "")))
         row_criteria = {n: crit_values[n] for n in crit_names}
-        if class_name not in tsv_classes:
-            tsv_classes[class_name] = {
+        if class_name not in grid_classes:
+            grid_classes[class_name] = {
                 "constructions": constructions,
                 "criteria": row_criteria,
             }
         else:
-            tsv_classes[class_name]["constructions"].update(constructions)
-            tsv_classes[class_name]["criteria"].update(row_criteria)
+            grid_classes[class_name]["constructions"].update(constructions)
+            grid_classes[class_name]["criteria"].update(row_criteria)
 
     # --- parse YAML into normalised structure ---
     # For classes with construction_criteria, flatten all per-construction criteria
@@ -752,12 +734,12 @@ def _diff_diagnostics_tsv_yaml(
     deterministic: List[Dict] = []
     ambiguous: List[Dict] = []
 
-    # --- classes in TSV but not in YAML ---
-    for class_name in tsv_classes:
+    # --- classes in the grid but not in YAML ---
+    for class_name in grid_classes:
         if class_name not in yaml_classes:
             # Serialize constructions as a sorted list — sets are not JSON-serializable.
-            serializable_data = {**tsv_classes[class_name],
-                                 "constructions": sorted(tsv_classes[class_name]["constructions"])}
+            serializable_data = {**grid_classes[class_name],
+                                 "constructions": sorted(grid_classes[class_name]["constructions"])}
             if class_name in known_classes:
                 deterministic.append({"kind": "class_added", "class_name": class_name,
                                       "data": serializable_data})
@@ -766,43 +748,43 @@ def _diff_diagnostics_tsv_yaml(
                 ambiguous.append({"kind": "unknown_class", "class_name": class_name,
                                   "suggestions": suggestions, "data": serializable_data})
 
-    # --- classes in YAML but not in TSV ---
+    # --- classes in YAML but not in the grid ---
     for class_name in yaml_classes:
-        if class_name not in tsv_classes:
+        if class_name not in grid_classes:
             ambiguous.append({"kind": "class_removed", "class_name": class_name})
 
     # --- classes present in both: diff constructions and criteria ---
-    for class_name in tsv_classes:
+    for class_name in grid_classes:
         if class_name not in yaml_classes:
             continue
-        tsv = tsv_classes[class_name]
+        grid = grid_classes[class_name]
         yml = yaml_classes[class_name]
 
-        for c in tsv["constructions"] - yml["constructions"]:
+        for c in grid["constructions"] - yml["constructions"]:
             deterministic.append({"kind": "construction_added", "class_name": class_name,
                                    "construction": c})
-        for c in yml["constructions"] - tsv["constructions"]:
+        for c in yml["constructions"] - grid["constructions"]:
             deterministic.append({"kind": "construction_removed", "class_name": class_name,
                                    "construction": c})
 
-        for crit in tsv["criteria"]:
+        for crit in grid["criteria"]:
             if crit not in yml["criteria"]:
                 if crit in known_criteria:
                     deterministic.append({"kind": "criterion_added", "class_name": class_name,
-                                          "criterion": crit, "values": tsv["criteria"][crit]})
+                                          "criterion": crit, "values": grid["criteria"][crit]})
                 else:
                     suggestions = get_close_matches(crit, known_criteria, n=3, cutoff=0.6)
                     ambiguous.append({"kind": "unknown_criterion", "class_name": class_name,
                                       "criterion": crit, "suggestions": suggestions,
-                                      "values": tsv["criteria"][crit]})
-            elif tsv["criteria"][crit] != yml["criteria"][crit]:
+                                      "values": grid["criteria"][crit]})
+            elif grid["criteria"][crit] != yml["criteria"][crit]:
                 deterministic.append({"kind": "criterion_values_changed",
                                       "class_name": class_name, "criterion": crit,
                                       "old_values": yml["criteria"][crit],
-                                      "new_values": tsv["criteria"][crit]})
+                                      "new_values": grid["criteria"][crit]})
 
         for crit in yml["criteria"]:
-            if crit not in tsv["criteria"]:
+            if crit not in grid["criteria"]:
                 deterministic.append({"kind": "criterion_removed", "class_name": class_name,
                                       "criterion": crit})
 
@@ -817,7 +799,7 @@ def _apply_yaml_diff(yaml_data: dict, deterministic_changes: "List[Dict]") -> di
 
     Args:
         yaml_data: original YAML dict (not mutated).
-        deterministic_changes: list of change dicts from _diff_diagnostics_tsv_yaml.
+        deterministic_changes: list of change dicts from _diff_diagnostics_grid_yaml.
 
     Returns:
         New YAML dict with changes applied.

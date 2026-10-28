@@ -109,7 +109,7 @@ commit them by hand, and the daily refresh's copies reach you with a pull
 (`coding/state_files.py`).
 
 The same goes for a language's files that a command writes: annotation
-TSVs, the planar file, the diagnostics YAML and TSV. Every such write goes
+TSVs, the planar file, the diagnostics YAML. Every such write goes
 through the local-file door (`coding/file_door.py`), which keeps the
 previous version in the language's `archive/` folder, adds a line to the
 language's `changes.tsv` (when, which file, what changed, which command,
@@ -157,7 +157,7 @@ own hand edits (to the YAML or the planar) still need committing by hand.
 
 2. In `coded_data/`, create:
    - `{lang_id}/lang_setup/planar_{lang_id}.tsv` — planar structure
-   - `{lang_id}/lang_setup/diagnostics_{lang_id}.yaml` — analysis classes and diagnostic criteria (YAML is the source of truth; the TSV is generated from it)
+   - `{lang_id}/lang_setup/diagnostics_{lang_id}.yaml` — analysis classes and diagnostic criteria (the language's one diagnostics file)
 
    Minimal YAML example:
    ```yaml
@@ -170,12 +170,7 @@ own hand edits (to the YAML or the planar) still need committing by hand.
          N-combines: [y, n]
    ```
 
-   After writing the YAML, generate the TSV:
-   ```bash
-   python -m coding sync-diagnostics-yaml --apply --lang {lang_id}
-   ```
-
-   See [Data management](data-management.md) for the required format of both files. `check-codebook` section 7 prints a ready-to-paste YAML snippet for each class not yet covered by any language.
+   See [Data management](data-management.md) for the required format of both files. `check-codebook` section 9 prints a ready-to-paste YAML snippet for each class not yet covered by any language.
 
 3. Generate annotation sheets and notebooks:
    ```bash
@@ -513,25 +508,22 @@ When the diagnostic model changes — a new analysis class, a class renamed or r
    ```bash
    python -m coding check-codebook
    ```
-   Section 5 prints the TSV row to paste into each applicable language's `diagnostics_{lang_id}.tsv`. Section 6 shows the current language × class coverage matrix.
+   Section 9 prints the entry to paste into each applicable language's `diagnostics_{lang_id}.yaml`. Section 10 shows the current language × class coverage matrix.
 4. Edit `diagnostics_{lang_id}.yaml` for each applicable language (see [Editing the diagnostics YAML](#editing-the-diagnostics-yaml)).
 5. Run the appropriate command below.
 
 #### Editing the diagnostics YAML
 
-`diagnostics_{lang_id}.yaml` in `coded_data/{lang_id}/lang_setup/` is the source of truth for which analyses run for a language. After editing it, regenerate the derived TSV:
+`diagnostics_{lang_id}.yaml` in `coded_data/{lang_id}/lang_setup/` is the one file saying which analyses run for a language; every command reads it directly. (A `diagnostics_{lang_id}.tsv` copy beside it was deleted 2026-10-27; `check-codebook` reports one that comes back.) After editing it, commit and push it in planars-data. The daily refresh copies it to the diagnostics Google Sheet within a day; to do that sooner:
 
 ```bash
 python -m coding sync-diagnostics-yaml --lang {lang_id}                  # dry run: show what would change
-python -m coding sync-diagnostics-yaml --apply --lang {lang_id}          # regenerate TSV from YAML
-python -m coding sync-diagnostics-yaml --to-sheet --apply --lang {lang_id} # copy the YAML to the diagnostics Sheet
+python -m coding sync-diagnostics-yaml --apply --lang {lang_id}          # copy the YAML to the diagnostics Sheet
 ```
-
-The daily refresh runs both, so the TSV and the diagnostics Google Sheet follow the YAML within a day. Run them by hand only if you want the Sheet updated sooner.
 
 #### Changing the planar or the diagnostics
 
-`planar_{lang_id}.tsv` and `diagnostics_{lang_id}.yaml` in planars-data are the only places to change a language's planar structure or diagnostics. The planar and diagnostics Google Sheets are read-only copies for the annotator (Phase 10 unit 11b, 2026-10-24): nothing is ever read back from them, and the daily refresh rebuilds them (`sync-planar --apply`, `sync-diagnostics-yaml --to-sheet --apply`).
+`planar_{lang_id}.tsv` and `diagnostics_{lang_id}.yaml` in planars-data are the only places to change a language's planar structure or diagnostics. The planar and diagnostics Google Sheets are read-only copies for the annotator (Phase 10 unit 11b, 2026-10-24): nothing is ever read back from them, and the daily refresh rebuilds them (`sync-planar --apply`, `sync-diagnostics-yaml --apply`).
 
 - **You** edit the file, commit it in planars-data, and let the daily refresh carry it to the Sheets (or run the command now).
 - **An annotator** suggests a change on the language's "planars and diagnostics" sheet (e.g. "English [stan1293] planars and diagnostics"; in the code, the proposal sheet); you review it with `accept-proposal`, which writes the accepted parts to the file. See [the collaborator guide](collaborator-guide.md#suggesting-changes-to-the-planar-structure-or-the-diagnostics).
@@ -609,12 +601,12 @@ python -m coding sync-params --apply --merge old1:old2:new     # merge two crite
 python -m coding sync-params --apply --remove                  # also remove stale columns
 ```
 
-Preserves existing annotations while inserting each new column where `diagnostics_{lang_id}.yaml` lists it among the tab's criteria. Rename, split and merge also make the same change to the criteria in `diagnostics_{lang_id}.yaml` (only those lines change; comments are kept) and regenerate `diagnostics_{lang_id}.tsv` from it, so there is no need to edit the YAML by hand first; commit and push both files inside `coded_data/` afterwards. Rename updates headers and validation in place. Split/merge rename the old column(s) to `_split_`/`_merged_` prefixes and add the new column(s) — coordinator remaps values then removes stale columns manually. `integrity-check --sheets` warns on any stale prefixed columns. Automatically regenerates and uploads notebooks afterward.
+Preserves existing annotations while inserting each new column where `diagnostics_{lang_id}.yaml` lists it among the tab's criteria. Rename, split and merge also make the same change to the criteria in `diagnostics_{lang_id}.yaml` (only those lines change; comments are kept), so there is no need to edit the YAML by hand first; the command commits and pushes it in planars-data when it ends (the local-file door). Rename updates headers and validation in place. Split/merge rename the old column(s) to `_split_`/`_merged_` prefixes and add the new column(s) — coordinator remaps values then removes stale columns manually. `integrity-check --sheets` warns on any stale prefixed columns. Automatically regenerates and uploads notebooks afterward.
 
 #### Renaming an analysis class
 
 **Required ordering:**
-1. Update `diagnostics_{lang_id}.yaml` for all affected languages to use the new class name, then run `sync-diagnostics-yaml --apply` to regenerate the TSV.
+1. Update `diagnostics_{lang_id}.yaml` for all affected languages to use the new class name.
 2. Run `restructure-sheets --rename-class` (pre-flight check enforces this order).
 
 ```bash
@@ -641,11 +633,11 @@ python -m coding rename-construction CLASS:OLD:NEW            # dry run, every l
 python -m coding rename-construction CLASS:OLD:NEW --apply    # repeat CLASS:OLD:NEW for several
 ```
 
-In every language that has it, `--apply` renames it in `diagnostics_{lang_id}.yaml` (and regenerates the TSV and the diagnostics Sheet), renames the tab and its Status row in place — the sheet keeps its link and its answers — and renames it in the manifest, the local TSV and check-comments' record. Tell the annotators: their tab has a new name. Do the schema commit, the run and both pushes in one sitting; the daily refresh would otherwise add an empty tab under the new name beside the answered one. A run that stopped partway is finished by running it again.
+In every language that has it, `--apply` renames it in `diagnostics_{lang_id}.yaml` (and updates the diagnostics Sheet), renames the tab and its Status row in place — the sheet keeps its link and its answers — and renames it in the manifest, the local TSV and check-comments' record. Tell the annotators: their tab has a new name. Do the schema commit, the run and both pushes in one sitting; the daily refresh would otherwise add an empty tab under the new name beside the answered one. A run that stopped partway is finished by running it again.
 
 #### Retiring an analysis class
 
-Remove the class from `diagnostics_{lang_id}.yaml` and run `sync-diagnostics-yaml --apply` to regenerate the TSV, then run `prune-manifest` to clean up:
+Remove the class from `diagnostics_{lang_id}.yaml`, then run `prune-manifest` to clean up:
 
 ```bash
 python -m coding prune-manifest                  # dry run — show what would be archived and removed
@@ -798,9 +790,9 @@ python -m coding check-codebook
 ```
 
 `check-codebook` provides lower-level schema detail and three informational reports:
-- **keystone_active unresolved** (section 6): active (language, class) pairs whose `keystone_active_default` is `[NEEDS REVIEW]` and have no language-level override — a reminder to declare an explicit value when the linguistic question is resolved
-- **Schema stubs** (section 7): classes with no language coverage, with a ready-to-paste `diagnostics_{lang_id}.tsv` row for each
-- **Coverage matrix** (section 8): language × class grid showing which classes are active per language
+- **keystone_active unresolved** (section 8): active (language, class) pairs whose `keystone_active_default` is `[NEEDS REVIEW]` and have no language-level override — a reminder to declare an explicit value when the linguistic question is resolved
+- **Schema stubs** (section 9): classes with no language coverage, with a ready-to-paste `diagnostics_{lang_id}.yaml` entry for each
+- **Coverage matrix** (section 10): language × class grid showing which classes are active per language
 
 Use `check-codebook` when adding criteria or classes, or when `integrity-check` flags a codebook inconsistency and you want more detail. `integrity-check` includes all `check-codebook` checks; `check-codebook` is faster and more detailed for schema-specific diagnosis.
 

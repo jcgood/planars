@@ -68,24 +68,21 @@ def test_sync_params_dry_run_has_no_precondition():
 
 
 # ---------------------------------------------------------------------------
-# sync-diagnostics-yaml: both directions (base, --to-sheet) require
-# coded_data_clean_tree -- this is the command whose enforcement call needs
-# the (".yaml", ".tsv") extensions exception, checked via enforce() below
-# rather than active_preconditions() (which only reports ids, not
-# enforcement parameters).
+# sync-diagnostics-yaml requires coded_data_clean_tree (it writes no local
+# file since the TSV copy went, 2026-10-27, so no git identity) -- one of
+# the commands whose enforcement call needs the (".yaml", ".tsv")
+# extensions exception, checked via enforce() below rather than
+# active_preconditions() (which only reports ids, not enforcement
+# parameters).
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("kwargs", [
-    dict(apply=True, to_sheet=False),
-    dict(apply=True, to_sheet=True),
-])
-def test_sync_diagnostics_yaml_every_direction_requires_clean_tree(kwargs):
-    # --to-sheet --apply also meets the base record's --apply gate.
-    assert preconditions.active_preconditions("sync_diagnostics_yaml", _ns(**kwargs)) == _WRITES
+def test_sync_diagnostics_yaml_apply_requires_clean_tree():
+    assert preconditions.active_preconditions(
+        "sync_diagnostics_yaml", _ns(apply=True)) == ["coded_data_clean_tree"]
 
 
 def test_sync_diagnostics_yaml_dry_run_has_no_precondition():
-    args = _ns(apply=False, to_sheet=False)
+    args = _ns(apply=False)
     assert preconditions.active_preconditions("sync_diagnostics_yaml", args) == []
 
 
@@ -157,7 +154,8 @@ def test_unknown_op_id_has_no_preconditions():
 # ---------------------------------------------------------------------------
 # enforce(): actually calls the registered enforcer with the right
 # extensions -- the one place the per-command exception
-# (sync_diagnostics_yaml needs both ".yaml" and ".tsv") is exercised.
+# (sync_diagnostics_yaml and the commands that read or edit the diagnostics
+# YAML need both ".yaml" and ".tsv") is exercised.
 # ---------------------------------------------------------------------------
 
 def test_enforce_calls_check_coded_data_clean_with_tsv_only_by_default(monkeypatch):
@@ -170,7 +168,7 @@ def test_enforce_calls_check_coded_data_clean_with_tsv_only_by_default(monkeypat
 def test_enforce_calls_check_coded_data_clean_with_yaml_and_tsv_for_sync_diagnostics_yaml(monkeypatch):
     calls = []
     monkeypatch.setattr(preconditions, "_check_coded_data_clean", lambda **kw: calls.append(kw))
-    preconditions.enforce("sync_diagnostics_yaml", _ns(apply=True, to_sheet=False))
+    preconditions.enforce("sync_diagnostics_yaml", _ns(apply=True))
     assert calls == [{"extensions": (".yaml", ".tsv")}]
 
 
@@ -178,7 +176,8 @@ def test_enforce_skips_the_unenforced_git_identity_precondition_for_restructure_
     calls = []
     monkeypatch.setattr(preconditions, "_check_coded_data_clean", lambda **kw: calls.append(kw))
     preconditions.enforce("restructure_sheets", _ns(apply=True))
-    assert calls == [{"extensions": (".tsv",)}]  # one call, for coded_data_clean_tree only
+    # one call, for coded_data_clean_tree only (.yaml too: it reads the diagnostics YAML)
+    assert calls == [{"extensions": (".yaml", ".tsv")}]
 
 
 def test_enforce_calls_nothing_on_a_dry_run(monkeypatch):

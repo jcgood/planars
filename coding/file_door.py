@@ -131,7 +131,6 @@ ARCHIVE_STAMP_FORMAT = "%Y%m%d_%H%M%S"
 ANNOTATION = "annotation"
 PLANAR = "planar"
 DIAGNOSTICS_YAML = "diagnostics_yaml"
-DIAGNOSTICS_TSV = "diagnostics_tsv"
 PROPOSAL_BASE = "proposal_base"
 
 # Every kind a command can write, the parts that name one, and its file name
@@ -146,9 +145,8 @@ KINDS: Dict[str, Dict[str, object]] = {
                        "what": "the planar file"},
     DIAGNOSTICS_YAML: {"parts": (), "name": lambda f: f"diagnostics_{f.lang_id}.yaml",
                        "what": "the diagnostics file"},
-    # Built from the YAML; deleted in unit 11b (ownership-design Q5).
-    DIAGNOSTICS_TSV:  {"parts": (), "name": lambda f: f"diagnostics_{f.lang_id}.tsv",
-                       "what": "the diagnostics TSV (a copy of the diagnostics file)"},
+    # (A diagnostics_tsv kind, the TSV copy of the YAML, was here until it
+    # was deleted 2026-10-27, unit 11b: migrations/delete_diagnostics_tsv.py.)
     # What the proposal sheet was last filled with (unit 11a; ownership-design
     # § 3.4): an annotator's proposal is the sheet's difference from it.
     PROPOSAL_BASE:    {"parts": (), "name": lambda f: f"proposal_base_{f.lang_id}.json",
@@ -158,7 +156,7 @@ KINDS: Dict[str, Dict[str, object]] = {
 SOURCES: FrozenSet[str] = frozenset({PLANAR, DIAGNOSTICS_YAML})
 # Built from another file in planars-data, so rebuilding one loses nothing:
 # not an overwrite (``overwrites``).
-BUILT: FrozenSet[str] = frozenset({DIAGNOSTICS_TSV, PROPOSAL_BASE})
+BUILT: FrozenSet[str] = frozenset({PROPOSAL_BASE})
 SETUP_FOLDER = "lang_setup"
 ARCHIVE_FOLDER = "archive"
 CHANGE_LOG_NAME = "changes.tsv"
@@ -214,10 +212,6 @@ def planar(lang_id: str) -> LocalFile:
 
 def diagnostics_yaml(lang_id: str) -> LocalFile:
     return LocalFile(DIAGNOSTICS_YAML, lang_id)
-
-
-def diagnostics_tsv(lang_id: str) -> LocalFile:
-    return LocalFile(DIAGNOSTICS_TSV, lang_id)
 
 
 def proposal_base(lang_id: str) -> LocalFile:

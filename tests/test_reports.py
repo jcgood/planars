@@ -248,16 +248,15 @@ class TestLayer1Completeness:
         lang_setup = lang_dir / "lang_setup"
         lang_setup.mkdir(parents=True)
 
-        import csv
+        import yaml
         rows = diagnostics_rows
         if rows:
-            diag_path = lang_setup / f"diagnostics_{lang_id}.tsv"
-            with open(diag_path, "w", newline="", encoding="utf-8") as f:
-                writer = csv.DictWriter(f, fieldnames=["Class", "Language", "Constructions", "Criteria"],
-                                        delimiter="\t")
-                writer.writeheader()
-                for row in rows:
-                    writer.writerow({**{"Language": lang_id, "Criteria": "crit"}, **row})
+            classes = {row["Class"]: {
+                "constructions": [c.strip() for c in row["Constructions"].split(",")],
+                "criteria": {"crit": ["y", "n"]}} for row in rows}
+            (lang_setup / f"diagnostics_{lang_id}.yaml").write_text(
+                yaml.safe_dump({"language": lang_id, "classes": classes}, sort_keys=False),
+                encoding="utf-8")
 
         if tsv_files:
             for (class_name, construction), content in tsv_files.items():

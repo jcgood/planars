@@ -37,7 +37,6 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 from __future__ import annotations
 
 import argparse
-import csv
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -173,21 +172,21 @@ def _archive_drive_sheet(
 def _active_classes(lang_id: str) -> set[str]:
     """Return the set of class names currently active for lang_id.
 
-    Reads diagnostics_{lang_id}.yaml preferentially; falls back to .tsv if
-    no YAML exists. Returns an empty set if neither file is present.
+    Reads diagnostics_{lang_id}.yaml. A language with no YAML stops the
+    command: without one every class would look stale and its sheets would
+    be archived (until 2026-10-27 that is what happened when neither the YAML
+    nor its TSV copy was there).
     """
-    lang_setup = CODED_DATA / lang_id / "lang_setup"
-    yaml_path = lang_setup / f"diagnostics_{lang_id}.yaml"
-    tsv_path  = lang_setup / f"diagnostics_{lang_id}.tsv"
-    if yaml_path.exists():
-        with open(yaml_path, encoding="utf-8") as f:
-            data = _yaml.safe_load(f)
-        return set((data or {}).get("classes", {}).keys())
-    if tsv_path.exists():
-        with open(tsv_path, encoding="utf-8", newline="") as f:
-            reader = csv.DictReader(f, delimiter="\t")
-            return {row["Class"] for row in reader if row.get("Class")}
-    return set()
+    yaml_path = CODED_DATA / lang_id / "lang_setup" / f"diagnostics_{lang_id}.yaml"
+    if not yaml_path.exists():
+        raise SystemExit(
+            f"ERROR: {lang_id} has sheets in the manifest but no {yaml_path.name} in "
+            f"coded_data/{lang_id}/lang_setup/, so prune-manifest can't tell which "
+            f"classes are active. Pull planars-data (git -C coded_data pull) or restore "
+            f"the file from its history, then re-run.")
+    with open(yaml_path, encoding="utf-8") as f:
+        data = _yaml.safe_load(f)
+    return set(((data or {}).get("classes") or {}).keys())
 
 
 def _find_stale(manifest: dict) -> Dict[str, List[str]]:

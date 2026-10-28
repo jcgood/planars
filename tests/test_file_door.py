@@ -76,7 +76,7 @@ def test_each_kind_builds_its_own_path(coded):
     assert file_door.annotation(LANG, CLASS, CON).path == coded / LANG / CLASS / "general.tsv"
     assert file_door.planar(LANG).path == coded / LANG / "lang_setup" / f"planar_{LANG}.tsv"
     assert file_door.diagnostics_yaml(LANG).relpath == f"lang_setup/diagnostics_{LANG}.yaml"
-    assert file_door.diagnostics_tsv(LANG).name == f"diagnostics_{LANG}.tsv"
+    assert file_door.proposal_base(LANG).name == f"proposal_base_{LANG}.json"
 
 
 def test_an_unknown_kind_or_missing_part_cannot_be_named():
@@ -346,12 +346,12 @@ def test_the_same_command_or_an_earlier_refresh_is_not_an_overwrite(coded):
 
 
 def test_rebuilding_a_file_built_from_another_is_not_an_overwrite(coded):
-    target = file_door.diagnostics_tsv(LANG)
-    with drive_door.running("sync-params", may_write=True):
-        file_door.write(target, file_door.read(target) + "\n", why="test")
+    target = file_door.proposal_base(LANG)
+    with drive_door.running("accept-proposal", may_write=True):
+        file_door.write(target, '{"a": 1}\n', why="test")
     with drive_door.running("daily-refresh", may_write=True):
-        with drive_door.running("sync-diagnostics-yaml", may_write=True):
-            file_door.write(target, file_door.read(target) + "\n", why="test")
+        with drive_door.running("proposal-sheets", may_write=True):
+            file_door.write(target, '{"a": 2}\n', why="test")
     assert file_door.overwrites("2000-01-01T00:00:00Z") == []
 
 

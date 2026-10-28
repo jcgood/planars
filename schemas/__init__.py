@@ -92,8 +92,8 @@ terms.yaml
 
 diagnostics_{lang_id}.yaml  (per-language, lives in coded_data/{lang_id}/lang_setup/)
     Per-language source of truth for which analysis classes, constructions, and
-    diagnostic criteria apply to a language.  The TSV of the same name is a
-    derived artifact generated from this file.  Format::
+    diagnostic criteria apply to a language: its one diagnostics file, read
+    by every command (a TSV copy beside it was deleted 2026-10-27).  Format::
 
         language: stan1293
         classes:
@@ -118,9 +118,8 @@ diagnostics_{lang_id}.yaml  (per-language, lives in coded_data/{lang_id}/lang_se
         language; present but blank on a sheet means not yet coded.
       - ``notes`` is an optional string (class-level).
     Workflow:
-      - Coordinators edit this YAML directly (never edit the TSV by hand).
-      - After editing, run ``python -m coding sync-diagnostics-yaml --apply --lang {lang_id}``
-        to regenerate the TSV.  Direct TSV edits are overwritten on the next run.
+      - Coordinators edit this YAML directly, then commit and push it in
+        planars-data.
       - When the criterion columns change, ``sync-params --apply`` carries
         the change to existing sheets.
       - The diagnostics Sheet is a read-only copy of this file (the daily

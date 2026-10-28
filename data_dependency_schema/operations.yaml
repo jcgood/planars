@@ -373,11 +373,11 @@
     Syncs a construction's criterion columns on its live sheet when
     diagnostics_{lang_id}.yaml changes (rename, split, merge, remove);
     --rename/--split/--merge first edit the criteria in the diagnostics
-    YAML itself, then regenerate the diagnostics TSV from it.
+    YAML itself.
   side_effects:
     - "inserts/deletes/renames criterion columns on live annotation tabs"
     - "updates sheets_manifest.json's per-construction param_names"
-    - "--rename/--split/--merge: edits the named criteria in diagnostics_{lang_id}.yaml (the rest of the file, comments included, is kept) and regenerates diagnostics_{lang_id}.tsv from it"
+    - "--rename/--split/--merge: edits the named criteria in diagnostics_{lang_id}.yaml (the rest of the file, comments included, is kept)"
   idempotent: true
   idempotency_note: >-
     Retry-safe: every sheet edit is driven by a real diff between the tab's
@@ -401,47 +401,29 @@
     - {fact: diagnostics_scope, role: writes}
   cascades_triggered:
     - "regenerate_notebooks() runs automatically after --apply"
-    - "regenerates diagnostics_{lang_id}.tsv from the edited YAML (--rename/--split/--merge)"
   modes: []
 
 - id: sync_diagnostics_yaml
   cli_command: sync-diagnostics-yaml
-  writes_to_drive: false
-  writes_locally: true
+  writes_to_drive: true
+  writes_locally: false
   description: >-
-    Copies diagnostics_{lang_id}.yaml (the source) to the derived TSV. This
-    record's top-level fields describe that default YAML->TSV direction;
-    --to-sheet copies it to the read-only diagnostics Sheet instead,
-    described under modes below.
+    Copies diagnostics_{lang_id}.yaml (the source) to the language's
+    read-only diagnostics Sheet, and protects its tab. (Until 2026-10-27 the
+    default direction wrote a diagnostics_{lang_id}.tsv copy and the Sheet
+    push was --to-sheet; the TSV was deleted, ownership-design Q5.)
   side_effects:
-    - "overwrites diagnostics_{lang_id}.tsv from the YAML"
+    - "overwrites the live diagnostics Sheet's content from the YAML"
   idempotent: true
   idempotency_note: >-
-    Only writes when the derived TSV content actually differs from what's on
-    disk ("TSV already up to date" short-circuits otherwise) -- a second run
-    with nothing changed performs no write.
+    Only writes when content differs from the Sheet's current content
+    ("Sheet already up to date" short-circuits otherwise).
   apply_gate: "--apply"
-  preconditions: [coded_data_clean_tree, coded_data_git_identity_configured]
+  preconditions: [coded_data_clean_tree]
   facts_touched:
     - {fact: diagnostics_scope, role: both}
   cascades_triggered: []
-  modes:
-    - name: "--to-sheet"
-      description: >-
-        Pushes the YAML-derived diagnostics content to the live diagnostics
-        Sheet, overwriting stale content.
-      side_effects:
-        - "overwrites the live diagnostics Sheet's content from the YAML"
-      idempotent: true
-      idempotency_note: >-
-        Only writes when content differs from the Sheet's current content
-        ("Sheet already up to date" short-circuits otherwise).
-      apply_gate: "--to-sheet --apply"
-      preconditions: [coded_data_clean_tree]
-      writes_to_drive: true
-      writes_locally: false
-      facts_touched:
-        - {fact: diagnostics_scope, role: both}
+  modes: []
 
 - id: sync_span_rule_hashes
   cli_command: sync-span-rule-hashes
@@ -669,7 +651,7 @@
   description: >-
     Checks consistency between diagnostic_criteria.yaml,
     diagnostic_classes.yaml/diagnostic_classes_status.yaml, analysis
-    modules, and every diagnostics_{lang_id}.tsv.
+    modules, and every diagnostics_{lang_id}.yaml.
   side_effects: ["none (read-only)"]
   idempotent: true
   idempotency_note: "Pure read-and-report; makes no writes of any kind."
@@ -815,7 +797,7 @@
     tab and its Status row in place (same sheet, same link, same answers),
     the manifest, the local TSV and check-comments' record (#318 d).
   side_effects:
-    - "edits the construction's name in diagnostics_{lang_id}.yaml (comments and layout kept), regenerates diagnostics_{lang_id}.tsv and pushes it to the diagnostics Sheet"
+    - "edits the construction's name in diagnostics_{lang_id}.yaml (comments and layout kept) and pushes it to the diagnostics Sheet"
     - "renames the tab and its Status-tab row on the live class sheet"
     - "renames the construction in sheets_manifest.json's constructions and construction_params, and uploads it"
     - "moves coded_data/{lang}/{class}/OLD.tsv to NEW.tsv through the local-file door (old version archived, both logged)"
@@ -1045,8 +1027,8 @@
     closes the proposal issue.
   side_effects:
     - >-
-      writes planar_{lang_id}.tsv and diagnostics_{lang_id}.yaml (then
-      rebuilds diagnostics_{lang_id}.tsv) through the local-file door, each
+      writes planar_{lang_id}.tsv and diagnostics_{lang_id}.yaml through
+      the local-file door, each
       validated first; writes the new proposal base
     - "refills the proposal sheet's Planar and Diagnostics tabs and rewrites Last review"
     - "comments on and closes the language's proposal issue, naming the next steps"
@@ -1132,7 +1114,7 @@
     the steps. Writes nothing to Drive itself; each command it runs is
     checked by the Drive door under its own record.
   side_effects:
-    - "runs sync-planar, import-sheets, check-notes, check-comments, sync-diagnostics-yaml (both directions), proposal-sheets, sync-params, generate-sheets --regen-dependents, update-sheets and generate-status-sheet with --apply, each with its own side effects (proposal-sheets files and closes the proposal issues itself)"
+    - "runs sync-planar, import-sheets, check-notes, check-comments, sync-diagnostics-yaml, proposal-sheets, sync-params, generate-sheets --regen-dependents, update-sheets and generate-status-sheet with --apply, each with its own side effects (proposal-sheets files and closes the proposal issues itself)"
     - "files, updates or closes the daily issues (planar-changed, import-error, diagnostics-yaml-error, regen-dependents-error, dependent-stale, codebook-error, stale-manifest, integrity-error, data-overwrite, sheet-drift, status-sheet-error)"
     - "files an audit issue when none is open and none has closed in 30 days"
     - "each command it runs commits and pushes what it wrote in coded_data/ (planars-data) when it ends, through the local-file door"

@@ -75,7 +75,6 @@ inventing new terminology:
 | `collaborator_doc` | The per-language Google Doc for free-text collaborator notes; change-tracked via `notes_state.json` content hashes. |
 | `planar_tsv` | `coded_data/{lang}/lang_setup/planar_{lang_id}.tsv` — the source for a language's planar structure, edited by the coordinator (by hand or through `accept-proposal`). Until unit 11b it was also downloaded from `planar_sheet`, the one entity whose cascade direction was ambiguous. |
 | `diagnostics_yaml` | `coded_data/{lang}/lang_setup/diagnostics_{lang_id}.yaml` — the coordinator-facing source of truth for a language's diagnostics scope. |
-| `diagnostics_tsv` | `coded_data/{lang}/lang_setup/diagnostics_{lang_id}.tsv` — always regenerated from `diagnostics_yaml`; documented as never hand-edited. |
 | `construction_tsv` | `coded_data/{lang}/{class}/{construction}.tsv` — the local mirror of one construction's annotation data, imported from `annotation_sheet`. |
 | `schema_yaml` | One of the five project-wide `schemas/*.yaml` files (`diagnostic_classes`, `diagnostic_criteria`, `planar`, `terms`, `languages`) — hand-edited, normative, rarely regenerated. |
 | `derived_artifact` | Any regenerated, don't-hand-edit output: notebooks, PDF reports, rendered codebook markdown, `tests/snapshots/` baselines. |
@@ -95,10 +94,11 @@ in whether they can *ever* be authoritative — `annotation_sheet` is;
 was, sometimes, until unit 11b). Naming that
 directly in the entity means a reader sees "never authoritative" as a
 structural fact of the vocabulary, not something inferred from free text
-every time. The same logic splits the three local-TSV entities: `diagnostics_tsv`
-has a hard documented rule (never hand-edited), `construction_tsv` is
-download-only, and `planar_tsv` is a source a person edits — the
-distinction that mattered on 2026-07-29, when it was also a download.
+every time. The same logic splits the local-TSV entities: `construction_tsv`
+is download-only, and `planar_tsv` is a source a person edits — the
+distinction that mattered on 2026-07-29, when it was also a download. (A
+third, `diagnostics_tsv`, a copy regenerated from `diagnostics_yaml`, was
+removed with the file on 2026-10-27.)
 
 `manifest`, `code_comment`, and `github_issue` each get their own entity
 rather than folding into `derived_artifact`, because none of them are
@@ -225,7 +225,7 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
   is required on every record, `true` or `false`, because an unreasoned
   `true` is the more dangerous of the two to get wrong silently.
 - **`apply_gate`** — what actually gates a live write: the flags that must
-  all be set (`"--apply"`, `"--to-sheet --apply"`), or `null` for a command
+  all be set (`"--apply"`, `"--check --apply"`), or `null` for a command
   with no live-write concept (a mode with `null` is active whenever its own
   flag is set: `generate-sheets`' `--regen-construction` is never gated by
   `--apply` at all). Anything else is an error (`coding/gating.py`).
@@ -241,8 +241,8 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
   the gate that was actually satisfied, and the provenance log records the
   writes themselves. Several commands' Drive-write status
   genuinely diverges by mode the same way `apply_gate`/`preconditions` can —
-  `sync-diagnostics-yaml`'s default direction touches only the local TSV;
-  only `--to-sheet` reaches the live Sheet — so a mode restates it
+  `generate-sheets`' `--regen-dependents` writes to Drive with no `--apply`
+  at all — so a mode restates it
   per the same "full override" rule as every other mode field. `false` for a
   command with no live-write concept at all (pure read-only) and for one
   whose writes are entirely local, never Drive itself.
@@ -275,8 +275,8 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
   `restructure-sheets --rename-class`.)*
 - **`modes`** — some commands genuinely behave differently by flag:
   `generate-sheets`' `--regen-construction` has no `--apply` gate at all and
-  touches different facts than the base command; `sync-diagnostics-yaml`'s
-  `--to-sheet` is a different direction with different preconditions. Flattening these onto one set of top-level fields would
+  touches different facts than the base command; `build-chapters`' `--check`
+  writes no chapter file and has different preconditions. Flattening these onto one set of top-level fields would
   either overstate what the base command does or understate what the mode
   does. A `modes` entry is a **full, self-contained override** — it restates
   its own `side_effects`/`idempotent`/`idempotency_note`/`apply_gate`/

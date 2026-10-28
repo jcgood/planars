@@ -409,6 +409,10 @@ the same commit.
    `apply-pending` and `pending_changes.json` (every entry came from the two
    Sheets), and the `pending-changes` and `diagnostics-drift` labels (kept
    registered as `retired` for their closed issues).
+   *Built 2026-10-27, second part:* the diagnostics TSV is deleted (Q5);
+   every reader reads the YAML through `make_forms._read_diagnostics_for_language`,
+   and `sync-diagnostics-yaml`'s one job is the Sheet (`--to-sheet`
+   retired). As built: progress doc, Phase 10 row.
 7. **11c — Colab by labels, the manifest deleted, notebooks rebuilt daily**
    (needs 5f's sharing test for notebooks, and Q7's label test).
 8. **11d — the Instructions sentences into the schema.**

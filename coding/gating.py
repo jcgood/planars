@@ -24,7 +24,7 @@ def gate_satisfied(apply_gate: Optional[str], mode_name: Optional[str],
     """True if this record/mode's gate is satisfied by the actual invocation.
 
     apply_gate is normally a space-separated list of long flags that must
-    ALL be set (e.g. "--apply", "--to-sheet --apply") -- active whenever
+    ALL be set (e.g. "--apply", "--check --apply") -- active whenever
     the coordinator passed every one of them. A null apply_gate means no
     --apply concept: for the base record that means "always active"; for a
     mode (which always corresponds to its own named flag, e.g.

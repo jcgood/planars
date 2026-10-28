@@ -130,6 +130,11 @@ _KNOWN_SITES: Dict[Site, str] = {
         "invocation (plain `sync-params --apply`)",
     ("sync_params.py", 'print(f"WARNING: --merge requires old1:old2:new, got: {args[i + 1]!r}")', 1):
         "only reachable via --merge, same reasoning as --split above",
+    ("sync_params.py", 'print(f"  [{lang_id}] WARNING {w.location}: {w.message}")', 1):
+        "only reachable via --rename/--split/--merge (_edit_diagnostics_yaml), "
+        "never passed by the automated workflow invocation; the same warnings "
+        "reach the daily refresh's summary through sync-diagnostics-yaml's "
+        "identical line above",
     ("generate_sheets.py", 'print(f"    [WARNING] {ni_label} exists but \'{crit}\' column is blank.")', 1):
         "inside _prefill_free_occurrence_rows (the noninterruption tab its "
         "reads_from.prefill_free names) -- only reachable via the "

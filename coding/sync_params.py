@@ -17,11 +17,11 @@ This script propagates diagnostic criterion changes across all downstream layers
                                (_edit_diagnostics_yaml): only the criteria named change,
                                and its comments and layout are kept; written through
                                the local-file door (previous version archived, change
-                               logged, committed when the command ends)
-  diagnostics_{lang_id}.tsv  — a copy generated from the YAML; after those edits it is
-                               regenerated the way sync-diagnostics-yaml --apply does it
-                               (#315: until 2026-10-18 the TSV was edited and the YAML
-                               rebuilt from it, losing every field but notes)
+                               logged, committed when the command ends). #315: until
+                               2026-10-18 a TSV copy was edited and the YAML rebuilt
+                               from it, losing every field but notes; the copy was
+                               deleted 2026-10-27. The diagnostics Sheet follows in the
+                               next daily refresh (sync-diagnostics-yaml).
   Google Sheets              — annotation form column headers (always updated)
 
 Imported TSVs in coded_data/ are downstream of Sheets; after any lifecycle operation run
@@ -68,7 +68,6 @@ from .make_forms import (
     _encode_criteria_dict,
     _load_diagnostics_yaml_for_edit,
 )
-from .sync_diagnostics_yaml import _sync_to_tsv
 from .validate_diagnostics import validate_diagnostics_yaml
 from .schemas import criteria_for, criterion_values
 from planars.schema_values import is_keystone
@@ -284,9 +283,7 @@ def _edit_diagnostics_yaml(lang_id: str, renames, splits, merges, apply: bool) -
 
     Prints each criteria change. With apply, writes the YAML through the
     local-file door (only the criteria named change; comments and layout are
-    kept; the previous version is archived) and regenerates
-    diagnostics_{lang_id}.tsv from it, as sync-diagnostics-yaml --apply does.
-    An edit that would leave the YAML failing validation writes nothing.
+    kept; the previous version is archived). An edit that would leave the YAML failing validation writes nothing.
     """
     yaml_path = file_door.diagnostics_yaml(lang_id).path
     if not yaml_path.exists():
@@ -306,8 +303,8 @@ def _edit_diagnostics_yaml(lang_id: str, renames, splits, merges, apply: bool) -
     if not (apply and changes):
         return
 
-    blocking = [i for i in validate_diagnostics_yaml(data, lang_id)
-                if i.level == "error" and i.blocking]
+    issues = validate_diagnostics_yaml(data, lang_id)
+    blocking = [i for i in issues if i.level == "error" and i.blocking]
     if blocking:
         for e in blocking:
             print(f"  [{lang_id}] ERROR {e.location}: {e.message}")
@@ -317,7 +314,10 @@ def _edit_diagnostics_yaml(lang_id: str, renames, splits, merges, apply: bool) -
     file_door.write(file_door.diagnostics_yaml(lang_id), _dump_diagnostics_yaml(data),
                     why="sync-params: " + "; ".join(c.strip() for c in changes))
     print(f"  [{lang_id}] YAML updated → {yaml_path.name}")
-    _sync_to_tsv(lang_id, apply=True, error_langs=[])
+    # A new criterion the schema doesn't define yet is a warning, not a
+    # refusal; say so here (until 2026-10-27 the TSV rebuild printed it).
+    for w in (i for i in issues if i.level == "warning"):
+        print(f"  [{lang_id}] WARNING {w.location}: {w.message}")
 
 
 def _schema_values(name: str) -> List[str]:
@@ -591,8 +591,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(args: argparse.Namespace | None = None) -> None:
     """Entry point for `python -m coding sync-params`.
 
-    Compares expected param columns (from diagnostics_{lang_id}.yaml, or the TSV if there
-    is no YAML) against actual sheet headers, inserts new columns in the diagnostics
+    Compares expected param columns (from diagnostics_{lang_id}.yaml) against actual sheet headers, inserts new columns in the diagnostics
     file's order (_insert_at), optionally removes stale columns,
     applies dropdown validation, and updates the Drive manifest if anything changed.
     In dry-run mode (no --apply) only prints what would change.
@@ -610,8 +609,8 @@ def main(args: argparse.Namespace | None = None) -> None:
     # coded_data_clean_tree is enforced centrally at the python -m coding
     # dispatch chokepoint now -- see coding/preconditions.py -- not here.
     # See update_sheets.py's guard comment for why: a prior step's failed
-    # auto-commit can leave coded_data/ (including the diagnostics/planar
-    # TSVs this command reads) in a stale, partially-reverted state.
+    # auto-commit can leave coded_data/ (including the diagnostics YAML and
+    # planar TSV this command reads) in a stale, partially-reverted state.
     planar_files = sorted(CODED_DATA.glob("*/lang_setup/planar_*.tsv"))
     if not planar_files:
         raise SystemExit("No planar_*.tsv found in coded_data/*/lang_setup/")
@@ -629,7 +628,7 @@ def main(args: argparse.Namespace | None = None) -> None:
 
         # Rename/split/merge edit diagnostics_{lang_id}.yaml, the source,
         # before it is read below, so the sheet operations see the new
-        # criteria; the TSV is then regenerated from it (#315).
+        # criteria (#315).
         if renames or splits or merges:
             _edit_diagnostics_yaml(lang_id, renames, splits, merges, apply)
 

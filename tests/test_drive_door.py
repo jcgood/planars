@@ -1168,7 +1168,7 @@ def test_a_literal_na_in_the_planar_file_is_pushed_as_written(env):
 
 # -- the diagnostics Sheet (5f) -------------------------------------------------------
 
-DIAG_TO_SHEET = argparse.Namespace(apply=True, to_sheet=True, lang=LANG)
+DIAG_TO_SHEET = argparse.Namespace(apply=True, lang=LANG)
 
 
 def _diagnostics_id(door):

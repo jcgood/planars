@@ -3,7 +3,6 @@ Connecting to Google APIs...
   [arao1248] YAML updated → diagnostics_arao1248.yaml
   [arao1248] WARNING diagnostics_arao1248.yaml [subspanrepetition]: Diagnostic criterion 'widescope_either' is not defined in diagnostic_criteria.yaml
   [arao1248] WARNING diagnostics_arao1248.yaml [subspanrepetition]: Diagnostic criterion 'widescope_either' is not in the allowed set for class 'subspanrepetition' in diagnostic_classes.yaml (allowed: ['fillable_botheither_conjunct', 'widescope_left', 'widescope_right'])
-  [arao1248] Updated → diagnostics_arao1248.tsv
 
 Language: arao1248
 Mode:     apply
@@ -23,7 +22,6 @@ Merges:   ['widescope_right:widescope_left:widescope_either']
   [stan1293] YAML updated → diagnostics_stan1293.yaml
   [stan1293] WARNING diagnostics_stan1293.yaml [subspanrepetition]: Diagnostic criterion 'widescope_either' is not defined in diagnostic_criteria.yaml
   [stan1293] WARNING diagnostics_stan1293.yaml [subspanrepetition]: Diagnostic criterion 'widescope_either' is not in the allowed set for class 'subspanrepetition' in diagnostic_classes.yaml (allowed: ['fillable_botheither_conjunct', 'widescope_left', 'widescope_right'])
-  [stan1293] Updated → diagnostics_stan1293.tsv
 
 Language: stan1293
 Mode:     apply
@@ -63,7 +61,6 @@ Merges:   ['widescope_right:widescope_left:widescope_either']
   [synth0001] YAML updated → diagnostics_synth0001.yaml
   [synth0001] WARNING diagnostics_synth0001.yaml [subspanrepetition]: Diagnostic criterion 'widescope_either' is not defined in diagnostic_criteria.yaml
   [synth0001] WARNING diagnostics_synth0001.yaml [subspanrepetition]: Diagnostic criterion 'widescope_either' is not in the allowed set for class 'subspanrepetition' in diagnostic_classes.yaml (allowed: ['fillable_botheither_conjunct', 'widescope_left', 'widescope_right'])
-  [synth0001] Updated → diagnostics_synth0001.tsv
 
 Language: synth0001
 Mode:     apply
@@ -100,4 +97,4 @@ Merges:   ['widescope_right:widescope_left:widescope_either']
 Manifest updated on Drive.
 
 Drive door (enforce): checked 51 write(s) to 11 tab(s) or file(s); 0 broke a rule.
-Local-file door: changed 6 file(s), previous versions archived and logged.
+Local-file door: changed 3 file(s), previous versions archived and logged.

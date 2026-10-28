@@ -26,7 +26,8 @@ code paths of `--refresh-dropdowns` (removed 2026-10-23 with the manifest's
 copy of each criterion's values it relied on); a class present in the manifest but absent from the diagnostics YAML; and a
 plain apply/dry-run baseline confirming the manifest is only rewritten when
 something actually changed. stdout, the mutation log, and the rewritten
-`diagnostics_{lang_id}.tsv`/`.yaml` files in `coded_data/` all came back
+`diagnostics_{lang_id}.yaml` files in `coded_data/` (and the TSV copies,
+deleted 2026-10-27) all came back
 byte-identical between the unmigrated and migrated code.
 
 `CODED_DATA` is redirected into a temp tree in every test, for both this
@@ -93,12 +94,9 @@ class Env:
         return self.doorway.spreadsheet(
             self.sheet_id(lang, class_name)).worksheet(construction)
 
-    # -- the local diagnostics YAML/TSV ----------------------------------
+    # -- the local diagnostics YAML ---------------------------------------
     def yaml_path(self, lang: str) -> Path:
         return self.coded / lang / "lang_setup" / f"diagnostics_{lang}.yaml"
-
-    def tsv_path(self, lang: str) -> Path:
-        return self.coded / lang / "lang_setup" / f"diagnostics_{lang}.tsv"
 
     def edit_yaml(self, lang: str, fn) -> None:
         data = _yaml.safe_load(self.yaml_path(lang).read_text(encoding="utf-8"))
@@ -439,8 +437,7 @@ def test_manifest_is_never_touched_by_a_dry_run(env):
 
 
 # ---------------------------------------------------------------------------
-# rename/split/merge edit diagnostics_{lang_id}.yaml, then regenerate the TSV
-# from it (#315)
+# rename/split/merge edit diagnostics_{lang_id}.yaml (#315)
 # ---------------------------------------------------------------------------
 
 def _changed_lines(before: str, after: str) -> List[str]:
@@ -474,25 +471,10 @@ def test_split_and_merge_change_only_their_criteria_in_the_yaml(env):
     assert "# Positions treated as always present" in after
 
 
-def test_the_tsv_is_regenerated_from_the_edited_yaml(env):
-    env.run(["sync-params", "--apply", "--rename", "noninterruption:free:free_form"])
-
-    from coding.make_forms import _yaml_to_tsv_df
-    yaml_data = _yaml.safe_load(env.yaml_path("stan1293").read_text(encoding="utf-8"))
-    assert env.tsv_path("stan1293").read_text(encoding="utf-8") == \
-        _yaml_to_tsv_df(yaml_data, "stan1293").to_csv(sep="\t", index=False)
-
-
 def test_a_dry_run_does_not_rewrite_the_diagnostics_yaml(env):
     before = env.yaml_path("stan1293").read_text(encoding="utf-8")
     env.run(["sync-params", "--rename", "noninterruption:free:free_form"])
     assert env.yaml_path("stan1293").read_text(encoding="utf-8") == before
-
-
-def test_a_dry_run_does_not_rewrite_the_diagnostics_tsv(env):
-    before = env.tsv_path("stan1293").read_text(encoding="utf-8")
-    env.run(["sync-params", "--rename", "noninterruption:free:free_form"])
-    assert env.tsv_path("stan1293").read_text(encoding="utf-8") == before
 
 
 # ---------------------------------------------------------------------------

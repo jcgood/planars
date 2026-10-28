@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
-"""Validation for diagnostics_{lang_id}.yaml (the source) and its TSV copy.
+"""Validation for diagnostics_{lang_id}.yaml, the one diagnostics file.
 
-`validate_diagnostics_yaml` is called by sync-diagnostics-yaml;
-`validate_diagnostics_df` (the TSV) by generate-sheets, import-sheets,
-validate-coding and integrity-check, to flag issues before sheets are created
-or revalidated.
+`validate_diagnostics_yaml` is called by sync-diagnostics-yaml, generate-sheets,
+validate-coding, integrity-check and the commands that edit the YAML
+(sync-params, rename-construction, accept-proposal), to flag issues before
+sheets are created or revalidated. (Until 2026-10-27 a second validator,
+``validate_diagnostics_df``, checked the TSV copy; the copy was deleted.)
 
-Checks (both forms unless noted):
-  - Structural      — TSV: required columns present, Language matches lang_id;
-                      YAML: 'language' matches lang_id, 'classes' is a mapping
-  - Brace syntax    — TSV only: criterion specs like stressed{y/n/both} are
-                      well-formed (the YAML lists values for each criterion)
+Checks:
+  - Structural      — 'language' matches lang_id, 'classes' is a mapping
+  - Criterion values — every criterion lists a non-empty list of values
   - Criterion names — base criterion names are defined in diagnostic_criteria.yaml
   - Class names     — class corresponds to a planars/ analysis module
   - Constructions   — 'general' must be alone (unless the class defines its
                       constructions in the schema); no duplicates within a class
-  - keystone_active — YAML only: if present, must be bool or a
+  - keystone_active — if present, must be bool or a
                       {construction: bool} dict
   - Glottocode      — lang_id matches Glottocode format; advisory if not
                       verified (in the local cache or schemas/languages.yaml)
@@ -24,12 +23,11 @@ Checks (both forms unless noted):
                       diagnostic_classes.yaml)
   - Required classes — every class with collection_required: "y" in
                       diagnostic_classes_status.yaml must be present. Reported
-                      as an error but with blocking=False in both forms: a
-                      class simply not drafted yet is no reason to withhold
-                      the rest of a valid file. Callers that gate a write on
-                      errors (import-sheets' diagnostics download,
-                      sync-diagnostics-yaml's two directions) gate on
-                      ``.blocking``, not on ``level`` alone.
+                      as an error but with blocking=False: a class simply not
+                      drafted yet is no reason to withhold the rest of a
+                      valid file. Callers that gate a write on errors
+                      (sync-diagnostics-yaml, the YAML-editing commands) gate
+                      on ``.blocking``, not on ``level`` alone.
 """
 from __future__ import annotations
 
@@ -67,7 +65,7 @@ def _is_glottolog_verified(lang_id: str) -> bool:
 
 def _glottocode_issues(lang_id: str, location: str) -> List[ValidationIssue]:
     """The Glottocode format warning or the Glottolog-verification advisory,
-    for both the YAML and TSV forms. Synthetic test languages are exempt."""
+    for the diagnostics YAML. Synthetic test languages are exempt."""
     if _is_synthetic(lang_id):
         return []
     if not _is_valid_glottocode(lang_id):
@@ -88,10 +86,6 @@ from .schemas import load_diagnostic_classes, load_diagnostic_criteria  # noqa: 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-from .make_forms import DIAGNOSTICS_TSV_COLUMNS  # noqa: E402
-_REQUIRED_COLS = set(DIAGNOSTICS_TSV_COLUMNS)
-
 
 def _known_analysis_classes() -> Set[str]:
     """Return the set of valid class names by inspecting planars/ modules.
@@ -183,30 +177,6 @@ def _codebook_criterion_names() -> Set[str]:
             if name:
                 names.add(name)
     return names
-
-
-def _parse_criterion_specs(value: str) -> List[tuple]:
-    """Parse a comma-separated criterion specs string into (name, values, raw_spec) tuples.
-
-    Does not raise — returns what it can and lets the caller emit ValidationIssues.
-    """
-    results = []
-    for spec in [s.strip() for s in value.split(",") if s.strip()]:
-        if "{" in spec:
-            close = spec.find("}")
-            open_ = spec.find("{")
-            name = spec[:open_].strip()
-            if close == -1:
-                results.append((name, None, spec))  # None signals malformed
-            else:
-                values_str = spec[open_ + 1:close]
-                values = [v.strip() for v in values_str.split("/") if v.strip()]
-                results.append((name, values if values else None, spec))
-        else:
-            # A bare name used to mean [y, n]; that default was removed
-            # (2026-10-12, Phase 10): every criterion states its values.
-            results.append((spec, None, spec))
-    return results
 
 
 # ---------------------------------------------------------------------------
@@ -399,190 +369,6 @@ def validate_diagnostics_yaml(data: dict, lang_id: str) -> List[ValidationIssue]
                 issues.append(ValidationIssue(
                     "error", filename,
                     f"Required class '{cls}' (collection_required: \"y\") is missing",
-                    blocking=False,
-                ))
-
-    return issues
-
-
-def validate_diagnostics_df(df, lang_id: str) -> List[ValidationIssue]:
-    """Validate a diagnostics_{lang_id}.tsv DataFrame for a given language.
-
-    Parameters
-    ----------
-    df      : DataFrame read from diagnostics_{lang_id}.tsv
-    lang_id : expected language ID (from the planar filename)
-    """
-    issues: List[ValidationIssue] = []
-
-    # ------------------------------------------------------------------
-    # 1. Structural
-    # ------------------------------------------------------------------
-    missing_cols = _REQUIRED_COLS - set(df.columns)
-    if missing_cols:
-        issues.append(ValidationIssue(
-            "error", f"diagnostics_{lang_id}.tsv",
-            f"Missing required columns: {sorted(missing_cols)}"
-        ))
-        return issues  # can't proceed without structure
-
-    for i, row in df.iterrows():
-        lang = str(row.get("Language", "")).strip()
-        if lang != lang_id:
-            issues.append(ValidationIssue(
-                "error", f"row {i + 2}",
-                f"Language value '{lang}' does not match expected lang_id '{lang_id}'"
-            ))
-
-    # ------------------------------------------------------------------
-    # 2. Brace syntax + 3. Param names vs. codebook
-    # ------------------------------------------------------------------
-    known_criteria = _codebook_criterion_names()
-
-    for i, row in df.iterrows():
-        class_name = str(row.get("Class", "")).strip()
-        params_raw = str(row.get("Criteria", "")).strip()
-        location   = f"row {i + 2} [{class_name}]"
-
-        for name, values, raw_spec in _parse_criterion_specs(params_raw):
-            # Brace syntax
-            if values is None:
-                if "{" not in raw_spec:
-                    issues.append(ValidationIssue(
-                        "error", location,
-                        f"Criterion '{raw_spec}' lists no values — write it as "
-                        f"{raw_spec}{{v1/v2/...}} (there is no [y, n] default)"
-                    ))
-                elif "}" not in raw_spec:
-                    issues.append(ValidationIssue(
-                        "error", location,
-                        f"Malformed param spec '{raw_spec}' — missing closing brace"
-                    ))
-                else:
-                    issues.append(ValidationIssue(
-                        "error", location,
-                        f"Param spec '{raw_spec}' has empty value list"
-                    ))
-            # Param names vs. codebook (only if codebook loaded successfully)
-            if known_criteria and name and name not in known_criteria:
-                issues.append(ValidationIssue(
-                    "warning", location,
-                    f"Diagnostic criterion '{name}' is not defined in diagnostic_criteria.yaml"
-                ))
-
-    # ------------------------------------------------------------------
-    # 4. Class names vs. analysis modules
-    # ------------------------------------------------------------------
-    known_classes = _known_analysis_classes()
-
-    for i, row in df.iterrows():
-        class_name = str(row.get("Class", "")).strip()
-        if not class_name:
-            issues.append(ValidationIssue(
-                "error", f"row {i + 2}",
-                "Empty Class value"
-            ))
-        elif known_classes and class_name not in known_classes:
-            issues.append(ValidationIssue(
-                "warning", f"row {i + 2}",
-                f"Class '{class_name}' has no corresponding planars/ analysis module "
-                f"(known: {sorted(known_classes)})"
-            ))
-
-    # ------------------------------------------------------------------
-    # 5. Construction naming
-    # ------------------------------------------------------------------
-    schema_constructions = _schema_defined_constructions()
-
-    for i, row in df.iterrows():
-        class_name     = str(row.get("Class", "")).strip()
-        constructions  = [c.strip() for c in str(row.get("Constructions", "")).split(",") if c.strip()]
-        location       = f"row {i + 2} [{class_name}]"
-
-        if not constructions:
-            issues.append(ValidationIssue(
-                "error", location,
-                "No constructions listed"
-            ))
-            continue
-
-        if class_name in schema_constructions:
-            allowed = schema_constructions[class_name]
-            unknown = [c for c in constructions if c not in allowed]
-            if unknown:
-                issues.append(ValidationIssue(
-                    "error", location,
-                    f"construction(s) {unknown} not defined for '{class_name}' in "
-                    f"diagnostic_classes.yaml (allowed: {sorted(allowed)})"
-                ))
-        elif "general" in constructions and len(constructions) > 1:
-            issues.append(ValidationIssue(
-                "error", location,
-                f"'general' must be the only construction when used, "
-                f"but found: {constructions}"
-            ))
-
-        seen: Dict[str, int] = {}
-        for j, name in enumerate(constructions):
-            if name in seen:
-                issues.append(ValidationIssue(
-                    "error", location,
-                    f"Duplicate construction name '{name}'"
-                ))
-            else:
-                seen[name] = j
-
-    # ------------------------------------------------------------------
-    # 6. Glottocode format + cache advisory (synthetic languages exempt)
-    # ------------------------------------------------------------------
-    issues.extend(_glottocode_issues(lang_id, f"diagnostics_{lang_id}.tsv"))
-
-    # ------------------------------------------------------------------
-    # 7. Schema conformance — params must be in the allowed set for class
-    # ------------------------------------------------------------------
-    allowed_by_class = _diagnostic_class_allowed_criteria()
-
-    if allowed_by_class:
-        for i, row in df.iterrows():
-            class_name = str(row.get("Class", "")).strip()
-            params_raw = str(row.get("Criteria", "")).strip()
-            location   = f"row {i + 2} [{class_name}]"
-
-            if not class_name or class_name not in allowed_by_class:
-                continue  # unknown class already flagged in check 4
-
-            allowed = allowed_by_class[class_name]
-            for name, _values, _raw in _parse_criterion_specs(params_raw):
-                if name and name not in allowed:
-                    issues.append(ValidationIssue(
-                        "warning", location,
-                        f"Diagnostic criterion '{name}' is not in the allowed set for class "
-                        f"'{class_name}' in diagnostic_classes.yaml "
-                        f"(allowed: {sorted(allowed)})"
-                    ))
-
-    # ------------------------------------------------------------------
-    # 8. Required classes must be present
-    # ------------------------------------------------------------------
-    required_classes = _required_collection_classes()
-    if required_classes:
-        present_classes = {str(row.get("Class", "")).strip() for _, row in df.iterrows()}
-        for cls in sorted(required_classes):
-            if cls not in present_classes:
-                issues.append(ValidationIssue(
-                    "error", f"diagnostics_{lang_id}.tsv",
-                    f"Required class '{cls}' (collection_required: \"y\" in "
-                    f"diagnostic_classes_status.yaml) is missing",
-                    # Matches validate_diagnostics_yaml's identical check
-                    # above -- a required class simply not drafted yet is
-                    # not a reason to withhold syncing the classes that are
-                    # already valid. Missing here until issue #283 found the
-                    # gap: import_sheets.py's _download_lang_setup_sheets
-                    # gates purely on level == "error", so this used to
-                    # silently skip the whole diagnostics Sheet download
-                    # for any language with a genuinely non-blocking gap
-                    # like this one (confirmed happening to arao1248 daily,
-                    # via issue #279's already-tracked missing proform class).
                     blocking=False,
                 ))
 

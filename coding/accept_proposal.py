@@ -12,9 +12,9 @@ With ``--apply`` it asks about each one:
 2. applies what is accepted to the sources through the local-file door
    (previous version archived, a change-log line naming the issue and the
    annotator's reasons): the planar file, and the diagnostics YAML
-   (``make_forms._diff_diagnostics_tsv_yaml``/``_apply_yaml_diff`` on the
-   round-trip YAML, so comments survive; the diagnostics TSV is then
-   rebuilt from it). Each is validated first, and nothing is written if
+   (``make_forms._diff_diagnostics_grid_yaml``/``_apply_yaml_diff`` on the
+   round-trip YAML, so comments survive; the diagnostics Sheet follows in
+   the next daily refresh). Each is validated first, and nothing is written if
    either fails. A diagnostics change those functions call ambiguous (an
    unknown class or criterion, a class removed) or one in a class with
    per-construction criteria is not applied: it is listed for the
@@ -144,14 +144,14 @@ def _new_diagnostics(lang_id: str, rows: List[Row], header: List[str],
                      problems: List[str], by_hand: List[str]):
     """The edited round-trip YAML, or None if nothing changes or it fails."""
     import yaml
-    from .make_forms import _apply_yaml_diff, _diff_diagnostics_tsv_yaml, \
+    from .make_forms import _apply_yaml_diff, _diff_diagnostics_grid_yaml, \
         _load_diagnostics_yaml_for_edit
     from .validate_diagnostics import validate_diagnostics_yaml
 
     path = file_door.diagnostics_yaml(lang_id).path
     plain = yaml.safe_load(path.read_text(encoding="utf-8"))
-    deterministic, ambiguous = _diff_diagnostics_tsv_yaml(_grid_frame(rows, header), plain,
-                                                          lang_id)
+    deterministic, ambiguous = _diff_diagnostics_grid_yaml(_grid_frame(rows, header), plain,
+                                                           lang_id)
     per_construction = {name for name, data in (plain.get("classes") or {}).items()
                         if (data or {}).get("construction_criteria")}
     for change in ambiguous:
@@ -319,10 +319,8 @@ def main(args: argparse.Namespace | None = None) -> None:
     else:
         new_planar = None
     if accepted and new_yaml is not None:
-        from .sync_diagnostics_yaml import _sync_to_tsv
         file_door.write(file_door.diagnostics_yaml(lang_id), _dump_diagnostics_yaml(new_yaml),
                         why=why)
-        _sync_to_tsv(lang_id, apply=True, error_langs=[])
         print(f"  diagnostics_{lang_id}.yaml updated")
 
     # Refill the sheet from the new sources and record the review on it.

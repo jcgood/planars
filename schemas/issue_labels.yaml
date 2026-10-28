@@ -163,12 +163,12 @@ labels:
     color: "d73a4a"
     description: "Filed when sync-diagnostics-yaml finds a blocking diagnostics YAML error."
     meaning: >-
-      `sync-diagnostics-yaml` (either direction) found a blocking
+      `sync-diagnostics-yaml` found a blocking
       `diagnostics_{lang_id}.yaml` validation error — a malformed YAML, not
-      schema inconsistency (`codebook-error`). A non-blocking error (e.g. a required class not yet
+      schema inconsistency (`codebook-error`) — so the diagnostics Sheet was
+      not updated. A non-blocking error (e.g. a required class not yet
       drafted) does not trigger this. Resolve: fix the YAML, run
-      `sync-diagnostics-yaml --apply` (and `--to-sheet --apply` if the Sheet
-      needs it too). Auto-closed when clean.
+      `sync-diagnostics-yaml --apply`. Auto-closed when clean.
     filed_by: data-refresh.yml
 
   - name: import-error

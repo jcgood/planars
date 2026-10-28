@@ -65,9 +65,8 @@ def _give_old_names(doorway, coded: Path) -> None:
             params = info.get("construction_params") or {}
             if new in params:
                 params[old] = params.pop(new)
-            for name in (f"diagnostics_{lang}.yaml", f"diagnostics_{lang}.tsv"):
-                p = setup / name
-                p.write_text(p.read_text(encoding="utf-8").replace(new, old), encoding="utf-8")
+            p = setup / f"diagnostics_{lang}.yaml"
+            p.write_text(p.read_text(encoding="utf-8").replace(new, old), encoding="utf-8")
             tsv = coded / lang / CLS / f"{new}.tsv"
             if tsv.exists():
                 tsv.rename(tsv.with_name(f"{old}.tsv"))
