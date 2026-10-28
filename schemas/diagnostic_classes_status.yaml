@@ -254,6 +254,8 @@ classes:
       Corrective accent (e.g. "HE did it, not SHE") is out of scope — do not code
       pairs elicited or observed under a correction context (see issue #237 for the
       literature distinguishing corrective from contrastive/ordinary accent).
+      Example: give both versions where you can, accents in capitals, as
+        shared: She probably comPLETely destroyed the car. | independent: She PROBably comPLETely destroyed the car.
     span_rule_hash: "79bb5fda"
     criterion_set_status: "[NEEDS REVIEW]"  # accented is reused as-is from metrical
       # (stable there); joint_accent is new and unvalidated against real data.

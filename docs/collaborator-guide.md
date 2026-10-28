@@ -18,6 +18,8 @@ The cells you fill in describe grammatical properties of the elements: whether t
 
 Your coordinator will share a Google Sheets link with you. Open it in a browser — it works like any Google Sheet. You do not need to install anything.
 
+Please don't change the sheet's sharing (for example to "anyone with the link"): your own account already has access, and a link share lets anyone edit your answers. If a tool or AI assistant you use can't open the sheet, ask your coordinator rather than opening the sharing. Likewise, don't rename or delete tabs: the tooling reads them by name, so a renamed tab's answers are not imported.
+
 ### Filling in values
 
 Each criterion column has a dropdown validation list. Click a cell and use the dropdown, or type the value directly. Most criteria accept `y` or `n`; some accept additional values such as `both` or `?`. The allowed values are listed in the dropdown — entering anything else will trigger a validation warning (the cell will turn pink).
