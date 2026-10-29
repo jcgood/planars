@@ -4,9 +4,9 @@ against the fake.
 File 14 of 18 migrated to the Drive doorway (#271). Its Drive footprint is
 confined to two independent, read-only entry points: `_section_sheets` (the
 `--sheets` flag, opening each language's class spreadsheets and comparing live
-tab titles/headers against the manifest) and `main()`'s `--check-manifest` fast
-path (downloads the manifest only, no Sheet API calls at all -- used by the
-daily `data-refresh` workflow). Neither ever writes: this file only opens
+tab titles/headers against the diagnostics YAML) and `main()`'s
+`--check-manifest` fast path (reads the ID file and the YAML only, no Drive
+calls at all -- used by the daily `data-refresh` workflow). Neither ever writes: this file only opens
 spreadsheets, lists worksheet titles, and reads header rows, reporting
 mismatches as printed warnings/errors. Every scenario below asserts
 `doorway.mutations == []` for exactly that reason.
@@ -58,9 +58,10 @@ import pytest
 
 from coding import drive as drive_module
 from coding import drive_doorway
+from coding import drive_ids
 from coding import integrity_check as ic
 from command_runner import run_command
-from fake_drive import FakeDriveDoorway, MANIFEST_FILE_ID, use_frozen_coded_data
+from fake_drive import FakeDriveDoorway, use_frozen_coded_data
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "integrity_check"
@@ -96,7 +97,10 @@ def env(monkeypatch, tmp_path):
     doorway = FakeDriveDoorway.from_fixtures()
     use_frozen_coded_data(monkeypatch, tmp_path)
     monkeypatch.setattr(ic, "date", _FrozenDate)
-    monkeypatch.setattr(drive_module, "_load_drive_config", FakeDriveDoorway.drive_config)
+    # The ID file the command reads; a test changes it through run_main.config.
+    config = FakeDriveDoorway.drive_config()
+    monkeypatch.setattr(drive_module, "_load_drive_config",
+                        lambda: json.loads(json.dumps(config)))
     drive_doorway.set_doorway(doorway)
 
     def run_main(argv: List[str]) -> Tuple[str, Optional[int]]:
@@ -110,6 +114,7 @@ def env(monkeypatch, tmp_path):
             exit_code = exc.code
         return buf.getvalue(), exit_code
 
+    run_main.config = config
     try:
         yield doorway, run_main
     finally:
@@ -130,16 +135,8 @@ def check_snapshot(name: str, actual: str) -> None:
         f"PLANARS_UPDATE_SNAPSHOTS=1 and review the diff.")
 
 
-def mutate_manifest(doorway, fn) -> None:
-    """Load manifest.json, apply fn(manifest) in place, write it back."""
-    manifest = doorway.download_file_json(MANIFEST_FILE_ID)
-    fn(manifest)
-    doorway.file(MANIFEST_FILE_ID).content = json.dumps(manifest).encode("utf-8")
-
-
 def sheet_id(doorway, lang: str, class_name: str) -> str:
-    manifest = doorway.download_file_json(MANIFEST_FILE_ID)
-    return manifest[lang]["sheets"][class_name]["spreadsheet_id"]
+    return drive_ids.class_sheet_id(FakeDriveDoorway.drive_config(), lang, class_name)
 
 
 def first_criterion_col(header: List[str]) -> int:
@@ -164,30 +161,6 @@ def test_check_manifest_clean_transcript(env):
     _, run_main = env
     out, _ = run_main(["integrity-check", "--check-manifest"])
     check_snapshot("check_manifest_clean.txt", out)
-
-
-# ---------------------------------------------------------------------------
-# MANIFEST SHAPE section (Phase 6 boundary 4, issue #271)
-# ---------------------------------------------------------------------------
-
-def test_manifest_shape_clean_on_default_run(env):
-    # Not asserting exit_code here -- arao1248 has known, unrelated open
-    # issues elsewhere in the report (e.g. #279's proform gap) that can
-    # drive exit 1 on their own. This test is scoped to the MANIFEST SHAPE
-    # section only.
-    _, run_main = env
-    out, _ = run_main(["integrity-check", "--lang", "arao1248"])
-    assert "MANIFEST SHAPE" in out
-    assert "✓  manifest matches the expected shape" in out
-
-def test_manifest_shape_violation_drives_exit_1(env):
-    doorway, run_main = env
-    mutate_manifest(doorway, lambda m: m.__setitem__("arao1248", "not-a-dict-anymore"))
-
-    out, exit_code = run_main(["integrity-check", "--lang", "arao1248"])
-    assert "MANIFEST SHAPE" in out
-    assert "✗  manifest does not match the expected shape" in out
-    assert exit_code == 1
 
 
 # ---------------------------------------------------------------------------
@@ -276,8 +249,7 @@ def test_stale_merged_column_uses_the_merge_wording(env):
 
 def test_unreachable_spreadsheet_reported_per_class_not_fatal(env):
     doorway, run_main = env
-    mutate_manifest(doorway, lambda m: m["arao1248"]["sheets"]["ciscategorial"]
-                     .__setitem__("spreadsheet_id", "does_not_exist_xyz"))
+    run_main.config["arao1248"]["class_sheets"]["ciscategorial"]["id"] = "does_not_exist_xyz"
 
     out, exit_code = run_main(["integrity-check", "--sheets", "--lang", "arao1248"])
     assert "ciscategorial  —  could not open spreadsheet:" in out
@@ -311,12 +283,11 @@ def test_no_sheets_flag_skips_the_section_and_touches_no_drive_calls(env):
 
 def test_check_manifest_reports_stale_entries_and_exits_1(env):
     doorway, run_main = env
-    mutate_manifest(doorway, lambda m: m["arao1248"]["sheets"].__setitem__(
-        "ghost_class", {"spreadsheet_id": "does_not_matter",
-                        "constructions": ["general"], "construction_params": {}}))
+    run_main.config["arao1248"]["class_sheets"]["ghost_class"] = {
+        "id": "does_not_matter", "version": 1}
 
     out, exit_code = run_main(["integrity-check", "--check-manifest"])
-    assert "STALE MANIFEST ENTRIES (1)" in out
+    assert "CLASS SHEETS NOT IN DIAGNOSTICS (1)" in out
     assert "ghost_class" in out
     assert "python -m coding prune-manifest --apply" in out
     assert exit_code == 1
@@ -326,27 +297,22 @@ def test_check_manifest_reports_stale_entries_and_exits_1(env):
 def test_check_manifest_clean_does_not_exit_nonzero(env):
     _, run_main = env
     out, exit_code = run_main(["integrity-check", "--check-manifest"])
-    assert "No stale manifest entries." in out
+    assert "No class sheets recorded for classes absent from diagnostics." in out
     assert exit_code is None
 
 
-def test_check_manifest_warns_and_continues_when_drive_is_unavailable(env, monkeypatch):
-    """Designed to warn and move on, not crash -- see the comment at
-    coding/integrity_check.py ~line 869: a daily workflow run should not file a
-    misleading stale-manifest issue just because Drive was briefly unreachable."""
+def test_check_manifest_fails_when_the_id_file_is_unreadable(env, monkeypatch):
+    """The ID file is a local file (unit 11c), so one that can't be read is a
+    real error: the check fails, and the refresh's issue shows why, rather
+    than skipping as it did when it read the manifest from Drive."""
     doorway, run_main = env
 
-    # The outage shows at the first Drive read. Making the door never fails:
-    # it doesn't reach Drive until used.
     def _boom(*args, **kwargs):
-        raise ConnectionError("simulated Drive outage")
+        raise ValueError("drive_config.json: Expecting value: line 1 column 1")
 
-    monkeypatch.setattr(drive_module, "load_manifest", _boom)
-    out, exit_code = run_main(["integrity-check", "--check-manifest"])
-    assert "WARNING: Could not load manifest" in out
-    assert "simulated Drive outage" in out
-    assert "skipping stale manifest check" in out
-    assert exit_code is None  # returns cleanly rather than sys.exit(1)
+    monkeypatch.setattr(drive_module, "_load_drive_config", _boom)
+    with pytest.raises(ValueError, match="drive_config.json"):
+        run_main(["integrity-check", "--check-manifest"])
     assert doorway.mutations == []
 
 

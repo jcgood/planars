@@ -301,8 +301,8 @@ def lang_id():
 
 @pytest.fixture
 def manifest_with_old(lang_id):
-    """Manifest where lang has 'old_class' but not 'new_class'."""
-    return {lang_id: {"sheets": {"old_class": {"spreadsheet_id": "abc"}}}}
+    """ID file where lang has a sheet for 'old_class' but not 'new_class'."""
+    return {lang_id: {"class_sheets": {"old_class": {"id": "abc", "version": 1}}}}
 
 
 def test_preflight_passes_when_new_in_diagnostics_old_absent(tmp_path, lang_id, manifest_with_old):
@@ -329,11 +329,11 @@ def test_preflight_errors_when_new_absent_from_diagnostics(tmp_path, lang_id, ma
 
 
 def test_preflight_skips_language_with_no_involvement(tmp_path, lang_id):
-    """No error for a language that has neither old class in manifest nor new class in diagnostics."""
-    manifest = {lang_id: {"sheets": {"unrelated_class": {}}}}
+    """No error for a language that has neither old class in the ID file nor new class in diagnostics."""
+    config = {lang_id: {"class_sheets": {"unrelated_class": {"id": "x", "version": 1}}}}
     _make_diagnostics(tmp_path, lang_id, ["unrelated_class"])
     planar = _make_planar_file(tmp_path, lang_id)
-    _preflight_rename_class(manifest, {"old_class": "new_class"}, [planar])  # should not raise
+    _preflight_rename_class(config,{"old_class": "new_class"}, [planar])  # should not raise
 
 
 def test_preflight_parse_rename_class_flag():

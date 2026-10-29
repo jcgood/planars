@@ -10,14 +10,14 @@ Class renames:
     no local TSVs for proform/
     would archive: proform_stan1293 → _archived/proform_stan1293_v2
     would create: proform_renamed_stan1293 (v3)
-    would update manifest: proform -> proform_renamed
+    would update the ID file: proform -> proform_renamed
     Archived proform_stan1293 → _archived/proform_stan1293_v2
     [do_so_substitution] wrote: carried 142, new blank 0, dropped 0
     [vp_ellipsis] wrote: carried 142, new blank 0, dropped 0
     Status tab created (2 construction(s))
     Locked tab Instructions: create
     Locked tab Instructions: protect
-    Manifest: proform -> proform_renamed (v3): https://docs.google.com/spreadsheets/d/fake_ss_0002
+    ID file: proform -> proform_renamed (v3): https://docs.google.com/spreadsheets/d/fake_ss_0002
 
 Language: stan1293
 
@@ -77,11 +77,7 @@ Language: stan1293
     (no changes — skipping)
 
   proform_renamed (current v3)
-    [do_so_substitution] downloaded 142 rows
-    [vp_ellipsis] downloaded 142 rows
-    [do_so_substitution] carry over 142; new blank 0
-    [vp_ellipsis] carry over 142; new blank 0
-    (no changes — skipping)
+    (replaced earlier in this run — skipping)
 
   phrasal_accent (current v1)
     [prescreening] downloaded 142 rows
@@ -96,7 +92,8 @@ Language: stan1293
     [elements] carry over 135; new blank 0
     (no changes — skipping)
 
-Manifest updated on Drive.
+ID file updated.
+Manifest copy republished on Drive.
 
 Done.
 

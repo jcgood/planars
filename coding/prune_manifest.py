@@ -1,32 +1,38 @@
 #!/usr/bin/env python3
-"""Remove retired analysis class entries from the Drive manifest and archive their TSVs.
+"""Retire analysis classes: remove them from the ID file and archive their TSVs and sheets.
+
+(The command keeps its old name, prune-manifest; what it prunes is the ID file's
+list of class sheets, and the manifest copy is republished from it.)
 
 When an analysis class is removed from diagnostics_{lang_id}.yaml (and the TSV regenerated
-via `sync-diagnostics-yaml --apply`), the Drive manifest retains the stale entry
-indefinitely. This causes import-sheets to keep downloading the old sheet and writing
-TSVs to the retired class directory.
+via `sync-diagnostics-yaml --apply`), the ID file (drive_config.json) retains the stale
+class sheet indefinitely. This causes import-sheets to keep downloading the old sheet and
+writing TSVs to the retired class directory.
 
 Run from the repo root:
     python -m coding prune-manifest           # dry run — show what would change
-    python -m coding prune-manifest --apply   # archive TSVs, move Drive sheet, remove manifest entry
+    python -m coding prune-manifest --apply   # archive TSVs, move Drive sheet, remove it from the ID file
     python -m coding prune-manifest --apply --all  # skip per-class confirmation prompts
 
-For each stale class (in manifest but not in diagnostics_{lang_id}.yaml, or its TSV if
-there is no YAML), --apply will:
-  1. Write a timestamped manifest snapshot to manifest_archives/ (gitignored)
-  2. Remove each *.tsv in coded_data/{lang}/{class}/ through the local-file door
+For each stale class (a class sheet in the ID file but not in diagnostics_{lang_id}.yaml),
+--apply will:
+  1. Remove each *.tsv in coded_data/{lang}/{class}/ through the local-file door
      (coding/file_door.py), which keeps its last version in
      coded_data/{lang}/archive/{class}/, logs it in the language's changes.tsv,
      removes the emptied class folder, and commits and pushes the change in
      planars-data when the command ends
-  3. Move the Drive spreadsheet into an _archived/ subfolder in the language's Drive folder,
+  2. Move the Drive spreadsheet into an _archived/ subfolder in the language's Drive folder,
      and make it read-only for everyone but its owner (drive.make_read_only)
-  4. Remove the class entry from the Drive manifest and re-upload it
+  3. Remove the class sheet from the ID file (`drive_ids.remove_class_sheet`)
+     and save it, through the local-file door, which commits it in
+     planars-data (its history there is the record of what was removed)
 
-Without --all it asks about each class. The Drive manifest is uploaded right
-after each class is archived, not once at the end, so a crash partway through
-never leaves it listing an already-archived class. A stale class here means a
-retired one; to rename a class instead, use `restructure-sheets --rename-class`.
+Without --all it asks about each class. The ID file is saved right after each
+class is archived, not once at the end, so a crash partway through never
+leaves it listing an already-archived class. When any class was retired, the
+manifest copy the Colab notebooks read is then republished once
+(`manifest_copy.publish`). A stale class here means a retired one; to rename
+a class instead, use `restructure-sheets --rename-class`.
 
 The Drive sheet is moved to _archived/, not deleted — annotation data is irreplaceable.
 A recency warning is shown if the sheet was modified within the last 14 days, in case
@@ -46,17 +52,14 @@ import yaml as _yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
-MANIFEST_ARCHIVES = ROOT / "manifest_archives"
 
 from .drive import (
-    load_manifest,
     make_read_only,
-    upload_manifest,
     _load_drive_config,
     _save_drive_config,
 )
 from .drive_doorway import get_doorway
-from . import drive_door
+from . import drive_door, drive_ids, manifest_copy
 from .sheet_spec import ARCHIVE_FOLDER_NAME
 from . import file_door
 
@@ -112,29 +115,28 @@ def _warn_if_recently_edited(meta: Dict, spreadsheet_id: str) -> None:
 
 
 def _archive_drive_sheet(
-    doorway, lang_id: str, class_name: str, manifest: dict, apply: bool
+    doorway, lang_id: str, class_name: str, config: dict, apply: bool
 ) -> bool:
     """Move the Drive spreadsheet for a retired class into _archived/ in the language folder.
 
-    In dry-run mode prints what would happen; in apply mode performs the move.
-    Returns True if the sheet was (or would be) archived.
+    The sheet and folder come from the ID file (``config``). In dry-run mode
+    prints what would happen; in apply mode performs the move. Returns True
+    if the sheet was (or would be) archived.
     """
-    lang_data = manifest.get(lang_id, {})
-    sheet_info = lang_data.get("sheets", {}).get(class_name, {})
-    spreadsheet_id = sheet_info.get("spreadsheet_id")
-    folder_id = lang_data.get("folder_id")
+    spreadsheet_id = drive_ids.class_sheet_id(config, lang_id, class_name)
+    folder_id = config.get(lang_id, {}).get("folder_id")
 
     if not spreadsheet_id:
-        print(f"    no spreadsheet_id in manifest for {class_name} — skipping Drive archival")
+        print(f"    no sheet ID in the ID file for {class_name} — skipping Drive archival")
         return False
     if not folder_id:
-        print(f"    no folder_id in manifest for {lang_id} — skipping Drive archival")
+        print(f"    no folder_id in the ID file for {lang_id} — skipping Drive archival")
         return False
 
     meta = _sheet_metadata(doorway, spreadsheet_id, class_name)
 
     if not apply:
-        ss_url = sheet_info.get("spreadsheet_url", spreadsheet_id)
+        ss_url = drive_ids.sheet_url(spreadsheet_id)
         print(f"    would move Drive sheet → _archived/  ({ss_url})")
         if meta:
             _warn_if_recently_edited(meta, spreadsheet_id)
@@ -180,7 +182,7 @@ def _active_classes(lang_id: str) -> set[str]:
     yaml_path = CODED_DATA / lang_id / "lang_setup" / f"diagnostics_{lang_id}.yaml"
     if not yaml_path.exists():
         raise SystemExit(
-            f"ERROR: {lang_id} has sheets in the manifest but no {yaml_path.name} in "
+            f"ERROR: {lang_id} has sheets in the ID file but no {yaml_path.name} in "
             f"coded_data/{lang_id}/lang_setup/, so prune-manifest can't tell which "
             f"classes are active. Pull planars-data (git -C coded_data pull) or restore "
             f"the file from its history, then re-run.")
@@ -189,28 +191,19 @@ def _active_classes(lang_id: str) -> set[str]:
     return set(((data or {}).get("classes") or {}).keys())
 
 
-def _find_stale(manifest: dict) -> Dict[str, List[str]]:
-    """Return {lang_id: [stale_class_name, ...]} for all languages in the manifest."""
+def _find_stale(config: dict) -> Dict[str, List[str]]:
+    """Return {lang_id: [stale_class_name, ...]} for the languages in the ID file
+    (the classes with a sheet there that the diagnostics YAML no longer has)."""
     result: Dict[str, List[str]] = {}
-    for lang_id, lang_data in manifest.items():
-        manifest_classes = set(lang_data.get("sheets", {}).keys())
+    for lang_id in drive_ids.languages(config):
+        sheet_classes = set(drive_ids.class_sheets(config, lang_id))
+        if not sheet_classes:
+            continue
         active = _active_classes(lang_id)
-        stale = sorted(manifest_classes - active)
+        stale = sorted(sheet_classes - active)
         if stale:
             result[lang_id] = stale
     return result
-
-
-# ---------------------------------------------------------------------------
-# Manifest archiving
-# ---------------------------------------------------------------------------
-
-def _archive_manifest(manifest: dict, timestamp: str) -> Path:
-    """Write a timestamped snapshot of the manifest to manifest_archives/."""
-    MANIFEST_ARCHIVES.mkdir(exist_ok=True)
-    dest = MANIFEST_ARCHIVES / f"manifest_{timestamp}.json"
-    dest.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
-    return dest
 
 
 # ---------------------------------------------------------------------------
@@ -220,11 +213,13 @@ def _archive_manifest(manifest: dict, timestamp: str) -> Path:
 def build_parser() -> argparse.ArgumentParser:
     """Build the argument parser for `python -m coding prune-manifest`."""
     ap = argparse.ArgumentParser(
-        description="Archive retired class TSVs and remove stale manifest entries."
+        description="Archive retired class TSVs and sheets and remove them from the ID file "
+                    "(then republish the manifest copy)."
     )
     ap.add_argument(
         "--apply", action="store_true",
-        help="archive TSVs, move Drive sheet, remove manifest entry (default: dry run)",
+        help="archive TSVs, move Drive sheet, remove it from the ID file, "
+             "republish the manifest copy (default: dry run)",
     )
     ap.add_argument(
         "--all", action="store_true", dest="skip_prompts",
@@ -247,16 +242,16 @@ def main(args: argparse.Namespace | None = None) -> None:
     # prior step's failed auto-commit.
     _SHEET_META.clear()
     doorway = get_doorway()
-    manifest = load_manifest(doorway)
+    config = _load_drive_config()
 
-    stale_map = _find_stale(manifest)
+    stale_map = _find_stale(config)
 
     if not stale_map:
-        print("All manifest entries match active diagnostics — nothing to prune.")
+        print("Every class sheet in the ID file matches active diagnostics — nothing to prune.")
         return
 
     # Always show dry-run summary; warn if annotation data exists (possible rename)
-    print(f"{'DRY RUN — ' if not apply else ''}Stale manifest entries found:\n")
+    print(f"{'DRY RUN — ' if not apply else ''}Stale class sheets found in the ID file:\n")
     for lang_id, stale_classes in stale_map.items():
         print(f"  {lang_id}:")
         print(f"    stale classes: {', '.join(stale_classes)}")
@@ -273,19 +268,13 @@ def main(args: argparse.Namespace | None = None) -> None:
                 )
             else:
                 print(f"    no local TSVs for {class_name}/")
-            _archive_drive_sheet(doorway, lang_id, class_name, manifest, apply=False)
-            print(f"    would remove from manifest: {lang_id}/{class_name}")
+            _archive_drive_sheet(doorway, lang_id, class_name, config, apply=False)
+            print(f"    would remove from the ID file: {lang_id}/{class_name}")
         print()
 
     if not apply:
         print("Run with --apply to make these changes.")
         return
-
-    timestamp = file_door.stamp()
-
-    # Archive manifest before any mutation
-    snapshot_path = _archive_manifest(manifest, timestamp)
-    print(f"Manifest snapshot written to {snapshot_path.relative_to(ROOT)}\n")
 
     any_changes = False
 
@@ -311,29 +300,24 @@ def main(args: argparse.Namespace | None = None) -> None:
                 print(f"    no local TSVs to archive for {class_name}/")
 
             # Move Drive sheet to _archived/ subfolder
-            _archive_drive_sheet(doorway, lang_id, class_name, manifest, apply=True)
+            _archive_drive_sheet(doorway, lang_id, class_name, config, apply=True)
 
-            # Remove from manifest
-            del manifest[lang_id]["sheets"][class_name]
-            print(f"    removed from manifest: {lang_id}/{class_name}")
+            # Remove from the ID file, and save it right after this class's
+            # local/Drive archiving is done, not once after the whole loop --
+            # a crash partway through must not leave the ID file still
+            # showing an already-archived class as present, which would make
+            # a retry reprocess it (issue #280).
+            drive_ids.remove_class_sheet(config, lang_id, class_name)
+            _save_drive_config(config)
+            print(f"    removed from the ID file: {lang_id}/{class_name}")
             any_changes = True
-
-            # Upload the manifest right after this class's local/Drive
-            # archiving is done, not once after the whole loop -- a crash
-            # partway through must not leave Drive's manifest still showing
-            # an already-archived class as present, which would make a retry
-            # reprocess it (issue #280).
-            drive_cfg = _load_drive_config()
-            file_id = drive_cfg.get("_planars_config_file_id")
-            root_id = drive_cfg.get("_root_folder_id")
-            new_id = upload_manifest(doorway, manifest, root_id, file_id)
-            if new_id != file_id:
-                drive_cfg["_planars_config_file_id"] = new_id
-                _save_drive_config(drive_cfg)
 
         print()
 
     if any_changes:
-        print("Drive manifest updated.")
+        # The notebooks read the manifest copy: republish it without the retired sheets.
+        manifest_copy.publish(doorway, config)
+        _save_drive_config(config)
+        print("ID file updated; manifest copy republished on Drive.")
     else:
         print("No changes made (all classes skipped).")

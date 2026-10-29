@@ -14,8 +14,9 @@ And per sheet: add tabs for constructions new in the diagnostics YAML;
 rebuild and protect the locked tabs (coding/locked_tabs.py) wherever they
 differ from their sources; and give the Status tab any column
 `planar.yaml`'s `status_tab.columns` lists that it lacks, and a row for
-every construction. The daily refresh runs this with --apply, and
-``--apply`` updates the manifest on Drive. The planar file is read as the
+every construction. The sheets are the language's class sheets in the ID file,
+and the tabs a sheet has are those labelled as constructions
+(``construction_tabs()``). The daily refresh runs this with --apply. The planar file is read as the
 source of truth, so ``--apply`` stops if ``coded_data/`` has uncommitted
 changes (``coded_data_clean_tree``, enforced centrally by preconditions.py).
 
@@ -23,9 +24,8 @@ Which columns of a tab hold criteria, how wide an added row should be, and
 what each dropdown allows come from the tab's own header plus the diagnostics
 YAML, via ``_resolve_criterion_columns`` and ``_fresh_param_values``
 (written for refresh-dropdowns, #272; moved here 2026-10-23 when that
-command began reading the sheet spec instead), never from the manifest,
-which is bookkeeping and goes stale. When the two cannot be reconciled the tab is skipped with a
-reason rather than written to (otherwise a new row could narrow the whole
+command began reading the sheet spec instead). When the two cannot be
+reconciled the tab is skipped with a reason rather than written to (otherwise a new row could narrow the whole
 tab's dropdowns, or write ``NA`` into ``Source``/``Comments``).
 
 Does NOT renumber positions or restructure existing content — use
@@ -48,11 +48,8 @@ from .make_forms import (
     _infer_language_id_from_planar_filename,
     _read_diagnostics_for_language,
 )
-from .drive import (
-    _load_drive_config,
-    load_manifest,
-    upload_manifest,
-)
+from . import drive_ids
+from .drive import _load_drive_config
 from .drive_doorway import WorksheetHandle, WorksheetNotFound, get_doorway
 from .schemas import criteria_for
 from .generate_sheets import (
@@ -487,7 +484,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     # where this exact gap let update-sheets write bogus rows to 16 live
     # sheets from a stale planar file).
     doorway = get_doorway()
-    manifest = load_manifest(doorway)
+    config = _load_drive_config()
     # Imported here: restructure_sheets imports generate_sheets at load time,
     # as this module does.
     from .restructure_sheets import _get_keyed_row_constructions
@@ -510,24 +507,23 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     any_changes = False
     any_drift = False
-    manifest_modified = False
 
-    for manifest_lang, lang_data in manifest.items():
-        if manifest_lang not in lang_planar_data:
-            print(f"\n  [{manifest_lang}] No local planar file found — skipping")
+    for lang_id in drive_ids.languages(config):
+        if lang_id not in lang_planar_data:
+            print(f"\n  [{lang_id}] No local planar file found — skipping")
             continue
-        element_index, planar_pos_map, planar_path = lang_planar_data[manifest_lang]
+        element_index, planar_pos_map, planar_path = lang_planar_data[lang_id]
 
         # The diagnostics YAML says what values each criterion allows, and it
         # says so per *construction*: several classes give their constructions
         # different criteria (segmental's aspiration_prominence and flapping,
         # phrasal_accent's prescreening and general), so a per-class reading
         # would give all but the first the wrong values — that was issue #272.
-        lang_setup_dir = CODED_DATA / manifest_lang / "lang_setup"
+        lang_setup_dir = CODED_DATA / lang_id / "lang_setup"
         try:
-            diag_rows = _read_diagnostics_for_language(manifest_lang, lang_setup_dir)
+            diag_rows = _read_diagnostics_for_language(lang_id, lang_setup_dir)
         except Exception as exc:
-            print(f"\n  [{manifest_lang}] Could not read diagnostics: {exc}")
+            print(f"\n  [{lang_id}] Could not read diagnostics: {exc}")
             diag_rows = []
         criteria_by_construction = {
             (cls, con): values for cls, con, _names, values in diag_rows
@@ -538,11 +534,13 @@ def main(args: argparse.Namespace | None = None) -> None:
         for cls, _con, _names, values in diag_rows:
             class_criteria_union.setdefault(cls, {}).update(values)
 
-        for class_name, sheet_info in lang_data["sheets"].items():
+        for class_name, spreadsheet_id in drive_ids.class_sheets(config, lang_id).items():
             print(f"\n  {class_name}")
-            ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
+            ss = doorway.open_spreadsheet(spreadsheet_id)
 
-            constructions = sheet_info["constructions"]
+            # The tabs the sheet has now; the diagnostics YAML says which
+            # it should have (new ones are added below).
+            constructions = ss.construction_tabs()
 
             for construction in constructions:
                 try:
@@ -587,7 +585,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                 # still count as pair-row here, so the tab is skipped, not written to.
                 is_pair_row = any(c in header for c in PAIR_ROW_SHAPES["element_pairs"])
 
-                lang_trailing = trailing_columns_for(manifest_lang)
+                lang_trailing = trailing_columns_for(lang_id)
                 missing_trailing = [col for col in lang_trailing if col not in header]
                 if missing_trailing:
                     any_changes = True
@@ -615,9 +613,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                     continue
 
                 # Which columns hold criteria comes from the tab's own header;
-                # what each one allows comes from the diagnostics YAML. Neither
-                # answer is the manifest's to give — it is bookkeeping, and it
-                # goes stale. When the two cannot be reconciled, say so and
+                # what each one allows comes from the diagnostics YAML. When the two cannot be reconciled, say so and
                 # leave the tab alone: an added row of the wrong width puts
                 # values under the wrong headings, which is worse than not
                 # adding it.
@@ -626,7 +622,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                     _fresh_param_values(
                         class_name, construction,
                         criteria_by_construction.get((class_name, construction), {}),
-                        manifest_lang),
+                        lang_id),
                     class_criteria_union.get(class_name, {}))
                 if error:
                     print(f"    [{construction}] SKIPPED — {error}")
@@ -643,10 +639,10 @@ def main(args: argparse.Namespace | None = None) -> None:
                     # Only elements in biuniqueness scope, built exactly as
                     # the tab was first built.
                     missing_rows = _compute_missing_biuniq_element_rows(
-                        rows, header, manifest_lang, col_start, len(per_col))
+                        rows, header, lang_id, col_start, len(per_col))
                 else:
                     missing_rows = _compute_missing_rows(
-                        ws, element_index, manifest_lang, col_start, len(per_col),
+                        ws, element_index, lang_id, col_start, len(per_col),
                         class_name=class_name, construction=construction,
                     )
 
@@ -665,9 +661,9 @@ def main(args: argparse.Namespace | None = None) -> None:
                 if apply and (missing_rows or missing_trailing):
                     print(f"    [{construction}] done")
 
-            # Detect constructions in the diagnostics YAML that are not yet in the
-            # manifest (i.e. added after the sheet was first generated).  Create a
-            # tab for each and update the manifest entry in memory.
+            # Detect constructions in the diagnostics YAML that the sheet has no
+            # tab for (i.e. added after the sheet was first generated).  Create
+            # a tab for each.
             yaml_constructions = {
                 construction: (names, values)
                 for cls, construction, names, values in diag_rows
@@ -684,25 +680,17 @@ def main(args: argparse.Namespace | None = None) -> None:
                     action = "Adding" if apply else "Would add"
                     print(f"    [{c}] {action} new tab ({len(pn)} criterion/criteria)")
                     any_changes = True
-                # Set outside the apply branch: adding a tab rewrites the
-                # manifest too, and the dry run is what a coordinator reads to
-                # decide whether to run the apply. This used to be set only on
-                # apply, which made the "Would update manifest" line below
-                # unreachable.
-                manifest_modified = True
                 if apply:
-                    new_params = _add_constructions_to_existing_sheet(
-                        ss, class_name, new_for_class, manifest_lang,
+                    _add_constructions_to_existing_sheet(
+                        ss, class_name, new_for_class, lang_id,
                         element_index, planar_path,
                     )
-                    sheet_info["constructions"].extend(new_construction_names)
-                    sheet_info.setdefault("construction_params", {}).update(new_params)
 
             # The locked tabs (Instructions, Planar Structure — schemas/planar.yaml
             # locked_tabs) are rebuilt from their sources and protected on every
             # sheet, every day; only what differs is written. This is the run
             # that keeps them current whichever command changed their source.
-            for change in rebuild_locked_tabs(ss, class_name, manifest_lang,
+            for change in rebuild_locked_tabs(ss, class_name, lang_id,
                                               planar_path, apply=apply):
                 any_changes = True
                 print(f"    [locked tab] {'' if apply else 'would '}{change}")
@@ -716,16 +704,6 @@ def main(args: argparse.Namespace | None = None) -> None:
                 print(f"    {'' if apply else 'would '}{change}")
             if apply:
                 reorder_tabs(ss, list(yaml_constructions))
-
-    if manifest_modified:
-        drive_config = _load_drive_config()
-        root_folder_id = drive_config.get("_root_folder_id", "")
-        existing_file_id = drive_config.get("_planars_config_file_id", "")
-        if apply:
-            upload_manifest(doorway, manifest, root_folder_id, existing_file_id)
-            print("\nManifest updated on Drive.")
-        else:
-            print("\nWould update manifest on Drive (new tabs detected).")
 
     if any_drift:
         print("\nSome sheets are out of sync with the planar structure.")

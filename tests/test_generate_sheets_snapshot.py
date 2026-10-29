@@ -15,7 +15,7 @@ lesson from files 5/15/16 — patching `coding.drive`'s copy of a name is not
 enough for a module that imported it by name), across twelve scenarios: a dry
 run and a true no-op `--apply` over the real fixture data (all three languages
 already have every class); a brand-new language (`arao1248` with its manifest
-entry removed — real annotation data untouched, since the fixture is a private
+entry removed from the ID file — real annotation data untouched, since the fixture is a private
 copy) both dry-run and `--apply`, the full creation path — folder, notes doc,
 planar/diagnostics sheets, one sheet per class, Status tabs; a new class added
 to an existing language's diagnostics YAML; a new construction added to an
@@ -23,9 +23,9 @@ existing class; `--force` refused when annotation sheets already exist;
 `--regen-construction` for a `nonpermutability` pair construction and a
 `coreference` one with `--pos-remap`; `--regen-dependents` both skipping (the
 real fixture data has no missing dependent TSVs) and regenerating (one deleted
-to force it); and `--push-manifest`. stdout and the mutation log came back
-byte-identical between the unmigrated and migrated code for all twelve —
-diffed as full files, not sampled.
+to force it). (`--push-manifest` was a thirteenth, deleted in unit 11c.) At the
+migration stdout and the mutation log came back byte-identical between the
+unmigrated and migrated code for all twelve — diffed as full files, not sampled.
 
 `_find_annotated_drops`/`_format_annotated_drop` (the --regen-construction
 annotated-drop abort, since Phase 10 unit 5c the Drive door's and tested in
@@ -38,11 +38,11 @@ file is pure logic, unaffected by which Drive interface the surrounding
 functions take.
 
 `CODED_DATA` and `ROOT` are both redirected into a private tmp tree per test
-(this file writes `manifest_backup.json`/`sheets_manifest.json` relative to
-`ROOT`, which must never land in the real repo) — `schemas/` is symlinked in
-so `_sync_language_metadata`'s direct-by-path read of `languages.yaml` still
-resolves the three real, already-onboarded fixture languages rather than
-spuriously warning that they're unknown.
+— `schemas/` is symlinked in so `_warn_if_language_metadata_incomplete`'s
+direct-by-path read of `languages.yaml` still resolves the three real,
+already-onboarded fixture languages rather than spuriously warning that
+they're unknown. Each test gets its own ID file (`env.config`), which the
+command changes in place.
 
 Regenerate: `PLANARS_UPDATE_SNAPSHOTS=1 pytest tests/test_generate_sheets_snapshot.py`
 """
@@ -63,6 +63,7 @@ import pytest
 
 from coding import drive as drive_module
 from coding import drive_doorway
+from coding import drive_ids
 from coding import generate_notebooks as gn
 from coding import generate_sheets as gs
 from coding import state_files
@@ -91,20 +92,23 @@ class Env:
 
     def __init__(self, doorway: FakeDriveDoorway, coded: Path, tmp_root: Path,
                  saved_configs: List[dict],
-                 notebook_calls: List[bool], run: Callable[[List[str]], str]) -> None:
+                 notebook_calls: List[bool], run: Callable[[List[str]], str],
+                 config: Dict) -> None:
         self.doorway = doorway
+        self.config = config
         self.coded = coded
         self.tmp_root = tmp_root
         self.saved_configs = saved_configs
         self.notebook_calls = notebook_calls
         self.run = run
 
-    # -- the manifest ---------------------------------------------------
+    # -- the ID file ---------------------------------------------------
     def manifest(self) -> Dict:
+        """The notebooks' manifest copy on Drive (rebuilt by the command)."""
         return self.doorway.download_file_json(MANIFEST_FILE_ID)
 
     def sheet_id(self, lang: str, class_name: str) -> str:
-        return self.manifest()[lang]["sheets"][class_name]["spreadsheet_id"]
+        return drive_ids.class_sheet_id(self.config, lang, class_name)
 
     def tab(self, lang: str, class_name: str, construction: str):
         return self.doorway.spreadsheet(
@@ -120,27 +124,23 @@ class Env:
         self.yaml_path(lang).write_text(
             _yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
 
-    def remove_from_manifest(self, lang: str) -> None:
-        """Simulate a brand-new language: strip its manifest entry.
+    def forget_language(self, lang: str) -> None:
+        """Simulate a brand-new language: strip its entry from the ID file.
 
-        Its spreadsheets stay seeded in the fake -- only the manifest forgets
+        Its spreadsheets stay seeded in the fake -- only the ID file forgets
         about them, exactly like arao1248 in the pre-migration baseline.
         """
-        manifest = self.manifest()
-        manifest.pop(lang, None)
-        f = self.doorway.file(MANIFEST_FILE_ID)
-        f.content = json.dumps(manifest).encode("utf-8")
+        self.config.pop(lang, None)
 
     def remove_class(self, lang: str, class_name: str) -> None:
         """Simulate a class that has never been set up for this language: no
-        manifest entry, no sheet in Drive (trashed), no local TSVs, not in the
+        ID-file entry, no sheet in Drive (trashed), no local TSVs, not in the
         diagnostics YAML. Lets a test create it fresh even though the frozen
         data (captured from live Drive) already has it."""
-        manifest = self.manifest()
-        info = manifest.get(lang, {}).get("sheets", {}).pop(class_name, None)
-        self.doorway.file(MANIFEST_FILE_ID).content = json.dumps(manifest).encode("utf-8")
-        if info and info.get("spreadsheet_id"):
-            self.doorway.file(info["spreadsheet_id"]).trashed = True
+        sheet_id = drive_ids.class_sheet_id(self.config, lang, class_name)
+        drive_ids.remove_class_sheet(self.config, lang, class_name)
+        if sheet_id:
+            self.doorway.file(sheet_id).trashed = True
         shutil.rmtree(self.coded / lang / class_name, ignore_errors=True)
         self.edit_yaml(lang, lambda d: (d.get("classes") or {}).pop(class_name, None))
 
@@ -153,21 +153,21 @@ def env(monkeypatch, tmp_path):
     for lang in LANGS:
         shutil.copytree(FROZEN_CODED_DATA / lang, coded / lang)
 
-    # _sync_language_metadata reads ROOT/schemas/languages.yaml directly by
-    # path, and gs.ROOT is redirected below so manifest_backup.json and
-    # sheets_manifest.json never touch the real repo -- symlink schemas/ in so
-    # that read still resolves the three real, already-onboarded languages.
+    # _warn_if_language_metadata_incomplete reads ROOT/schemas/languages.yaml
+    # directly by path, and gs.ROOT is redirected below -- symlink schemas/ in
+    # so that read still resolves the three real, already-onboarded languages.
     (tmp_path / "schemas").symlink_to(ROOT / "schemas")
 
     saved_configs: List[dict] = []
     notebook_calls: List[bool] = []
+    # One ID file for the test, handed to the command on every load: the
+    # command changes it in place, and a test can change it first.
+    config = FakeDriveDoorway.drive_config()
 
     point_coded_data_at(monkeypatch, coded)
     monkeypatch.setattr(gs, "ROOT", tmp_path)
-    monkeypatch.setattr(gs, "MANIFEST_PATH", tmp_path / "sheets_manifest.json")
-    monkeypatch.setattr(gs, "_load_drive_config", FakeDriveDoorway.drive_config)
-    monkeypatch.setattr(drive_module, "_load_drive_config",
-                        FakeDriveDoorway.drive_config)
+    monkeypatch.setattr(gs, "_load_drive_config", lambda: config)
+    monkeypatch.setattr(drive_module, "_load_drive_config", lambda: config)
     monkeypatch.setattr(gs, "_save_drive_config",
                         lambda cfg: saved_configs.append(cfg))
     monkeypatch.setattr(gn, "regenerate_notebooks",
@@ -186,7 +186,7 @@ def env(monkeypatch, tmp_path):
         return buf.getvalue()
 
     try:
-        yield Env(doorway, coded, tmp_path, saved_configs, notebook_calls, run)
+        yield Env(doorway, coded, tmp_path, saved_configs, notebook_calls, run, config)
     finally:
         drive_doorway.reset_doorway()
 
@@ -250,32 +250,32 @@ def test_apply_noop_baseline_transcript(env):
     """Real data as committed: a sheet is made for each class a language lists
     with no sheet yet, and for nothing else. Which classes those are comes from
     the data, not from this test: since the 2026-10-19 refreeze, arao1248's
-    proform stub (#279) has none. The apply also re-uploads the merged
-    manifest once at the end regardless (unlike sync-params, generate-sheets
-    has no "anything changed" gate on that final upload).
+    proform stub (#279) has none. With nothing to make, the notebooks'
+    manifest copy is not re-uploaded.
     """
-    manifest = env.manifest()
     missing = sorted(
         f"{cls}_{lang}"
-        for lang, entry in manifest.items() if isinstance(entry, dict) and "sheets" in entry
+        for lang in drive_ids.languages(env.config)
         for cls in (_yaml.safe_load(env.yaml_path(lang).read_text(encoding="utf-8"))
                     .get("classes") or {})
-        if cls not in entry["sheets"])
+        if cls not in drive_ids.class_sheets(env.config, lang))
     out = env.run(["generate-sheets", "--apply"])
     check_snapshot("apply_noop_baseline.txt", out)
     made = sorted(m["title"] for m in env.doorway.mutations_of("create_spreadsheet"))
     assert made == missing
     assert len(env.doorway.mutations_of("move_file")) == len(missing)
+    if not missing:
+        assert env.doorway.mutations_of("update_file") == []
 
 
 def test_brand_new_language_dry_run_transcript(env):
-    env.remove_from_manifest("arao1248")
+    env.forget_language("arao1248")
     check_snapshot("brand_new_dry_run.txt", env.run(["generate-sheets"]))
     assert env.doorway.mutations == [], "a dry run must perform no Drive mutations at all"
 
 
 def test_brand_new_language_apply_transcript(env):
-    env.remove_from_manifest("arao1248")
+    env.forget_language("arao1248")
     check_snapshot("brand_new_apply.txt", env.run(["generate-sheets", "--apply"]))
 
 
@@ -285,7 +285,7 @@ def test_brand_new_language_apply_digest(env):
     class created in a single run. Reviewed here, not as raw JSON — see
     update_sheets' precedent (docs/data-layer-progress.md Findings 9-11).
     """
-    env.remove_from_manifest("arao1248")
+    env.forget_language("arao1248")
     env.run(["generate-sheets", "--apply"])
     check_snapshot("brand_new_apply_digest.txt", render(env.doorway.mutations))
 
@@ -308,12 +308,12 @@ def test_a_transient_429_moving_a_new_sheet_is_retried_not_a_crash(env, monkeypa
     create_spreadsheet/create_permission, where a retry after a lost
     response can create a second copy.
     """
-    env.remove_from_manifest("arao1248")
+    env.forget_language("arao1248")
     monkeypatch.setattr("coding.drive_door.time.sleep", lambda *a, **kw: None)
     env.doorway.fail_after("move_file", 1, exc=api_error(429, "rate limited"))
     out = env.run(["generate-sheets", "--apply"])
     assert "[SystemExit:" not in out
-    assert "arao1248" in env.manifest()
+    assert drive_ids.class_sheets(env.config, "arao1248")
     assert env.doorway.mutations_of("move_file")
 
 
@@ -433,13 +433,6 @@ def test_regen_dependents_exits_non_zero_on_a_real_failure(env, monkeypatch):
     assert "[SystemExit: 1]" in out
 
 
-def test_push_manifest_transcript(env):
-    manifest = env.manifest()
-    gs.MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    out = env.run(["generate-sheets", "--push-manifest"])
-    check_snapshot("push_manifest.txt", out)
-
-
 # ---------------------------------------------------------------------------
 # A dry run writes nothing, ever
 # ---------------------------------------------------------------------------
@@ -475,8 +468,8 @@ def test_force_refuses_before_destroying_any_annotation_sheet(env):
     """
     ciscategorial_id = env.sheet_id("arao1248", "ciscategorial")
     before = env.tab("arao1248", "ciscategorial", "general").get_all_values()
-    planar_id = env.manifest()["arao1248"]["planar_spreadsheet_id"]
-    diagnostics_id = env.manifest()["arao1248"]["diagnostics_spreadsheet_id"]
+    planar_id = env.config["arao1248"]["planar_spreadsheet_id"]
+    diagnostics_id = env.config["arao1248"]["diagnostics_spreadsheet_id"]
     before_planar = env.doorway.spreadsheet(planar_id).sheet1.get_all_values()
     before_diagnostics = env.doorway.spreadsheet(diagnostics_id).sheet1.get_all_values()
 
@@ -504,8 +497,8 @@ def test_force_refuses_for_a_later_language_before_an_earlier_one_is_touched(env
     code aborts during the preflight pass, before arao1248 or stan1293 is
     touched at all.
     """
-    env.remove_from_manifest("arao1248")
-    env.remove_from_manifest("stan1293")
+    env.forget_language("arao1248")
+    env.forget_language("stan1293")
 
     out = env.run(["generate-sheets", "--apply", "--force"])
 
@@ -528,7 +521,7 @@ def test_force_succeeds_as_before_when_no_language_fails_the_guard(env):
     --force-vs-existing-sheets one.
     """
     for lang in LANGS:
-        env.remove_from_manifest(lang)
+        env.forget_language(lang)
     # Not about #285's referential-divergence guard -- see
     # resolve_referential_divergence_for_test's docstring.
     resolve_referential_divergence_for_test(env, "synth0001")
@@ -538,7 +531,7 @@ def test_force_succeeds_as_before_when_no_language_fails_the_guard(env):
     assert "ERROR: --force refused" not in out
     assert "[SystemExit" not in out
     for lang in LANGS:
-        assert lang in env.manifest()
+        assert drive_ids.class_sheets(env.config, lang)
     create_titles = [m["title"] for m in env.doorway.mutations_of("create_spreadsheet")]
     for lang in LANGS:
         assert f"planar_{lang}" in create_titles
@@ -550,14 +543,14 @@ def test_force_succeeds_as_before_when_no_language_fails_the_guard(env):
 
 def test_orphan_sheet_guard_aborts_before_create(env):
     """A same-named spreadsheet already sitting in the language's Drive folder
-    but absent from the manifest must stop the run before a second one gets
+    but absent from the ID file must stop the run before a second one gets
     created alongside it.
     """
-    env.remove_from_manifest("arao1248")
-    # arao1248's folder was already seeded (from the manifest entry before it
+    env.forget_language("arao1248")
+    # arao1248's folder was already seeded (from the ID file entry before it
     # was stripped above) -- get_or_create_folder finds it by name, the same
-    # resolution main() itself performs when existing_lang_data has no
-    # folder_id of its own.
+    # resolution main() itself performs when the ID file has no folder_id
+    # of its own.
     lang_folder = env.doorway.get_or_create_folder("arao1248", parent_id=ROOT_FOLDER_ID)
     env.doorway.seed_file(
         "ciscategorial_arao1248",
@@ -579,7 +572,7 @@ def test_orphan_sheet_guard_aborts_before_create(env):
 # ---------------------------------------------------------------------------
 
 def test_a_second_identical_apply_after_creation_is_a_noop_for_that_language(env):
-    env.remove_from_manifest("arao1248")
+    env.forget_language("arao1248")
     env.run(["generate-sheets", "--apply"])
     env.doorway.clear_mutations()
 
@@ -625,7 +618,7 @@ def test_regen_dependents_stops_firing_once_the_dependent_tsv_is_imported(env):
 # ---------------------------------------------------------------------------
 
 def test_nothing_criterion_shaped_is_written_onto_source_or_comments_on_creation(env):
-    env.remove_from_manifest("arao1248")
+    env.forget_language("arao1248")
     env.run(["generate-sheets", "--apply"])
     assert_no_criterion_writes_onto_trailing_columns(env.doorway)
 
@@ -661,21 +654,32 @@ def test_nothing_criterion_shaped_is_written_onto_trailing_columns_on_regen(env)
 # The manifest
 # ---------------------------------------------------------------------------
 
-def test_manifest_upload_fires_on_creation(env):
-    env.remove_from_manifest("arao1248")
+def test_manifest_copy_is_refreshed_on_creation_and_lists_the_new_sheets(env):
+    env.forget_language("arao1248")
     env.run(["generate-sheets", "--apply"])
     updates = [m["file_id"] for m in env.doorway.mutations_of("update_file")]
     assert MANIFEST_FILE_ID in updates
+    sheets = env.manifest()["arao1248"]["sheets"]
+    assert {c: s["spreadsheet_id"] for c, s in sheets.items()} == \
+        drive_ids.class_sheets(env.config, "arao1248")
+
+
+def test_new_sheets_are_recorded_in_the_id_file(env):
+    env.forget_language("arao1248")
+    env.run(["generate-sheets", "--apply"])
+    sheets = env.config["arao1248"]["class_sheets"]
+    assert sheets and all(entry["version"] == 1 for entry in sheets.values())
+    assert env.saved_configs[-1] is env.config
 
 
 def test_manifest_is_never_touched_by_a_dry_run(env):
-    env.remove_from_manifest("arao1248")
+    env.forget_language("arao1248")
     env.run(["generate-sheets"])
     assert env.doorway.mutations_of("update_file") == []
 
 
 def test_drive_config_is_saved_on_apply(env):
-    env.remove_from_manifest("arao1248")
+    env.forget_language("arao1248")
     env.run(["generate-sheets", "--apply"])
     assert env.saved_configs, "drive_config.json should be written after a real apply"
 
@@ -685,13 +689,13 @@ def test_drive_config_is_saved_on_apply(env):
 # ---------------------------------------------------------------------------
 
 def test_notebooks_regenerate_after_a_real_apply(env):
-    env.remove_from_manifest("arao1248")
+    env.forget_language("arao1248")
     env.run(["generate-sheets", "--apply"])
     assert env.notebook_calls == [True]
 
 
 def test_notebooks_do_not_regenerate_on_a_dry_run(env):
-    env.remove_from_manifest("arao1248")
+    env.forget_language("arao1248")
     env.run(["generate-sheets"])
     assert env.notebook_calls == []
 

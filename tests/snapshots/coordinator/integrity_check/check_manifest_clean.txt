@@ -1,1 +1,1 @@
-No stale manifest entries.
+No class sheets recorded for classes absent from diagnostics.

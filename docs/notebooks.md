@@ -47,7 +47,7 @@ Below the chart, each analysis class produces a text report listing:
 **Audience:** Project coordinators
 **Location:** Top-level `ConstituencyTypology` Drive folder
 
-A single notebook covering all languages in the manifest. Shows per-construction text reports and one domain chart per language. Useful for cross-linguistic comparison and project oversight.
+A single notebook covering all languages in the manifest copy (rebuilt daily from the ID file). Shows per-construction text reports and one domain chart per language. Useful for cross-linguistic comparison and project oversight.
 
 ### How to use
 

@@ -33,7 +33,7 @@ coding/                         Google Sheets workflow tools (python -m coding <
 coded_data/{lang_id}/           Annotation data per language (in planars-data repo)
   lang_setup/                 Planar structure TSV + diagnostics_{lang_id}.yaml
   {class_name}/                 Filled TSVs per analysis class
-  archive/{class_name}/         Superseded TSVs (after import-sheets --overwrite-existing or prune-manifest)
+  archive/{class_name}/         Superseded TSVs (after import-sheets --overwrite-existing or prune-manifest, which retires a class)
 coded_data/synth0001/           Synthetic second-language dataset (not real data)
 notebooks/
   templates/                    Boilerplate notebooks used by generate-notebooks
@@ -118,12 +118,16 @@ Filled TSV filenames use the pattern `{construction}.tsv`. The language ID and a
 
 ### Google Drive manifest
 
-The Drive manifest (`manifest.json`) is stored on Drive and contains all languages' sheet metadata and folder IDs. `coded_data/drive_config.json`, in private planars-data, bootstraps the Drive lookup. It holds:
+`coded_data/drive_config.json` (the ID file), in private planars-data, is the one record of where every Drive file the tooling made is; commands read and write it through `coding/drive_ids.py`. It holds:
 
 - `_root_folder_id` — the `ConstituencyTypology` top-level Drive folder
-- `_planars_config_file_id` — the manifest file
+- `_planars_config_file_id` — the manifest copy on Drive (see below)
 - `_all_languages_notebook_file_id` — the coordinator notebook
-- Per-language: `folder_id`, `planar_spreadsheet_id`, `diagnostics_spreadsheet_id`, `proposal_spreadsheet_id` (with the Sheets' URLs), `notes_doc_id`, `domains_notebook_file_id`, `report_notebook_file_id`, `report_file_id`
+- Per-language: `folder_id`, `planar_spreadsheet_id`, `diagnostics_spreadsheet_id`, `proposal_spreadsheet_id` (with the Sheets' URLs), `notes_doc_id`, `domains_notebook_file_id`, `report_notebook_file_id`, `report_file_id`, `class_sheets` (each class sheet's ID and version), `status_sheet_id`, `notification_issue`
+
+Which constructions a sheet has is read from the sheet's labelled tabs; which it should have, from `diagnostics_{lang_id}.yaml`.
+
+The manifest (`manifest.json` on Drive) is no longer read by any command. It is a copy rebuilt whole from the ID file and the sources (`coding/manifest_copy.py`; `python -m coding publish-manifest --apply`, also a daily-refresh step), kept only because the published Colab notebooks still read it.
 
 It contains no credentials, but its IDs point at unpublished data, so it belongs to planars-data, not the public planars repo (moved there 2026-10-12; earlier it was committed to planars, and this page wrongly called it gitignored). The daily refresh commits its changes along with the other planars-data files.
 

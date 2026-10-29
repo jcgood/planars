@@ -22,7 +22,7 @@ Run from the repo root:
     # to the old judgment instead of having to hunt for it:
     python -m coding restructure-sheets --split-element "PRON{P,T}:me,you,him,her,it,us,them" --apply
 
-    # Rename an analysis class across all languages (renames sheet, local TSV dir, manifest):
+    # Rename an analysis class across all languages (renames sheet, local TSV dir, ID file entry):
     python -m coding restructure-sheets --rename-class old_class:new_class --apply
     python -m coding restructure-sheets --rename-class old:new1 --rename-class old2:new2 --apply
 
@@ -66,7 +66,12 @@ What this does per spreadsheet:
   3. [--apply] Creates a new spreadsheet from the updated planar structure
   4. Carries over annotations matched by (Element, Position_Name)
   5. Leaves unmatched rows blank for re-annotation
-  6. Updates sheets_manifest.json to point to the new spreadsheets
+  6. [--apply] Records the new spreadsheet in the ID file (drive_config.json,
+     through `drive_ids.set_class_sheet`, version + 1; the archived copy is
+     named with the old version) and, when the run replaced any sheet,
+     republishes the manifest copy the Colab notebooks read
+     (`manifest_copy.publish`). The sheets to restructure are the ID file's
+     class sheets; the tabs a sheet holds are read from the sheet itself.
 
 Each tab's local annotation TSV is rewritten to match, through the local-file
 door (coding/file_door.py): the previous version goes to
@@ -104,7 +109,8 @@ After `--apply`, for each language whose sheets actually changed:
 
 Archived sheets: `_lock_archived_sheet` sets the annotator's grant to reader
 (`drive.set_user_role`) and removes any link share; `_rollback_unit` undoes only
-that one grant. To retire a class rather than rename it, use `prune-manifest`.
+that one grant. To retire a class rather than rename it, use `prune-manifest`
+(which removes the class from the ID file).
 The Drive door retries every call and checks the writes.
 
 Authentication: same OAuth2 setup as generate_sheets.py.
@@ -112,7 +118,6 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 from __future__ import annotations
 
 import argparse
-import json
 import re
 import sys
 from pathlib import Path
@@ -138,8 +143,9 @@ from planars.schema_values import (
 )
 from .drive import (
     _load_drive_config, _save_drive_config,
-    load_manifest, remove_anyone_permission, set_user_role, upload_manifest,
+    remove_anyone_permission, set_user_role,
 )
+from . import drive_ids, manifest_copy
 from .drive_doorway import SpreadsheetHandle, WorksheetHandle, WorksheetNotFound, get_doorway
 from .generate_sheets import (
     _annotator_email,
@@ -156,13 +162,13 @@ from .notify import (
     build_change_comment,
     changed_lang_ids,
     ensure_notification_issue,
+    folder_url as drive_folder_url,
     post_notification_comment,
 )
 from . import restructure_journal
 from . import drive_door, file_door
 from .sheet_spec import ARCHIVE_FOLDER_NAME
 
-MANIFEST_PATH = ROOT / "sheets_manifest.json"
 CODED_DATA = ROOT / "coded_data"
 _STRUCTURAL_COLS = set(ELEMENT_ROW_COLUMNS)
 
@@ -241,11 +247,6 @@ def _lookup_existing(
 # Drive helpers
 # ---------------------------------------------------------------------------
 
-def _folder_id_from_url(folder_url: str) -> str:
-    """Extract the Drive folder ID from a Drive folder URL (last path segment)."""
-    return folder_url.rstrip("/").rsplit("/", 1)[-1]
-
-
 def _lock_archived_sheet(doorway, file_id: str, lang_id: str) -> None:
     """Remove any 'anyone' permission from a just-archived sheet and share it
     read-only with the language's annotator, if one is on file.
@@ -278,14 +279,14 @@ def _lock_archived_sheet(doorway, file_id: str, lang_id: str) -> None:
 # Interrupted-run recovery (Phase 7 of the data layer redesign, issue #271)
 # ---------------------------------------------------------------------------
 
-def _rollback_unit(doorway, manifest, entry: dict) -> None:
+def _rollback_unit(doorway, entry: dict) -> None:
     """Undo an OLD_SHEET_ARCHIVED-only unit: move the archived sheet back to
     its language folder, rename it back to its live title, and restore the
     annotator's write access -- the exact inverse of `_lock_archived_sheet`.
 
     Only called for entries `restructure_journal.is_rollback_safe()` confirms
     are still pre-recreate (see that module's docstring for why nothing later
-    is undone this way). Does not touch the manifest -- it was never updated
+    is undone this way). Does not touch the ID file -- it was never updated
     for this unit, so it already still points at the sheet being restored
     here.
 
@@ -320,16 +321,15 @@ def _rollback_unit(doorway, manifest, entry: dict) -> None:
     print(f"    [{lang_id}] {class_name}: rolled back — sheet restored, un-archived.")
 
 
-def _finish_new_sheet_created_unit(manifest, entry: dict) -> Tuple[str, str, str]:
+def _finish_new_sheet_created_unit(config, entry: dict) -> Tuple[str, str, str]:
     """Finish a NEW_SHEET_CREATED unit: the replacement sheet itself is
-    already done, only the manifest bookkeeping (pointing at it) never
+    already done, only the ID file bookkeeping (pointing at it) never
     happened. Pure local bookkeeping, no further Drive-sheet mutation --
-    always safe to finish forward. The actual Drive upload of this manifest
-    change, and clearing the unit from the journal, happen where they
-    already do for a normal run's classes -- once, in the end-of-run upload
-    block -- so a crash between this write and that upload leaves the
-    journal entry in place and correctly re-detected, rather than marked
-    done early.
+    always safe to finish forward. Saving the ID file, and clearing the
+    unit from the journal, happen where they already do for a normal run's
+    classes -- in the end-of-run block, after the ID file is saved -- so a
+    crash between this change and that save leaves the journal entry in
+    place and correctly re-detected, rather than marked done early.
 
     Handles both shapes this checkpoint can mean: an ordinary restructure
     (`class_name` unchanged) and a `--rename-class` unit (`detail`'s
@@ -337,9 +337,9 @@ def _finish_new_sheet_created_unit(manifest, entry: dict) -> Tuple[str, str, str
     the OLD class name -- see `_rename_class_for_language`). For a rename,
     also finishes the local TSV directory rename if it didn't already
     happen (deliberately deferred here rather than done before this
-    checkpoint, same reasoning as the manifest write: neither is unsafe to
+    checkpoint, same reasoning as the ID file write: neither is unsafe to
     redo/skip if already done, unlike archiving or creating a sheet) and
-    drops the old class's now-stale manifest entry.
+    drops the old class's now-stale ID file entry.
 
     Returns (lang_id, DISPLAY class name, url) for the caller's
     sheet_links/notify list -- the new name for a rename, same as the
@@ -361,15 +361,10 @@ def _finish_new_sheet_created_unit(manifest, entry: dict) -> Tuple[str, str, str
                                      f"(restructure-sheets --resume)")
             print(f"    [{lang_id}] {class_name} -> {new_class_name}: "
                   f"moved local TSVs.")
-        manifest.get(lang_id, {}).get("sheets", {}).pop(class_name, None)
-    manifest.setdefault(lang_id, {}).setdefault("sheets", {})[new_class_name] = {
-        "spreadsheet_id": detail["spreadsheet_id"],
-        "url": detail["url"],
-        "constructions": detail["constructions"],
-        "construction_params": detail["construction_params"],
-        "version": detail["version"],
-    }
-    print(f"    [{lang_id}] {new_class_name}: resumed — manifest now points at the "
+        drive_ids.remove_class_sheet(config, lang_id, class_name)
+    drive_ids.set_class_sheet(config, lang_id, new_class_name,
+                              detail["spreadsheet_id"], detail["version"])
+    print(f"    [{lang_id}] {new_class_name}: resumed — the ID file now points at the "
           f"already-created sheet ({detail['url']}).")
     return lang_id, new_class_name, detail["url"]
 
@@ -1092,14 +1087,14 @@ def _copy_keyed_tab_with_rename(
 # ---------------------------------------------------------------------------
 
 def _preflight_rename_class(
-    manifest: dict,
+    config: dict,
     rename_class_map: Dict[str, str],
     planar_files: list,
 ) -> None:
     """Abort if any language fails the --rename-class pre-flight checks.
 
     For each rename pair (old_class -> new_class), every language that has
-    old_class in the manifest must also have new_class in its diagnostics file
+    old_class in the ID file (``config``) must also have new_class in its diagnostics file
     (and must NOT have old_class in it).  This enforces the required
     ordering: edit diagnostics_{lang_id}.yaml first, then rename.  The file
     is read the way every command reads it
@@ -1113,11 +1108,11 @@ def _preflight_rename_class(
         except Exception:
             continue
         active_classes = {c for c, _, _, _ in specs}
-        manifest_classes = set(manifest.get(lang_id, {}).get("sheets", {}).keys())
+        sheet_classes = set(drive_ids.class_sheets(config, lang_id))
 
         for old_class, new_class in rename_class_map.items():
             # Language doesn't involve this rename at all — skip.
-            if old_class not in manifest_classes and new_class not in active_classes:
+            if old_class not in sheet_classes and new_class not in active_classes:
                 continue
             # Old class still in the diagnostics file — coordinator must remove it first.
             if old_class in active_classes:
@@ -1126,8 +1121,8 @@ def _preflight_rename_class(
                     f"    Replace it with {new_class!r} there, run "
                     f"`python -m coding sync-diagnostics-yaml --apply`, then re-run --rename-class."
                 )
-            # Old class in manifest but new class absent from the diagnostics file.
-            if old_class in manifest_classes and new_class not in active_classes:
+            # Old class has a sheet but new class is absent from the diagnostics file.
+            if old_class in sheet_classes and new_class not in active_classes:
                 errors.append(
                     f"  {lang_id}: {new_class!r} is not in diagnostics_{lang_id}.yaml.\n"
                     f"    Add it there, run "
@@ -1143,7 +1138,7 @@ def _preflight_rename_class(
 
 def _rename_class_for_language(
     doorway,
-    manifest: dict,
+    config: dict,
     lang_id: str,
     old_class: str,
     new_class: str,
@@ -1159,7 +1154,8 @@ def _rename_class_for_language(
 
     Downloads annotations from the old class sheet, archives it, creates a new
     sheet under new_class with all annotations carried over, renames the local
-    TSV directory, and updates the manifest in-place.
+    TSV directory, and records the new sheet in the ID file (``config``,
+    changed in place; the caller saves it).
 
     Journals its archive/create progress the same way the main per-class
     loop does (Phase 7 unit 2, issue #271) -- one entry keyed by
@@ -1172,19 +1168,23 @@ def _rename_class_for_language(
 
     Returns True if changes were made (or would be made in dry-run).
     """
-    lang_data = manifest.get(lang_id, {})
-    sheet_info = lang_data.get("sheets", {}).get(old_class)
+    old_sheet_id = drive_ids.class_sheet_id(config, lang_id, old_class)
 
-    if not sheet_info:
-        if lang_data.get("sheets", {}).get(new_class):
-            print(f"  {lang_id}/{old_class}: already renamed to {new_class!r} in manifest — skipping")
+    if not old_sheet_id:
+        if drive_ids.class_sheet_id(config, lang_id, new_class):
+            print(f"  {lang_id}/{old_class}: already renamed to {new_class!r} in the ID file — skipping")
         else:
-            print(f"  {lang_id}/{old_class}: no manifest entry — skipping")
+            print(f"  {lang_id}/{old_class}: no sheet in the ID file — skipping")
         return False
 
-    version = sheet_info.get("version", 1)
+    version = drive_ids.class_sheet_version(config, lang_id, old_class)
     new_version = version + 1
-    constructions = sheet_info.get("constructions", [])
+    ss = doorway.open_spreadsheet(old_sheet_id)
+    constructions = ss.construction_tabs()
+    if not constructions:
+        print(f"  {lang_id}/{old_class}: the sheet has no tabs labelled as constructions "
+              f"— skipping (rebuilding it would drop its answers)")
+        return False
 
     # Param info from new diagnostics entry
     new_specs = {constr: (pn, pv) for cls, constr, pn, pv in specs if cls == new_class}
@@ -1210,7 +1210,6 @@ def _rename_class_for_language(
         return False
 
     # Download annotations from old sheet
-    ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
     all_annotations: Dict[str, Dict[Tuple[str, str], Dict[str, str]]] = {}
     for construction in constructions:
         try:
@@ -1248,7 +1247,7 @@ def _rename_class_for_language(
 
     print(f"    would archive: {old_class}_{lang_id} → _archived/{old_class}_{lang_id}_v{version}")
     print(f"    would create: {new_class}_{lang_id} (v{new_version})")
-    print(f"    would update manifest: {old_class} -> {new_class}")
+    print(f"    would update the ID file: {old_class} -> {new_class}")
 
     if not apply:
         return True
@@ -1282,7 +1281,6 @@ def _rename_class_for_language(
 
     default_ws = new_ss.sheet1
     tab_names = []
-    new_construction_params = {}
 
     for construction in constructions:
         if construction not in new_specs:
@@ -1296,7 +1294,6 @@ def _rename_class_for_language(
             trailing=trailing_columns_for(lang_id),
         )
         tab_names.append(construction)
-        new_construction_params[construction] = {"param_names": param_names}
         print(f"    [{construction}] wrote: carried {carried}, new blank {new_count}, dropped {dropped_count}")
 
     if default_ws.title not in tab_names:
@@ -1307,17 +1304,16 @@ def _rename_class_for_language(
         _refresh_locked_tabs(new_ss, new_class, lang_id, planar_path)
     reorder_tabs(new_ss, tab_names)
 
-    # Checkpoint here, before the local dir rename / manifest update below --
+    # Checkpoint here, before the local dir rename / ID file update below --
     # a real replacement sheet with real carried-over data exists as of this
     # point, so recovery must never delete it (restructure_journal.py's
     # is_rollback_safe() keys off exactly this checkpoint). The dir rename
-    # and manifest write that follow are pure bookkeeping, safe to redo or
+    # and ID file write that follow are pure bookkeeping, safe to redo or
     # skip if a crash lands between them and are handled uniformly for both
     # a fresh run and --resume by _finish_new_sheet_created_unit.
     restructure_journal.record_checkpoint(
         lang_id, old_class, restructure_journal.NEW_SHEET_CREATED,
-        spreadsheet_id=new_ss.id, url=new_ss.url, constructions=tab_names,
-        construction_params=new_construction_params, version=new_version,
+        spreadsheet_id=new_ss.id, url=new_ss.url, version=new_version,
         new_class_name=new_class,
     )
     if journal_units is not None:
@@ -1334,16 +1330,12 @@ def _rename_class_for_language(
                                      f"(restructure-sheets --rename-class)")
             print(f"    Renamed: {old_dir.relative_to(ROOT)} -> {new_dir.relative_to(ROOT)}")
 
-    # Update manifest in-place
-    del manifest[lang_id]["sheets"][old_class]
-    manifest[lang_id]["sheets"][new_class] = {
-        "spreadsheet_id": new_ss.id,
-        "url": new_ss.url,
-        "constructions": tab_names,
-        "construction_params": new_construction_params,
-        "version": new_version,
-    }
-    print(f"    Manifest: {old_class} -> {new_class} (v{new_version}): {new_ss.url}")
+    # Record the new sheet in the ID file and save it, so the sheet is never
+    # again known only to the journal.
+    drive_ids.remove_class_sheet(config, lang_id, old_class)
+    drive_ids.set_class_sheet(config, lang_id, new_class, new_ss.id, new_version)
+    _save_drive_config(config)
+    print(f"    ID file: {old_class} -> {new_class} (v{new_version}): {new_ss.url}")
     if sheet_links is not None:
         sheet_links.append((lang_id, new_class, new_ss.url))
     return True
@@ -1513,17 +1505,18 @@ def build_parser() -> argparse.ArgumentParser:
 def main(args: argparse.Namespace | None = None) -> None:
     """Entry point for `python -m coding restructure-sheets`.
 
-    For each class in the manifest, downloads current annotations, optionally
+    For each class sheet in the ID file, downloads current annotations, optionally
     archives the existing spreadsheet to _archived/ in Drive (renamed to include _v{N}), creates a new
     spreadsheet from the updated planar structure, and carries over matching
     annotations by (Element, Position_Name). Unmatched rows are left blank for
-    re-annotation. Updates the manifest on Drive and locally.
+    re-annotation. Records each new sheet in the ID file, and republishes the
+    manifest copy at the end of a run that replaced any sheet.
     In dry-run mode (no --apply) only prints what would change.
 
     With --rename-class old:new, renames the class across all languages: archives
     the old sheet, creates a new one under the new name with all annotations
     carried over, renames coded_data/{lang}/{old}/ to coded_data/{lang}/{new}/,
-    and updates the manifest.  diagnostics_{lang_id}.yaml must be updated to use
+    and updates the ID file.  diagnostics_{lang_id}.yaml must be updated to use
     the new name BEFORE running this command (enforced by pre-flight checks).
 
     With --split-element old:new1,new2,..., retires one element in favor of several
@@ -1578,7 +1571,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     # precondition still guards against. See update_sheets.py's guard comment
     # for why (issue #248's stray-row incident).
     doorway = get_doorway()
-    manifest = load_manifest(doorway)
+    config = _load_drive_config()
 
     # Interrupted-run recovery (Phase 7, issue #271). Anything still in the
     # journal is evidence a previous --apply run died mid-class; refuse to
@@ -1605,7 +1598,7 @@ def main(args: argparse.Namespace | None = None) -> None:
             )
         print("\nRolling back interrupted classes (old sheet restored, nothing else touched):")
         for entry in journal.values():
-            _rollback_unit(doorway, manifest, entry)
+            _rollback_unit(doorway, entry)
             restructure_journal.clear_unit(entry["lang_id"], entry["class_name"])
         print("\nDone. Re-run without --rollback to continue restructuring normally.")
         return
@@ -1618,10 +1611,10 @@ def main(args: argparse.Namespace | None = None) -> None:
                 # and "roll back, then let the loop below redo it cleanly"
                 # are the same operation here -- reuse the safe primitive
                 # rather than a second way to reach the same state.
-                _rollback_unit(doorway, manifest, entry)
+                _rollback_unit(doorway, entry)
                 restructure_journal.clear_unit(entry["lang_id"], entry["class_name"])
             else:
-                _, display_class_name, url = _finish_new_sheet_created_unit(manifest, entry)
+                _, display_class_name, url = _finish_new_sheet_created_unit(config, entry)
                 # Clear by the journal KEY (old class name for a rename), not
                 # the display name the function returns -- clearing by the
                 # new name would silently no-op and leave this unit stuck.
@@ -1643,24 +1636,22 @@ def main(args: argparse.Namespace | None = None) -> None:
     # recovery block, so a resumed class's entry lands in the same summary/
     # notify list as one this run restructured fresh.
 
-    # --rename-class pass: runs before the main restructure loop so the manifest
+    # --rename-class pass: runs before the main restructure loop so the ID file
     # reflects the new class names when the main loop processes each language.
     if rename_class_map:
         print(f"\n{'DRY RUN — ' if not apply else ''}Class renames:")
         for old, new in rename_class_map.items():
             print(f"  {old!r} -> {new!r}")
-        _preflight_rename_class(manifest, rename_class_map, list(planar_files))
+        _preflight_rename_class(config, rename_class_map, list(planar_files))
         for planar_file in planar_files:
             lang_id = _infer_language_id_from_planar_filename(planar_file.name)
             element_index = build_element_index(planar_file.name, planar_file.parent)
             specs = _read_diagnostics_for_language(lang_id, planar_file.parent)
-            lang_data = manifest.get(lang_id, {})
-            folder_url = lang_data.get("folder_url", "")
-            folder_id = _folder_id_from_url(folder_url) if folder_url else None
+            folder_id = config.get(lang_id, {}).get("folder_id") or None
             for old_class, new_class in rename_class_map.items():
                 planar_path = planar_file.parent / f"planar_{lang_id}.tsv"
                 _rename_class_for_language(
-                    doorway, manifest, lang_id, old_class, new_class,
+                    doorway, config, lang_id, old_class, new_class,
                     element_index, specs, apply, folder_id, planar_path,
                     sheet_links=sheet_links, journal_units=renamed_classes,
                 )
@@ -1699,26 +1690,36 @@ def main(args: argparse.Namespace | None = None) -> None:
         if not apply:
             print("(run with --apply to archive old sheets and regenerate)")
 
-        lang_data = manifest.get(lang_id, {})
-        folder_url = lang_data.get("folder_url", "")
-        folder_id = _folder_id_from_url(folder_url) if folder_url else None
-        if folder_url:
-            lang_folder_urls[lang_id] = folder_url
+        folder_id = config.get(lang_id, {}).get("folder_id") or None
+        if folder_id:
+            lang_folder_urls[lang_id] = drive_folder_url(folder_id)
 
         for class_name, constructions_list in classes.items():
-            sheet_info = lang_data.get("sheets", {}).get(class_name)
-            if not sheet_info:
-                print(f"\n  {class_name}: not in manifest, skipping (run python -m coding generate-sheets --apply first)")
+            sheet_id = drive_ids.class_sheet_id(config, lang_id, class_name)
+            if not sheet_id:
+                print(f"\n  {class_name}: no sheet in the ID file, skipping (run python -m coding generate-sheets --apply first)")
                 continue
 
-            version = sheet_info.get("version", 1)
+            version = drive_ids.class_sheet_version(config, lang_id, class_name)
             print(f"\n  {class_name} (current v{version})")
 
-            ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
+            if (lang_id, class_name) in {(lid, cn) for lid, cn, _ in sheet_links}:
+                # Made or finished earlier in this run (--rename-class, --resume):
+                # already built from the current structure, and its tabs are
+                # not labelled as constructions until the command ends.
+                print("    (replaced earlier in this run — skipping)")
+                continue
+
+            ss = doorway.open_spreadsheet(sheet_id)
+            sheet_tabs = ss.construction_tabs()
+            if not sheet_tabs:
+                print("    the sheet has no tabs labelled as constructions — skipping "
+                      "(rebuilding it would drop its answers)")
+                continue
 
             # Step 1: Download current annotations from all tabs
             all_annotations: Dict[str, Dict[Tuple[str, str], Dict[str, str]]] = {}
-            for construction in sheet_info["constructions"]:
+            for construction in sheet_tabs:
                 try:
                     ws = ss.worksheet(construction)
                     all_annotations[construction] = _download_tab_annotations(ws)
@@ -1821,7 +1822,6 @@ def main(args: argparse.Namespace | None = None) -> None:
 
             default_ws = new_ss.sheet1
             tab_names = []
-            new_construction_params = {}
 
             for construction, param_names, param_values in constructions_list:
                 keyed = keyed_row_constructions.get(class_name, {}).get(construction)
@@ -1831,7 +1831,6 @@ def main(args: argparse.Namespace | None = None) -> None:
                         rename_map, element_rename_map, split_element_map,
                         trailing=trailing_columns_for(lang_id))
                     tab_names.append(construction)
-                    new_construction_params[construction] = {"param_names": param_names}
                     msg = f"    [{construction}] (keyed tab) copied {copied} rows, {changed} cell(s) renamed"
                     if flagged:
                         msg += f", {flagged} row(s) on a split element — NEEDS MANUAL REVIEW"
@@ -1849,7 +1848,6 @@ def main(args: argparse.Namespace | None = None) -> None:
                         class_name=class_name, trailing=trailing_columns_for(lang_id),
                     )
                     tab_names.append(construction)
-                    new_construction_params[construction] = {"param_names": param_names}
                     msg = f"    [{construction}] (pair tab) copied {rows_copied} rows, {cells_renamed} cell(s) renamed"
                     if rows_split:
                         msg += f", {rows_split} row(s) split (blank, old judgment quoted in a note)"
@@ -1870,7 +1868,6 @@ def main(args: argparse.Namespace | None = None) -> None:
                     trailing=trailing_columns_for(lang_id),
                 )
                 tab_names.append(construction)
-                new_construction_params[construction] = {"param_names": param_names}
                 print(f"    [{construction}] wrote: carried {carried}, new blank {new_count}, dropped {dropped_count}")
 
             if default_ws.title not in tab_names:
@@ -1884,21 +1881,13 @@ def main(args: argparse.Namespace | None = None) -> None:
             restructured_classes.add((lang_id, class_name))
             restructure_journal.record_checkpoint(
                 lang_id, class_name, restructure_journal.NEW_SHEET_CREATED,
-                spreadsheet_id=new_ss.id, url=new_ss.url, constructions=tab_names,
-                construction_params=new_construction_params, version=new_version,
+                spreadsheet_id=new_ss.id, url=new_ss.url, version=new_version,
             )
 
-            # Step 5: Update manifest
-            manifest[lang_id]["sheets"][class_name] = {
-                "spreadsheet_id": new_ss.id,
-                "url": new_ss.url,
-                "constructions": tab_names,
-                "construction_params": new_construction_params,
-                "version": new_version,
-            }
-            # Write local manifest copy immediately so it survives if a later API
-            # error prevents the final upload block from running.
-            MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+            # Step 5: Record the new sheet in the ID file, and save it at once
+            # so it survives if a later API error stops the run.
+            drive_ids.set_class_sheet(config, lang_id, class_name, new_ss.id, new_version)
+            _save_drive_config(config)
             print(f"    New sheet (v{new_version}): {new_ss.url}")
             sheet_links.append((lang_id, class_name, new_ss.url))
 
@@ -1909,9 +1898,8 @@ def main(args: argparse.Namespace | None = None) -> None:
     if rename_map and pair_row_constructions:
         for planar_file in planar_files:
             lang_id = _infer_language_id_from_planar_filename(planar_file.name)
-            lang_data = manifest.get(lang_id, {})
             for class_name, pair_cons in pair_row_constructions.items():
-                sheet_info = lang_data.get("sheets", {}).get(class_name)
+                pair_sheet_id = drive_ids.class_sheet_id(config, lang_id, class_name)
                 for construction in sorted(pair_cons):
                     if apply:
                         tsv_changed = _cascade_rename_pair_tsv(
@@ -1922,9 +1910,9 @@ def main(args: argparse.Namespace | None = None) -> None:
                                 f" local TSV: updated {tsv_changed} position cell(s)"
                             )
                     if apply and (lang_id, class_name) not in restructured_classes:
-                        if not sheet_info:
+                        if not pair_sheet_id:
                             continue
-                        ss_pair = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
+                        ss_pair = doorway.open_spreadsheet(pair_sheet_id)
                         try:
                             ws = ss_pair.worksheet(construction)
                             sheet_changed = _cascade_rename_pair_tab(ws, rename_map)
@@ -1937,29 +1925,23 @@ def main(args: argparse.Namespace | None = None) -> None:
                             pass
 
     if apply:
-        # Update local manifest and upload to Drive.
-        MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-        config = _load_drive_config()
-        for lid, ld in manifest.items():
-            if "folder_id" not in ld:
-                folder_url = ld.get("folder_url", "")
-                if folder_url:
-                    ld["folder_id"] = folder_url.rstrip("/").rsplit("/", 1)[-1]
-            config.setdefault(lid, {})["folder_id"] = ld.get("folder_id", "")
-            config[lid].pop("manifest_file_id", None)
-        existing_file_id = config.get("_planars_config_file_id")
-        root_folder_id = config.get("_root_folder_id")
-        file_id = upload_manifest(doorway, manifest, root_folder_id, existing_file_id)
-        config["_planars_config_file_id"] = file_id
-        _save_drive_config(config)
-        print("\nManifest updated on Drive.")
-        # Only now -- after the Drive upload actually succeeded -- clear these
-        # units from the journal. A crash between the write above and here
-        # leaves them recorded as NEW_SHEET_CREATED, correctly re-detected as
-        # still not synced to Drive rather than marked done early (Phase 7,
-        # issue #271; see restructure_journal.py's module docstring).
-        for lang_id, class_name in restructured_classes | resumed_units | renamed_classes:
-            restructure_journal.clear_unit(lang_id, class_name)
+        done_units = restructured_classes | resumed_units | renamed_classes
+        if done_units:
+            # Save the ID file (a resumed unit's change is only in memory
+            # until now; the others were saved as each sheet was recorded).
+            _save_drive_config(config)
+            print("\nID file updated.")
+            # Only now -- after the ID file is saved -- clear these units
+            # from the journal. A crash before here leaves them recorded as
+            # NEW_SHEET_CREATED, correctly re-detected as not yet recorded
+            # rather than marked done early (Phase 7, issue #271; see
+            # restructure_journal.py's module docstring).
+            for lang_id, class_name in done_units:
+                restructure_journal.clear_unit(lang_id, class_name)
+            # The notebooks read the manifest copy: tell it about the new sheets now.
+            manifest_copy.publish(doorway, config)
+            _save_drive_config(config)
+            print("Manifest copy republished on Drive.")
 
     if not apply:
         print("\nRun with --apply to make these changes.")
@@ -1995,8 +1977,8 @@ def main(args: argparse.Namespace | None = None) -> None:
             print("  fresh spreadsheet and archives the old one) — any previously bookmarked")
             print("  sheet links are now stale. The Drive folder link does NOT change across")
             print("  restructures, so it's the one worth bookmarking long-term:")
-            for lang_id, folder_url in lang_folder_urls.items():
-                print(f"  [{lang_id}] {folder_url}")
+            for lang_id, lang_folder_url in lang_folder_urls.items():
+                print(f"  [{lang_id}] {lang_folder_url}")
 
         if sheet_links:
             print("\n--- Affected sheets (new URLs — old bookmarks to these classes are stale) ---")
@@ -2011,32 +1993,23 @@ def main(args: argparse.Namespace | None = None) -> None:
         # See coding/notify.py for the one-issue-per-language design rationale.
         if sheet_links:
             print("\n--- Notifying language tracking issues ---")
-            manifest_dirty = False
             for notify_lang_id in changed_lang_ids(sheet_links):
                 lang_sheet_links = [
                     (class_name, url)
                     for lid, class_name, url in sheet_links
                     if lid == notify_lang_id
                 ]
-                folder_url = lang_folder_urls.get(notify_lang_id)
-                status_sheet_url = manifest.get(notify_lang_id, {}).get("status_sheet_url")
-                issue_number, created = ensure_notification_issue(notify_lang_id, manifest)
-                manifest_dirty = manifest_dirty or created
-                body = build_change_comment(notify_lang_id, lang_sheet_links, folder_url, status_sheet_url)
+                notify_folder_url = lang_folder_urls.get(notify_lang_id)
+                status_id = drive_ids.status_sheet_id(config, notify_lang_id)
+                status_sheet_url = drive_ids.sheet_url(status_id) if status_id else None
+                issue_number, created = ensure_notification_issue(notify_lang_id, config)
+                if created:
+                    # A new notification issue: record its number in the ID file
+                    # at once, so a lost number can never lead to a duplicate.
+                    _save_drive_config(config)
+                body = build_change_comment(notify_lang_id, lang_sheet_links, notify_folder_url, status_sheet_url)
                 post_notification_comment(issue_number, body)
                 print(f"  [{notify_lang_id}] commented on issue #{issue_number}")
-            if manifest_dirty:
-                # A new notification issue was created for at least one language --
-                # persist the updated manifest the same way the rest of this
-                # command already does (MANIFEST_PATH.write_text + upload_manifest).
-                MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-                config = _load_drive_config()
-                existing_file_id = config.get("_planars_config_file_id")
-                root_folder_id = config.get("_root_folder_id")
-                file_id = upload_manifest(doorway, manifest, root_folder_id, existing_file_id)
-                config["_planars_config_file_id"] = file_id
-                _save_drive_config(config)
-                print("  Manifest updated on Drive (new notification_issue number(s)).")
 
 
 if __name__ == "__main__":

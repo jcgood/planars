@@ -22,6 +22,7 @@ Regenerate: `PLANARS_UPDATE_SNAPSHOTS=1 pytest tests/test_prune_manifest_snapsho
 """
 from __future__ import annotations
 
+import copy
 import io
 import json
 import os
@@ -36,7 +37,7 @@ from typing import Dict, List
 import pytest
 
 from coding import drive as drive_module
-from coding import drive_door, drive_doorway, prune_manifest
+from coding import drive_door, drive_doorway, drive_ids, prune_manifest
 from command_runner import run_command
 from fake_drive import (FROZEN_CODED_DATA, MANIFEST_FILE_ID, ROOT_FOLDER_ID, point_coded_data_at,
                         FakeDriveDoorway, api_error)
@@ -46,7 +47,7 @@ SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "prune_manifest"
 UPDATING = os.environ.get("PLANARS_UPDATE_SNAPSHOTS") == "1"
 
 LANG = "stan1293"
-RETIRED = "stress"          # in the manifest, absent from diagnostics
+RETIRED = "stress"          # in the ID file, absent from diagnostics
 LANGS = ["arao1248", "stan1293", "synth0001"]
 SHEET_ID = "retired_sheet_id"
 
@@ -63,7 +64,9 @@ def env(monkeypatch, tmp_path):
     Yields (doorway, run, coded), where `run(argv, answers)` plays one command.
     """
     doorway = FakeDriveDoorway.from_fixtures()
-    manifest = doorway.download_file_json(MANIFEST_FILE_ID)
+    # The ID file, with the retired class's sheet added to the language's.
+    id_file = IdFile(FakeDriveDoorway.drive_config())
+    drive_ids.set_class_sheet(id_file, LANG, RETIRED, SHEET_ID)
 
     doorway.seed_spreadsheet({
         "spreadsheet_id": SHEET_ID,
@@ -73,14 +76,8 @@ def env(monkeypatch, tmp_path):
                         "col_count": 2,
                         "values": [["Element", "accented"], ["also", "y"]]}],
     })
-    doorway.file(SHEET_ID).parents = [manifest[LANG]["folder_id"]]
+    doorway.file(SHEET_ID).parents = [id_file[LANG]["folder_id"]]
     doorway.file(SHEET_ID).modified_time = _recently(400)
-    manifest[LANG]["sheets"][RETIRED] = {
-        "spreadsheet_id": SHEET_ID,
-        "spreadsheet_url": f"https://docs.google.com/spreadsheets/d/{SHEET_ID}",
-        "constructions": ["general"],
-    }
-    doorway.file(MANIFEST_FILE_ID).content = json.dumps(manifest).encode()
 
     coded = tmp_path / "coded_data"
     (coded / LANG / RETIRED).mkdir(parents=True)
@@ -97,15 +94,19 @@ def env(monkeypatch, tmp_path):
             setup / f"diagnostics_{lang}.yaml")
 
     point_coded_data_at(monkeypatch, coded)
-    monkeypatch.setattr(prune_manifest, "MANIFEST_ARCHIVES", tmp_path / "manifest_archives")
     monkeypatch.setattr(prune_manifest, "ROOT", tmp_path)
     # The real drive_config.json holds live IDs; a test must never write it.
-    config = {"_planars_config_file_id": MANIFEST_FILE_ID,
-              "_root_folder_id": ROOT_FOLDER_ID}
-    saved: Dict = {}
-    monkeypatch.setattr(prune_manifest, "_load_drive_config", lambda: dict(config))
-    monkeypatch.setattr(prune_manifest, "_save_drive_config", saved.update)
-    monkeypatch.setattr(drive_module, "_load_drive_config", lambda: dict(config))
+    # `id_file` stands in for it: the command loads a copy and saves it back.
+    def load_id_file() -> dict:
+        return copy.deepcopy(dict(id_file))
+
+    def save_id_file(config: dict) -> None:
+        id_file.saves += 1
+        id_file.clear()
+        id_file.update(copy.deepcopy(config))
+    monkeypatch.setattr(prune_manifest, "_load_drive_config", load_id_file)
+    monkeypatch.setattr(prune_manifest, "_save_drive_config", save_id_file)
+    monkeypatch.setattr(drive_module, "_load_drive_config", load_id_file)
     drive_doorway.set_doorway(doorway)
 
     def run(argv: List[str], answers: List[str] = ()) -> str:
@@ -128,7 +129,7 @@ def env(monkeypatch, tmp_path):
         return re.sub(r"\d{8}_\d{6}", "TIMESTAMP", buf.getvalue())
 
     try:
-        yield doorway, run, coded, saved
+        yield doorway, run, coded, id_file
     finally:
         drive_doorway.reset_doorway()
 
@@ -147,7 +148,18 @@ def check_snapshot(name: str, actual: str) -> None:
         f"PLANARS_UPDATE_SNAPSHOTS=1 and review the diff.")
 
 
+class IdFile(dict):
+    """The stand-in ID file's contents, counting how often it was saved."""
+    saves = 0
+
+
+def sheets_of(id_file) -> Dict[str, str]:
+    """{class: spreadsheet_id} the ID file holds for the language."""
+    return drive_ids.class_sheets(id_file, LANG)
+
+
 def manifest_of(doorway) -> Dict:
+    """The manifest copy on Drive."""
     return doorway.download_file_json(MANIFEST_FILE_ID)
 
 
@@ -187,17 +199,17 @@ def test_apply_transcript(env):
 # ---------------------------------------------------------------------------
 
 def test_dry_run_changes_nothing_anywhere(env):
-    doorway, run, coded, saved = env
+    doorway, run, coded, id_file = env
     run(["prune-manifest"])
     assert doorway.mutations == []
     assert active_tsvs(coded) == ["general.tsv", "stress_domain.tsv"]
     assert archived_tsvs(coded) == []
-    assert RETIRED in manifest_of(doorway)[LANG]["sheets"]
-    assert saved == {}
+    assert RETIRED in sheets_of(id_file)
+    assert id_file.saves == 0
 
 
 def test_dry_run_says_the_sheet_would_move_without_reading_it(env):
-    """It quotes the manifest's URL rather than asking Drive for the name."""
+    """It quotes the sheet's URL (built from the ID file) rather than asking Drive for the name."""
     doorway, run, _, _ = env
     out = run(["prune-manifest"])
     assert f"would move Drive sheet → _archived/  (https://docs.google.com/spreadsheets/d/{SHEET_ID})" in out
@@ -229,24 +241,18 @@ def test_the_drive_sheet_is_moved_into_archived_not_removed(env):
         ["Element", "accented"], ["also", "y"]]
 
 
-def test_the_manifest_snapshot_is_written_before_anything_changes(env, tmp_path):
-    _, run, _, _ = env
-    out = run(["prune-manifest", "--apply"], ["y"])
-    assert "Manifest snapshot written to" in out
-    snapshots = list((tmp_path / "manifest_archives").glob("manifest_*.json"))
-    assert len(snapshots) == 1
-    # The snapshot is the state *before* the prune — the retired class is in it.
-    assert RETIRED in json.loads(snapshots[0].read_text())[LANG]["sheets"]
-
-
-def test_the_retired_class_leaves_the_manifest_on_drive(env):
-    doorway, run, _, _ = env
-    before = manifest_of(doorway)[LANG]["sheets"]
+def test_the_retired_class_leaves_the_id_file_and_the_manifest_copy(env):
+    doorway, run, _, id_file = env
+    before = set(sheets_of(id_file))
     run(["prune-manifest", "--apply"], ["y"])
-    after = manifest_of(doorway)[LANG]["sheets"]
+    after = set(sheets_of(id_file))
     assert RETIRED in before and RETIRED not in after
     # And nothing else was dropped along the way.
-    assert set(before) - {RETIRED} == set(after)
+    assert before - {RETIRED} == after
+    assert id_file.saves >= 1
+    # The manifest copy on Drive was rebuilt from the ID file, without it.
+    published = manifest_of(doorway)[LANG]["sheets"]
+    assert RETIRED not in published and set(published) == after
 
 
 # ---------------------------------------------------------------------------
@@ -254,20 +260,21 @@ def test_the_retired_class_leaves_the_manifest_on_drive(env):
 # ---------------------------------------------------------------------------
 
 def test_declining_leaves_everything_as_it_was(env):
-    doorway, run, coded, _ = env
+    doorway, run, coded, id_file = env
     out = run(["prune-manifest", "--apply"], ["n"])
     assert "Skipped stress." in out
     assert "No changes made (all classes skipped)." in out
     assert doorway.mutations == []
     assert active_tsvs(coded) == ["general.tsv", "stress_domain.tsv"]
-    assert RETIRED in manifest_of(doorway)[LANG]["sheets"]
+    assert RETIRED in sheets_of(id_file)
+    assert id_file.saves == 0
 
 
 def test_all_skips_the_prompt(env):
-    doorway, run, coded, _ = env
+    doorway, run, coded, id_file = env
     run(["prune-manifest", "--apply", "--all"], answers=[])   # a prompt would raise
     assert active_tsvs(coded) == []
-    assert RETIRED not in manifest_of(doorway)[LANG]["sheets"]
+    assert RETIRED not in sheets_of(id_file)
 
 
 # ---------------------------------------------------------------------------
@@ -303,7 +310,7 @@ def test_the_warning_comes_before_the_prompt_it_should_inform(env):
     and a coordinator who has read the line is entitled to go ahead. What
     changed is that they get to read it first.
     """
-    doorway, run, coded, _ = env
+    doorway, run, coded, id_file = env
     doorway.file(SHEET_ID).modified_time = _recently(1)
     out = run(["prune-manifest", "--apply"], ["y"])
 
@@ -311,7 +318,7 @@ def test_the_warning_comes_before_the_prompt_it_should_inform(env):
     prompt = out.index(f"Prune '{RETIRED}' from")
     assert warning < prompt, "the warning has to come first to be worth printing"
     assert active_tsvs(coded) == []
-    assert RETIRED not in manifest_of(doorway)[LANG]["sheets"]
+    assert RETIRED not in sheets_of(id_file)
 
 
 # ---------------------------------------------------------------------------
@@ -319,7 +326,7 @@ def test_the_warning_comes_before_the_prompt_it_should_inform(env):
 # ---------------------------------------------------------------------------
 
 def test_an_unreadable_sheet_is_reported_and_the_move_is_skipped(env, monkeypatch):
-    doorway, run, _, _ = env
+    doorway, run, _, id_file = env
 
     def refuse(*args, **kwargs):
         # As Drive refuses: a 403. (Any other error the door's own label
@@ -330,16 +337,14 @@ def test_an_unreadable_sheet_is_reported_and_the_move_is_skipped(env, monkeypatc
     out = run(["prune-manifest", "--apply"], ["y"])
     assert "could not read sheet metadata" in out
     assert doorway.mutations_of("move_file") == []
-    # The manifest entry goes anyway, which is worth knowing: the sheet stays
+    # The ID file entry goes anyway, which is worth knowing: the sheet stays
     # where it is and stops being listed.
-    assert RETIRED not in manifest_of(doorway)[LANG]["sheets"]
+    assert RETIRED not in sheets_of(id_file)
 
 
 def test_nothing_stale_does_nothing(env, monkeypatch):
-    doorway, run, coded, _ = env
-    manifest = manifest_of(doorway)
-    del manifest[LANG]["sheets"][RETIRED]
-    doorway.file(MANIFEST_FILE_ID).content = json.dumps(manifest).encode()
+    doorway, run, coded, id_file = env
+    drive_ids.remove_class_sheet(id_file, LANG, RETIRED)
     shutil.rmtree(coded / LANG / RETIRED)
     out = run(["prune-manifest", "--apply", "--all"])
     assert "nothing to prune" in out
@@ -349,9 +354,9 @@ def test_nothing_stale_does_nothing(env, monkeypatch):
 # ---------------------------------------------------------------------------
 # Idempotency (Phase 8 of the data layer redesign, issue #271) -- proving
 # operations.yaml's own claim ("_find_stale is recomputed fresh from the
-# current manifest at the start of every run, so a class already fully
+# current ID file at the start of every run, so a class already fully
 # pruned won't be reprocessed") against a real prune, not the case above's
-# manually-simulated post-state. #280's fix (upload_manifest running right
+# manually-simulated post-state. #280's fix (saving the ID file right
 # after each class, not once at the end of the whole loop) is what makes
 # this true for a run interrupted mid-loop; this test is the plain
 # uninterrupted case, which the fix needed to keep true too.
@@ -370,13 +375,13 @@ def test_a_transient_429_during_archiving_is_retried_not_a_crash(env, monkeypatc
     is a real "one 429, then the retry succeeds" case. time.sleep is mocked
     so the real ~15s backoff wait doesn't slow the suite down.
     """
-    doorway, run, coded, _ = env
+    doorway, run, coded, id_file = env
     monkeypatch.setattr("coding.drive_door.time.sleep", lambda *a, **kw: None)
     doorway.fail_after("move_file", 1, exc=api_error(429, "rate limited"))
     out = run(["prune-manifest", "--apply"], ["y"])
     assert "[SystemExit:" not in out
     assert "archived Drive sheet" in out
-    assert RETIRED not in manifest_of(doorway)[LANG]["sheets"]
+    assert RETIRED not in sheets_of(id_file)
 
 
 def test_a_second_apply_after_a_real_prune_reprocesses_nothing(env):

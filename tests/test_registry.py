@@ -66,7 +66,7 @@ def test_command_detail_shows_flags_and_operation_fields():
     out = buf.getvalue()
     assert "--apply" in out
     assert "--regen-construction" in out
-    assert "Idempotent: False" in out
+    assert "Idempotent: True" in out
     assert "Apply gate: --apply" in out
 
 

@@ -29,7 +29,8 @@ The coordinator tooling, run as `python -m coding <command>`.
   what each allows comes from the diagnostics YAML** (via
   `update_sheets._resolve_criterion_columns`/`_fresh_param_values`; a
   sheet's dropdowns, `sheet_spec.class_sheet_spec`),
-  never from the manifest, which is bookkeeping and goes stale. Every
+  never from the manifest, which is only a copy rebuilt for the Colab
+  notebooks (`manifest_copy.py`) and no command reads it. Every
   dropdown request is built by `generate_sheets.dropdown_request`. No
   dropdown or criterion note goes on a trailing column
   (`tests/mutation_checks.py`).

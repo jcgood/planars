@@ -606,6 +606,13 @@ def status_sheets(r: Refresh) -> None:
              lambda: status_sheet_error_body(result.output), "Annotation Status sheets rebuilt")
 
 
+def manifest_copy(r: Refresh) -> None:
+    """After every step that can make, retire or add a tab to a sheet, so the
+    copy the published notebooks read is current (unit 11c; deleted with the
+    manifest in 11c-5). A failure shows the run red."""
+    r.unreported("manifest copy", run("publish-manifest", "--apply"))
+
+
 AUDIT_EVERY_DAYS = 30
 
 
@@ -689,6 +696,8 @@ STEPS: List[Step] = [
     Step("dropdowns", "refresh-dropdowns --apply (dropdowns as the codebook says)", dropdowns),
     Step("status sheets", "generate-status-sheet --apply → status-sheet-error",
          status_sheets),
+    Step("manifest copy", "publish-manifest --apply (the copy the Colab notebooks read)",
+         manifest_copy),
     Step("audit", f"file an audit issue if none closed in {AUDIT_EVERY_DAYS} days → audit",
          audit_due),
     Step("scope", "count languages, diagnostics files and filled TSVs", scope_summary, always=True),

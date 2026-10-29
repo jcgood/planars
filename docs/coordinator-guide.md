@@ -176,7 +176,7 @@ own hand edits (to the YAML or the planar) still need committing by hand.
    ```bash
    python -m coding generate-sheets --apply
    ```
-   This creates one Google Sheets file per analysis class, uploads contributor and coordinator Colab notebooks to Drive, creates read-only Google Sheets copying the planar structure and diagnostics files, and updates the Drive manifest. On re-runs, only classes not yet in the manifest are created. Omit `--apply` first to see a dry-run report of what would be created.
+   This creates one Google Sheets file per analysis class, uploads contributor and coordinator Colab notebooks to Drive, creates read-only Google Sheets copying the planar structure and diagnostics files, and records the new sheets in the ID file (`drive_config.json`). On re-runs, only classes without a sheet in the ID file are created. Omit `--apply` first to see a dry-run report of what would be created.
 
 4. If this is the first language in the project, run `setup-root-folder` once after `generate-sheets` — see [Drive folder structure](#drive-folder-structure) below.
 
@@ -198,11 +198,11 @@ python -m coding generate-sheets --apply             # creates sheets for new cl
 python -m coding generate-sheets --force --apply     # blocked with a hard error if annotation sheets already exist
 ```
 
-**If `generate-sheets --apply` aborts with "already exists in the Drive folder but is not registered in the manifest":** a spreadsheet with that name is in Drive but not in the manifest. This usually means a previous run created an orphaned sheet (e.g. after clearing the manifest during debugging). Resolve by either (a) registering the existing sheet — add its spreadsheet ID to that class's manifest entry (ask Claude; the manifest is on Drive), as the error message says — or (b) moving the sheet to `_archived/` in the language's Drive folder and re-running `generate-sheets --apply`.
+**If `generate-sheets --apply` aborts with "already exists in the Drive folder but is not recorded in drive_config.json":** a spreadsheet with that name is in Drive but not in the ID file. This usually means a previous run created an orphaned sheet (e.g. after a sheet was retired or during debugging). Resolve by either (a) recording the existing sheet — add its spreadsheet ID under the language's `class_sheets` in `coded_data/drive_config.json` (ask Claude), as the error message says — or (b) moving the sheet to `_archived/` in the language's Drive folder and re-running `generate-sheets --apply`.
 
 Creates one Google Sheets file per analysis class with one tab per construction. Each tab has per-criterion dropdown validation, an optional **Source** column (page or section reference justifying each annotation, e.g. `§4.3`, `p. 217`, `Table 6.2`), and a free-text **Comments** column. Source comes before Comments; both are free-text and not validated. Each spreadsheet also gets a **Status tab** (always the last tab) with one row per construction and a dropdown (`in-progress` / `ready-for-review`). Also runs `generate-notebooks` automatically at the end.
 
-At the start of each run, the current Drive manifest is backed up to `manifest_backup.json` (gitignored) in the repo root. If something goes wrong during a run, this file can be used to recover sheet IDs without needing to access Drive directly.
+Sheet IDs live in the ID file (`coded_data/drive_config.json`), which is in planars-data, so its git history is the backup if a run goes wrong.
 
 #### 2. Collaborators annotate
 
@@ -620,7 +620,7 @@ python -m coding restructure-sheets --rename-class old_class:new_class --apply
 python -m coding restructure-sheets --rename-class old1:new1 --rename-class old2:new2 --apply
 ```
 
-For each renamed class, `--apply` archives the old spreadsheet, creates a new one under the new name with all annotations carried over, renames `coded_data/{lang}/{old}/` to `coded_data/{lang}/{new}/` in-place (preserving git history), and updates the Drive manifest.
+For each renamed class, `--apply` archives the old spreadsheet, creates a new one under the new name with all annotations carried over, renames `coded_data/{lang}/{old}/` to `coded_data/{lang}/{new}/` in-place (preserving git history), and records the new sheet in the ID file.
 
 **Do NOT use `prune-manifest` for a rename** — it would discard annotation data. `prune-manifest` is for retiring a class entirely.
 
@@ -633,7 +633,7 @@ python -m coding rename-construction CLASS:OLD:NEW            # dry run, every l
 python -m coding rename-construction CLASS:OLD:NEW --apply    # repeat CLASS:OLD:NEW for several
 ```
 
-In every language that has it, `--apply` renames it in `diagnostics_{lang_id}.yaml` (and updates the diagnostics Sheet), renames the tab and its Status row in place — the sheet keeps its link and its answers — and renames it in the manifest, the local TSV and check-comments' record. Tell the annotators: their tab has a new name. Do the schema commit, the run and both pushes in one sitting; the daily refresh would otherwise add an empty tab under the new name beside the answered one. A run that stopped partway is finished by running it again.
+In every language that has it, `--apply` renames it in `diagnostics_{lang_id}.yaml` (and updates the diagnostics Sheet), renames the tab and its Status row in place — the sheet keeps its link and its answers — and renames the local TSV and check-comments' record. Tell the annotators: their tab has a new name. Do the schema commit, the run and both pushes in one sitting; the daily refresh would otherwise add an empty tab under the new name beside the answered one. A run that stopped partway is finished by running it again.
 
 #### Retiring an analysis class
 
@@ -641,17 +641,16 @@ Remove the class from `diagnostics_{lang_id}.yaml`, then run `prune-manifest` to
 
 ```bash
 python -m coding prune-manifest                  # dry run — show what would be archived and removed
-python -m coding prune-manifest --apply          # archive TSVs and remove manifest entries
+python -m coding prune-manifest --apply          # archive TSVs and remove the sheets from the ID file
 python -m coding prune-manifest --apply --all    # same, skipping per-class confirmation prompts
 ```
 
 For each retired class, `--apply`:
-1. Writes a timestamped manifest snapshot to `manifest_archives/` (local audit trail, gitignored)
-2. Removes each TSV in `coded_data/{lang}/{class}/`, keeping its last version in `coded_data/{lang}/archive/{class}/` and logging it in the language's `changes.tsv` (committed and pushed when the command ends)
-3. Moves the Drive spreadsheet into an `_archived/` subfolder inside the language's Drive folder
-4. Removes the class entry from the Drive manifest
+1. Removes each TSV in `coded_data/{lang}/{class}/`, keeping its last version in `coded_data/{lang}/archive/{class}/` and logging it in the language's `changes.tsv` (committed and pushed when the command ends)
+2. Moves the Drive spreadsheet into an `_archived/` subfolder inside the language's Drive folder
+3. Removes the class sheet from the ID file (`coded_data/drive_config.json`; its history in planars-data is the record), then republishes the manifest copy the Colab notebooks read
 
-The Drive sheet is moved, not deleted — annotation data is irreplaceable. A warning is shown if the sheet was edited within the last 14 days (possible unapplied annotation work). If the move fails for any reason, a warning is printed and the sheet can be moved manually from Drive; the manifest entry is still removed.
+The Drive sheet is moved, not deleted — annotation data is irreplaceable. A warning is shown if the sheet was edited within the last 14 days (possible unapplied annotation work). If the move fails for any reason, a warning is printed and the sheet can be moved manually from Drive; the sheet is still removed from the ID file.
 
 If `prune-manifest` warns "this class contains annotation data — consider `--rename-class` instead", check whether the class was renamed rather than retired before proceeding.
 
@@ -693,7 +692,7 @@ A position that only changed number needs no flag: answers are carried over by p
 
 **This also cascades into every pair-row construction that references the retired element** (`nonpermutability`'s `general`, `coreference`'s three constructions, and any future pair-row diagnostic — found generically, not hardcoded by class name), not just the element's "home" construction. Each old pair-row involving the retired element fans out into one new row per replacement element, left blank, with the old row's criterion value, `Example`, `Source` and `Comments` quoted in a note on the new row's criterion cell — the same blank-plus-note policy as above, just extended to pairs. A pair where *both* sides are the retired element (a self-pair) is left untouched and flagged for manual review rather than guessed at.
 
-**Tell annotators to bookmark the Drive folder, not individual sheet links.** Every class spreadsheet gets a brand-new URL each time `restructure-sheets --apply` runs (the old one is archived, a new one is created) — any sheet link an annotator has bookmarked from before a restructure is now stale, pointing at an archived, no-longer-live copy. The failure mode is silent: a stale link still opens a perfectly normal-looking spreadsheet, just one that's disconnected from the manifest, so annotation done there would never reach `import-sheets`. The language's top-level Drive folder URL, by contrast, never changes — restructures only move old spreadsheets into an `_archived/` subfolder *within* it and create new ones directly in it. `restructure-sheets --apply` prints this folder link (labeled "Bookmark this instead") alongside the per-class sheet links in its final summary specifically so this doesn't need to be remembered separately each time.
+**Tell annotators to bookmark the Drive folder, not individual sheet links.** Every class spreadsheet gets a brand-new URL each time `restructure-sheets --apply` runs (the old one is archived, a new one is created) — any sheet link an annotator has bookmarked from before a restructure is now stale, pointing at an archived, no-longer-live copy. The failure mode is silent: a stale link still opens a perfectly normal-looking spreadsheet, just one that's disconnected from the ID file, so annotation done there would never reach `import-sheets`. The language's top-level Drive folder URL, by contrast, never changes — restructures only move old spreadsheets into an `_archived/` subfolder *within* it and create new ones directly in it. `restructure-sheets --apply` prints this folder link (labeled "Bookmark this instead") alongside the per-class sheet links in its final summary specifically so this doesn't need to be remembered separately each time.
 
 #### Refreshing dropdowns after criterion value changes
 
@@ -938,7 +937,7 @@ Each issue closes by itself on the next clean run. The run's summary page on Git
 
 ### Drive folder structure
 
-The Drive manifest (`manifest.json`) is stored on Drive and contains all languages' sheet metadata and folder IDs. `coded_data/drive_config.json` (in planars-data) bootstraps the Drive lookup — it holds `_root_folder_id`, `_planars_config_file_id`, and per-language `folder_id`, `planar_spreadsheet_id`, and `diagnostics_spreadsheet_id`. It contains no credentials, only IDs; they point at unpublished data, so it lives in the private repo.
+`coded_data/drive_config.json` (in planars-data), the ID file, is the one record of where the Drive files are — it holds `_root_folder_id`, `_planars_config_file_id` (the manifest copy on Drive, rebuilt from the ID file for the Colab notebooks by `publish-manifest`), and per-language `folder_id`, `planar_spreadsheet_id`, `diagnostics_spreadsheet_id`, `class_sheets`, `status_sheet_id` and `notification_issue`. It contains no credentials, only IDs; they point at unpublished data, so it lives in the private repo.
 
 `drive_config.json` is created and updated automatically — you never need to edit it by hand. `generate-sheets` writes per-language IDs as it creates Drive folders and files; `setup-root-folder` adds the top-level `_root_folder_id`.
 
@@ -956,4 +955,4 @@ This is idempotent — safe to re-run, but only needs to happen once per project
 
 #### Joining an existing project
 
-`drive_config.json` is in planars-data, so it arrives when you clone `planars-data` as `coded_data/` — no file sharing needed. Once you have cloned both repos and set up the three GitHub Actions secrets above, the workflows can locate the existing Drive manifest and language folders without any additional configuration.
+`drive_config.json` is in planars-data, so it arrives when you clone `planars-data` as `coded_data/` — no file sharing needed. Once you have cloned both repos and set up the three GitHub Actions secrets above, the workflows can locate the existing language folders and sheets without any additional configuration.

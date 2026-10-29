@@ -90,8 +90,8 @@ def env(monkeypatch, tmp_path):
     # The whole language folder: the Drive door checks each sheet it wrote
     # against a spec built from the language's files.
     coded = use_frozen_coded_data(monkeypatch, tmp_path)
-    config = dict(FakeDriveDoorway.drive_config(),
-                  **{LANG: {"planar_spreadsheet_id": PLANAR_ID}})
+    config = FakeDriveDoorway.drive_config()
+    config.setdefault(LANG, {})["planar_spreadsheet_id"] = PLANAR_ID
     monkeypatch.setattr(sp, "PLANAR_CHANGES_PATH", tmp_path / "planar_changes.json")
     monkeypatch.setattr(drive_module, "_load_drive_config", lambda: json.loads(json.dumps(config)))
     monkeypatch.setattr(file_door, "_commit", lambda run: None)

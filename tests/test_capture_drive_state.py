@@ -195,8 +195,7 @@ def test_apply_refreezes_sheets_and_local_folders_together(tmp_path, monkeypatch
     monkeypatch.setattr(cds, "CODED_DATA", live)
     monkeypatch.setattr(cds, "ROOT", tmp_path)
     monkeypatch.setattr(cds, "_get_clients", lambda: (_GCFor(doorway), _DriveV3(doorway)))
-    monkeypatch.setattr(cds, "_load_drive_config",
-                        lambda: {"_planars_config_file_id": MANIFEST_FILE_ID})
+    monkeypatch.setattr(cds, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(cds, "_download_file_json", lambda drive, file_id: manifest)
 
     with redirect_stdout(io.StringIO()):

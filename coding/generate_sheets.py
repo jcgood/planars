@@ -9,9 +9,11 @@ Run from the repo root:
 Dry-run by default, like every other mutating command in this project (see
 docs/tooling-design.md) — no Drive writes happen without --apply. On the first run
 (with --apply), creates one Google Sheet per analysis class with one tab per
-construction. On subsequent runs, only creates sheets for classes not yet in the
-Drive manifest (e.g. a newly added aspiration class), and adds tabs for constructions
-newly added to an existing class. Existing tabs are left untouched.
+construction. On subsequent runs, only creates sheets for classes with no sheet in the
+ID file, drive_config.json (e.g. a newly added aspiration class; each new sheet's ID is
+recorded there), and adds tabs for constructions newly added to an existing class (what
+a sheet holds is read from its tabs). Existing tabs are left untouched. A run that made
+anything refreshes the notebooks' copy of the manifest on Drive (manifest_copy.publish).
 
 To sync param column changes to existing sheets: python -m coding sync-params --apply
 
@@ -101,16 +103,14 @@ from . import validate_diagnostics as _val_diag
 from . import biuniqueness_rows as _br
 from . import people as _people
 from . import issues as _issues
-from . import drive_door
+from . import drive_door, drive_ids, manifest_copy
 from .drive import (
     _load_drive_config,
     _save_drive_config,
-    upload_manifest,
     create_notes_doc,
     ensure_user_permission,
 )
 from .drive_doorway import SpreadsheetHandle, WorksheetHandle, WorksheetNotFound, get_doorway
-from .glottolog import cached_entry as _cached_glottolog, get_metadata as _fetch_glottolog
 from planars.schema_values import (
     ELEMENT_ROW_COLUMNS, KEYSTONE_NAME, PAIR_ROW_KEYS, PAIR_ROW_SHAPES, STATUS_COLUMNS,
     STATUS_CONSTRUCTION_COLUMN, STATUS_PROBLEMS_COLUMN, STATUS_STATUS_COLUMN,
@@ -150,10 +150,8 @@ from .make_forms import (
     _read_diagnostics_for_language,
     resolve_keystone_active,
     resolve_obligatory_positions,
-    planar_to_manifest_dict,
 )
 
-MANIFEST_PATH = ROOT / "sheets_manifest.json"
 CODED_DATA = ROOT / "coded_data"
 
 # Columns appended after param columns; no dropdown validation: planar.yaml's
@@ -218,17 +216,17 @@ def _upload_lang_setup_as_sheets(
     planar_dir: Path,
     lang_id: str,
     folder_id: str,
-    existing_lang_data: Dict,
+    ids: Dict,
 ) -> Dict:
     """Create a language's planar and diagnostics Sheets if it has none yet.
 
     Each is a read-only copy of its source in planars-data
     (``planar_{lang_id}.tsv``, ``diagnostics_{lang_id}.yaml``; Phase 10 unit
-    11b). An existing one is left alone: sync-planar and sync-diagnostics-yaml
-    keep it current, daily.
+    11b). One the ID file (``ids``, the language's entry) already records is
+    left alone: sync-planar and sync-diagnostics-yaml keep it current, daily.
 
-    Returns a dict with planar_spreadsheet_id/url and diagnostics_spreadsheet_id/url
-    (only keys present if the source exists).
+    Returns ``{planar_spreadsheet_id: ..., diagnostics_spreadsheet_id: ...}``
+    for the Sheets made now only; the caller records them in the ID file.
     """
     result: Dict = {}
     sources = (("planar", "planar_sheet", planar_dir / f"planar_{lang_id}.tsv"),
@@ -237,16 +235,52 @@ def _upload_lang_setup_as_sheets(
     for name, kind, source in sources:
         if not source.exists():
             continue
-        id_key, url_key = f"{name}_spreadsheet_id", f"{name}_spreadsheet_url"
-        existing_id = existing_lang_data.get(id_key)
-        if existing_id:
-            result[id_key] = existing_id
-            result[url_key] = existing_lang_data.get(url_key, "")
+        id_key = f"{name}_spreadsheet_id"
+        if ids.get(id_key):
             continue
         sheet_id, url = _create_copy_sheet(doorway, folder_id, lang_id, kind)
-        result[id_key], result[url_key] = sheet_id, url
+        result[id_key] = sheet_id
         print(f"  Created {name} sheet: {url}")
     return result
+
+
+def _warn_if_language_metadata_incomplete(lid: str) -> None:
+    """Warn (for the coordinator's Claude) when ``schemas/languages.yaml`` is
+    missing the language or its name / source / author, since Drive folder and
+    notebook display names come from it.
+
+    Reads languages.yaml directly by path (not via the cached loader in
+    coding.schemas) because ``python -m coding lookup-lang`` may write a new
+    entry earlier in the same session and the just-written state is needed.
+    The manifest copy for the notebooks reads languages.yaml itself
+    (``manifest_copy``), so nothing is copied anywhere.
+    """
+    _lang_yaml = ROOT / "schemas" / "languages.yaml"
+    _langs = {}
+    if _lang_yaml.exists():
+        with open(_lang_yaml, encoding="utf-8") as _f:
+            _langs = yaml.safe_load(_f) or {}
+    entry = _langs.get(lid)
+    if entry:
+        meta = entry.get("meta") or {}
+        glottolog = entry.get("glottolog") or {}
+        missing = [f for f in ("source", "author") if not meta.get(f)]
+        no_name = not glottolog.get("name")
+        if missing or no_name:
+            problems = (
+                [f"name (run python -m coding lookup-lang {lid} first)"]
+                if no_name else []) + missing
+            print(
+                f"  [{lid}] WARNING: languages.yaml meta incomplete "
+                f"(missing: {', '.join(problems)}).\n"
+                f"    Display names may be incorrect in Drive folders and notebooks.\n"
+                f"    Fill in the meta block and commit before sharing notebooks with contributors."
+            )
+    else:
+        print(
+            f"  [{lid}] WARNING: not found in schemas/languages.yaml. "
+            f"Run 'python -m coding lookup-lang {lid}' before running generate-sheets."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -1609,15 +1643,19 @@ def _create_analysis_sheet(
     constructions: List[Tuple[str, List[str], Dict[str, List[str]]]],
     element_index,
     planar_path: Path,
-) -> Dict:
-    """Create a Google Sheet for one analysis class with one tab per construction."""
+) -> Tuple[str, str]:
+    """Create a Google Sheet for one analysis class with one tab per construction.
+
+    Returns ``(spreadsheet_id, url)``; the caller records the ID in the ID file
+    (``drive_ids.set_class_sheet``).
+    """
     sheet_title = f"{class_name}_{lang_id}"
     print(f"  Creating: {sheet_title}")
 
     # Guard: abort if a same-named spreadsheet already exists in the folder but is not
-    # registered in the manifest.  _check_force_against_existing_sheets only fires when the
-    # manifest already has an entry for this class; this check covers the case where the
-    # manifest entry is absent (e.g. after prune-manifest or during debugging iterations).
+    # recorded in the ID file.  _check_force_against_existing_sheets only fires when the
+    # ID file already has a sheet for this class; this check covers the case where it
+    # does not (e.g. after a sheet was retired or during debugging iterations).
     existing = doorway.list_files(
         q=(
             f"'{folder_id}' in parents"
@@ -1632,10 +1670,11 @@ def _create_analysis_sheet(
         ids = ", ".join(f["id"] for f in existing)
         raise SystemExit(
             f"\nERROR: A spreadsheet named \"{sheet_title}\" already exists in the Drive "
-            f"folder but is not registered in the manifest for {lang_id}.\n"
+            f"folder but is not recorded in drive_config.json for {lang_id}.\n"
             f"  Existing file ID(s): {ids}\n\n"
             f"To resolve, either:\n"
-            f"  (a) Register the existing sheet: add its spreadsheet_id to the manifest, or\n"
+            f"  (a) Record the existing sheet: add its spreadsheet ID to drive_config.json\n"
+            f"      under {lang_id}'s class_sheets, or\n"
             f"  (b) Move it to _archived/ in Drive, then re-run\n"
             f"      python -m coding generate-sheets --apply\n"
         )
@@ -1669,19 +1708,7 @@ def _create_analysis_sheet(
     _create_status_tab(spreadsheet, tab_names)
     reorder_tabs(spreadsheet, tab_names)
 
-    # Each construction's criteria, for the manifest (the analysis notebooks
-    # read them). Their allowed values stay in the diagnostics YAML only.
-    construction_params = {
-        construction: {"param_names": pn}
-        for construction, pn, _ in constructions
-    }
-
-    return {
-        "spreadsheet_id": spreadsheet.id,
-        "url": spreadsheet.url,
-        "constructions": tab_names,
-        "construction_params": construction_params,
-    }
+    return spreadsheet.id, spreadsheet.url
 
 
 # ---------------------------------------------------------------------------
@@ -1757,9 +1784,9 @@ def _tab_criteria(lang_id: str, class_name: str, construction: str):
     """A tab's criterion columns and allowed values, from the language's
     diagnostics YAML through coding.schemas.criteria_for.
 
-    --regen-construction used to read these from the manifest's cached copy,
-    with typed fallbacks per class ({"scopal": ["y", "n"]}, ...): a stale copy
-    plus a hidden default (Phase 10, 2026-10-12).
+    --regen-construction used to read these from a cached copy, with typed
+    fallbacks per class ({"scopal": ["y", "n"]}, ...): a stale copy plus a
+    hidden default (Phase 10, 2026-10-12).
     """
     specs = _read_diagnostics_for_language(lang_id, CODED_DATA / lang_id / "lang_setup")
     for cls, con, names, values in specs:
@@ -1774,7 +1801,7 @@ def _regen_construction(
     lang_id: str,
     class_name: str,
     construction_name: str,
-    manifest_class_info: dict,
+    spreadsheet_id: str,
     pos_num_remap: Optional[Dict[int, int]] = None,
     confirm_drop: bool = False,
 ) -> None:
@@ -1803,7 +1830,7 @@ def _regen_construction(
         lang_id:              language ID (e.g. 'stan1293').
         class_name:           analysis class (e.g. 'nonpermutability').
         construction_name:    dependent construction to regenerate (e.g. 'general').
-        manifest_class_info:  the sheet entry from the manifest for this class.
+        spreadsheet_id:       the class sheet's ID (drive_ids.class_sheet_id).
         pos_num_remap:        optional {old_pos_num: new_pos_num} for carrying over
                               annotations when position numbers have shifted (e.g. after
                               a position was inserted or deleted in the planar).  Pass via
@@ -1820,9 +1847,8 @@ def _regen_construction(
     Opening is an idempotent read, so the added retry changes nothing about
     what gets written.
     """
-    spreadsheet_id = manifest_class_info.get("spreadsheet_id")
     if not spreadsheet_id:
-        raise SystemExit(f"  No spreadsheet_id in manifest for {lang_id}/{class_name}")
+        raise SystemExit(f"  No sheet ID in drive_config.json for {lang_id}/{class_name}")
     spreadsheet = doorway.open_spreadsheet(spreadsheet_id)
 
     # keyed_rows tabs (biuniqueness_deviations' morphemes/morphs) are rebuilt
@@ -1911,7 +1937,7 @@ def _add_constructions_to_existing_sheet(
     lang_id: str,
     element_index,
     planar_path: Path,
-) -> Dict:
+) -> None:
     """Add new construction tabs to an already-existing spreadsheet.
 
     Used when a class already has a sheet but new constructions have been added
@@ -1922,19 +1948,16 @@ def _add_constructions_to_existing_sheet(
     callers hold the spreadsheet open already, and `update_sheets.py` reaches
     Drive through the doorway, where there is no client to hand over.
 
-    Returns construction_params dict for the newly added tabs only.
+    The sheet's tabs are the record of which constructions it holds
+    (``construction_tabs()``); nothing else is updated.
     """
     # Same per-tab criteria rule as _create_analysis_sheet (coding.schemas.criteria_for).
     new_constructions = apply_schema_criteria(class_name, new_constructions, lang_id)
-
-    construction_params: Dict = {}
 
     for construction, param_names, param_values in new_constructions:
         what = _fill_new_tab(ss, lang_id, class_name, construction, param_names,
                              param_values, element_index, planar_path)
         print(f"    Tab: {construction} ({what})")
-
-        construction_params[construction] = {"param_names": param_names}
 
     # Refresh the locked tabs and Status, then put every tab in its place.
     planar_path = CODED_DATA / lang_id / "lang_setup" / f"planar_{lang_id}.tsv"
@@ -1949,8 +1972,6 @@ def _add_constructions_to_existing_sheet(
              if cls == class_name]
     reorder_tabs(ss, order)
 
-    return construction_params
-
 
 def _tsv_has_rows(path: Path) -> bool:
     """True if the TSV has at least one row below its header."""
@@ -1959,11 +1980,11 @@ def _tsv_has_rows(path: Path) -> bool:
         return any(line.strip() for line in f)
 
 
-def _source_tab_status(doorway, cls_info: dict, source_name: str) -> str:
+def _source_tab_status(doorway, spreadsheet_id: str, source_name: str) -> str:
     """The source tab's status in its sheet's Status tab ('' if unreadable)."""
     from .validate_coding import tab_statuses
     try:
-        ss = doorway.open_spreadsheet(cls_info["spreadsheet_id"])
+        ss = doorway.open_spreadsheet(spreadsheet_id)
         status = tab_statuses(ss).get(source_name, "")
     except Exception as exc:
         print(f"    (could not read the Status tab: {exc})")
@@ -1971,7 +1992,7 @@ def _source_tab_status(doorway, cls_info: dict, source_name: str) -> str:
     return status if isinstance(status, str) else ""
 
 
-def _regen_dependents_simple(doorway, manifest: dict) -> List[str]:
+def _regen_dependents_simple(doorway, config: dict) -> List[str]:
     """Generate dependent constructions that have nothing in them yet.
 
     Safe to automate, because a tab with no rows has nothing to lose. Fires in
@@ -2011,9 +2032,8 @@ def _regen_dependents_simple(doorway, manifest: dict) -> List[str]:
 
         for lang_id in sorted(d.name for d in CODED_DATA.iterdir()
                                if d.is_dir() and not d.name.startswith(".")):
-            lang_manifest = manifest.get(lang_id, {})
-            cls_info = lang_manifest.get("sheets", {}).get(cls_name)
-            if not cls_info:
+            sheet_id = drive_ids.class_sheet_id(config, lang_id, cls_name)
+            if not sheet_id:
                 continue
 
             for source_name, dep_name in deps:
@@ -2033,7 +2053,7 @@ def _regen_dependents_simple(doorway, manifest: dict) -> List[str]:
                           f"--regen-construction {cls_name}:{dep_name}")
                     continue
                 if dep_path.exists():
-                    status = _source_tab_status(doorway, cls_info, source_name)
+                    status = _source_tab_status(doorway, sheet_id, source_name)
                     if status != STATUS_READY:
                         print(f"  [{lang_id}/{cls_name}/{dep_name}] empty — waiting for "
                               f"'{source_name}' to be marked ready-for-review "
@@ -2042,7 +2062,7 @@ def _regen_dependents_simple(doorway, manifest: dict) -> List[str]:
 
                 print(f"  [{lang_id}/{cls_name}/{dep_name}] regenerating from {source_name}…")
                 try:
-                    _regen_construction(doorway, lang_id, cls_name, dep_name, cls_info)
+                    _regen_construction(doorway, lang_id, cls_name, dep_name, sheet_id)
                 except Exception as exc:
                     print(f"  ERROR: {exc}")
                     failures.append(f"{lang_id}/{cls_name}/{dep_name}: {exc}")
@@ -2056,11 +2076,13 @@ def _regen_dependents_simple(doorway, manifest: dict) -> List[str]:
 
 def _plan_language_creation(
     all_classes: Dict[str, List[Tuple[str, List[str], Dict[str, List[str]]]]],
-    existing_lang_data: Dict,
-    force: bool,
+    ids: Dict,
+    existing_tabs: Dict[str, List[str]],
 ) -> Dict:
-    """Determine what generate-sheets would create/update for one language, using
-    only already-fetched manifest data (existing_lang_data) -- no live Drive calls.
+    """Determine what generate-sheets would create/update for one language, from
+    its entry in the ID file (``ids``) and the construction tabs each existing
+    class sheet already has (``existing_tabs``, ``{class: [construction, ...]}``,
+    one key per class that has a sheet) -- no Drive calls of its own.
 
     This is the dry-run/--apply gate's pure-logic core (issue: generate-sheets had
     no dry-run mode at all before this, unlike every other mutating command in the
@@ -2079,22 +2101,21 @@ def _plan_language_creation(
             added to an EXISTING class's sheet (not counted again under new_classes)
         anything: True if any of the above would cause a write
     """
-    existing_sheets = existing_lang_data.get("sheets", {})
-    new_classes = sorted(c for c in all_classes if c not in existing_sheets)
+    new_classes = sorted(c for c in all_classes if c not in existing_tabs)
 
     new_constructions: Dict[str, List[str]] = {}
     for cls, constructions_list in all_classes.items():
         if cls in new_classes:
             continue  # whole class is new; its constructions are covered there
-        existing_cons = set(existing_sheets.get(cls, {}).get("constructions", []))
+        existing_cons = set(existing_tabs[cls])
         added = [c for c, _, _ in constructions_list if c not in existing_cons]
         if added:
             new_constructions[cls] = added
 
-    needs_folder             = not bool(existing_lang_data.get("folder_id"))
-    needs_notes_doc           = not bool(existing_lang_data.get("notes_doc_id"))
-    needs_planar_sheet        = not bool(existing_lang_data.get("planar_spreadsheet_id"))
-    needs_diagnostics_sheet   = not bool(existing_lang_data.get("diagnostics_spreadsheet_id"))
+    needs_folder             = not bool(ids.get("folder_id"))
+    needs_notes_doc           = not bool(ids.get("notes_doc_id"))
+    needs_planar_sheet        = not bool(ids.get("planar_spreadsheet_id"))
+    needs_diagnostics_sheet   = not bool(ids.get("diagnostics_spreadsheet_id"))
 
     anything = (
         needs_folder or needs_notes_doc or needs_planar_sheet or needs_diagnostics_sheet
@@ -2112,15 +2133,16 @@ def _plan_language_creation(
 
 
 def _check_force_against_existing_sheets(
-    lang_id: str, force: bool, existing_lang_data: Dict
+    lang_id: str, force: bool, class_sheets: Dict[str, str]
 ) -> None:
     """Raise SystemExit if --force is attempted on a language with existing annotation sheets.
 
     Annotation data is irreplaceable. --force must never recreate sheets that
-    already have IDs in the manifest, as that would orphan the filled sheets.
+    already have IDs in the ID file (``class_sheets``: ``{class: sheet ID}``,
+    ``drive_ids.class_sheets``), as that would orphan the filled sheets.
     """
-    if force and existing_lang_data.get("sheets"):
-        existing_sheet_classes = list(existing_lang_data["sheets"].keys())
+    if force and class_sheets:
+        existing_sheet_classes = list(class_sheets)
         print(
             f"\nERROR: --force refused for {lang_id}.\n"
             f"  Existing annotation sheets: {existing_sheet_classes}\n"
@@ -2171,11 +2193,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--regen-dependents", action="store_true",
         help="regenerate dependent constructions with no annotation data yet (CI path)",
     )
-    ap.add_argument(
-        "--push-manifest", action="store_true",
-        help="upload the existing local sheets_manifest.json to Drive as manifest.json "
-             "(one-time migration utility)",
-    )
     return ap
 
 
@@ -2183,8 +2200,8 @@ def main(args: argparse.Namespace | None = None) -> None:
     """Entry point for `python -m coding generate-sheets`.
 
     Dry-run by default: without --apply, reports what would be created/updated per
-    language (_plan_language_creation, using only already-fetched manifest data —
-    no Drive writes) and moves on. This did not exist before -- generate-sheets was
+    language (_plan_language_creation, from the ID file and the tabs each class
+    sheet has — no Drive writes) and moves on. This did not exist before -- generate-sheets was
     the one mutating command in the project with no dry-run gate at all, unlike
     restructure-sheets/sync-params/update-sheets/sync-diagnostics-yaml, in direct
     tension with docs/tooling-design.md's "dry-run by default" principle. Fixed
@@ -2198,15 +2215,14 @@ def main(args: argparse.Namespace | None = None) -> None:
       none yet (sync-planar and sync-diagnostics-yaml keep them current).
     - Creates one annotation Google Sheet per analysis class (skipping existing ones unless
       --force). Each sheet has one tab per construction with dropdown validation.
-    - Uploads the merged manifest.json manifest to Drive after each language.
+      Each new sheet's ID goes into the ID file (drive_config.json) as soon as it exists.
+    - Adds the tabs of constructions a class's existing sheet lacks.
+    - If it made anything, refreshes the notebooks' manifest copy on Drive once
+      at the end (manifest_copy.publish: rebuilt from the ID file, never edited).
     - Regenerates contributor notebooks at the end.
     """
     if args is None:
         args = build_parser().parse_args()
-
-    if args.push_manifest:
-        push_manifest()
-        return
 
     # --regen-construction CLASS:CONSTRUCTION [--lang LANG_ID]
     # Regenerate a specific dependent construction tab in an existing sheet.
@@ -2237,19 +2253,17 @@ def main(args: argparse.Namespace | None = None) -> None:
         print("Connecting to Google APIs...")
         doorway = get_doorway()
         config = _load_drive_config()
-        file_id = config.get("_planars_config_file_id")
-        manifest = doorway.download_file_json(file_id) if file_id else {}
 
         langs = [lang_filter] if lang_filter else sorted(
             d.name for d in CODED_DATA.iterdir() if d.is_dir() and not d.name.startswith(".")
         )
         for lang_id in langs:
-            cls_info = manifest.get(lang_id, {}).get("sheets", {}).get(class_name)
-            if not cls_info:
-                print(f"  {lang_id}/{class_name}: not in manifest — skipping")
+            sheet_id = drive_ids.class_sheet_id(config, lang_id, class_name)
+            if not sheet_id:
+                print(f"  {lang_id}/{class_name}: no sheet in drive_config.json — skipping")
                 continue
             print(f"\n{lang_id}/{class_name}/{construction_name}")
-            _regen_construction(doorway, lang_id, class_name, construction_name, cls_info,
+            _regen_construction(doorway, lang_id, class_name, construction_name, sheet_id,
                                 pos_num_remap=pos_num_remap or None, confirm_drop=confirm_drop)
         return
 
@@ -2267,9 +2281,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         print("Connecting to Google APIs...")
         doorway = get_doorway()
         config = _load_drive_config()
-        file_id = config.get("_planars_config_file_id")
-        manifest = doorway.download_file_json(file_id) if file_id else {}
-        failures = _regen_dependents_simple(doorway, manifest)
+        failures = _regen_dependents_simple(doorway, config)
         if failures:
             # Issue #283: this used to return None regardless of whether any
             # regeneration failed -- the workflow step had no way to notice,
@@ -2296,52 +2308,21 @@ def main(args: argparse.Namespace | None = None) -> None:
     config = _load_drive_config()
     root_folder_id = config.get("_root_folder_id")
 
-    # Load the existing merged config from Drive (if present) so we can update
-    # it incrementally as each language is processed, preserving other languages.
-    # Not routed through load_manifest(doorway): that helper has different
-    # fallback semantics for the pre-#30 per-language format and does not write
-    # the recovery backup below, both of which this call site needs.
-    existing_config_file_id = config.get("_planars_config_file_id")
-    if existing_config_file_id:
-        try:
-            merged_config: Dict = doorway.download_file_json(existing_config_file_id)
-            # Back up the raw downloaded manifest before any mutations so it can
-            # be used for recovery if something goes wrong during this run.
-            _manifest_backup = ROOT / "manifest_backup.json"
-            _manifest_backup.write_text(json.dumps(merged_config, indent=2), encoding="utf-8")
-            print(f"Manifest backed up to manifest_backup.json ({len(merged_config)} language(s))")
-            # If it's old-format (just folder_ids, no sheets), start fresh.
-            if not any("sheets" in v for v in merged_config.values() if isinstance(v, dict)):
-                merged_config = {}
-        except Exception:
-            merged_config = {}
-    else:
-        merged_config = {}
-
-    # Preflight: resolve existing_lang_data for every language and check
-    # --force against it before any language's sheets are touched. Checking
-    # this one language at a time inside the main loop below meant an
+    # Preflight: check --force against each language's class sheets in the ID
+    # file before any language's sheets are touched. Checking this one
+    # language at a time inside the main loop below meant an
     # `--apply --force` run could overwrite the first language's
     # planar/diagnostics reference sheets and only then abort on a later
     # language's existing annotation sheets -- too late for the language
     # already overwritten (Finding 15, docs/data-layer-progress.md). Every
     # language must pass this guard before any of them are touched.
-    existing_lang_data_by_lang: Dict[str, Dict] = {}
     for planar_file in planar_files:
         lang_id = _infer_language_id_from_planar_filename(planar_file.name)
-        existing_lang_data: Dict = merged_config.get(lang_id, {})
-        if not existing_lang_data and lang_id in config:
-            # Migration: try old-format per-language manifest file
-            old_fid = config[lang_id].get("manifest_file_id")
-            if old_fid:
-                try:
-                    existing_lang_data = doorway.download_file_json(old_fid)
-                except Exception:
-                    pass
-        existing_lang_data_by_lang[lang_id] = existing_lang_data
-        _check_force_against_existing_sheets(lang_id, force, existing_lang_data)
+        _check_force_against_existing_sheets(
+            lang_id, force, drive_ids.class_sheets(config, lang_id))
 
-    full_manifest: Dict = {}
+    # Whether this run made or changed anything the notebooks' manifest copy shows.
+    changed = False
 
     for planar_file in planar_files:
         planar_dir = planar_file.parent
@@ -2389,19 +2370,20 @@ def main(args: argparse.Namespace | None = None) -> None:
 
         print(f"Classes:     {list(all_classes.keys())}")
 
-        # existing_lang_data was already resolved for every language in the
-        # preflight pass above (which also ran the --force guard against it
-        # before any language's sheets were touched) -- reuse it rather than
-        # recomputing it here and re-issuing the old-format fallback's Drive
-        # read a second time.
-        existing_lang_data: Dict = existing_lang_data_by_lang[lang_id]
+        # What the language has now: its IDs in the ID file, and which
+        # construction tabs each of its class sheets already holds (read from
+        # the sheet itself).
+        ids: Dict = config.get(lang_id) or {}
+        existing_sheets = drive_ids.class_sheets(config, lang_id)
+        existing_tabs = {cls: doorway.open_spreadsheet(sid).construction_tabs()
+                         for cls, sid in existing_sheets.items() if cls in all_classes}
 
-        # Dry-run gate: report what would happen using only manifest/local data,
-        # with no Drive writes, unless --apply is given. See docs/tooling-design.md's
+        # Dry-run gate: report what would happen, with no Drive writes, unless
+        # --apply is given. See docs/tooling-design.md's
         # "dry-run by default" principle -- generate-sheets previously had no such
         # gate at all, unlike every other mutating command in this project.
         diag_path_exists = diag_path.exists()
-        plan = _plan_language_creation(all_classes, existing_lang_data, force)
+        plan = _plan_language_creation(all_classes, ids, existing_tabs)
         plan_anything = plan["anything"] or (plan["needs_diagnostics_sheet"] and diag_path_exists)
         if plan_anything and not apply:
             print("  DRY RUN — would create/update:")
@@ -2426,11 +2408,14 @@ def main(args: argparse.Namespace | None = None) -> None:
             continue
 
         # Resolve/create Drive folder.
+        changed = True
         folder_id = (
-            existing_lang_data.get("folder_id")
+            ids.get("folder_id")
             or doorway.get_or_create_folder(lang_id, parent_id=root_folder_id,
                                             identity=drive_door.folder("language", lang_id))
         )
+        config.setdefault(lang_id, {})["folder_id"] = folder_id
+        _save_drive_config(config)
         email = _annotator_email(lang_id)
         if email:
             try:
@@ -2443,11 +2428,11 @@ def main(args: argparse.Namespace | None = None) -> None:
         folder_url = f"https://drive.google.com/drive/folders/{folder_id}"
         print(f"Folder:      {folder_url}")
 
-        # Create collaborator notes doc if not already in the manifest. Its
+        # Create collaborator notes doc if the ID file has none. Its
         # name (sheet_spec.file_spec) uses the language's name from
         # languages.yaml — run `lookup-lang <lang_id>` first, or the doc is
         # named by the bare Glottocode.
-        existing_notes_doc_id = existing_lang_data.get("notes_doc_id") or config.get(lang_id, {}).get("notes_doc_id")
+        existing_notes_doc_id = ids.get("notes_doc_id")
         if not existing_notes_doc_id:
             try:
                 existing_notes_doc_id = create_notes_doc(doorway, lang_id, folder_id)
@@ -2458,125 +2443,44 @@ def main(args: argparse.Namespace | None = None) -> None:
         else:
             print(f"Notes doc:   (existing) https://docs.google.com/document/d/{existing_notes_doc_id}")
 
-        # Safety check: if the manifest has no entry for this language but
-        # drive_config.json shows it was previously set up (has a folder_id),
-        # the manifest is almost certainly stale — not a genuinely new language.
-        # Creating sheets now would produce empty sheets that overwrite annotation data.
-        # Abort unless --force is explicitly passed.
-        if not existing_lang_data and not force:
-            established = config.get(lang_id, {})
-            if established.get("folder_id"):
-                raise SystemExit(
-                    f"\nERROR: The Drive manifest has no entry for '{lang_id}', but "
-                    f"drive_config.json records it as an established language "
-                    f"(folder_id: {established['folder_id']}).\n"
-                    f"This almost certainly means the manifest is stale or was accidentally "
-                    f"replaced with an empty file — NOT that the sheets are genuinely new.\n"
-                    f"\nCreating sheets now would produce empty sheets and destroy annotation data.\n"
-                    f"\nTo recover: check manifest_backup.json (written at the start of this run)\n"
-                    f"or inspect the Drive manifest directly (file id: {existing_config_file_id}).\n"
-                    f"\nTo force recreation of all sheets (DESTRUCTIVE — data will be lost): "
-                    f"use --force."
-                )
+        if existing_notes_doc_id:
+            config[lang_id]["notes_doc_id"] = existing_notes_doc_id
+            _save_drive_config(config)
 
-        def _sync_language_metadata(lang_data: dict, lid: str) -> None:
-            """Copy glottolog + meta blocks from languages.yaml into the Drive manifest entry.
-
-            languages.yaml is the source of truth.  The Drive manifest carries a
-            copy so the data lives near the annotation sheets.  If the language is
-            not yet in languages.yaml, falls back to glottolog_cache.json and warns.
-
-            Reads languages.yaml directly by path (not via coding.schemas cached
-            loader) because python -m coding lookup-lang may write a new entry
-            earlier in the same session and we need the just-written state, not
-            a cached snapshot.
-            """
-            import yaml as _yaml
-            _lang_yaml = ROOT / "schemas" / "languages.yaml"
-            _langs = {}
-            if _lang_yaml.exists():
-                with open(_lang_yaml, encoding="utf-8") as _f:
-                    _langs = _yaml.safe_load(_f) or {}
-            entry = _langs.get(lid)
-            if entry:
-                if "glottolog" in entry:
-                    lang_data["glottolog"] = entry["glottolog"]
-                if "meta" in entry:
-                    lang_data["meta"] = entry["meta"]
-                # Warn if key meta fields are blank — display names will be wrong
-                # in Drive folders and notebooks until they are filled in.
-                meta = entry.get("meta") or {}
-                glottolog = entry.get("glottolog") or {}
-                missing = [f for f in ("source", "author") if not meta.get(f)]
-                no_name = not glottolog.get("name")
-                if missing or no_name:
-                    problems = (
-                        [f"name (run python -m coding lookup-lang {lid} first)"]
-                        if no_name else []) + missing
-                    print(
-                        f"  [{lid}] WARNING: languages.yaml meta incomplete "
-                        f"(missing: {', '.join(problems)}).\n"
-                        f"    Display names may be incorrect in Drive folders and notebooks.\n"
-                        f"    Fill in the meta block and commit before sharing notebooks with contributors."
-                    )
-            else:
-                print(
-                    f"  [{lid}] WARNING: not found in schemas/languages.yaml. "
-                    f"Run 'python -m coding lookup-lang {lid}' before running generate-sheets."
-                )
-                glotto = _cached_glottolog(lid)
-                if not glotto:
-                    try:
-                        glotto = _fetch_glottolog(lid)
-                    except Exception as exc:
-                        print(f"  [{lid}] WARNING: Could not fetch Glottolog metadata: {exc}")
-                if glotto:
-                    lang_data["glottolog"] = {
-                        "name":      glotto["name"],
-                        "iso639_3":  glotto["iso639_3"],
-                        "family":    glotto["classification"][0]["name"] if glotto["classification"] else None,
-                        "latitude":  glotto["latitude"],
-                        "longitude": glotto["longitude"],
-                    }
+        _warn_if_language_metadata_incomplete(lang_id)
 
         # The planar and diagnostics Sheets: read-only copies of their
         # sources, made here only if the language has none yet.
-        input_sheet_info = _upload_lang_setup_as_sheets(
-            doorway, planar_dir, lang_id, folder_id, existing_lang_data
+        input_sheet_ids = _upload_lang_setup_as_sheets(
+            doorway, planar_dir, lang_id, folder_id, ids
         )
+        if input_sheet_ids:
+            config[lang_id].update(input_sheet_ids)
+            _save_drive_config(config)
 
-        if not force and existing_lang_data:
-            existing_sheets = existing_lang_data.get("sheets", {})
-            new_class_names = [c for c in all_classes if c not in existing_sheets]
-
-            # A class that already has a sheet may still have gained a new
-            # construction in its diagnostics YAML entry -- check every
-            # existing class for that regardless of whether this language
-            # also picked up brand-new classes this run (brand-new classes
-            # are handled separately below via classes_to_create).
+        # A class that already has a sheet may still have gained a new
+        # construction in its diagnostics YAML entry -- check every
+        # existing class for that regardless of whether this language
+        # also picked up brand-new classes this run (brand-new classes
+        # are handled separately below via classes_to_create).
+        new_class_names = [c for c in all_classes if c not in existing_sheets]
+        if existing_sheets:
             added_any = False
             for cls, constructions_list in all_classes.items():
                 if cls not in existing_sheets:
                     continue
-                existing_cls_info = existing_sheets.get(cls, {})
-                existing_cons = set(existing_cls_info.get("constructions", []))
+                existing_cons = set(existing_tabs[cls])
                 new_cons = [(c, pn, pv) for c, pn, pv in constructions_list
                             if c not in existing_cons]
                 if not new_cons:
                     continue
                 added_any = True
                 print(f"  [{cls}] new construction(s): {[c for c,_,_ in new_cons]}")
-                ss_id = existing_cls_info["spreadsheet_id"]
                 _planar_path = planar_dir / f"planar_{lang_id}.tsv"
-                new_params = _add_constructions_to_existing_sheet(
-                    doorway.open_spreadsheet(ss_id), cls, new_cons, lang_id,
+                _add_constructions_to_existing_sheet(
+                    doorway.open_spreadsheet(existing_sheets[cls]), cls, new_cons, lang_id,
                     element_index, _planar_path,
                 )
-                existing_cls_info.setdefault("constructions", []).extend(
-                    [c for c, _, _ in new_cons]
-                )
-                existing_cls_info.setdefault("construction_params", {}).update(new_params)
-                existing_lang_data["sheets"][cls] = existing_cls_info
 
             if not new_class_names:
                 if not added_any:
@@ -2584,88 +2488,37 @@ def main(args: argparse.Namespace | None = None) -> None:
                         f"  All classes already have sheets. Skipping {lang_id}.\n"
                         "  (use --force to regenerate)"
                     )
-                existing_lang_data["folder_id"] = folder_id
-                if existing_notes_doc_id:
-                    existing_lang_data["notes_doc_id"] = existing_notes_doc_id
-                existing_lang_data.update(input_sheet_info)
-                _sync_language_metadata(existing_lang_data, lang_id)
-                config.setdefault(lang_id, {})["folder_id"] = folder_id
-                if existing_notes_doc_id:
-                    config[lang_id]["notes_doc_id"] = existing_notes_doc_id
-                _save_drive_config(config)
-                full_manifest[lang_id] = existing_lang_data
-                merged_config[lang_id] = existing_lang_data
                 continue
             print(f"Existing:    {list(existing_sheets.keys())}")
             print(f"New:         {new_class_names}")
 
-        # --force was already checked against existing_lang_data for every
-        # language in the preflight pass above, before any language's sheets
-        # were touched -- no need to check again here.
-        classes_to_create = {
-            k: v for k, v in all_classes.items()
-            if k not in existing_lang_data.get("sheets", {})
-        }
+        # --force was already checked against the language's class sheets for
+        # every language in the preflight pass above, before any language's
+        # sheets were touched -- no need to check again here.
+        classes_to_create = {k: v for k, v in all_classes.items() if k in new_class_names}
 
-        # Build lang_data starting from existing data (or fresh), always include folder_id.
-        lang_data: Dict = existing_lang_data or {"folder_url": folder_url, "sheets": {}}
-        lang_data["folder_id"] = folder_id
-        if existing_notes_doc_id:
-            lang_data["notes_doc_id"] = existing_notes_doc_id
-        lang_data.update(input_sheet_info)  # store planar/diagnostics spreadsheet IDs
-        lang_data["planar"] = planar_to_manifest_dict(planar_file, lang_id)
-
-        _sync_language_metadata(lang_data, lang_id)
-
-        # Create one sheet per new analysis class
+        # Create one sheet per new analysis class, recording each in the ID
+        # file as soon as it exists so a later failure cannot lose its ID.
         for class_name, constructions in classes_to_create.items():
-            sheet_info = _create_analysis_sheet(
+            sheet_id, sheet_url = _create_analysis_sheet(
                 doorway, folder_id, lang_id, class_name, constructions, element_index,
                 planar_path=planar_file,
             )
-            lang_data["sheets"][class_name] = sheet_info
-            print(f"    URL: {sheet_info['url']}\n")
-
-        full_manifest[lang_id] = lang_data
-        merged_config[lang_id] = lang_data
-
-        # Upload the full merged config to Drive after each language so partial
-        # progress is saved even if a later language fails.
-        existing_config_file_id = upload_manifest(
-            doorway, merged_config, root_folder_id, existing_config_file_id
-        )
-        config["_planars_config_file_id"] = existing_config_file_id
-        config.setdefault(lang_id, {})["folder_id"] = folder_id
-        # Mirror planar/diagnostics sheet IDs into drive_config.json so they are
-        # available locally without fetching the full manifest from Drive.
-        for key in ("planar_spreadsheet_id", "planar_spreadsheet_url",
-                    "diagnostics_spreadsheet_id", "diagnostics_spreadsheet_url"):
-            if key in input_sheet_info:
-                config[lang_id][key] = input_sheet_info[key]
-        if existing_notes_doc_id:
-            config[lang_id]["notes_doc_id"] = existing_notes_doc_id
-        # Remove stale per-language manifest_file_id (superseded by merged config).
-        config[lang_id].pop("manifest_file_id", None)
-        _save_drive_config(config)
-        print(f"manifest.json updated on Drive (id: {existing_config_file_id})")
+            drive_ids.set_class_sheet(config, lang_id, class_name, sheet_id, 1)
+            _save_drive_config(config)
+            print(f"    URL: {sheet_url}\n")
 
     if not apply:
         print("\nRun with --apply to make these changes.")
         return
 
-    # Upload merged config once more after the loop to capture any skipped languages
-    # that were added to merged_config but didn't trigger an in-loop upload.
-    final_file_id = upload_manifest(
-        doorway, merged_config, root_folder_id, existing_config_file_id
-    )
-    config["_planars_config_file_id"] = final_file_id
-    _save_drive_config(config)
-    print(f"manifest.json uploaded (id: {final_file_id})")
-
-    # Write local manifest with all languages (gitignored, kept for reference)
-    MANIFEST_PATH.write_text(json.dumps(full_manifest, indent=2), encoding="utf-8")
-    print(f"\nLocal manifest written to: {MANIFEST_PATH.name}")
-    print(f"drive_config.json written.")
+    # The manifest is a copy for the published Colab notebooks, rebuilt whole
+    # from the ID file; refresh it when this run made or changed a sheet.
+    if changed:
+        file_id = manifest_copy.publish(doorway, config)
+        _save_drive_config(config)
+        print(f"Notebook manifest copy refreshed on Drive (id: {file_id})")
+    print("drive_config.json written.")
 
     print("\nEach language's folder and sheets are shared with the annotator named in "
           "people.yaml; for a language with none listed, add one there and re-run with --apply.")
@@ -2674,46 +2527,5 @@ def main(args: argparse.Namespace | None = None) -> None:
     regenerate_notebooks()
 
 
-def push_manifest() -> None:
-    """Upload the existing local sheets_manifest.json to Drive as merged manifest.json.
-
-    One-time migration utility. Run with:
-        python -m coding generate-sheets --push-manifest
-    """
-    if not MANIFEST_PATH.exists():
-        raise SystemExit(
-            "sheets_manifest.json not found. Nothing to push.\n"
-            "Run python -m coding generate-sheets --apply first to create sheets."
-        )
-    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-    print("Connecting to Google APIs...")
-    doorway = get_doorway()
-    config = _load_drive_config()
-
-    # Enrich manifest with folder_id from drive_config before uploading.
-    merged_config: Dict = {}
-    for lang_id, lang_data in manifest.items():
-        entry = dict(lang_data)
-        folder_url = entry.get("folder_url", "")
-        folder_id = config.get(lang_id, {}).get("folder_id") or (
-            folder_url.rstrip("/").rsplit("/", 1)[-1] if folder_url else ""
-        )
-        entry["folder_id"] = folder_id
-        config.setdefault(lang_id, {})["folder_id"] = folder_id
-        config[lang_id].pop("manifest_file_id", None)
-        merged_config[lang_id] = entry
-
-    root_folder_id = config.get("_root_folder_id")
-    existing_file_id = config.get("_planars_config_file_id")
-    file_id = upload_manifest(doorway, merged_config, root_folder_id, existing_file_id)
-    config["_planars_config_file_id"] = file_id
-    _save_drive_config(config)
-    print(f"manifest.json uploaded (id: {file_id})")
-    print(f"drive_config.json written.")
-
-
 if __name__ == "__main__":
-    if "--push-manifest" in sys.argv:
-        push_manifest()
-    else:
-        main()
+    main()

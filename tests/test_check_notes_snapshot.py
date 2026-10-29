@@ -60,19 +60,18 @@ def env(monkeypatch, tmp_path, github):
     let a regression to filing duplicates pass.
     """
     doorway = FakeDriveDoorway.from_fixtures()
-    manifest = doorway.download_file_json(MANIFEST_FILE_ID)
+    # The ID file the command reads (notes_doc_id is one of its entries).
+    config = FakeDriveDoorway.drive_config()
 
     def seed_doc(text: str = NOTES) -> None:
         doorway.seed_doc("Araona [arao1248] — Annotation Notes", text,
-                         parent_id=manifest[LANG]["folder_id"], file_id=DOC_ID)
-        manifest[LANG]["notes_doc_id"] = DOC_ID
-        doorway.file(MANIFEST_FILE_ID).content = json.dumps(manifest).encode()
+                         parent_id=config[LANG]["folder_id"], file_id=DOC_ID)
+        config[LANG]["notes_doc_id"] = DOC_ID
 
     def seed_no_doc() -> None:
         # The recording already carries a real notes_doc_id; drop it, or the
         # create-on-first-use path is never reached.
-        manifest[LANG].pop("notes_doc_id", None)
-        doorway.file(MANIFEST_FILE_ID).content = json.dumps(manifest).encode()
+        config[LANG].pop("notes_doc_id", None)
 
     # In tmp_path (tests/conftest.py); written outside the door here, as
     # what is already on disk.
@@ -80,12 +79,16 @@ def env(monkeypatch, tmp_path, github):
     state_path.parent.mkdir(parents=True, exist_ok=True)
     state_path.write_text("{}", encoding="utf-8")
 
-    config = {"_planars_config_file_id": MANIFEST_FILE_ID,
-              "_root_folder_id": ROOT_FOLDER_ID}
     saved: Dict = {}
+
+    def save(new):
+        saved.update(new)
+        config.clear()
+        config.update(json.loads(json.dumps(new)))
+
     monkeypatch.setattr(drive_module, "_load_drive_config",
                         lambda: json.loads(json.dumps(config)))
-    monkeypatch.setattr(drive_module, "_save_drive_config", saved.update)
+    monkeypatch.setattr(drive_module, "_save_drive_config", save)
     drive_doorway.set_doorway(doorway)
 
     def close_issue(number: int) -> None:
@@ -272,14 +275,15 @@ def test_a_newly_created_doc_is_readable_and_empty(env):
     assert env.doorway.get_doc_text(new_id) == ""
 
 
-def test_the_new_docs_id_is_written_back_to_the_manifest(env):
+def test_the_new_docs_id_is_written_back_to_the_id_file(env):
     """Or the next run creates a second Doc and the collaborator loses the first."""
     env.seed_no_doc()
     env.run(["check-notes", "--lang", LANG, "--apply"])
     new_id = env.doorway.mutations_of("create_file")[0]["file_id"]
+    assert env.saved[LANG]["notes_doc_id"] == new_id
+    # The manifest copy is republished with it.
     manifest = env.doorway.download_file_json(MANIFEST_FILE_ID)
     assert manifest[LANG]["notes_doc_id"] == new_id
-    assert env.saved[LANG]["notes_doc_id"] == new_id
 
 
 # ---------------------------------------------------------------------------

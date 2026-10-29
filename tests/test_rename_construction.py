@@ -3,8 +3,10 @@
 The test renames coreference's np_reference to np_coreference, the rename
 the schema made on 2026-10-23. Whichever name the frozen data has (it is
 recaptured after the live rename), the test first gives English and synth0001
-the old name everywhere — tab, Status row, manifest, diagnostics file, TSV —
-so it always starts from the state the live run started from.
+the old name everywhere — tab, Status row, diagnostics file, TSV — so it
+always starts from the state the live run started from. (The ID file holds
+sheet IDs, not tab names, so the rename leaves it alone; the manifest copy
+on Drive lists the tab names and is republished after a renamed tab.)
 """
 from __future__ import annotations
 
@@ -16,7 +18,7 @@ from pathlib import Path
 
 import pytest
 
-from coding import drive_doorway
+from coding import drive_doorway, drive_ids
 from coding import rename_construction as rc
 from command_runner import run_command
 from fake_drive import MANIFEST_FILE_ID, FakeDriveDoorway, use_frozen_coded_data
@@ -47,30 +49,29 @@ def _status_names(ws):
 
 def _give_old_names(doorway, coded: Path) -> None:
     """Put each construction back under its old name wherever it has the new."""
-    manifest = _manifest(doorway)
     for lang in LANGS:
-        info = manifest[lang]["sheets"][CLS]
-        ss = doorway.spreadsheet(info["spreadsheet_id"])
+        ss = doorway.spreadsheet(drive_ids.class_sheet_id(FakeDriveDoorway.drive_config(), lang, CLS))
         status = ss.worksheet(STATUS_TAB)
         rows = status.get_all_values()
         col = rows[0].index(STATUS_CONSTRUCTION_COLUMN)
         setup = coded / lang / "lang_setup"
         for old, new in RENAMES.items():
             if new in [ws.title for ws in ss.worksheets()]:
-                ss.worksheet(new).update_title(old)
+                tab = ss.worksheet(new)
+                tab.update_title(old)
+                # The tab's name label goes back too (the door reads it).
+                for meta in ss._developer_metadata:
+                    if (meta["metadataKey"] == "planars_tab" and meta["metadataValue"] == new
+                            and meta["location"].get("sheetId") == tab.id):
+                        meta["metadataValue"] = old
             for r, row in enumerate(rows[1:], start=2):
                 if row[col] == new:
                     status.update([[old]], f"{chr(ord('A') + col)}{r}")
-            info["constructions"] = [old if c == new else c for c in info["constructions"]]
-            params = info.get("construction_params") or {}
-            if new in params:
-                params[old] = params.pop(new)
             p = setup / f"diagnostics_{lang}.yaml"
             p.write_text(p.read_text(encoding="utf-8").replace(new, old), encoding="utf-8")
             tsv = coded / lang / CLS / f"{new}.tsv"
             if tsv.exists():
                 tsv.rename(tsv.with_name(f"{old}.tsv"))
-    doorway.file(MANIFEST_FILE_ID).content = json.dumps(manifest).encode("utf-8")
 
 
 @pytest.fixture()
@@ -107,22 +108,24 @@ def test_a_dry_run_changes_nothing(env):
 
 def test_apply_renames_everywhere_and_keeps_the_answers(env):
     doorway, coded, run = env
-    sheet_id = _manifest(doorway)["stan1293"]["sheets"][CLS]["spreadsheet_id"]
+    ids = FakeDriveDoorway.drive_config()
+    sheet_id = drive_ids.class_sheet_id(ids, "stan1293", CLS)
     answers = doorway.spreadsheet(sheet_id).worksheet(OLD).get_all_values()
 
     out = run(*SPECS, "--apply")
     assert "0 broke a rule" in out, out
+    assert "Manifest copy republished" in out
 
     manifest = _manifest(doorway)
     for lang in LANGS:
         info = manifest[lang]["sheets"][CLS]
+        # The ID file is untouched: same sheet. The manifest copy lists the new tab names.
+        assert info["spreadsheet_id"] == drive_ids.class_sheet_id(ids, lang, CLS)
         ss = doorway.spreadsheet(info["spreadsheet_id"])
         titles = [ws.title for ws in ss.worksheets()]
         assert set(RENAMES.values()) <= set(titles) and not set(RENAMES) & set(titles)
         assert NEW in _status_names(ss.worksheet(STATUS_TAB))
         assert OLD not in _status_names(ss.worksheet(STATUS_TAB))
-        assert NEW in info["constructions"] and OLD not in info["constructions"]
-        assert NEW in info["construction_params"]
         yaml_text = (coded / lang / "lang_setup" / f"diagnostics_{lang}.yaml").read_text()
         assert NEW in yaml_text and OLD not in yaml_text
         assert (coded / lang / CLS / f"{NEW}.tsv").exists()
@@ -130,6 +133,15 @@ def test_apply_renames_everywhere_and_keeps_the_answers(env):
     # Same spreadsheet, same answers: only the tab's name changed.
     assert manifest["stan1293"]["sheets"][CLS]["spreadsheet_id"] == sheet_id
     assert doorway.spreadsheet(sheet_id).worksheet(NEW).get_all_values() == answers
+
+
+def test_the_republished_manifest_copy_lists_the_new_tab_names(env):
+    doorway, _, run = env
+    run(*SPECS, "--apply")
+    for lang in LANGS:
+        info = _manifest(doorway)[lang]["sheets"][CLS]
+        assert set(RENAMES.values()) <= set(info["constructions"])
+        assert not set(RENAMES) & set(info["constructions"])
 
 
 def test_a_second_run_changes_nothing(env):

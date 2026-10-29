@@ -215,9 +215,9 @@ def test_the_daily_import_brings_the_keyed_tabs_down_intact(created, monkeypatch
     monkeypatch.setattr(is_, "ROOT", tmp)
     monkeypatch.setattr(is_, "ERROR_DIR", tmp / "import_errors")
     monkeypatch.setattr(is_, "_notify_collaborator_check", lambda *a: None)
-    monkeypatch.setattr(is_, "_load_drive_config", FakeDriveDoorway.drive_config)
-    monkeypatch.setattr(is_, "_save_drive_config", lambda cfg: None)
-    monkeypatch.setattr(drive_module, "_load_drive_config", FakeDriveDoorway.drive_config)
+    # The ID file generate-sheets recorded the new class sheet in, not a fresh one.
+    monkeypatch.setattr(is_, "_load_drive_config", lambda: env.config)
+    monkeypatch.setattr(drive_module, "_load_drive_config", lambda: env.config)
     monkeypatch.setattr(sys, "argv", ["import-sheets", "--lang", LANG, "--apply",
                                       "--overwrite-existing"])
     buf = io.StringIO()
@@ -258,7 +258,7 @@ def test_update_sheets_adds_only_in_scope_elements_and_leaves_keyed_tabs_alone(
     planar.loc[i, "Elements"] += ", dare, NP{O}"
     planar.to_csv(planar_path, sep="\t", index=False)
 
-    monkeypatch.setattr(us, "_load_drive_config", FakeDriveDoorway.drive_config)
+    monkeypatch.setattr(us, "_load_drive_config", lambda: env.config)
     monkeypatch.setattr(sys, "argv", ["update-sheets", "--apply"])
     buf = io.StringIO()
     with redirect_stdout(buf):
@@ -303,14 +303,13 @@ def test_restructure_carries_keyed_answers_across_an_element_rename(created, mon
     planar.to_csv(planar_path, sep="\t", index=False)
 
     tmp = env.tmp_root
-    monkeypatch.setattr(rs, "MANIFEST_PATH", tmp / "sheets_manifest.json")
-    monkeypatch.setattr(rs, "_load_drive_config", FakeDriveDoorway.drive_config)
-    monkeypatch.setattr(drive_module, "_load_drive_config", FakeDriveDoorway.drive_config)
+    monkeypatch.setattr(rs, "_load_drive_config", lambda: env.config)
+    monkeypatch.setattr(drive_module, "_load_drive_config", lambda: env.config)
     monkeypatch.setattr(rs, "_save_drive_config", lambda cfg: None)
     monkeypatch.setattr(gn, "regenerate_notebooks", lambda: None)
     monkeypatch.setattr(vc, "revalidate_sheets", lambda lang_ids=None: 0)
     monkeypatch.setattr(sp, "sync_planars", lambda lang_ids=None, apply=False: [])
-    monkeypatch.setattr(rs, "ensure_notification_issue", lambda lang_id, manifest: (999, False))
+    monkeypatch.setattr(rs, "ensure_notification_issue", lambda lang_id, config: (999, False))
     monkeypatch.setattr(rs, "post_notification_comment", lambda *a, **kw: None)
     monkeypatch.setattr(sys, "argv", ["restructure-sheets", "--lang", LANG,
                                       "--rename-element", "do:doo", "--apply"])

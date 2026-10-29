@@ -961,10 +961,23 @@ class FakeDriveDoorway:
         return doorway
 
     @staticmethod
-    def drive_config() -> Dict[str, str]:
-        """The bootstrap dict commands read from drive_config.json."""
-        return {"_root_folder_id": ROOT_FOLDER_ID,
-                "_planars_config_file_id": MANIFEST_FILE_ID}
+    def drive_config() -> Dict[str, Any]:
+        """The ID file (drive_config.json) as commands read it: the two
+        bootstrap IDs, and each language's class sheets, status sheet and
+        notification issue (``coding/drive_ids.py``), taken from the saved
+        manifest, which recorded them when the data was captured. A fresh
+        dict each call, so a command that changes it changes no other test's.
+        """
+        from coding import drive_ids
+        config: Dict[str, Any] = {"_root_folder_id": ROOT_FOLDER_ID,
+                                  "_planars_config_file_id": MANIFEST_FILE_ID}
+        manifest_path = FIXTURE_DIR / "manifest.json"
+        if manifest_path.exists():
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            for lang_id, entry in manifest.items():
+                if isinstance(entry, dict):
+                    drive_ids.copy_from_manifest(config, lang_id, entry)
+        return config
 
     def seed_spreadsheet(self, data: Mapping[str, Any]) -> FakeSpreadsheet:
         """Load one captured spreadsheet exactly as recorded. No tidying."""

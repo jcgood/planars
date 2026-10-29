@@ -9,10 +9,10 @@ from pathlib import Path
 
 import pytest
 
-from coding import drive_doorway
+from coding import drive_doorway, drive_ids
 from coding import set_tab_status as sts
 from command_runner import run_command
-from fake_drive import MANIFEST_FILE_ID, FakeDriveDoorway, use_frozen_coded_data
+from fake_drive import FakeDriveDoorway, use_frozen_coded_data
 from coding.validate_coding import marked_by_text
 from planars.schema_values import (
     MARKED_BY_ANNOTATOR, MARKED_BY_COORDINATOR, STATUS_CONSTRUCTION_COLUMN,
@@ -29,8 +29,8 @@ ARGS = ["--lang", LANG, "--class", CLS, "--construction", TAB]
 
 
 def _status_ws(doorway):
-    info = doorway.download_file_json(MANIFEST_FILE_ID)[LANG]["sheets"][CLS]
-    return doorway.spreadsheet(info["spreadsheet_id"]).worksheet(STATUS_TAB)
+    sid = drive_ids.class_sheet_id(FakeDriveDoorway.drive_config(), LANG, CLS)
+    return doorway.spreadsheet(sid).worksheet(STATUS_TAB)
 
 
 def _cell(doorway, column: str) -> str:

@@ -70,9 +70,9 @@ def fake(monkeypatch, tmp_path):
 
 
 def _sheet_id(fake, lang: str, class_name: str) -> str:
-    """The Drive ID of one language's class spreadsheet, from the manifest."""
-    manifest = fake.download_file_json(MANIFEST_FILE_ID)
-    return manifest[lang]["sheets"][class_name]["spreadsheet_id"]
+    """The Drive ID of one language's class spreadsheet, from the ID file."""
+    from coding import drive_ids
+    return drive_ids.class_sheet_id(FakeDriveDoorway.drive_config(), lang, class_name)
 
 
 def run(argv, monkeypatch) -> str:

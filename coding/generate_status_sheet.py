@@ -38,7 +38,11 @@ every run (so it tracks pair-row regeneration), using
 for keyed-row tabs; ``restructure_sheets._get_pair_row_constructions`` /
 ``_get_keyed_row_constructions`` only decide which of them applies. A
 spreadsheet created for a status sheet is found or made with
-``drive.get_or_create_spreadsheet``. The daily refresh rebuilds every status
+``drive.get_or_create_spreadsheet``. Which class sheets exist, and each
+language's folder, come from the ID file (drive_config.json); a status sheet's
+ID is recorded there (``drive_ids.set_status_sheet_id``), and only when that
+is new does the run republish the manifest copy (``manifest_copy.publish``),
+which carries the link. The daily refresh rebuilds every status
 sheet after ``update-sheets``, so the percentages never lag the sheets.
 
 Re-running with --apply overwrites the existing status_{lang_id} spreadsheet
@@ -60,7 +64,6 @@ Authentication: same OAuth2 setup as generate_sheets.py.
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -68,11 +71,8 @@ from typing import Dict, List, Optional, Set, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
-MANIFEST_PATH = ROOT / "sheets_manifest.json"
 
 from .drive import (
-    load_manifest,
-    upload_manifest,
     get_or_create_spreadsheet,
     ensure_user_permission,
     remove_anyone_permission,
@@ -80,7 +80,7 @@ from .drive import (
     _save_drive_config,
 )
 from .drive_doorway import WorksheetNotFound, get_doorway
-from . import drive_door
+from . import drive_door, drive_ids, manifest_copy
 from .people import annotator_email
 from .make_forms import (
     _read_diagnostics_for_language,
@@ -233,36 +233,36 @@ def _construction_params(
 def _gather_status_rows(
     doorway,
     lang_id: str,
-    lang_data: Dict,
+    sheets: Dict[str, str],
     row_skeletons: List[Dict],
     problems: List[str],
 ) -> List[Dict]:
     """Fill in live status/link data for each row skeleton by reading the live Sheet.
 
-    Opens each class spreadsheet once (constructions share one spreadsheet, keyed
-    by class_name in the manifest) and reads each construction's tab.
+    ``sheets`` is ``{class_name: spreadsheet_id}`` from the ID file
+    (``drive_ids.class_sheets``). Opens each class spreadsheet once
+    (constructions share one spreadsheet) and reads each construction's tab.
     Returns row dicts with class_name, construction, is_pair, status_text, color, link.
     A spreadsheet that cannot be opened is added to ``problems``, which make
     the command exit non-zero once every language is done.
     """
     lang_setup_dir = CODED_DATA / lang_id / "lang_setup"
-    sheets = lang_data.get("sheets", {})
     open_spreadsheets: Dict[str, Optional[object]] = {}
     rows: List[Dict] = []
 
     for skel in row_skeletons:
         class_name = skel["class_name"]
         construction = skel["construction"]
-        sheet_info = sheets.get(class_name)
+        sheet_id = sheets.get(class_name)
 
-        if not sheet_info:
+        if not sheet_id:
             text, color = _missing_sheet_status()
             rows.append({**skel, "status_text": text, "color": color, "link": None})
             continue
 
         if class_name not in open_spreadsheets:
             try:
-                open_spreadsheets[class_name] = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
+                open_spreadsheets[class_name] = doorway.open_spreadsheet(sheet_id)
             except Exception as exc:
                 problems.append(f"[{lang_id}] could not open the {class_name} spreadsheet: {exc}")
                 open_spreadsheets[class_name] = None
@@ -500,11 +500,11 @@ def main(args: argparse.Namespace | None = None) -> None:
     lang_filter = args.lang
 
     doorway = get_doorway()
-    manifest = load_manifest(doorway)
+    config = _load_drive_config()
     pair_row_constructions = _get_pair_row_constructions()
-    manifest_dirty = False
+    status_sheet_recorded = False
 
-    lang_ids = [lang_filter] if lang_filter else sorted(manifest.keys())
+    lang_ids = [lang_filter] if lang_filter else drive_ids.languages(config)
     # Anything that leaves a language's status sheet wrong or unbuilt. The run
     # carries on for the other languages, then exits non-zero naming them, so
     # the daily refresh files a status-sheet-error issue.
@@ -520,13 +520,12 @@ def main(args: argparse.Namespace | None = None) -> None:
                                                  identity=drive_door.folder("status"))
         folder_url = f"https://drive.google.com/drive/folders/{folder_id}"
         _lock_read_only(doorway, folder_id,
-                        [l for l in manifest if not l.startswith("_")])
+                        drive_ids.languages(config))
         print(f"\nAnnotation Status folder: {folder_url}")
 
     for lang_id in lang_ids:
-        lang_data = manifest.get(lang_id)
-        if not lang_data:
-            print(f"\n[{lang_id}] not found in manifest — skipping")
+        if lang_id not in drive_ids.languages(config):
+            print(f"\n[{lang_id}] not found in the ID file — skipping")
             continue
         lang_setup_dir = CODED_DATA / lang_id / "lang_setup"
         if not lang_setup_dir.exists():
@@ -546,7 +545,8 @@ def main(args: argparse.Namespace | None = None) -> None:
         n_classes = len({s["class_name"] for s in skeletons})
         print(f"\n[{lang_id}] {len(skeletons)} construction(s) across {n_classes} class(es)")
 
-        rows = _gather_status_rows(doorway, lang_id, lang_data, skeletons, problems)
+        rows = _gather_status_rows(doorway, lang_id, drive_ids.class_sheets(config, lang_id),
+                                   skeletons, problems)
         for r in rows:
             marker = " (pair-row tab)" if r["is_pair"] else ""
             print(f"    {r['class_name']}/{r['construction']}{marker}: {r['status_text']}")
@@ -554,37 +554,35 @@ def main(args: argparse.Namespace | None = None) -> None:
         if not apply:
             continue
 
-        lang_folder_url = lang_data.get("folder_url", "")
+        lang_folder_id = config.get(lang_id, {}).get("folder_id")
+        lang_folder_url = (f"https://drive.google.com/drive/folders/{lang_folder_id}"
+                           if lang_folder_id else "")
         sheet_name = f"status_{lang_id}"
         ss, created = get_or_create_spreadsheet(
             doorway, folder_id, sheet_name,
             identity=drive_door.lang_file("status_sheet", lang_id))
         from .laminar_charts import chart_links
         _write_status_sheet(ss, lang_id, lang_folder_url, rows,
-                            chart_links(_load_drive_config().get(lang_id, {})))
+                            chart_links(config.get(lang_id, {})))
         _lock_read_only(doorway, ss.id, [lang_id])
         action = "Created" if created else "Updated"
         print(f"    {action}: {ss.url}")
 
-        # Persist so other commands (coding/notify.py's sheet-change comments)
-        # can link to this without a live Drive search each time.
-        if lang_data.get("status_sheet_url") != ss.url:
-            lang_data["status_sheet_url"] = ss.url
-            manifest_dirty = True
+        # Record it in the ID file so other commands (coding/notify.py's
+        # sheet-change comments) can link to it without a live Drive search.
+        if drive_ids.status_sheet_id(config, lang_id) != ss.id:
+            drive_ids.set_status_sheet_id(config, lang_id, ss.id)
+            status_sheet_recorded = True
+            _save_drive_config(config)
 
     if not apply:
         print("\nRun with --apply to create/update the sheet(s) on Drive.")
     else:
         print("\nDone.")
-        if manifest_dirty:
-            MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-            config = _load_drive_config()
-            existing_file_id = config.get("_planars_config_file_id")
-            root_folder_id = config.get("_root_folder_id")
-            file_id = upload_manifest(doorway, manifest, root_folder_id, existing_file_id)
-            config["_planars_config_file_id"] = file_id
+        if status_sheet_recorded:
+            manifest_copy.publish(doorway, config)
             _save_drive_config(config)
-            print("Manifest updated on Drive (status_sheet_url).")
+            print("Manifest copy republished (new status sheet link).")
 
     if problems:
         print("\nERROR: some status sheets are wrong or were not rebuilt:")

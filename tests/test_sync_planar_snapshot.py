@@ -108,11 +108,11 @@ def env(monkeypatch, tmp_path):
         src = FROZEN_CODED_DATA / lang / "lang_setup" / f"planar_{lang}.tsv"
         shutil.copy2(src, dest / src.name)
 
-    # The recorded manifest, so renumbering finds the recorded class sheets.
+    # The recorded ID file, so renumbering finds the recorded class sheets.
     config = dict(FakeDriveDoorway.drive_config())
     for lang in LANGS:
-        config[lang] = {"folder_id": f"folder_{lang}",
-                        "planar_spreadsheet_id": PLANAR_ID[lang]}
+        config.setdefault(lang, {}).update({"folder_id": f"folder_{lang}",
+                                            "planar_spreadsheet_id": PLANAR_ID[lang]})
 
     changes_path = tmp_path / "planar_changes.json"
     autocommits: List[dict] = []

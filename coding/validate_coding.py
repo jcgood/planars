@@ -61,7 +61,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
 from . import drive_door
-from .drive import load_manifest
+from . import drive, drive_ids
 from .drive_doorway import WorksheetNotFound, get_doorway
 from .locked_tabs import system_tab_titles
 from .restructure_sheets import _get_keyed_row_constructions, _get_pair_row_constructions
@@ -1043,9 +1043,10 @@ def revalidate_sheets(
     """
     from .annotator_notices import SheetProblems
     doorway = get_doorway()
-    manifest = load_manifest(doorway)
-    if not manifest:
-        raise SystemExit("No manifest found. Run python -m coding generate-sheets --apply first.")
+    config = drive._load_drive_config()
+    lang_list = drive_ids.languages(config)
+    if not lang_list:
+        raise SystemExit("The ID file has no languages. Run python -m coding generate-sheets --apply first.")
 
     total_blocking = 0
     total_sheets = 0
@@ -1062,7 +1063,7 @@ def revalidate_sheets(
     pair_row_constructions = _get_pair_row_constructions()
     keyed_row_constructions = _get_keyed_row_constructions()
 
-    for lang_id, lang_data in sorted(manifest.items()):
+    for lang_id in lang_list:
         if lang_ids and lang_id not in lang_ids:
             continue
 
@@ -1093,10 +1094,7 @@ def revalidate_sheets(
                         print(f"    {issue}")
 
         lang_notices: Optional[list] = []
-        for class_name, sheet_info in sorted(lang_data.get("sheets", {}).items()):
-            sid = sheet_info.get("spreadsheet_id") or sheet_info.get("id")
-            if not sid:
-                continue
+        for class_name, sid in sorted(drive_ids.class_sheets(config, lang_id).items()):
             try:
                 ss = doorway.open_spreadsheet(sid)
             except Exception as e:

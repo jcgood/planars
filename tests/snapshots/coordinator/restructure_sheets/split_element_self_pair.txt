@@ -167,7 +167,8 @@ Language: stan1293
     Status tab created (3 construction(s))
     New sheet (v2): https://docs.google.com/spreadsheets/d/fake_ss_0022
 
-Manifest updated on Drive.
+ID file updated.
+Manifest copy republished on Drive.
 
 Done.
 

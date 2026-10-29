@@ -432,30 +432,46 @@ the same commit.
    | `glottolog`, `meta` | `schemas/languages.yaml` |
 
    Steps, each a commit that leaves a working system:
-   - **11c-1, the ID file holds every ID.** One module reads and writes it
-     by name (class sheet, status sheet, notification issue …); a migration
-     copies the class-sheet IDs, versions, status sheet and issue numbers
-     from the manifest; every command that creates or retires a sheet
-     writes the ID file.
-   - **11c-2, commands stop reading the manifest,** each fact from its home
-     above, command by command. They keep writing it until 11c-5, because
-     the published notebooks read it until then; nothing else reads it,
-     and `integrity-check` stops comparing it with anything.
-   - **11c-3, one package function for Colab** (in `planars/`): given a
-     language, it finds its sheets by their labels, reads each tab's
-     criteria from its header and the planar from the locked planar Sheet.
-     The reports read what it returns instead of the manifest. Tested
-     against the offline fake and once live with Jeff's own account.
+   - **11c-1, the ID file holds every ID.** `coding/drive_ids.py` reads and
+     writes it by name (class sheet, status sheet, notification issue);
+     `migrations/ids_from_manifest.py` copies them from the manifest (it
+     had lost arao1248's notification issue, #326, so it finds a missing
+     one by title). The door's `construction_tabs()` says which
+     constructions a class sheet has a tab for, from the tabs' 5d labels.
+   - **11c-2, the manifest becomes a rebuilt copy, and commands stop
+     touching it.** `coding/manifest_copy.py` builds it whole from the homes
+     above (checked against the saved manifest: identical but for a dead
+     synth0001 key) and publishes it; the daily refresh and each command
+     that records a new or retired sheet call it. Every command reads the
+     ID file and the sources instead, and its own manifest editing (and
+     `sheets_manifest.json`, `manifest_backup.json`) is deleted.
+     `notify.py` finds a language's issue by title before making one.
+   - **11c-3, one package function for Colab** (in `planars/`). *Built
+     2026-10-28 as* `planars/from_sheets.py`: `open_language` finds a
+     language's class sheets and planar Sheet by their labels (names in
+     `planars/drive_labels.py`, which the door now imports) and writes each
+     construction tab and the planar into a temporary folder laid out like
+     `coded_data/`; the reports then run their ordinary local code on it
+     (`source="local"`, `repo_root=lang.root`), so Colab no longer has
+     analysis code of its own. `tests/test_from_sheets.py`: for all three
+     languages, spans read from the saved sheets equal spans from the saved
+     TSVs, and the planar comes back byte-identical. **The old
+     `source="sheets"` path stays until 11c-5:** the published notebooks
+     install the package from GitHub on every run, so deleting it before
+     they are replaced would break them that day.
    - **11c-4, notebooks hold no class lists** and call that function; the
-     daily refresh runs `generate-notebooks --apply`. Templates built and
-     tested, not yet published.
+     daily refresh runs `generate-notebooks --apply`. Committed together
+     with 11c-5, after the label test passes: `generate-sheets --apply` and
+     other commands republish the notebooks, so new templates on GitHub
+     would switch every notebook before the test.
    - **11c-5, live (name to Jeff first):** the two tests with Jeff's second
      account (open one shared notebook; it finds the language's sheets by
      label). If both pass: publish the notebooks, delete the manifest on
      Drive and its kind in the door, `upload_manifest`, `load_manifest` and
      `manifest_contract.py`. If the label test fails, 11c-5 waits (Q7: no
-     fallback to a manifest). The commands stop writing it in the same
-     commit, and `sheets_manifest.json` and `manifest_backup.json` go.
+     fallback to a manifest). `manifest_copy.py` goes in the same commit,
+     with the `publish-manifest` command and its refresh step, and
+     `from_sheets.py`'s entry in `tests/test_no_leftovers.py` `KEPT`.
 8. **11d — the Instructions sentences into the schema.** *Built
    2026-10-28:* planar.yaml's `sheet_text`, read through
    `coding.schemas.sheet_text`. As built: progress doc, Phase 10 row.

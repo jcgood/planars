@@ -77,20 +77,21 @@
   description: a language's Glottolog metadata plus project metadata (source, author, annotation_status)
   locations:
     - {entity: schema_yaml, detail: "schemas/languages.yaml -- the source of truth"}
-    - {entity: manifest, detail: "sheets_manifest.json's synced copy, written by generate-sheets/import-sheets"}
+    - {entity: manifest, detail: "the manifest copy on Drive, rebuilt whole by publish-manifest (coding/manifest_copy.py) for the Colab notebooks"}
   authoritative: schema_yaml
   cascade:
     direction: automatic
     mechanism: >-
-      generate-sheets and import-sheets both write a fresh copy of
-      schemas/languages.yaml into the manifest after loading it (CLAUDE.md:
-      "Always edit languages.yaml, not the manifest").
+      publish-manifest rebuilds the manifest copy from
+      schemas/languages.yaml (CLAUDE.md: "Always edit languages.yaml, not the
+      manifest copy"); it runs in the daily refresh and at the end of every
+      command that makes or retires a sheet.
   drift_risk:
     possible: true
     note: >-
-      If someone edits the manifest's copy directly, that edit is silently
-      overwritten on the next generate-sheets/import-sheets run -- or, if
-      neither runs again soon, the two simply disagree in the meantime.
+      If someone edits the manifest copy directly, that edit is silently
+      overwritten on the next publish-manifest run -- or, until then, the
+      two simply disagree. No command reads the manifest copy.
     caught_by: "nothing yet -- no automated check compares the two copies."
 
 - id: span_rule_semantics
@@ -153,7 +154,7 @@
 - id: sheet_change_notification_state
   description: whether a language's collaborator(s) have been notified their annotation sheets changed
   locations:
-    - {entity: manifest, detail: "sheets_manifest.json's notification_issue field for the language"}
+    - {entity: filename_convention, detail: "the ID file, drive_config.json's notification_issue field for the language (drive_ids.notification_issue)"}
     - {entity: github_issue, detail: "the per-language 'Sheet updates -- {lang_id}' issue itself -- its comment history IS the notification record"}
   authoritative: github_issue
   cascade:
@@ -161,14 +162,17 @@
     mechanism: >-
       restructure-sheets --apply calls notify.py after a language's sheets
       actually change: ensure_notification_issue finds-or-creates the
-      per-language issue (writing its number into the manifest the first
-      time), then post_notification_comment posts the change summary.
+      per-language issue (writing its number into the ID file the first
+      time; before creating one it looks for an open issue with the
+      language's title, so a lost number never makes a duplicate), then
+      post_notification_comment posts the change summary.
   drift_risk:
     possible: true
     note: >-
-      If the manifest's notification_issue number and the actual issue
-      diverge (manually closed/deleted, or manifest hand-edited),
-      ensure_notification_issue could create a duplicate or post nowhere.
+      If the ID file's notification_issue number and the actual issue
+      diverge (manually closed/deleted, or the file hand-edited),
+      ensure_notification_issue could post nowhere (a closed issue is still
+      commented on; a deleted one is not found).
     caught_by: "nothing yet -- not checked by integrity-check today."
 
 - id: collaborator_notes_surfaced_state
@@ -258,17 +262,18 @@
   description: which analysis classes have a registered annotation spreadsheet for a language
   locations:
     - {entity: diagnostics_yaml, detail: "which classes are declared for the language"}
-    - {entity: manifest, detail: "sheets_manifest.json's per-language sheets dict -- one entry per class with a live spreadsheet"}
+    - {entity: manifest, detail: "drive_config.json (the ID file; read through coding/drive_ids.py) -- one class_sheets entry per class with a live spreadsheet"}
   authoritative: diagnostics_yaml
   cascade:
     direction: manual
     mechanism: >-
-      A class removed from diagnostics_yaml leaves a stale manifest entry
-      until a coordinator runs prune-manifest --apply (archives the TSVs,
-      moves the Drive spreadsheet to _archived/, removes the manifest
-      entry). A class added to diagnostics_yaml needs generate-sheets to
-      create the corresponding spreadsheet and manifest entry in the first
-      place -- nothing detects a newly-declared class automatically.
+      A class removed from diagnostics_yaml leaves a stale class_sheets entry
+      in the ID file until a coordinator runs prune-manifest --apply
+      (archives the TSVs, moves the Drive spreadsheet to _archived/, removes
+      the sheet from the ID file). A class added to diagnostics_yaml needs
+      generate-sheets to create the corresponding spreadsheet and ID-file
+      entry in the first place -- nothing detects a newly-declared class
+      automatically.
   drift_risk:
     possible: true
     note: >-
@@ -276,7 +281,7 @@
       leaves data-refresh.yml re-importing (and re-checking) a Sheet nobody
       intends to keep using, indefinitely.
     caught_by: >-
-      integrity-check's stale manifest entry check (_stale_manifest_classes),
+      integrity-check's stale class-sheet check (_stale_manifest_classes),
       run in the default per-language section and daily via data-refresh.yml,
       filed as stale-manifest.
 
@@ -316,38 +321,27 @@
   locations:
     - {entity: diagnostics_yaml, detail: "each construction's criteria/construction_criteria entries"}
     - {entity: annotation_sheet, detail: "the tab's own header row -- one column per criterion, plus structural/trailing columns"}
-    - {entity: manifest, detail: "sheets_manifest.json's construction_params[construction].param_names -- a cached copy sync-params also updates, not a live read of the Sheet"}
   authoritative: diagnostics_yaml
   cascade:
     direction: manual
     mechanism: >-
       sync-params --apply diffs the tab's own header against the current
-      diagnostics YAML and inserts/deletes/renames columns to match,
-      updating the manifest's param_names in the same run. Nothing runs this
+      diagnostics YAML and inserts/deletes/renames columns to match; it
+      records nothing in the manifest copy (unit 11c). Nothing runs this
       automatically -- a criterion added, removed, or renamed in the YAML has
-      no effect on the live sheet or the manifest until a coordinator
-      notices and runs it.
+      no effect on the live sheet until a coordinator notices and runs it.
   drift_risk:
     possible: true
     note: >-
       Found 2026-08-10 while reviewing sync-params for the Phase 4 (#271)
       operation registry -- previously undocumented. A criterion column
       change in diagnostics_yaml sits unpropagated indefinitely with nothing
-      prompting a run. Once sync-params does run for other reasons, it keeps
-      the sheet and manifest in lockstep; the two staying stale *together*
-      (sync-params never run at all since the YAML changed) is the case
-      nothing catches -- see caught_by.
+      prompting a run.
     caught_by: >-
       integrity-check --sheets's per-construction header check
       (_section_sheets in coding/integrity_check.py) compares the live tab's
-      actual header against the MANIFEST's param_names, not against the
-      diagnostics YAML directly -- so it catches a sheet/manifest
-      disagreement (a partial sync-params run, or a hand-edited manifest)
-      and names the fix (sync-params --apply). It does not catch the YAML
-      having moved while the sheet and manifest stayed stale together behind
-      it, since manifest and sheet still agree with each other in that case.
-      Nothing today compares the live sheet directly against the diagnostics
-      YAML.
+      actual header against the criteria the diagnostics YAML declares for
+      it, and names the fix (sync-params --apply).
 
 - id: pair_row_position_numbers
   description: the position NUMBER embedded in a pair-row construction's Position_A/Position_B cells (format "N (name)") must match the current planar structure's numbering for that position name

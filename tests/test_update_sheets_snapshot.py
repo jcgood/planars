@@ -49,7 +49,7 @@ import pytest
 import yaml
 
 from coding import drive as drive_module
-from coding import drive_doorway
+from coding import drive_doorway, drive_ids
 from coding import update_sheets as us
 from coding.locked_tabs import locked_tab_titles
 from command_runner import run_command
@@ -84,12 +84,9 @@ class Env:
         self.coded = coded
         self.run = run
 
-    # -- the manifest -------------------------------------------------------
-    def manifest(self) -> Dict:
-        return self.doorway.download_file_json(MANIFEST_FILE_ID)
-
+    # -- the ID file --------------------------------------------------------
     def sheet_id(self, lang: str, class_name: str) -> str:
-        return self.manifest()[lang]["sheets"][class_name]["spreadsheet_id"]
+        return drive_ids.class_sheet_id(FakeDriveDoorway.drive_config(), lang, class_name)
 
     def tab(self, lang: str, class_name: str, construction: str):
         return self.doorway.spreadsheet(
@@ -118,7 +115,7 @@ class Env:
 
     def add_construction(self, lang: str, class_name: str,
                          construction: str) -> None:
-        """A construction in the diagnostics YAML the manifest has never seen."""
+        """A construction in the diagnostics YAML the sheet has no tab for."""
         path = self.coded / lang / "lang_setup" / f"diagnostics_{lang}.yaml"
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
         entry = data["classes"][class_name]
@@ -237,7 +234,7 @@ def test_new_construction_transcript(env):
 
 
 def test_new_construction_dry_run_transcript(env):
-    """The dry run names both consequences: a new tab, and a rewritten manifest."""
+    """The dry run names the new tab."""
     env.add_construction("arao1248", "ciscategorial", "second_frame")
     check_snapshot("new_construction_dry_run.txt", env.run(["update-sheets"]))
 
@@ -248,11 +245,13 @@ def test_a_language_with_no_local_planar_is_named_not_skipped_silently(env):
     assert "[synth0001] No local planar file found — skipping" in out
 
 
-def test_a_tab_the_sheet_does_not_have_is_named(env):
+def test_a_tab_the_sheet_does_not_have_is_named_as_a_tab_to_add(env):
+    """The YAML says what the sheet should hold, the sheet what it does: a
+    construction in the YAML with no tab is a tab to add."""
     ss = env.doorway.spreadsheet(env.sheet_id("arao1248", "ciscategorial"))
     ss.del_worksheet(ss.worksheet("general"))
     out = env.run(["update-sheets"])
-    assert "[general] tab not found, skipping" in out
+    assert "[general] Would add new tab" in out
 
 
 # ---------------------------------------------------------------------------
@@ -390,8 +389,8 @@ def test_a_drifted_tab_is_left_alone_and_the_command_stops(env):
     for (ss_id, title), rows in before.items():
         if title in LOCKED:
             continue
-        if ss_id in {env.sheet_id("arao1248", c)
-                     for c in env.manifest()["arao1248"]["sheets"]}:
+        if ss_id in set(drive_ids.class_sheets(
+                FakeDriveDoorway.drive_config(), "arao1248").values()):
             assert (env.doorway.spreadsheet(ss_id)
                     .worksheet(title).get_all_values() == rows)
 
@@ -435,28 +434,23 @@ def test_a_dry_run_with_changes_exits_non_zero(env):
 
 
 # ---------------------------------------------------------------------------
-# The manifest
+# The manifest is not this command's
 # ---------------------------------------------------------------------------
 
-def test_the_manifest_is_only_rewritten_when_a_tab_was_added(env):
+def test_the_manifest_is_never_written(env):
     env.add_element("arao1248")
     env.run(["update-sheets", "--apply"])
     assert env.doorway.mutations_of("update_file") == []
 
 
-def test_a_new_construction_becomes_a_tab_and_reaches_the_manifest(env):
+def test_a_new_construction_becomes_a_tab_and_the_manifest_is_left_alone(env):
     env.add_construction("arao1248", "ciscategorial", "second_frame")
 
     env.run(["update-sheets", "--apply"])
 
     ss = env.doorway.spreadsheet(env.sheet_id("arao1248", "ciscategorial"))
     assert "second_frame" in [ws.title for ws in ss.worksheets()]
-
-    entry = env.manifest()["arao1248"]["sheets"]["ciscategorial"]
-    assert "second_frame" in entry["constructions"]
-    assert "second_frame" in entry["construction_params"]
-    assert [m["file_id"] for m in env.doorway.mutations_of("update_file")] \
-        == [MANIFEST_FILE_ID]
+    assert env.doorway.mutations_of("update_file") == []
     assert env.doorway.mutations_of("create_file") == []
 
 
@@ -467,17 +461,6 @@ def test_the_dry_run_says_it_would_add_the_tab_without_adding_it(env):
 
     assert "[second_frame] Would add new tab" in out
     assert env.doorway.mutations == []
-
-
-def test_the_dry_run_says_the_manifest_would_change_too(env):
-    """Finding 11, fixed. Adding a tab rewrites the manifest; say so up front.
-
-    The line was written but unreachable — the flag that guards it was only
-    ever set inside the --apply branch.
-    """
-    env.add_construction("arao1248", "ciscategorial", "second_frame")
-    out = env.run(["update-sheets"])
-    assert "Would update manifest on Drive (new tabs detected)." in out
 
 
 def test_the_status_tab_stays_last(env):

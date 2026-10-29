@@ -33,8 +33,6 @@ _SHUTIL = {"copy", "copy2", "copyfile", "copytree", "move", "rmtree"}
 _OS = {"remove", "rename", "replace", "unlink", "rmdir"}
 
 # The writes that are not planars-data's at all, and its test data.
-_ROOT_MANIFEST = ("not in planars-data: sheets_manifest.json (and manifest_backup.json) "
-                  "at the repo root, deleted in unit 11c")
 NOT_THROUGH_THE_DOOR: Dict[Site, str] = {
     # Test data: capture-drive-state is its one writer (ownership-design § 4.4).
     ("capture_drive_state.py", "main", "shutil.copytree"): "test data under .test_fixtures/",
@@ -42,11 +40,6 @@ NOT_THROUGH_THE_DOOR: Dict[Site, str] = {
     ("capture_drive_state.py", "main", "unlink"): "test data under .test_fixtures/",
     ("capture_drive_state.py", "main", "write_text"): "test data under .test_fixtures/",
     # Not planars-data at all.
-    ("generate_sheets.py", "main", "write_text"): _ROOT_MANIFEST,
-    ("generate_status_sheet.py", "main", "write_text"): _ROOT_MANIFEST,
-    ("restructure_sheets.py", "main", "write_text"): _ROOT_MANIFEST,
-    ("prune_manifest.py", "_archive_manifest", "write_text"):
-        "not in planars-data: manifest_archives/ at the repo root (gitignored)",
     ("sync_planar.py", "sync_planars", "write_text"):
         "not in planars-data: PLANAR_CHANGES_PATH in /tmp, for the daily refresh's issue",
     ("daily_refresh.py", "sync_planar", "unlink"): "not in planars-data: PLANAR_CHANGES_PATH",

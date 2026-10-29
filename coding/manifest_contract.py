@@ -5,8 +5,14 @@ the manifest is a dict/JSON structure, not a DataFrame, so this uses
 pydantic rather than the pandera used in `planars/contracts.py` and
 `coding/contracts.py`.
 
+Since unit 11c (2026-10-28) no command reads the manifest: it is a copy
+rebuilt whole from the ID file and the sources by `coding/manifest_copy.py`
+for the published Colab notebooks, and this contract, with the manifest,
+goes in 11c-5. The rest of this docstring is the reasoning from when it was
+written.
+
 **Deliberately far more permissive than the other three boundaries.**
-`load_manifest()` (`coding/drive.py`) is called near the
+`load_manifest()` (`coding/drive.py`) was called near the
 start of nearly every `coding/` command — the single highest-blast-radius
 function in the project. A schema built from one static fixture
 (`coded_data/.test_fixtures/drive_state/manifest.json`, three languages, captured
@@ -34,14 +40,9 @@ what to do with them:
   violation is written anyway and reported in the `door-violation` issue;
   it is refused only once the manifest moves to enforce, which happens only
   after real writes have passed the check (design § 4), so the risk above
-  is tested on live data first.
-- `integrity-check` (`coding/integrity_check.py`) — checks the manifest as
-  currently loaded, and lets it drive a real, trackable
-  `integrity-error` GitHub issue — safe to
-  do because the model's permissiveness means a violation here means
-  something structurally broken (the top level isn't a dict of dicts, a
-  language entry isn't a dict at all), not merely "a field this session
-  hasn't seen yet".
+  is tested on live data first. It is now the only caller: integrity-check's
+  MANIFEST SHAPE section, which read the manifest back from Drive, was
+  dropped in 11c (the door already checks the copy as it is written).
 """
 from __future__ import annotations
 

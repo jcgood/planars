@@ -6,11 +6,14 @@ logic. Retrying on a rate limit is the Drive door's (coding/drive_door.py),
 not this module's.
 
 Drive config: coded_data/drive_config.json (private planars-data; the ID
-file, ``state_files.ID_FILE``, written only through the local-file door) bootstraps
-every Drive lookup — the root folder (_root_folder_id), the manifest file
-(_planars_config_file_id), and each language's folder and sheet IDs. The
-manifest itself (manifest.json) lives on Drive; per-language entries carry
-notes_doc_id once a notes Doc exists.
+file, ``state_files.ID_FILE``, written only through the local-file door) is
+the one record of where every Drive file the tooling made is — the root
+folder (_root_folder_id), the manifest file (_planars_config_file_id), and
+each language's folder, sheets, notes Doc and the rest; its class sheets,
+status sheet and notification issue are read and written through
+``drive_ids.py`` (unit 11c). The manifest (manifest.json on Drive) is a copy
+for the Colab notebooks, rebuilt whole by ``manifest_copy.publish``; no
+command reads or edits it.
 
 Sharing: project data is shared with named people only. Helpers (all take the
 doorway): ``ensure_user_permission`` (at least ``role``), ``set_user_role``
@@ -23,9 +26,10 @@ generate_reports.py). Other shared helpers: ``get_or_create_spreadsheet``
 (generate_status_sheet.py), ``create_notes_doc`` and ``acknowledgment_line``
 (the only text the tooling appends to a notes Doc, the Drive door's rule 8).
 
-``upload_manifest`` updates the manifest by its recorded ID, else the one
-Drive holds (found by its label), and creates one only when Drive holds none.
-What it sends is checked by the Drive door against ``manifest_contract.check()``.
+``upload_manifest`` (called only by ``manifest_copy.publish``) updates the
+manifest by its recorded ID, else the one Drive holds (found by its label),
+and creates one only when Drive holds none. What it sends is checked by the
+Drive door against ``manifest_contract.check()``.
 
 ``_check_coded_data_clean`` (abort if ``coded_data/`` has uncommitted changes
 to files with given extensions, so a command never acts on a half-written or
@@ -51,6 +55,8 @@ from typing import Callable, Dict, List, Optional, Tuple
 import gspread
 from googleapiclient.discovery import build as google_build
 from googleapiclient.http import MediaIoBaseDownload
+
+from planars import drive_labels
 
 from . import drive_door
 
@@ -175,7 +181,8 @@ def upload_manifest(doorway, full_config: Dict, root_folder_id: str,
 
     def labelled() -> Optional[str]:
         found = doorway.list_files(
-            "properties has { key='planars_kind' and value='manifest' } and trashed=false")
+            f"properties has {{ key='{drive_labels.KIND}' and value='manifest' }} "
+            "and trashed=false")
         return found[0]["id"] if found else None
 
     return _upload_manifest_with(

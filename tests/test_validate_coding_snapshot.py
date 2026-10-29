@@ -2,7 +2,7 @@
 
 File 13 of 18 migrated to the Drive doorway (#271). Its Drive footprint is the
 smallest of any command migrated so far: no folder creation, no sharing, no
-manifest uploads. `revalidate_sheets()` only downloads the manifest, opens each
+manifest uploads. `revalidate_sheets()` only reads the ID file, opens each
 language's class spreadsheets, and writes pink cell highlighting back — every
 value it validates comes from the local TSVs `import-sheets` already wrote, not
 from the Sheet content itself.
@@ -51,7 +51,7 @@ import pandas as pd
 import pytest
 
 from coding import drive as drive_module
-from coding import drive_doorway
+from coding import drive_doorway, drive_ids
 from coding import validate_coding as vc
 from command_runner import run_command
 from planars.schema_values import STATUS_STATUS_COLUMN
@@ -83,7 +83,10 @@ def env(monkeypatch, tmp_path):
         shutil.copytree(FROZEN_CODED_DATA / lang, coded / lang)
 
     point_coded_data_at(monkeypatch, coded)
-    monkeypatch.setattr(drive_module, "_load_drive_config", FakeDriveDoorway.drive_config)
+    # The ID file the command reads, kept on the doorway so a test can read
+    # a sheet's ID from it or point a class at a sheet that does not exist.
+    doorway.id_file = FakeDriveDoorway.drive_config()
+    monkeypatch.setattr(drive_module, "_load_drive_config", lambda: doorway.id_file)
     drive_doorway.set_doorway(doorway)
 
     def run_main(argv: List[str]) -> Tuple[str, Optional[int]]:
@@ -128,9 +131,7 @@ def set_cell(coded: Path, lang: str, class_name: str, construction: str,
 
 
 def sheet_id(doorway, lang: str, class_name: str) -> str:
-    manifest = doorway.download_file_json(MANIFEST_FILE_ID)
-    info = manifest[lang]["sheets"][class_name]
-    return info.get("spreadsheet_id") or info.get("id")
+    return drive_ids.class_sheet_id(doorway.id_file, lang, class_name)
 
 
 def tab(doorway, lang: str, class_name: str, construction: str):
@@ -165,7 +166,7 @@ def test_lang_filter_restricts_output(env):
     assert "synth0001" not in out
 
 
-def test_no_lang_flag_runs_every_manifest_language(env):
+def test_no_lang_flag_runs_every_language_in_the_id_file(env):
     _, _, run_main = env
     out, _ = run_main(["validate-coding"])
     for lang_id in LANGS:
@@ -194,12 +195,8 @@ def test_status_instructions_planar_ref_tabs_are_skipped(env):
 # ---------------------------------------------------------------------------
 
 def test_unopenable_spreadsheet_is_reported_and_does_not_crash_the_run(env, monkeypatch):
-    import json
-
     doorway, _, run_main = env
-    manifest = doorway.download_file_json(MANIFEST_FILE_ID)
-    manifest["arao1248"]["sheets"]["noninterruption"]["spreadsheet_id"] = "nonexistent_ss_xyz"
-    doorway.file(MANIFEST_FILE_ID).content = json.dumps(manifest).encode("utf-8")
+    drive_ids.set_class_sheet(doorway.id_file, "arao1248", "noninterruption", "nonexistent_ss_xyz")
 
     out, exit_code = run_main(["validate-coding", "--lang", "arao1248"])
     assert "[noninterruption] could not open spreadsheet:" in out
@@ -461,12 +458,9 @@ def test_notify_comments_on_the_sheet_for_an_annotator_without_github(env, githu
 
 
 def test_notify_leaves_a_language_alone_when_a_sheet_could_not_be_checked(env, github):
-    import json
     doorway, coded, run_main = env
     _break_a_ready_tab(doorway, coded)
-    manifest = doorway.download_file_json(MANIFEST_FILE_ID)
-    manifest["arao1248"]["sheets"]["noninterruption"]["spreadsheet_id"] = "nonexistent_ss_xyz"
-    doorway.file(MANIFEST_FILE_ID).content = json.dumps(manifest).encode("utf-8")
+    drive_ids.set_class_sheet(doorway.id_file, "arao1248", "noninterruption", "nonexistent_ss_xyz")
 
     out, _ = run_main(["validate-coding", "--lang", "arao1248", "--notify"])
     assert "arao1248: not every sheet could be checked" in out

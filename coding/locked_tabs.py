@@ -5,7 +5,7 @@ classes carry them is the `locked_tabs` registry in `schemas/planar.yaml`;
 this module runs from it. Each tab is rebuilt from its source (the schemas,
 the language's planar TSV) by `rebuild_locked_tabs`, which every command that
 creates or reshapes a class sheet calls, and which `update-sheets --apply`
-calls daily for every sheet in the manifest — so a tab is current within a
+calls daily for every class sheet in the ID file — so a tab is current within a
 day of its source changing, whichever command changed it.
 
 A rebuild writes only what differs (it reads the tab and compares first), so

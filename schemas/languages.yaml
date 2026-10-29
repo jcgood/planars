@@ -8,8 +8,8 @@
 # Project metadata (meta block) is hand-edited by coordinators.
 # New entries are scaffolded automatically by lookup-lang.
 #
-# The Drive manifest carries a copy of each entry (written by generate-sheets
-# and import-sheets) as a convenience; always edit here, not there.
+# The manifest copy on Drive carries a copy of each entry (rebuilt whole by
+# publish-manifest, for the Colab notebooks); always edit here, not there.
 #
 # annotation_status values: planned | in-progress | complete
 # examples values: glossed | unglossed (schemas/planar.yaml example_styles)

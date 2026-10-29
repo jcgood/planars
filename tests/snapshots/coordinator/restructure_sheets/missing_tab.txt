@@ -93,7 +93,6 @@ Language: stan1293
     [prescreening] downloaded 142 rows
     [reflexive_coreference] downloaded 0 rows
     [pronoun_coreference] downloaded 0 rows
-    [np_coreference] tab not found
     [prescreening] carry over 134; rename 8; new blank 0
     [reflexive_coreference] (pair tab) no position renames needed
     [pronoun_coreference] (pair tab) no position renames needed
@@ -152,7 +151,8 @@ Language: stan1293
     Status tab created (3 construction(s))
     New sheet (v2): https://docs.google.com/spreadsheets/d/fake_ss_0022
 
-Manifest updated on Drive.
+ID file updated.
+Manifest copy republished on Drive.
 
 Done.
 

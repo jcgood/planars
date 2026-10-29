@@ -89,7 +89,5 @@ Renames:  ['free:free_form']
   [phrasal_accent/prescreening] Rename: free not found — skipping
   [phrasal_accent/general] Rename: free not found — skipping
 
-Manifest updated on Drive.
-
-Drive door (enforce): checked 7 write(s) to 7 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 6 write(s) to 6 tab(s) or file(s); 0 broke a rule.
 Local-file door: changed 3 file(s), previous versions archived and logged.

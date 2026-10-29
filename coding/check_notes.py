@@ -11,7 +11,9 @@ so the collaborator knows their notes were received.
 New content is detected by a hash of the Doc's text with the acknowledgment
 lines stripped, kept per language in ``notes_state.json``
 (``state_files.NOTES_STATE_PATH``, written through the local-file door). A
-language with no notes Doc yet gets one made on ``--apply``. One issue per
+language with no notes Doc yet gets one made on ``--apply``; its ID goes in
+the ID file (drive_config.json), which also lists the languages checked, and
+the manifest copy is republished. One issue per
 annotator covers every language that annotator has: the issue number is
 stored in the state (``_annotator_issues``) and preferred over a title
 search, so renaming the issue doesn't start a second thread. A closed issue
@@ -173,19 +175,16 @@ def main(args: argparse.Namespace | None = None) -> None:
         print()
 
     from .drive import (
-        load_manifest, _strip_acknowledgment_lines,
-        upload_manifest, _load_drive_config, _save_drive_config,
+        _strip_acknowledgment_lines, _load_drive_config, _save_drive_config,
         acknowledgment_line,
     )
+    from . import drive_ids, manifest_copy
     from .drive_doorway import get_doorway
     from planars.languages import get_display_name, get_entry
 
     print("Connecting to Google APIs...")
     doorway = get_doorway()
-    manifest = load_manifest(doorway)
     config = _load_drive_config()
-    root_folder_id = config.get("_root_folder_id")
-    existing_config_file_id = config.get("_planars_config_file_id")
 
     state = _load_notes_state()
     today = date.today().isoformat()
@@ -197,43 +196,35 @@ def main(args: argparse.Namespace | None = None) -> None:
     to_acknowledge: List[Tuple[str, str, str]] = []
     # Languages successfully checked (for last_checked state update on --apply).
     checked_lang_ids: List[str] = []
-    manifest_dirty = False
+    config_dirty = False
 
-    for lang_id, lang_data in sorted(manifest.items()):
-        if lang_id.startswith("_"):
-            continue
+    for lang_id in drive_ids.languages(config):
         if lang_filter and lang_id != lang_filter:
             continue
 
-        doc_id = lang_data.get("notes_doc_id")
+        doc_id = config[lang_id].get("notes_doc_id")
         if not doc_id:
-            # Create-on-first-use: generate the doc now and store in manifest.
-            folder_id = lang_data.get("folder_id")
+            # Create-on-first-use: generate the doc now and record it in the ID file.
+            folder_id = config[lang_id].get("folder_id")
             if not folder_id:
-                print(f"[{lang_id}] No folder_id in manifest — skipping")
+                print(f"[{lang_id}] No folder_id in the ID file — skipping")
                 continue
             if apply:
                 from .drive import create_notes_doc
                 try:
                     doc_id = create_notes_doc(doorway, lang_id, folder_id)
-                    lang_data["notes_doc_id"] = doc_id
-                    manifest[lang_id]["notes_doc_id"] = doc_id
-                    config.setdefault(lang_id, {})["notes_doc_id"] = doc_id
-                    manifest_dirty = True
+                    config[lang_id]["notes_doc_id"] = doc_id
+                    config_dirty = True
                     print(f"[{lang_id}] Created notes doc: https://docs.google.com/document/d/{doc_id}")
                 except Exception as e:
                     print(f"[{lang_id}] Could not create notes doc: {e}")
                     continue
             else:
-                print(f"[{lang_id}] No notes_doc_id in manifest (would create on --apply)")
+                print(f"[{lang_id}] No notes_doc_id in the ID file (would create on --apply)")
                 continue
 
         lang_entry = get_entry(lang_id) or {}
-        annotator = (
-            lang_entry.get("meta", {}).get("annotator")
-            or lang_data.get("meta", {}).get("annotator")
-            or "Unknown"
-        )
+        annotator = lang_entry.get("meta", {}).get("annotator") or "Unknown"
         display_name = get_display_name(lang_id)
 
         try:
@@ -301,16 +292,17 @@ def main(args: argparse.Namespace | None = None) -> None:
                 # re-acknowledges it (issue #280).
                 _save_notes_state(state)
 
-    # Persist state and manifest if changed.
+    # Persist state, and the ID file if a notes Doc was made.
     if apply:
         for lang_id in checked_lang_ids:
             state.setdefault(lang_id, {})["last_checked"] = today
         _save_notes_state(state)
         print("\nnotes_state.json updated.")
-        if manifest_dirty and root_folder_id and existing_config_file_id:
-            upload_manifest(doorway, manifest, root_folder_id, existing_config_file_id)
+        if config_dirty:
             _save_drive_config(config)
-            print("Drive manifest updated with new notes_doc_id(s).")
+            manifest_copy.publish(doorway, config)
+            _save_drive_config(config)
+            print("ID file updated with new notes_doc_id(s); manifest copy republished.")
 
     if not annotator_notes:
         print("\nNo new notes to report.")

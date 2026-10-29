@@ -213,9 +213,9 @@ labels:
 
   - name: stale-manifest
     color: "E4E669"
-    description: "Filed when manifest has classes absent from diagnostics YAML; run prune-manifest."
+    description: "Filed when the ID file has class sheets absent from diagnostics YAML; run prune-manifest."
     meaning: >-
-      Manifest entries have no matching class in `diagnostics_{lang}.yaml`.
+      Class sheets in the ID file have no matching class in `diagnostics_{lang}.yaml`.
       Resolve: `prune-manifest --apply`. Auto-closed when clean.
     filed_by: data-refresh.yml
 

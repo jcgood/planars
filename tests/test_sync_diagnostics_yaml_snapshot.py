@@ -67,8 +67,7 @@ def env(monkeypatch, tmp_path):
     """
     doorway = FakeDriveDoorway.from_fixtures()
     use_frozen_coded_data(monkeypatch, tmp_path)
-    config = {"_planars_config_file_id": MANIFEST_FILE_ID,
-              "_root_folder_id": ROOT_FOLDER_ID}
+    config = FakeDriveDoorway.drive_config()
     monkeypatch.setattr(drive_module, "_load_drive_config",
                         lambda: json.loads(json.dumps(config)))
     # The recorded Sheets predate their protection (unit 11b); protected here,
@@ -348,7 +347,7 @@ def test_a_language_with_no_yaml_is_skipped(env, monkeypatch, tmp_path):
 
 def test_a_language_with_no_sheet_recorded_is_skipped_not_created(env):
     """It only updates; making the sheet is generate-sheets' job. The
-    language has a sound YAML, so the skip is the manifest's."""
+    language has a sound YAML, so the skip is the ID file's."""
     doorway, run = env
     lang_setup = sdy.CODED_DATA / "nyan1308" / "lang_setup"
     lang_setup.mkdir(parents=True)
@@ -361,7 +360,7 @@ def test_a_language_with_no_sheet_recorded_is_skipped_not_created(env):
               V-combines: [y, n]
         """), encoding="utf-8")
     out = run(["sdy", "--lang", "nyan1308", "--apply"])
-    assert "No diagnostics_spreadsheet_id in manifest" in out
+    assert "No diagnostics_spreadsheet_id in the ID file" in out
     assert doorway.mutations == []
 
 

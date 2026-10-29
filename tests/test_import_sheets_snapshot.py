@@ -4,11 +4,10 @@ File 15 of 18 migrated to the Drive doorway (#271) -- the command the daily
 `data-refresh` GitHub Action runs to pull annotator work down from Sheets, and
 the largest and most consequential file migrated so far (1,138 lines against
 the last three files' combined total of well under that). Its Drive footprint:
-`get_doorway()`/`load_manifest(doorway)` once, `doorway.open_spreadsheet(...)`
-per class spreadsheet, `doorway.get_file(...)` in `_verify_manifest_sheet_ids`
-(abort-before-download guard, `--apply` only), and `upload_manifest(doorway, ...)`
-at the very end if the manifest's glottolog/meta/planar-structure fields drifted
-from `schemas/languages.yaml` and the local planar. Cell highlighting
+`get_doorway()`, `doorway.open_spreadsheet(...)` per class spreadsheet (the
+class sheets come from the ID file), and `doorway.get_file(...)` in
+`_verify_sheet_ids` (abort-before-download guard, `--apply` only). Since unit
+11c the command neither reads nor writes the manifest. Cell highlighting
 (`_highlight_invalid_cells`, delegating to `validate_coding.highlight_cells`)
 and the final `revalidate_sheets()` call are handle-level operations that
 needed no edits -- both already went through the doorway before this file did
@@ -118,7 +117,7 @@ import pandas as pd
 import pytest
 
 from coding import drive as drive_module
-from coding import drive_doorway, file_door
+from coding import drive_doorway, drive_ids, file_door
 from coding import import_sheets as is_
 from command_runner import run_command
 from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, point_coded_data_at
@@ -156,30 +155,26 @@ class Env:
                  notified_collaborator: List[List[Dict]],
                  run: Callable[[List[str]], Tuple[str, Optional[int]]]) -> None:
         self.doorway = doorway
+        self.config = FakeDriveDoorway.drive_config()
         self.coded = coded
         self.notified_collaborator = notified_collaborator
         self.run = run
 
-    # -- the manifest ---------------------------------------------------
-    def manifest(self) -> Dict:
-        return self.doorway.download_file_json(MANIFEST_FILE_ID)
-
-    def mutate_manifest(self, fn: Callable[[Dict], None]) -> None:
-        m = self.manifest()
-        fn(m)
-        self.doorway.file(MANIFEST_FILE_ID).content = json.dumps(m).encode("utf-8")
+    # -- the ID file ----------------------------------------------------
+    def mutate_config(self, fn: Callable[[Dict], None]) -> None:
+        fn(self.config)
 
     def sheet_id(self, lang: str, cls: str) -> str:
-        return self.manifest()[lang]["sheets"][cls]["spreadsheet_id"]
+        return drive_ids.class_sheet_id(self.config, lang, cls)
 
     def tab(self, lang: str, cls: str, construction: str):
         return self.doorway.spreadsheet(self.sheet_id(lang, cls)).worksheet(construction)
 
     def planar_sheet(self, lang: str):
-        return self.doorway.spreadsheet(self.manifest()[lang]["planar_spreadsheet_id"]).sheet1
+        return self.doorway.spreadsheet(self.config[lang]["planar_spreadsheet_id"]).sheet1
 
     def diagnostics_sheet(self, lang: str):
-        return self.doorway.spreadsheet(self.manifest()[lang]["diagnostics_spreadsheet_id"]).sheet1
+        return self.doorway.spreadsheet(self.config[lang]["diagnostics_spreadsheet_id"]).sheet1
 
     def set_status(self, lang: str, cls: str, construction: str, status: str) -> None:
         ws = self.doorway.spreadsheet(self.sheet_id(lang, cls)).worksheet("Status")
@@ -230,19 +225,18 @@ def env(monkeypatch, tmp_path):
     point_coded_data_at(monkeypatch, coded)
 
     notified_collaborator: List[List[Dict]] = []
-    saved_config: List[Dict] = []
 
     monkeypatch.setattr(is_, "ROOT", tmp_path)
     monkeypatch.setattr(is_, "ERROR_DIR", tmp_path / "import_errors")
     # Archive names and change-log times are the local-file door's.
     monkeypatch.setattr(file_door, "datetime", _FrozenDatetime)
     monkeypatch.setattr(is_, "_notify_collaborator_check", notified_collaborator.append)
-    monkeypatch.setattr(is_, "_load_drive_config", FakeDriveDoorway.drive_config)
-    monkeypatch.setattr(is_, "_save_drive_config", saved_config.append)
-    # load_manifest()/upload_manifest() are defined in coding/drive.py and call
-    # THAT module's own _load_drive_config() -- patching import_sheets.py's
-    # imported copy alone leaves them looking at the real drive_config.json.
-    monkeypatch.setattr(drive_module, "_load_drive_config", FakeDriveDoorway.drive_config)
+    # The ID file, one copy for the test, which a scenario may change.
+    # The command's own import of _load_drive_config and coding.drive's
+    # (used by revalidate_sheets) both read it.
+    config_holder: List[Dict] = []
+    monkeypatch.setattr(is_, "_load_drive_config", lambda: config_holder[0])
+    monkeypatch.setattr(drive_module, "_load_drive_config", lambda: config_holder[0])
     drive_doorway.set_doorway(doorway)
 
     def run(argv: List[str]) -> Tuple[str, Optional[int]]:
@@ -257,7 +251,9 @@ def env(monkeypatch, tmp_path):
         return buf.getvalue(), exit_code
 
     try:
-        yield Env(doorway, coded, notified_collaborator, run)
+        e = Env(doorway, coded, notified_collaborator, run)
+        config_holder.append(e.config)
+        yield e
     finally:
         drive_doorway.reset_doorway()
 
@@ -310,9 +306,8 @@ def test_dry_run_transcript(env):
 
 
 def test_verify_aborts_transcript(env):
-    """A manifest entry pointing at a spreadsheet the fake has never seen."""
-    env.mutate_manifest(lambda m: m["arao1248"]["sheets"]["ciscategorial"]
-                        .__setitem__("spreadsheet_id", "does_not_exist_xyz"))
+    """An ID-file entry pointing at a spreadsheet the fake has never seen."""
+    drive_ids.set_class_sheet(env.config, "arao1248", "ciscategorial", "does_not_exist_xyz")
     out, exit_code = env.run(["import-sheets", "--apply"])
     assert exit_code == 1
     check_snapshot("verify_aborts.txt", out)
@@ -515,15 +510,14 @@ def test_a_missing_row_on_an_in_progress_tab_is_a_collaborator_check(env):
 
 
 # ---------------------------------------------------------------------------
-# _verify_manifest_sheet_ids only ever runs under --apply
+# _verify_sheet_ids only ever runs under --apply
 # ---------------------------------------------------------------------------
 
 def test_verify_aborts_before_any_download_under_apply(env):
-    env.mutate_manifest(lambda m: m["arao1248"]["sheets"]["ciscategorial"]
-                        .__setitem__("spreadsheet_id", "does_not_exist_xyz"))
+    drive_ids.set_class_sheet(env.config, "arao1248", "ciscategorial", "does_not_exist_xyz")
     out, exit_code = env.run(["import-sheets", "--apply"])
     assert exit_code == 1
-    assert "ERROR: Manifest contains inaccessible spreadsheet IDs" in out
+    assert "ERROR: The ID file contains inaccessible spreadsheet IDs" in out
     assert "Language:" not in out  # aborted before the per-language loop started
     assert env.doorway.mutations == []
 
@@ -537,8 +531,7 @@ def test_verify_is_skipped_on_a_dry_run_that_never_reaches_the_bad_id(env):
     "y" classes (Finding 19), which surfaces its own unrelated ERROR lines on
     every run for this language -- the thing this test actually checks is
     that stan1293's bad ID is never reached."""
-    env.mutate_manifest(lambda m: m["stan1293"]["sheets"]["ciscategorial"]
-                        .__setitem__("spreadsheet_id", "does_not_exist_xyz"))
+    drive_ids.set_class_sheet(env.config, "stan1293", "ciscategorial", "does_not_exist_xyz")
     out, exit_code = env.run(["import-sheets", "--lang", "arao1248"])
     assert exit_code is None
     assert "does_not_exist_xyz" not in out
@@ -558,8 +551,7 @@ def test_a_bad_id_reached_on_a_dry_run_warns_and_previews_every_other_language(e
     matters operationally for the --apply case; asserted here on the dry
     run because that's what this test already exercises for the
     no-crash/keeps-previewing behavior above)."""
-    env.mutate_manifest(lambda m: m["stan1293"]["sheets"]["ciscategorial"]
-                        .__setitem__("spreadsheet_id", "does_not_exist_xyz"))
+    drive_ids.set_class_sheet(env.config, "stan1293", "ciscategorial", "does_not_exist_xyz")
     out, exit_code = env.run(["import-sheets"])
 
     assert exit_code == 1
@@ -572,32 +564,20 @@ def test_a_bad_id_reached_on_a_dry_run_warns_and_previews_every_other_language(e
     assert "Language: stan1293" in out
     assert "Language: synth0001" in out
     # stan1293's other classes (not just ciscategorial) are still reached.
-    other_classes = [c for c in env.manifest()["stan1293"]["sheets"] if c != "ciscategorial"]
-    assert other_classes, "expected stan1293 to have more than one class in the manifest"
+    other_classes = [c for c in drive_ids.class_sheets(env.config, "stan1293")
+                     if c != "ciscategorial"]
+    assert other_classes, "expected stan1293 to have more than one class sheet"
     for cls in other_classes:
         assert f"\n  {cls}" in out
 
 
 # ---------------------------------------------------------------------------
-# Manifest metadata sync: uploads only when the planar structure changed
+# The manifest is not this command's: it never writes it
 # ---------------------------------------------------------------------------
 
-def test_manifest_metadata_sync_uploads_when_the_planar_structure_changed(env):
-    env.mutate_manifest(lambda m: m["arao1248"].__setitem__(
-        "planar", {"keystone_pos": 999, "positions": []}))
-
+def test_the_manifest_is_never_written(env):
     out, _ = env.run(["import-sheets", "--lang", "arao1248", "--apply"])
-
-    assert "manifest.json updated on Drive" in out
-    updates = [m for m in env.doorway.mutations if m["op"] == "update_file"
-              and m["file_id"] == MANIFEST_FILE_ID]
-    assert len(updates) == 1
-    assert env.manifest()["arao1248"]["planar"]["keystone_pos"] != 999
-
-
-def test_manifest_metadata_sync_uploads_nothing_when_unchanged(env):
-    out, _ = env.run(["import-sheets", "--lang", "arao1248", "--apply"])
-    assert "manifest.json updated on Drive" not in out
+    assert "manifest" not in out
     assert not any(m["op"] == "update_file" and m["file_id"] == MANIFEST_FILE_ID
                   for m in env.doorway.mutations)
 

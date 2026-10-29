@@ -142,7 +142,9 @@ from typing import (Any, Callable, Dict, FrozenSet, Iterable, Iterator, List, Ma
 
 import gspread
 
-ROOT = Path(__file__).resolve().parent.parent
+from planars import drive_labels
+
+ROOT =Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
 ENFORCE = "enforce"
@@ -158,8 +160,8 @@ WATCH = "watch"
 # 2026-10-19); contributor charts since 2026-10-27 (six uploads by
 # laminar-charts on 2026-10-26). Everything else stays in LIVE_MODE, watch.
 LIVE_MODE = WATCH
-CLASS_SHEET = "class_sheet"
-PLANAR_SHEET = "planar_sheet"
+CLASS_SHEET = drive_labels.CLASS_SHEET
+PLANAR_SHEET = drive_labels.PLANAR_SHEET
 DIAGNOSTICS_SHEET = "diagnostics_sheet"
 STATUS_SHEET = "status_sheet"
 # A language's proposal sheet (unit 11a; ownership-design § 3.2): where its
@@ -253,22 +255,19 @@ KINDS: Dict[str, Dict[str, Any]] = {
 # notebook belongs to one language except all_languages.
 _LANGUAGE_FOLDERS = {"language", "archive"}
 
-# The Drive properties a file's identity is written to. Public properties,
-# not appProperties, which only the OAuth client that wrote them can read.
-_LABEL = {"kind": "planars_kind", "lang_id": "planars_lang",
-          "class_name": "planars_class", "name": "planars_name"}
-STATE_LABEL = "planars_state"
-ARCHIVED = "archived"
-# A tab's labels, as Sheets developer metadata on the tab (document
-# visibility, so any coordinator's client reads them): its kind, one of the
-# three below (sheet_spec uses the same names), and its name — the locked
-# tab's title, the construction, or Status — which stays put if someone
-# renames the tab by hand.
-TAB_KIND_LABEL = "planars_tab_kind"
-TAB_NAME_LABEL = "planars_tab"
+# The Drive properties a file's identity is written to, and a tab's labels
+# (its kind, one of the three below, which sheet_spec uses too, and its
+# name — the locked tab's title, the construction, or Status): the names are
+# planars/drive_labels.py's, which Colab reads too.
+_LABEL = {"kind": drive_labels.KIND, "lang_id": drive_labels.LANG,
+          "class_name": drive_labels.CLASS, "name": drive_labels.NAME}
+STATE_LABEL = drive_labels.STATE
+ARCHIVED = drive_labels.ARCHIVED
+TAB_KIND_LABEL = drive_labels.TAB_KIND
+TAB_NAME_LABEL = drive_labels.TAB_NAME
 LOCKED_TAB = "locked"
 STATUS_TAB_KIND = "status"
-CONSTRUCTION_TAB = "construction"
+CONSTRUCTION_TAB = drive_labels.CONSTRUCTION_TAB
 TAB_KINDS = (LOCKED_TAB, CONSTRUCTION_TAB, STATUS_TAB_KIND)
 # The one tab of a planar or diagnostics Sheet: every cell the tooling's, a
 # copy of its source that annotators read (sheet_spec.copy_sheet_spec; Phase
@@ -1737,6 +1736,29 @@ class CheckedSpreadsheet:
 
     def fetch_sheet_metadata(self, params: Optional[Mapping[str, Any]] = None) -> Mapping[str, Any]:
         return _retry(lambda: self._inner.fetch_sheet_metadata(params=params))
+
+    def construction_tabs(self) -> List[str]:
+        """The constructions this class sheet has a tab for, in tab order:
+        each tab labelled as a construction, by its name label (the
+        construction, which stays put if someone renames the tab by hand).
+        What the sheet holds, as opposed to what the diagnostics YAML says it
+        should (unit 11c: this replaced the manifest's ``constructions``).
+
+        The door labels the tabs a command makes or renames only when the
+        command ends, so mid-command a tab with no label yet counts, by its
+        title, when the sheet's spec lists it as a construction
+        (``unlabelled_tabs``). Any other unlabelled tab is not the tooling's."""
+        new = {ws.id: ws.title for ws, kind in self._door.unlabelled_tabs(self)
+               if kind == CONSTRUCTION_TAB}
+        labels = self._door._tab_labels_of(self)
+        names = []
+        for ws in _retry(self._inner.worksheets):
+            label = labels.get(ws.id, {})
+            if label.get(TAB_KIND_LABEL) == CONSTRUCTION_TAB and label.get(TAB_NAME_LABEL):
+                names.append(label[TAB_NAME_LABEL])
+            elif ws.id in new:
+                names.append(new[ws.id])
+        return names
 
     def _tab_by_sheet_id(self, sheet_id: int) -> Optional["CheckedWorksheet"]:
         """The tab a request names. The door keeps each spreadsheet's tabs for

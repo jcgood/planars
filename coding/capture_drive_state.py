@@ -22,7 +22,7 @@ folders as they stood locally (copied here into
 moment, or a command under test sees "changes" between them that no one made.
 So ``--apply`` replaces both for every language it captures, and nothing else
 refreshes either. With ``--lang`` the other languages' entries are kept; for
-a captured language, the recording of a sheet no longer in the manifest is
+a captured language, the recording of a sheet no longer in the ID file is
 deleted (one whose capture just failed is kept as the last good copy). Never
 normalise or hand-edit a saved file: re-run the capture. Until 2026-10-10
 only the Sheets half was saved and the tests read the live folders, so Adam's
@@ -75,6 +75,7 @@ from .drive import (
     _load_drive_config,
     _open_spreadsheet,
 )
+from . import drive_ids
 from .drive_door import _retry
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -86,7 +87,7 @@ FIXTURE_ROOT = CODED_DATA / ".test_fixtures"
 FIXTURE_DIR = FIXTURE_ROOT / "drive_state"
 FROZEN_CODED_DATA = FIXTURE_ROOT / "coded_data"
 
-# Spreadsheet roles recorded per language from the manifest/drive_config, beyond
+# Spreadsheet roles recorded per language from the ID file (drive_config.json), beyond
 # the per-class annotation sheets.
 _SINGLETON_SHEET_KEYS = ("planar_spreadsheet_id", "diagnostics_spreadsheet_id")
 
@@ -183,18 +184,17 @@ def _own_grants(drive, file_id: str) -> List[Dict]:
     return grants
 
 
-def _plan(manifest: Dict, langs: List[str]) -> List[tuple]:
-    """Return [(lang_id, role, spreadsheet_id), ...] to capture. No network."""
+def _plan(config: Dict, langs: List[str]) -> List[tuple]:
+    """Return [(lang_id, role, spreadsheet_id), ...] to capture, from the ID
+    file's contents (``config``). No network."""
     targets = []
     for lang_id in langs:
-        entry = manifest.get(lang_id, {})
+        entry = config.get(lang_id, {})
         for key in _SINGLETON_SHEET_KEYS:
             if entry.get(key):
                 targets.append((lang_id, key.replace("_spreadsheet_id", ""), entry[key]))
-        for class_name, info in sorted((entry.get("sheets") or {}).items()):
-            sid = info.get("spreadsheet_id") or info.get("id")
-            if sid:
-                targets.append((lang_id, f"class:{class_name}", sid))
+        for class_name, sid in sorted(drive_ids.class_sheets(config, lang_id).items()):
+            targets.append((lang_id, f"class:{class_name}", sid))
     return targets
 
 
@@ -228,10 +228,8 @@ def main(args: argparse.Namespace | None = None) -> None:
     if not manifest:
         raise SystemExit("No manifest found on Drive — nothing to capture.")
 
-    langs = [lang_filter] if lang_filter else sorted(
-        k for k, v in manifest.items() if isinstance(v, dict) and not k.startswith("_")
-    )
-    targets = _plan(manifest, langs)
+    langs = [lang_filter] if lang_filter else drive_ids.languages(config)
+    targets = _plan(config, langs)
 
     if not apply:
         print(f"\nDRY RUN — would capture {len(targets)} spreadsheet(s) "
@@ -246,9 +244,9 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     FIXTURE_DIR.mkdir(parents=True, exist_ok=True)
 
-    # The manifest is Drive state too, and the fake needs it: it is what every
-    # command reads to learn which spreadsheet holds which class. Recorded
-    # verbatim, same rule as everything else here.
+    # The manifest copy is Drive state too, and the fake still serves it until
+    # unit 11c-5 (the published notebooks read it). Recorded verbatim, same
+    # rule as everything else here.
     (FIXTURE_DIR / "manifest.json").write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
 
@@ -294,7 +292,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     }
     index_path.write_text(json.dumps(index, indent=2, ensure_ascii=False), encoding="utf-8")
 
-    # A recording of a sheet the manifest no longer lists (a retired class)
+    # A recording of a sheet the ID file no longer lists (a retired class)
     # would otherwise sit here forever with nothing pointing at it. One whose
     # capture just failed is kept, as the last good copy.
     written = {e["path"] for e in captured}
@@ -305,7 +303,7 @@ def main(args: argparse.Namespace | None = None) -> None:
             role = old.stem.replace("class_", "class:", 1)
             if rel not in written and f"{lang_id}/{role}" not in failed_labels:
                 old.unlink()
-                print(f"  removed {rel} (no longer in the manifest)")
+                print(f"  removed {rel} (no longer in the ID file)")
 
     # The other half: the language folders as they stand locally right now.
     for lang_id in langs:

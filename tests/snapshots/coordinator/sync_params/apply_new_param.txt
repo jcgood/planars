@@ -60,6 +60,4 @@ Mode:     apply
   [phrasal_accent/prescreening] OK — no changes
   [phrasal_accent/general] OK — no changes
 
-Manifest updated on Drive.
-
-Drive door (enforce): checked 4 write(s) to 2 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 3 write(s) to 1 tab(s) or file(s); 0 broke a rule.

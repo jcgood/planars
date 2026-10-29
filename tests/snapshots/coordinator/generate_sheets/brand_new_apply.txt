@@ -1,5 +1,4 @@
 Connecting to Google APIs...
-Manifest backed up to manifest_backup.json (2 language(s))
 
 Language:    arao1248
 Planar file: planar_arao1248.tsv
@@ -58,7 +57,6 @@ Notes doc:   https://docs.google.com/document/d/fake_file_0001
     Status tab created (1 construction(s))
     URL: https://docs.google.com/spreadsheets/d/fake_ss_0017
 
-manifest.json updated on Drive (id: fake_manifest_file)
 
 Language:    stan1293
 Planar file: planar_stan1293.tsv
@@ -71,10 +69,8 @@ Planar file: planar_synth0001.tsv
 Classes:     ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent']
   All classes already have sheets. Skipping synth0001.
   (use --force to regenerate)
-manifest.json uploaded (id: fake_manifest_file)
-
-Local manifest written to: sheets_manifest.json
+Notebook manifest copy refreshed on Drive (id: fake_manifest_file)
 drive_config.json written.
 
 Each language's folder and sheets are shared with the annotator named in people.yaml; for a language with none listed, add one there and re-run with --apply.
-Drive door (enforce): checked 122 write(s) to 39 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 121 write(s) to 39 tab(s) or file(s); 0 broke a rule.

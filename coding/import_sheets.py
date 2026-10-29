@@ -6,8 +6,9 @@ Run from the repo root:
     python -m coding import-sheets --apply      # write TSVs when content has changed
     python -m coding import-sheets --apply --overwrite-existing  # rewrite even if the cells match
 
-Reads the manifest from Drive (via drive_config.json), downloads each sheet
-tab, validates values, and writes {construction}.tsv to
+Reads each language's class sheets from the ID file (drive_config.json),
+downloads each sheet tab (the constructions the sheet has a tab for),
+validates values, and writes {construction}.tsv to
 coded_data/{lang_id}/{class_name}/.
 
 Every file is written through the local-file door (coding/file_door.py): a
@@ -60,10 +61,8 @@ ROOT = Path(__file__).resolve().parent.parent
 
 import pandas as pd
 
-from .drive import (
-    load_manifest, upload_manifest,
-    _load_drive_config, _save_drive_config,
-)
+from . import drive_ids
+from .drive import _load_drive_config
 from .drive_doorway import get_doorway, WorksheetNotFound
 from planars.schema_values import STATUS_IN_PROGRESS, STATUS_READY, is_keystone
 from .restructure_sheets import _get_keyed_row_constructions, _get_pair_row_constructions
@@ -73,7 +72,6 @@ from .validate import ValidationIssue
 from .make_forms import (
     resolve_keystone_active,
     resolve_keystone_na_criteria,
-    planar_to_manifest_dict,
 )
 
 ERROR_DIR    = ROOT / "import_errors"
@@ -350,33 +348,28 @@ def _notify_collaborator_check(entries: List[Dict]) -> None:
         print(f"   (Could not create GitHub issue: {exc})")
 
 
-def _verify_manifest_sheet_ids(doorway, manifest: Dict) -> None:
-    """Abort if any annotation spreadsheet ID in the manifest is inaccessible.
+def _verify_sheet_ids(doorway, config: Dict, lang_filter: str = None) -> None:
+    """Abort if any class sheet ID in the ID file is inaccessible.
 
-    Protects against writing TSVs from a stale or corrupted manifest that
-    points to wrong (empty, deleted, or duplicate) spreadsheets. Runs a
-    lightweight Drive metadata fetch for each sheet ID — no sheet content
-    is downloaded at this stage.
+    Protects against writing TSVs from an ID file that points to wrong
+    (empty, deleted, or duplicate) spreadsheets. Runs a lightweight Drive
+    metadata fetch for each sheet ID — no sheet content is downloaded at
+    this stage.
     """
     bad: List[str] = []
-    for lang_id, lang_data in manifest.items():
-        if not isinstance(lang_data, dict):
+    for lang_id in drive_ids.languages(config):
+        if lang_filter and lang_id != lang_filter:
             continue
-        for class_name, sheet_info in lang_data.get("sheets", {}).items():
-            if not isinstance(sheet_info, dict):
-                continue
-            spreadsheet_id = sheet_info.get("spreadsheet_id")
-            if not spreadsheet_id:
-                continue
+        for class_name, spreadsheet_id in drive_ids.class_sheets(config, lang_id).items():
             try:
                 doorway.get_file(spreadsheet_id, fields="id,trashed")
             except Exception as e:
                 bad.append(f"  {lang_id}/{class_name}: {spreadsheet_id} — {e}")
     if bad:
-        print("ERROR: Manifest contains inaccessible spreadsheet IDs:")
+        print("ERROR: The ID file contains inaccessible spreadsheet IDs:")
         for line in bad:
             print(line)
-        print("The manifest may be stale or point to deleted/moved sheets.")
+        print("The ID file may point to deleted/moved sheets.")
         print("→ Run: python -m coding integrity-check --sheets")
         print("  This will list which spreadsheet IDs are unreachable and what to do next.")
         raise SystemExit(1)
@@ -411,8 +404,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main(args: argparse.Namespace | None = None) -> None:
     """Entry point for `python -m coding import-sheets`.
 
-    Dry-run by default — pass --apply to write any TSVs. Loads the manifest
-    from Drive, downloads each construction tab, validates values, and writes
+    Dry-run by default — pass --apply to write any TSVs. Reads the class
+    sheets from the ID file, downloads each construction tab, validates values, and writes
     filled TSVs under coded_data/{lang_id}/{class_name}/. Compares downloaded
     content to the existing file: if changed, writes the new one through the
     local-file door (which archives the old); if unchanged, skips with "No
@@ -435,10 +428,10 @@ def main(args: argparse.Namespace | None = None) -> None:
     # dispatch chokepoint now -- see coding/preconditions.py -- not here.
     print("Connecting to Google...")
     doorway = get_doorway()
-    manifest = load_manifest(doorway)
+    config = _load_drive_config()
 
     if apply:
-        _verify_manifest_sheet_ids(doorway, manifest)
+        _verify_sheet_ids(doorway, config, lang_filter)
 
     total_files = 0
     in_progress_files = 0
@@ -454,19 +447,19 @@ def main(args: argparse.Namespace | None = None) -> None:
     pair_row_constructions = _get_pair_row_constructions()
     keyed_row_constructions = _get_keyed_row_constructions()
 
-    for lang_id, lang_data in manifest.items():
+    for lang_id in drive_ids.languages(config):
         if lang_filter and lang_id != lang_filter:
             continue
         print(f"\nLanguage: {lang_id}")
         lang_warning_lines: List[str] = []
         lang_param_map = _val._load_param_map(lang_id)
 
-        for class_name, sheet_info in lang_data["sheets"].items():
+        for class_name, spreadsheet_id in drive_ids.class_sheets(config, lang_id).items():
             print(f"\n  {class_name}")
             try:
-                ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
+                ss = doorway.open_spreadsheet(spreadsheet_id)
             except Exception as e:
-                msg = f"[{class_name}] could not open spreadsheet {sheet_info['spreadsheet_id']!r} for {lang_id}: {e}"
+                msg = f"[{class_name}] could not open spreadsheet {spreadsheet_id!r} for {lang_id}: {e}"
                 print(f"    ERROR: {msg}")
                 lang_warning_lines.append(f"ERROR: {msg}")
                 total_import_errors += 1
@@ -478,7 +471,10 @@ def main(args: argparse.Namespace | None = None) -> None:
             if not status_map and not ignore_status:
                 print(f"    (no Status tab found — importing all constructions)")
 
-            for construction in sheet_info["constructions"]:
+            # The tabs the sheet has, then any construction its Status tab lists
+            # that has no tab (deleted by hand): reported below as a missing tab.
+            tabs = ss.construction_tabs()
+            for construction in tabs + [c for c in status_map if c not in tabs]:
                 try:
                     ws = ss.worksheet(construction)
                 except WorksheetNotFound:
@@ -511,7 +507,7 @@ def main(args: argparse.Namespace | None = None) -> None:
 
                 # Per-param allowed values: the language's diagnostics YAML through
                 # coding.schemas.criteria_for — the same source validate-coding
-                # uses — not the manifest's cached copy (Phase 10, 2026-10-12).
+                # uses.
                 param_values = lang_param_map.get(class_name, {}).get(construction, {}).get("values")
 
                 # Which constructions have pair rows comes from the schema, not
@@ -645,46 +641,6 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     backup_part = f", {in_progress_files} in-progress backup(s)" if in_progress_files else ""
     print(f"\nDone. {total_files} file(s) written{backup_part}, {total_warnings} warning(s).")
-
-    # Sync glottolog + meta from languages.yaml into the Drive manifest.
-    # Read fresh each run — not via coding.schemas cached loader — because
-    # lookup-lang may have written a new languages.yaml entry earlier in the
-    # same session and we need the just-written state, not a cached snapshot.
-    import yaml as _yaml
-    _lang_yaml = ROOT / "schemas" / "languages.yaml"
-    _langs = {}
-    if _lang_yaml.exists():
-        with open(_lang_yaml, encoding="utf-8") as _f:
-            _langs = _yaml.safe_load(_f) or {}
-    manifest_changed = False
-    for lid, entry in manifest.items():
-        if lid.startswith("_") or not isinstance(entry, dict):
-            continue
-        lang_entry = _langs.get(lid)
-        if lang_entry:
-            if entry.get("glottolog") != lang_entry.get("glottolog") or \
-               entry.get("meta") != lang_entry.get("meta"):
-                entry["glottolog"] = lang_entry.get("glottolog", {})
-                entry["meta"] = lang_entry.get("meta", {})
-                manifest_changed = True
-        # Refresh planar structure so Colab source='sheets' can derive nonpermutability spans.
-        planar_file = file_door.planar(lid).path
-        if planar_file.exists():
-            new_planar = planar_to_manifest_dict(planar_file, lid)
-            if entry.get("planar") != new_planar:
-                entry["planar"] = new_planar
-                manifest_changed = True
-    if manifest_changed and apply:
-        drive_cfg = _load_drive_config()
-        file_id = drive_cfg.get("_planars_config_file_id")
-        root_id = drive_cfg.get("_root_folder_id")
-        new_id = upload_manifest(doorway, manifest, root_id, file_id)
-        if new_id != file_id:
-            drive_cfg["_planars_config_file_id"] = new_id
-            _save_drive_config(drive_cfg)
-        print("manifest.json updated on Drive with languages.yaml metadata.")
-    elif manifest_changed:
-        print("(manifest.json has pending metadata changes — re-run with --apply to write)")
 
     # Raise collaborator-check issue if any in-progress anomalies were detected.
     if all_collaborator_check:

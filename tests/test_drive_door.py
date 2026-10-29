@@ -14,7 +14,7 @@ import ssl
 import pytest
 
 from coding import drive as drive_module
-from coding import drive_door, drive_doorway, state_files
+from coding import drive_door, drive_doorway, drive_ids, state_files
 from coding.drive_door import CheckedDoorway, DoorViolation
 from coding.sheet_spec import class_sheet_spec
 from fake_drive import FakeDriveDoorway, api_error, use_frozen_coded_data
@@ -32,7 +32,7 @@ def env(monkeypatch, tmp_path):
     monkeypatch.setattr("coding.drive_door.time.sleep", lambda *a, **kw: None)
     drive_doorway.set_doorway(fake)
     door = drive_doorway.get_doorway()
-    sheet_id = drive_module.load_manifest(door)[LANG]["sheets"][CLASS]["spreadsheet_id"]
+    sheet_id = drive_ids.class_sheet_id(FakeDriveDoorway.drive_config(), LANG, CLASS)
     try:
         yield fake, door, sheet_id, coded
     finally:
@@ -839,7 +839,7 @@ def test_every_create_writes_its_label_and_the_label_places_the_file(env):
 
 
 def _language_folder(door, lang=LANG):
-    return drive_module.load_manifest(door)[lang]["folder_id"]
+    return FakeDriveDoorway.drive_config()[lang]["folder_id"]
 
 
 def test_a_found_folder_labelled_as_something_else_is_reported(env):
@@ -1083,7 +1083,7 @@ TO_SHEET = argparse.Namespace(apply=True, langs=[LANG])
 
 
 def _planar_id(door):
-    return drive_module.load_manifest(door)[LANG]["planar_spreadsheet_id"]
+    return FakeDriveDoorway.drive_config()[LANG]["planar_spreadsheet_id"]
 
 
 def _planar(door):
@@ -1172,7 +1172,7 @@ DIAG_TO_SHEET = argparse.Namespace(apply=True, lang=LANG)
 
 
 def _diagnostics_id(door):
-    return drive_module.load_manifest(door)[LANG]["diagnostics_spreadsheet_id"]
+    return FakeDriveDoorway.drive_config()[LANG]["diagnostics_spreadsheet_id"]
 
 
 def _diagnostics(door):
@@ -1210,7 +1210,7 @@ def test_pushing_the_yaml_replaces_a_hand_edit_and_protects_the_sheet(env):
     raw.sheet1.update_cell(2, 4, "a hand edit")
     with drive_door.running("sync-diagnostics-yaml", DIAG_TO_SHEET):
         assert sync_diagnostics_yaml._sync_to_sheet(
-            LANG, drive_module.load_manifest(door), True, [])
+            LANG, FakeDriveDoorway.drive_config(), True, [])
     assert raw.sheet1.get_all_values() == before
     assert any(_is_ours(p, raw.sheet1.id) for p in raw.list_protected_ranges(raw.sheet1.id))
 

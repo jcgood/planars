@@ -15,13 +15,16 @@ Then, for each language whose diagnostics file has CLASS with OLD, ``--apply``:
      layout kept), then pushes the file to the language's diagnostics Sheet,
      as ``sync-diagnostics-yaml`` does;
   2. renames the tab on the class sheet in place, and its row on the Status
-     tab — the sheet and its link stay the same, and so do the answers;
-  3. renames the construction in the manifest (its ``constructions`` list and
-     ``construction_params``) and uploads it;
-  4. moves ``coded_data/{lang_id}/{class}/OLD.tsv`` to ``NEW.tsv`` (the
+     tab — the sheet and its link stay the same, and so do the answers (the
+     ID file is not touched: it holds sheet IDs, not tab names);
+  3. moves ``coded_data/{lang_id}/{class}/OLD.tsv`` to ``NEW.tsv`` (the
      local-file door keeps the old one in the archive and logs both);
-  5. carries check-comments' record of what it has seen on the tab over to
+  4. carries check-comments' record of what it has seen on the tab over to
      the new name, so those comments are not reported again.
+
+When an ``--apply`` run renamed a tab, it ends by republishing the manifest
+copy the Colab notebooks read (``manifest_copy.publish``), which lists each
+sheet's tab names.
 
 Archived TSVs, change logs, provenance lines and saved copies keep the old
 name: they are history.
@@ -39,14 +42,15 @@ Dry run by default: prints what each language would change.
 from __future__ import annotations
 
 import argparse
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 from gspread.utils import rowcol_to_a1
 
 from planars.schema_values import STATUS_CONSTRUCTION_COLUMN, STATUS_TAB, _class_entry
 
 from . import check_comments, file_door
-from .drive import _load_drive_config, _save_drive_config, load_manifest, upload_manifest
+from . import drive_ids, manifest_copy
+from .drive import _load_drive_config, _save_drive_config
 from .drive_doorway import WorksheetNotFound, get_doorway
 from .make_forms import _dump_diagnostics_yaml, _load_diagnostics_yaml_for_edit
 from .sync_diagnostics_yaml import _sync_to_sheet
@@ -150,10 +154,10 @@ def _rename_yaml(lang_id: str, renames: List[Rename],
     return mine, True
 
 
-def _rename_on_sheet(doorway, sheet_info: Dict, cls: str, old: str, new: str,
+def _rename_on_sheet(doorway, sheet_id: str, cls: str, old: str, new: str,
                      apply: bool) -> bool:
     """Step 2: the tab and its Status row, in place. True if anything changes."""
-    ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
+    ss = doorway.open_spreadsheet(sheet_id)
     titles = [ws.title for ws in ss.worksheets()]
     if old in titles and new in titles:
         raise SystemExit(f"rename-construction: {cls}'s sheet has both tabs {old!r} and "
@@ -184,27 +188,8 @@ def _rename_on_sheet(doorway, sheet_info: Dict, cls: str, old: str, new: str,
     return changed
 
 
-def _rename_in_manifest(sheet_info: Dict, old: str, new: str) -> bool:
-    """Step 3, in memory. True if anything changed."""
-    changed = False
-    constructions = sheet_info.get("constructions") or []
-    if old in constructions:
-        constructions[constructions.index(old)] = new
-        changed = True
-    return _rename_key(sheet_info.get("construction_params"), old, new) or changed
-
-
-def _upload(doorway, manifest: Dict) -> None:
-    cfg = _load_drive_config()
-    file_id = cfg.get("_planars_config_file_id")
-    new_id = upload_manifest(doorway, manifest, cfg.get("_root_folder_id"), file_id)
-    if new_id != file_id:
-        cfg["_planars_config_file_id"] = new_id
-        _save_drive_config(cfg)
-
-
 def _rename_local(lang_id: str, cls: str, old: str, new: str, apply: bool) -> bool:
-    """Steps 4 and 5. True if the TSV moves."""
+    """Steps 3 and 4. True if the TSV moves."""
     source = file_door.annotation(lang_id, cls, old)
     moves = source.path.exists()
     if moves:
@@ -246,11 +231,12 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
         raise SystemExit("rename-construction:\n  " + "\n  ".join(problems))
     apply = args.apply
     doorway = get_doorway()
-    manifest = load_manifest(doorway)
-    langs = [args.lang] if args.lang else sorted(manifest)
+    config = _load_drive_config()
+    langs = [args.lang] if args.lang else drive_ids.languages(config)
     print(("" if apply else "DRY RUN — ") + "renaming: "
           + ", ".join(f"{c}/{o} → {n}" for c, o, n in renames))
     touched = 0
+    sheets_renamed = False
     for lang_id in langs:
         print(f"\n{lang_id}:")
         mine, changed = _rename_yaml(lang_id, renames, apply)
@@ -258,23 +244,24 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
             print("  nothing to rename")
             continue
         if apply:
-            _sync_to_sheet(lang_id, manifest, apply=True, error_langs=[])
-        sheets = manifest.get(lang_id, {}).get("sheets", {})
-        manifest_changed = False
+            _sync_to_sheet(lang_id, config, apply=True, error_langs=[])
+        sheets = drive_ids.class_sheets(config, lang_id)
         for cls, old, new in mine:
             if cls in sheets:
-                changed |= _rename_on_sheet(doorway, sheets[cls], cls, old, new, apply)
-                if _rename_in_manifest(sheets[cls], old, new):
-                    print(f"  manifest: {cls} {old} → {new}")
-                    manifest_changed = True
+                on_sheet = _rename_on_sheet(doorway, sheets[cls], cls, old, new, apply)
+                changed |= on_sheet
+                sheets_renamed |= on_sheet
             changed |= _rename_local(lang_id, cls, old, new, apply)
-        changed |= manifest_changed
         if changed:
             touched += 1
         else:
             print("  already renamed")
-        if apply and manifest_changed:
-            _upload(doorway, manifest)
+    if apply and sheets_renamed:
+        # The IDs are unchanged, but the manifest copy the Colab notebooks
+        # read lists each sheet's tab names: republish it.
+        manifest_copy.publish(doorway, config)
+        _save_drive_config(config)
+        print("\nManifest copy republished on Drive (it lists the tab names).")
     if not apply:
         print(f"\nDry run: {touched} language(s) would change. Run with --apply to make "
               f"the changes.")

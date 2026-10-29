@@ -30,7 +30,5 @@ Renames:  ['noninterruption:free:free_form']
   [noninterruption/general] Rename: free → free_form
     Renamed.
 
-Manifest updated on Drive.
-
-Drive door (enforce): checked 4 write(s) to 4 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 3 write(s) to 3 tab(s) or file(s); 0 broke a rule.
 Local-file door: changed 3 file(s), previous versions archived and logged.

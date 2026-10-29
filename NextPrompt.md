@@ -207,10 +207,14 @@ refresh: green, its "diagnostics sheet" step clean, and no
 clone must be pulled before his Claude runs the tooling, or it writes the
 TSV again (the 2026-10-28 refresh was green and no TSV came back).
 **11d is done (2026-10-28):** the Instructions sentences are in planar.yaml's
-`sheet_text`. **11c started 2026-10-28:** its steps 11c-1 to 11c-5 are in
-`docs/ownership-design.md` § 6 item 7. Jeff runs the two live tests
-(11c-5) with a second Google account of his that doesn't own the files,
-so 11c no longer waits on Adam; don't re-ask.
+`sheet_text`. **11c-1 to 11c-3 done 2026-10-28** (steps and as-built in
+`docs/ownership-design.md` § 6 item 7): no command reads the manifest; the
+ID file holds every ID. **Next: the two live tests (11c-5)**, which Jeff
+runs with a second Google account of his that doesn't own the files (don't
+re-ask; 11c doesn't wait on Adam): share synth0001 with that account, one
+small test notebook that finds the sheets by label. Then 11c-4 and 11c-5 in
+one commit. Adam's clone must be pulled before his Claude runs the tooling:
+older code records a new sheet only in the manifest.
 
 **Where it stands:** class sheets are enforced live (2026-10-19, Jeff;
 `drive_door.LIVE_ENFORCED_KINDS`); every other kind now has its spec and is

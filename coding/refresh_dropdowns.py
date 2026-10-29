@@ -12,7 +12,7 @@ y/n default list removed 2026-10-12, so annotators couldn't pick both, na or
 unclear, and a typed position number showed as invalid). Until 2026-10-23
 this command compared a copy of the values kept in the manifest with the
 YAML and never looked at the sheet; that copy is gone, and this command
-writes only dropdowns.
+writes only dropdowns. The sheets to check are the ones in the ID file.
 
 Run from the repo root:
     python -m coding refresh-dropdowns           # dry run: list what differs
@@ -29,7 +29,7 @@ from typing import List, Optional, Tuple
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
-from .drive import load_manifest
+from . import drive, drive_ids
 from .drive_doorway import get_doorway
 from .generate_sheets import dropdown_request
 from .sheet_spec import STATUS, ClassSheetSpec, class_sheet_spec
@@ -109,7 +109,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     lang_filter = args.lang
 
     doorway = get_doorway()
-    manifest = load_manifest(doorway)
+    config = drive._load_drive_config()
 
     print(f"{'DRY RUN — ' if not apply else ''}Refreshing sheet dropdowns")
     if not apply:
@@ -118,10 +118,11 @@ def main(args: argparse.Namespace | None = None) -> None:
     any_changes = False
     failed: List[str] = []
 
-    for lang_id, lang_data in manifest.items():
+    for lang_id in drive_ids.languages(config):
         if lang_filter and lang_id != lang_filter:
             continue
-        if "sheets" not in lang_data:
+        sheets = drive_ids.class_sheets(config, lang_id)
+        if not sheets:
             continue
 
         lang_setup_dir = CODED_DATA / lang_id / "lang_setup"
@@ -129,11 +130,7 @@ def main(args: argparse.Namespace | None = None) -> None:
             print(f"\n[{lang_id}] No planar file found — skipping")
             continue
 
-        for class_name, sheet_info in lang_data["sheets"].items():
-            spreadsheet_id = sheet_info.get("spreadsheet_id")
-            if not spreadsheet_id:
-                continue
-
+        for class_name, spreadsheet_id in sheets.items():
             print(f"\n  [{lang_id}] {class_name}")
             try:
                 spec = class_sheet_spec(lang_id, class_name, CODED_DATA)

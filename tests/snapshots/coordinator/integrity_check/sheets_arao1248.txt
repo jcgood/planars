@@ -21,9 +21,6 @@
 ── DEPENDENT CONSTRUCTION STALENESS ────────────────────────────────────
   ✓  Araona [arao1248]: nonpermutability/element_prescreening → general
 
-── MANIFEST SHAPE ──────────────────────────────────────────────────────
-  ✓  manifest matches the expected shape
-
 ── SHARING ─────────────────────────────────────────────────────────────
   ✓  37 file(s) shared as their sharing rule says
 

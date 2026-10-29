@@ -134,7 +134,7 @@ def _describe_changes(current_df: pd.DataFrame, new_df: pd.DataFrame) -> List[st
     return lines
 
 
-def _sync_to_sheet(lang_id: str, manifest: dict, apply: bool, error_langs: List[str]) -> bool:
+def _sync_to_sheet(lang_id: str, config: dict, apply: bool, error_langs: List[str]) -> bool:
     """Sync YAML → Google Sheet for one language.
 
     Validates the YAML, renders it as rows, compares them with the
@@ -148,9 +148,9 @@ def _sync_to_sheet(lang_id: str, manifest: dict, apply: bool, error_langs: List[
     if yaml_data is None:
         return False
 
-    diag_id = manifest.get(lang_id, {}).get("diagnostics_spreadsheet_id")
+    diag_id = config.get(lang_id, {}).get("diagnostics_spreadsheet_id")
     if not diag_id:
-        print(f"  [{lang_id}] No diagnostics_spreadsheet_id in manifest — skipping")
+        print(f"  [{lang_id}] No diagnostics_spreadsheet_id in the ID file — skipping")
         return False
 
     new_df = _yaml_to_grid_df(yaml_data, lang_id)
@@ -233,18 +233,17 @@ def main(args: argparse.Namespace | None = None) -> None:
     if not apply:
         print("Dry run — nothing is written.\n")
 
-    from .drive import load_manifest
-    from .drive_doorway import get_doorway
+    from . import drive, drive_ids
     print("Connecting to Google APIs...")
-    manifest = load_manifest(get_doorway())
-    if not manifest:
-        raise SystemExit("No manifest found. Run python -m coding generate-sheets --apply first.")
+    config = drive._load_drive_config()
+    if not drive_ids.languages(config):
+        raise SystemExit("The ID file has no languages. Run python -m coding generate-sheets --apply first.")
     languages = ([lang_filter] if lang_filter
-                 else sorted(set(manifest) | set(_discover_languages())))
+                 else sorted(set(drive_ids.languages(config)) | set(_discover_languages())))
     changed = 0
     error_langs: List[str] = []
     for lang_id in languages:
-        changed += _sync_to_sheet(lang_id, manifest, apply, error_langs)
+        changed += _sync_to_sheet(lang_id, config, apply, error_langs)
     print()
     if apply:
         print(f"Done: {changed} Sheet(s) updated.")

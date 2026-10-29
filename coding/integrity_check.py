@@ -22,12 +22,6 @@ Runs ten sections of checks and prints a structured report:
                                     (biuniqueness_deviations' morphemes/morphs) are
                                     compared by row key (_keyed_staleness).
   ANNOTATION SHEETS             — checks live sheet structure and dropdown drift (requires --sheets)
-  MANIFEST SHAPE                 — checks the live manifest against manifest_contract.py's
-                                    pydantic model (Phase 6 boundary 4, issue #271). The model is
-                                    deliberately permissive (see that module's docstring), so a
-                                    violation here means something structurally broken, not merely
-                                    an unrecognized field -- safe to let drive a real error, unlike
-                                    upload_manifest()'s own non-blocking version of the same check.
   SHARING                        — every labelled Drive file's own grants against its sharing
                                     rule (sheet_spec.sharing_spec): catches access changed by hand
                                     in the Drive window, which the Drive door never sees.
@@ -38,7 +32,10 @@ Exit code 0 if no errors; 1 if any errors (warnings do not fail).
 
 Writes nothing. Drive is reached through the doorway, by two independent
 read-only entry points: --sheets (open each spreadsheet, list its tabs, read
-its header) and --check-manifest (the manifest alone).
+its header, comparing the tabs and criteria columns with the diagnostics YAML)
+and --check-manifest (the ID file and the YAML, no Drive calls). The manifest
+is not read: it is a copy rebuilt from the ID file (unit 11c), and the Drive
+door checks it against manifest_contract.py whenever it is written.
 
 Usage:
     python -m coding integrity-check
@@ -46,7 +43,7 @@ Usage:
     python -m coding integrity-check --sheets
 
 Two fast standalone modes run one check only (used by the daily refresh):
-    python -m coding integrity-check --check-manifest    # manifest classes absent from diagnostics
+    python -m coding integrity-check --check-manifest    # class sheets whose class left diagnostics
     python -m coding integrity-check --check-dependents  # stale dependent constructions
 """
 from __future__ import annotations
@@ -74,6 +71,7 @@ from .check_codebook import (
     _check_chart_keys,
     needs_review_entries,
 )
+from planars import drive_labels
 from planars.schema_values import (
     ELEMENT_ROW_COLUMNS, PAIR_ROW_SHAPES, STATUS_READY, TRAILING_COLUMNS,
 )
@@ -288,15 +286,18 @@ def _section_analysis(codebook: dict) -> Tuple[int, int]:
     return len(errs_req) + len(errs_keys), 0
 
 
-def _stale_manifest_classes(manifest: dict, lang_ids: List[str]) -> List[Tuple[str, str]]:
-    """Return (lang_id, class_name) pairs that are in the manifest but absent from diagnostics.
+def _stale_manifest_classes(config: dict, lang_ids: List[str]) -> List[Tuple[str, str]]:
+    """Return (lang_id, class_name) pairs recorded with a class sheet in the ID
+    file (drive_config.json) but absent from the language's diagnostics YAML.
 
-    Reads local diagnostics_{lang}.yaml — no Sheet API calls. A language
-    without one is skipped (the DIAGNOSTICS section reports it).
+    Reads the ID file's contents (``config``) and local diagnostics_{lang}.yaml
+    — no Drive calls. A language without a YAML is skipped (the DIAGNOSTICS
+    section reports it).
     """
+    from . import drive_ids
     stale = []
     for lang_id in lang_ids:
-        sheets_info = manifest.get(lang_id, {}).get("sheets", {})
+        sheets_info = drive_ids.class_sheets(config, lang_id)
         if not sheets_info:
             continue
         yaml_path = CODED_DATA / lang_id / "lang_setup" / f"diagnostics_{lang_id}.yaml"
@@ -314,15 +315,16 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
     print(_section("ANNOTATION SHEETS"))
 
     try:
-        from .drive import load_manifest
+        from . import drive, drive_ids
         from .drive_doorway import get_doorway
+        from .make_forms import _read_diagnostics_for_language
     except ImportError as exc:
         print(_warn(f"Could not import sheet utilities: {exc}"))
         return 0, 1
 
     try:
         doorway = get_doorway()
-        manifest = load_manifest(doorway)
+        config = drive._load_drive_config()
     except Exception as exc:
         print(_fail(f"Could not connect to Google Sheets: {exc}"))
         return 1, 0
@@ -345,10 +347,10 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
 
     for lang_id in lang_ids:
         lang = _lang_label(lang_id)
-        lang_data = manifest.get(lang_id)
+        sheet_ids = drive_ids.class_sheets(config, lang_id)
 
-        if not lang_data:
-            print(_warn(f"{lang}  —  not in Drive manifest"))
+        if lang_id not in drive_ids.languages(config):
+            print(_warn(f"{lang}  —  not in the ID file"))
             total_w += 1
             continue
 
@@ -371,21 +373,32 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
             print(_warn(f"{lang}  —  languages.yaml meta incomplete: {', '.join(missing_meta)} not set"))
             total_w += 1
 
-        sheets_info = lang_data.get("sheets", {})
-        if not sheets_info:
-            print(_warn(f"{lang}  —  no sheets in manifest"))
+        if not sheet_ids:
+            print(_warn(f"{lang}  —  no class sheets in the ID file"))
             total_w += 1
             continue
 
-        # Check for stale manifest entries via shared helper (no Sheet API calls).
-        for _, stale_cls in _stale_manifest_classes(manifest, [lang_id]):
-            print(_warn(f"{lang} · {stale_cls}  —  in manifest but not in diagnostics"))
+        # Check for retired classes still recorded (no Sheet API calls).
+        for _, stale_cls in _stale_manifest_classes(config, [lang_id]):
+            print(_warn(f"{lang} · {stale_cls}  —  in the ID file but not in diagnostics"))
             print(_sub(f"→ run: python -m coding prune-manifest --apply"))
             total_w += 1
 
-        for class_name, sheet_info in sorted(sheets_info.items()):
+        # What each tab should hold comes from the diagnostics YAML.
+        try:
+            diag_rows = _read_diagnostics_for_language(
+                lang_id, CODED_DATA / lang_id / "lang_setup")
+        except Exception as exc:
+            print(_warn(f"{lang}  —  could not read diagnostics YAML: {exc}"))
+            total_w += 1
+            diag_rows = []
+        yaml_tabs: dict = {}
+        for cls, con, names, _vals in diag_rows:
+            yaml_tabs.setdefault(cls, {})[con] = list(names)
+
+        for class_name, sheet_id in sorted(sheet_ids.items()):
             try:
-                ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
+                ss = doorway.open_spreadsheet(sheet_id)
             except Exception as exc:
                 print(_fail(f"{lang} · {class_name}  —  could not open spreadsheet: {exc}"))
                 total_e += 1
@@ -397,9 +410,9 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
                 print(_fail(f"{lang} · {class_name}  —  could not list worksheets: {exc}"))
                 total_e += 1
                 continue
-            construction_params = sheet_info.get("construction_params", {})
+            class_tabs = yaml_tabs.get(class_name, {})
 
-            for construction in sheet_info.get("constructions", []):
+            for construction in class_tabs:
                 label = f"{lang} · {class_name} · {construction}"
 
                 if construction not in tab_titles:
@@ -415,7 +428,7 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
                     total_e += 1
                     continue
 
-                expected = construction_params.get(construction, {}).get("param_names", [])
+                expected = class_tabs[construction]
                 is_pair_row = construction in _pair_row_constructions.get(class_name, set())
                 keyed = _keyed_row_constructions.get(class_name, {}).get(construction)
                 if keyed:
@@ -765,45 +778,6 @@ def _section_dependent_construction_staleness(
     return total_e, 0
 
 
-def _section_manifest_shape() -> Tuple[int, int]:
-    """Check the live manifest against manifest_contract.py's pydantic model.
-
-    Unlike upload_manifest()'s version of this check (a local, non-blocking
-    warning), a violation here contributes to total_e and can drive the
-    integrity-error GitHub issue -- safe because the model is deliberately
-    permissive (see manifest_contract.py's module docstring): a violation
-    means the manifest isn't shaped like {lang_id: {...}} at all, not merely
-    that it carries a field this session hasn't seen before.
-    """
-    print(_section("MANIFEST SHAPE"))
-
-    from . import manifest_contract
-    from .drive import load_manifest
-    from .drive_doorway import get_doorway
-
-    try:
-        manifest = load_manifest(get_doorway())
-    except Exception as exc:
-        # Drive unavailable -- skip silently, same reasoning as
-        # --check-manifest in main(): import-sheets files an import-error issue
-        # if Drive is genuinely down, so this section doesn't need to also.
-        print(f"  (could not load manifest: {exc} — skipping)")
-        return 0, 0
-
-    problems = manifest_contract.check(manifest)
-    if not problems:
-        print(_ok("manifest matches the expected shape"))
-        return 0, 0
-
-    print(_fail(f"manifest does not match the expected shape ({len(problems)} issue(s))"))
-    for p in problems:
-        print(_sub(p))
-    print(_sub("→ See coding/manifest_contract.py for the contract, "
-               "and docs/data-layer-progress.md's 2026-08-17 decisions-log "
-               "entry for why this is checked here rather than blocking the write."))
-    return len(problems), 0
-
-
 def _section_sharing() -> Tuple[int, int]:
     """Compare the live grants of every file the tooling made (found by its
     identity label) with its sharing rule (`sheet_spec.sharing_spec`).
@@ -824,11 +798,12 @@ def _section_sharing() -> Tuple[int, int]:
         files = []
         for kind in KINDS:
             files += doorway.list_files(
-                q=f"properties has {{ key='planars_kind' and value='{kind}' }} "
+                q=f"properties has {{ key='{drive_labels.KIND}' and value='{kind}' }} "
                   "and trashed=false",
                 fields="files(id,name,properties)")
     except Exception as exc:
-        # Drive unavailable: same reasoning as MANIFEST SHAPE above.
+        # Drive unavailable: skip; import-sheets files an import-error issue
+        # if Drive is down, so this section needn't too.
         print(f"  (could not list Drive files: {exc} — skipping)")
         return 0, 0
 
@@ -893,8 +868,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--check-manifest",
         action="store_true",
-        help="Fast standalone check: flag manifest classes absent from diagnostics YAML. "
-             "Requires Drive access but makes no Sheet API calls. Used by data-refresh.",
+        help="Fast standalone check: flag classes recorded with a sheet in the ID file "
+             "(drive_config.json) but absent from the diagnostics YAML. Reads only local "
+             "files; no Drive calls. Used by data-refresh (stale-manifest issue).",
     )
     parser.add_argument(
         "--check-dependents",
@@ -921,26 +897,19 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     # --check-manifest: lightweight standalone mode, no Sheet API calls.
     if args.check_manifest:
-        from .drive import load_manifest
-        from .drive_doorway import get_doorway
-        try:
-            doorway = get_doorway()
-            manifest = load_manifest(doorway)
-        except Exception as exc:
-            # Drive unavailable — skip silently rather than filing a misleading
-            # stale-manifest issue. import-sheets will file an import-error issue
-            # if Drive is genuinely down.
-            print(f"WARNING: Could not load manifest ({exc}) — skipping stale manifest check.")
-            return
-        stale = _stale_manifest_classes(manifest, lang_ids)
+        from . import drive
+        # A local file: one that can't be read is a real error, so it fails
+        # the step (and its issue shows why) rather than being skipped.
+        config = drive._load_drive_config()
+        stale = _stale_manifest_classes(config, lang_ids)
         if stale:
-            print(f"STALE MANIFEST ENTRIES ({len(stale)}) — "
-                  f"run python -m coding prune-manifest --apply to clean up:")
+            print(f"CLASS SHEETS NOT IN DIAGNOSTICS ({len(stale)}) — "
+                  f"run python -m coding prune-manifest --apply to retire them:")
             for lang_id, cls in stale:
                 print(f"  {_lang_label(lang_id)} · {cls}")
             sys.exit(1)
         else:
-            print("No stale manifest entries.")
+            print("No class sheets recorded for classes absent from diagnostics.")
         return
 
     # --check-dependents: lightweight standalone mode for dependent construction staleness.
@@ -978,9 +947,6 @@ def main(args: argparse.Namespace | None = None) -> None:
     total_e += e; total_w += w
 
     e, w = _section_dependent_construction_staleness(lang_ids, diag_classes)
-    total_e += e; total_w += w
-
-    e, w = _section_manifest_shape()
     total_e += e; total_w += w
 
     e, w = _section_sharing()

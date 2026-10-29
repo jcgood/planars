@@ -1,6 +1,6 @@
 """Tests for coding/import_sheets.py — data-protection helpers.
 
-Covers _verify_manifest_sheet_ids (aborts when any manifest sheet ID is
+Covers _verify_sheet_ids (aborts when any class sheet ID in the ID file is
 inaccessible) and _tsv_content_changed. Archiving a TSV before it is
 overwritten is the local-file door's since Phase 10 unit 6a:
 tests/test_file_door.py. (The planar and diagnostics Sheet downloads, with
@@ -16,24 +16,19 @@ from pathlib import Path
 
 import pytest
 
+from coding import drive_ids
 from coding.import_sheets import (
     _tsv_content_changed,
-    _verify_manifest_sheet_ids,
+    _verify_sheet_ids,
 )
 
 
 # ---------------------------------------------------------------------------
-# _verify_manifest_sheet_ids
+# _verify_sheet_ids
 # ---------------------------------------------------------------------------
 
 class _DoorwayStub:
-    """Minimal doorway-shaped stub: only get_file(file_id, fields=None).
-
-    _verify_manifest_sheet_ids now takes a doorway rather than a raw Drive
-    service (coding/drive_doorway.py's migration, #271 file 15), so this
-    replaces the old _make_drive_mock's .files().get(fileId=...).execute()
-    shape with the one method the doorway actually exposes.
-    """
+    """Minimal doorway-shaped stub: only get_file(file_id, fields=None)."""
 
     def __init__(self, bad_ids: set = frozenset()):
         self._bad_ids = bad_ids
@@ -44,49 +39,34 @@ class _DoorwayStub:
         return {"id": file_id}
 
 
-class TestVerifyManifestSheetIds:
-    def _manifest(self, ids: dict[str, str]) -> dict:
-        """Build a minimal manifest with one class per lang_id."""
-        result = {}
+class TestVerifySheetIds:
+    def _config(self, ids: dict[str, str]) -> dict:
+        """A minimal ID file with one class sheet per lang_id."""
+        config = {"_root_folder_id": "some_folder_id"}
         for lang_id, spreadsheet_id in ids.items():
-            result[lang_id] = {
-                "sheets": {
-                    "ciscategorial": {"spreadsheet_id": spreadsheet_id}
-                }
-            }
-        return result
+            drive_ids.set_class_sheet(config, lang_id, "ciscategorial", spreadsheet_id)
+        return config
 
     def test_passes_with_all_accessible(self):
-        manifest = self._manifest({"arao1248": "sheet_id_1", "stan1293": "sheet_id_2"})
-        doorway = _DoorwayStub()
-        _verify_manifest_sheet_ids(doorway, manifest)  # no error
+        config = self._config({"arao1248": "sheet_id_1", "stan1293": "sheet_id_2"})
+        _verify_sheet_ids(_DoorwayStub(), config)  # no error
 
     def test_aborts_when_sheet_inaccessible(self):
-        manifest = self._manifest({"arao1248": "bad_id"})
-        doorway = _DoorwayStub(bad_ids={"bad_id"})
+        config = self._config({"arao1248": "bad_id"})
         with pytest.raises(SystemExit):
-            _verify_manifest_sheet_ids(doorway, manifest)
+            _verify_sheet_ids(_DoorwayStub(bad_ids={"bad_id"}), config)
 
     def test_aborts_on_any_bad_id_among_multiple(self):
-        manifest = self._manifest({"arao1248": "good_id", "stan1293": "bad_id"})
-        doorway = _DoorwayStub(bad_ids={"bad_id"})
+        config = self._config({"arao1248": "good_id", "stan1293": "bad_id"})
         with pytest.raises(SystemExit):
-            _verify_manifest_sheet_ids(doorway, manifest)
+            _verify_sheet_ids(_DoorwayStub(bad_ids={"bad_id"}), config)
 
-    def test_passes_empty_manifest(self):
-        _verify_manifest_sheet_ids(_DoorwayStub(), {})  # no error
+    def test_checks_only_the_language_asked_for(self):
+        config = self._config({"arao1248": "good_id", "stan1293": "bad_id"})
+        _verify_sheet_ids(_DoorwayStub(bad_ids={"bad_id"}), config, "arao1248")  # no error
 
-    def test_skips_entries_without_spreadsheet_id(self):
-        manifest = {
-            "arao1248": {
-                "sheets": {"ciscategorial": {"url": "https://example.com"}}
-            }
-        }
-        _verify_manifest_sheet_ids(_DoorwayStub(), manifest)  # no error
-
-    def test_skips_non_dict_lang_data(self):
-        manifest = {"_root_folder_id": "some_folder_id"}
-        _verify_manifest_sheet_ids(_DoorwayStub(), manifest)  # no error
+    def test_passes_an_id_file_with_no_languages(self):
+        _verify_sheet_ids(_DoorwayStub(), {"_root_folder_id": "some_folder_id"})  # no error
 
 
 # ---------------------------------------------------------------------------

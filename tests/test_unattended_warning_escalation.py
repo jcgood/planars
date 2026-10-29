@@ -160,12 +160,6 @@ _KNOWN_SITES: Dict[Site, str] = {
     ("generate_sheets.py", 'print(f"  [WARNING] Could not create notes doc for {lang_id}: {_notes_err}")', 1):
         "inside the interactive language-onboarding path (notes doc creation) "
         "-- not --regen-dependents",
-    ("generate_sheets.py", 'print(f"  [{lid}] WARNING: Could not fetch Glottolog metadata: {exc}")', 1):
-        "inside the interactive language-onboarding path (Glottolog fetch) -- "
-        "not --regen-dependents",
-    ("integrity_check.py", 'print(f"WARNING: Could not load manifest ({exc}) — skipping stale manifest check.")', 1):
-        "deliberately silent by design -- see the code comment: defers to "
-        "import-sheets' own import-error issue if Drive is genuinely down",
     ("validate_coding.py", 'print(f"  [{class_name}/{construction}] WARNING: keystone_active unresolved — treating as False")', 1):
         "advisory warning under sheet-validation.yml, whose documented "
         "convention (CLAUDE.md's sheet-validation label entry) is that advisory "

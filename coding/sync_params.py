@@ -38,11 +38,10 @@ Every added column goes where the diagnostics file lists it among the tab's crit
 integrity-check --sheets warns on any _split_ or _merged_ prefixed column headers
 (sheet_spec.PARKED_COLUMN_PREFIXES).
 
-The tab's own header, never the manifest, decides which columns are current,
-new or surplus. An existing column's dropdown is refresh-dropdowns' job,
-which reads the sheet itself (this command's --refresh-dropdowns, which
-trusted the manifest's copy of each criterion's values, was removed
-2026-10-23 with that copy). ``coded_data_clean_tree`` is enforced centrally (preconditions.py) before
+The tab's own header decides which columns are current, new or surplus. An
+existing column's dropdown is refresh-dropdowns' job, which reads the sheet
+itself (this command's --refresh-dropdowns was removed 2026-10-23). Nothing
+is recorded in the manifest: it is rebuilt from the sheets and the YAML. ``coded_data_clean_tree`` is enforced centrally (preconditions.py) before
 ``--apply`` reads the diagnostics and planar files.
 
 Reads: one open, one tab list and one batch of header rows per spreadsheet
@@ -71,10 +70,8 @@ from .make_forms import (
 from .validate_diagnostics import validate_diagnostics_yaml
 from .schemas import criteria_for, criterion_values
 from planars.schema_values import is_keystone
-from .drive import (
-    _load_drive_config, _save_drive_config,
-    load_manifest, upload_manifest,
-)
+from . import drive_ids
+from .drive import _load_drive_config
 from .drive_doorway import WorksheetHandle, get_doorway
 from .generate_sheets import CODED_DATA, dropdown_request
 from .sheet_spec import MERGED_PREFIX, SPLIT_PREFIX, parked_operation
@@ -593,7 +590,7 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     Compares expected param columns (from diagnostics_{lang_id}.yaml) against actual sheet headers, inserts new columns in the diagnostics
     file's order (_insert_at), optionally removes stale columns,
-    applies dropdown validation, and updates the Drive manifest if anything changed.
+    and applies dropdown validation. The class sheets are the ones in the ID file.
     In dry-run mode (no --apply) only prints what would change.
     """
     # args itself is unused below -- see build_parser()'s docstring.
@@ -617,10 +614,9 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     print("Connecting to Google APIs...")
     doorway = get_doorway()
-    manifest = load_manifest(doorway)
+    config = _load_drive_config()
 
     any_changes = False
-    manifest_changed = False
 
     for planar_file in planar_files:
         planar_dir = planar_file.parent
@@ -656,15 +652,12 @@ def main(args: argparse.Namespace | None = None) -> None:
         if merges:
             print(f"Merges:   {[f'{o1}:{o2}:{n}' for o1, o2, n in merges]}")
 
-        lang_data = manifest.get(lang_id, {})
-        sheets = lang_data.get("sheets", {})
-
-        for class_name, sheet_info in sheets.items():
+        for class_name, spreadsheet_id in drive_ids.class_sheets(config, lang_id).items():
             if class_name not in expected:
                 print(f"[{class_name}] Not in diagnostics_{lang_id}.yaml — skipping")
                 continue
 
-            ss = doorway.open_spreadsheet(sheet_info["spreadsheet_id"])
+            ss = doorway.open_spreadsheet(spreadsheet_id)
             # One read for the tab list and one for every header row, per
             # spreadsheet; a tab is re-read only after this run writes to it.
             tabs = {ws.title: ws for ws in ss.worksheets()}
@@ -689,14 +682,6 @@ def main(args: argparse.Namespace | None = None) -> None:
                                 _rename_column(ws, old_name, new_name)
                                 header = ws.row_values(1)
                                 any_changes = True
-                                # Update manifest construction_params
-                                cp = sheet_info.setdefault("construction_params", {})
-                                cp.setdefault(construction, {})
-                                param_names = cp[construction].get("param_names", [])
-                                cp[construction]["param_names"] = [
-                                    new_name if p == old_name else p for p in param_names
-                                ]
-                                manifest_changed = True
                                 print(f"    Renamed.")
                         else:
                             print(f"  [{class_name}/{construction}] Rename: {old_name} not found — skipping")
@@ -709,14 +694,6 @@ def main(args: argparse.Namespace | None = None) -> None:
                         if apply:
                             _apply_split_to_sheet(ws, old, new1, new2, default_vals, exp_params)
                             header = ws.row_values(1)
-                            cp = sheet_info.setdefault("construction_params", {})
-                            cp.setdefault(construction, {})
-                            pnames = [p for p in cp[construction].get("param_names", []) if p != old]
-                            for p in (new1, new2):
-                                if p not in pnames:
-                                    pnames.append(p)
-                            cp[construction]["param_names"] = pnames
-                            manifest_changed = True
                             any_changes = True
                             print(f"    Split applied.")
                     else:
@@ -732,14 +709,6 @@ def main(args: argparse.Namespace | None = None) -> None:
                         if apply:
                             _apply_merge_to_sheet(ws, old1, old2, new, default_vals, exp_params)
                             header = ws.row_values(1)
-                            cp = sheet_info.setdefault("construction_params", {})
-                            cp.setdefault(construction, {})
-                            pnames = [p for p in cp[construction].get("param_names", [])
-                                      if p not in (old1, old2)]
-                            if new not in pnames:
-                                pnames.append(new)
-                            cp[construction]["param_names"] = pnames
-                            manifest_changed = True
                             any_changes = True
                             print(f"    Merge applied.")
                     else:
@@ -759,20 +728,9 @@ def main(args: argparse.Namespace | None = None) -> None:
                     and not parked_operation(p)
                 ]
                 if not new_params and not removed_params:
-                    # Sheet columns match diagnostics. Sync param_names in manifest if needed.
-                    if apply:
-                        cp = sheet_info.setdefault("construction_params", {})
-                        existing_cp = cp.get(construction, {})
-                        if existing_cp.get("param_names") != exp_params:
-                            cp.setdefault(construction, {})["param_names"] = exp_params
-                            manifest_changed = True
-                            print(f"  [{class_name}/{construction}] Manifest param_names updated")
-                        else:
-                            if not renames and not splits and not merges:
-                                print(f"  [{class_name}/{construction}] OK — no changes")
-                    else:
-                        if not renames and not splits and not merges:
-                            print(f"  [{class_name}/{construction}] OK — no changes")
+                    # Sheet columns match diagnostics.
+                    if not renames and not splits and not merges:
+                        print(f"  [{class_name}/{construction}] OK — no changes")
                     continue
 
                 any_changes = True
@@ -781,10 +739,6 @@ def main(args: argparse.Namespace | None = None) -> None:
                     print(f"  [{class_name}/{construction}] New params: {new_params}")
                     if apply:
                         _insert_param_columns(ws, new_params, exp_values, exp_params)
-                        # Update manifest construction_params so Colab reads the right params.
-                        cp = sheet_info.setdefault("construction_params", {})
-                        cp.setdefault(construction, {})["param_names"] = exp_params
-                        manifest_changed = True
                         print(f"    Added: {new_params}")
 
                 if removed_params:
@@ -812,9 +766,6 @@ def main(args: argparse.Namespace | None = None) -> None:
                                     }
                                 }]})
                                 header.pop(col_idx)
-                        cp = sheet_info.setdefault("construction_params", {})
-                        cp.setdefault(construction, {})["param_names"] = exp_params
-                        manifest_changed = True
                         print(f"    Removed: {removed_params}")
                     else:
                         marker = "(pass --apply --remove to delete)" if apply else "(pass --remove with --apply)"
@@ -823,19 +774,6 @@ def main(args: argparse.Namespace | None = None) -> None:
                             f"diagnostics: {removed_params}\n    {marker}"
                         )
 
-
-    # Update the merged manifest.json on Drive if anything changed.
-    if apply and manifest_changed:
-        config = _load_drive_config()
-        # Ensure folder_id is present in each manifest entry.
-        for lid in manifest:
-            manifest[lid].setdefault("folder_id", config.get(lid, {}).get("folder_id", ""))
-        existing_file_id = config.get("_planars_config_file_id")
-        root_folder_id = config.get("_root_folder_id")
-        file_id = upload_manifest(doorway, manifest, root_folder_id, existing_file_id)
-        config["_planars_config_file_id"] = file_id
-        _save_drive_config(config)
-        print("\nManifest updated on Drive.")
 
     print()
     if not any_changes:

@@ -49,7 +49,7 @@ from typing import Callable, Dict, List
 import pytest
 
 from coding import drive as drive_module
-from coding import drive_doorway
+from coding import drive_doorway, drive_ids
 from coding import generate_notebooks as gn
 from coding import sync_params as sp
 from command_runner import run_command
@@ -75,20 +75,15 @@ class Env:
     """One stand-in Drive, one private copy of the language setup files."""
 
     def __init__(self, doorway: FakeDriveDoorway, coded: Path,
-                 saved_configs: List[dict],
                  notebook_calls: List[bool], run: Callable[[List[str]], str]) -> None:
         self.doorway = doorway
         self.coded = coded
-        self.saved_configs = saved_configs
         self.notebook_calls = notebook_calls
         self.run = run
 
-    # -- the manifest ---------------------------------------------------
-    def manifest(self) -> Dict:
-        return self.doorway.download_file_json(MANIFEST_FILE_ID)
-
+    # -- the ID file ----------------------------------------------------
     def sheet_id(self, lang: str, class_name: str) -> str:
-        return self.manifest()[lang]["sheets"][class_name]["spreadsheet_id"]
+        return drive_ids.class_sheet_id(FakeDriveDoorway.drive_config(), lang, class_name)
 
     def tab(self, lang: str, class_name: str, construction: str):
         return self.doorway.spreadsheet(
@@ -141,15 +136,12 @@ def env(monkeypatch, tmp_path):
         shutil.copytree(FROZEN_CODED_DATA / lang / "lang_setup",
                         coded / lang / "lang_setup")
 
-    saved_configs: List[dict] = []
     notebook_calls: List[bool] = []
 
     point_coded_data_at(monkeypatch, coded)
     monkeypatch.setattr(sp, "_load_drive_config", FakeDriveDoorway.drive_config)
     monkeypatch.setattr(drive_module, "_load_drive_config",
                         FakeDriveDoorway.drive_config)
-    monkeypatch.setattr(sp, "_save_drive_config",
-                        lambda cfg: saved_configs.append(cfg))
     monkeypatch.setattr(gn, "regenerate_notebooks",
                         lambda: notebook_calls.append(True))
     drive_doorway.set_doorway(doorway)
@@ -166,7 +158,7 @@ def env(monkeypatch, tmp_path):
         return buf.getvalue()
 
     try:
-        yield Env(doorway, coded, saved_configs, notebook_calls, run)
+        yield Env(doorway, coded, notebook_calls, run)
     finally:
         drive_doorway.reset_doorway()
 
@@ -297,19 +289,10 @@ def _drop_from_yaml(env, lang, class_name, criterion):
     env.edit_yaml(lang, lambda d: d["classes"][class_name]["criteria"].pop(criterion))
 
 
-def test_apply_with_a_real_change_saves_drive_config(env):
+def test_apply_with_a_real_change_removes_the_column_and_writes_no_manifest(env):
     _drop_from_yaml(env, "synth0001", "noninterruption", "multiple")
     env.run(["sync-params", "--apply", "--remove"])
-    # drive_config.json is only ever saved when the manifest was uploaded.
-    assert env.saved_configs, "expected --remove of the surplus column to change the manifest"
-    for cfg in env.saved_configs:
-        assert cfg.get("_planars_config_file_id") == MANIFEST_FILE_ID
-
-
-def test_a_dry_run_never_saves_drive_config(env):
-    env.add_criterion("arao1248", "ciscategorial", "PLACE-combines")
-    env.run(["sync-params"])
-    assert env.saved_configs == []
+    assert env.doorway.mutations_of("update_file") == []
 
 
 # ---------------------------------------------------------------------------
@@ -410,23 +393,12 @@ def test_a_second_identical_remove_is_a_no_op(env):
 
 
 # ---------------------------------------------------------------------------
-# The manifest
+# The manifest is not this command's
 # ---------------------------------------------------------------------------
 
-def test_manifest_upload_fires_when_something_changed(env):
+def test_manifest_is_never_written_even_when_something_changed(env):
     env.add_criterion("arao1248", "ciscategorial", "PLACE-combines")
     env.run(["sync-params", "--apply"])
-    assert [m["file_id"] for m in env.doorway.mutations_of("update_file")] \
-        == [MANIFEST_FILE_ID]
-
-
-def test_manifest_upload_is_absent_on_a_true_no_op_apply(env):
-    """A second apply with nothing left to do touches the manifest not at all."""
-    env.run(["sync-params", "--apply"])
-    env.doorway.clear_mutations()
-
-    env.run(["sync-params", "--apply"])
-
     assert env.doorway.mutations_of("update_file") == []
 
 

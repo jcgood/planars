@@ -8,9 +8,12 @@ Run from the repo root:
 What this does:
   1. Reads diagnostics_{lang_id}.yaml (or its TSV, if there is no YAML) for each
      language to discover analysis classes
-  2. Looks up the file ID of manifest.json on Drive (kept up to date by
-     generate-sheets and the sheet modification commands; this command only
-     reads its ID and does not write it)
+  2. Looks up the file ID of manifest.json on Drive, the copy of the sheet
+     records the published notebooks read (rebuilt from drive_config.json by
+     manifest_copy.publish: the daily refresh and every command that records
+     a new or retired sheet; this command only reads its ID from
+     drive_config.json, bakes it into the notebooks, and never reads or
+     writes the manifest itself)
   3. Generates domains_{lang_id}.ipynb for each language from the contributor template,
      with CONFIG_FILE_ID and LANG_ID baked in; uploads to each language's Drive folder
   4. Generates report_{lang_id}.ipynb for each language from the report template,
@@ -239,8 +242,8 @@ def _run_generation(apply: bool) -> None:
     """Core logic for notebook generation.
 
     In dry-run mode (apply=False) prints what would be generated without
-    touching Drive. In apply mode, uploads manifest.json, per-language
-    contributor notebooks, and the coordinator notebook.
+    touching Drive. In apply mode, uploads the per-language contributor and
+    report notebooks and the coordinator notebook.
 
     Args:
         apply: if True, connect to Drive and upload; if False, dry-run only.
@@ -281,9 +284,9 @@ def _run_generation(apply: bool) -> None:
             "No _root_folder_id in drive_config.json. Run setup-root-folder first."
         )
 
-    # manifest.json on Drive is maintained by generate-sheets and the sheet
-    # modification scripts. generate-notebooks only needs its file ID to bake into
-    # the notebooks — it does not write to manifest.json itself.
+    # manifest.json on Drive is rebuilt from drive_config.json by
+    # manifest_copy.publish. generate-notebooks only needs its file ID to bake into
+    # the notebooks — it does not read or write manifest.json itself.
     config_file_id = drive_config.get("_planars_config_file_id")
     if not config_file_id:
         raise SystemExit(

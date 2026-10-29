@@ -646,7 +646,7 @@ value_placeholders:
     free_entry: true
     meaning: anything, kept exactly as typed
   # Spelled "names" for history: it also takes numbers (2026-10-22). Renaming
-  # the spelling would change every language's diagnostics file and manifest.
+  # the spelling would change every language's diagnostics file and every sheet's tab headers.
   # sync-planar renumbers the numbers in these cells, and in
   # <position_number> cells, when the planar's numbers shift
   # (planars/position_cells.py).

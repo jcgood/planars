@@ -32,7 +32,7 @@ Language: arao1248
     [tso_clause_linkage] carry over 73; new blank 0
     (no changes — skipping)
 
-  proform: not in manifest, skipping (run python -m coding generate-sheets --apply first)
+  proform: no sheet in the ID file, skipping (run python -m coding generate-sheets --apply first)
 
 Language: stan1293
 
@@ -181,8 +181,6 @@ Language: synth0001
     [prescreening] carry over 142; new blank 0
     (no changes — skipping)
 
-Manifest updated on Drive.
-
 Done.
 
 --- Revalidating sheets ---
@@ -197,4 +195,3 @@ Done.
   [arao1248] https://drive.google.com/drive/folders/1XHQvux5Bxtvo3LMEdKo_KKU_ZLiB-GoU
   [stan1293] https://drive.google.com/drive/folders/1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3
   [synth0001] https://drive.google.com/drive/folders/1F9y3SyErwY7ieexHGUmv3k17TNFd2hOH
-Drive door (enforce): checked 1 write(s) to 1 tab(s) or file(s); 0 broke a rule.

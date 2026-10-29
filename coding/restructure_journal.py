@@ -4,11 +4,11 @@ sequences: the main per-class restructure loop (unit 1, 2026-08-17) and
 
 Phase 7 of the data layer redesign (issue #271) — "close the transaction gap."
 `restructure-sheets --apply` archives a class's old sheet, creates and populates
-its replacement, and updates the manifest, all live, with no rollback (#248).
-Killed mid-sequence, a re-run couldn't tell which of those steps had actually
-landed and would blindly retry a non-idempotent one (re-archiving an
+its replacement, and records it in the ID file, all live, with no rollback
+(#248). Killed mid-sequence, a re-run couldn't tell which of those steps had
+actually landed and would blindly retry a non-idempotent one (re-archiving an
 already-archived, already-locked sheet; re-creating a sheet that already
-exists but was never wired into the manifest).
+exists but was never recorded in the ID file).
 
 **Unit of journaling: one (language, class) restructure** — the level the
 per-class loop already treats as its own try-point. Each unit's entry records
@@ -17,7 +17,9 @@ to either finish forward from there or (only when safe — see below) undo it:
 
     OLD_SHEET_ARCHIVED    -- old sheet renamed, moved to _archived/, locked
     NEW_SHEET_CREATED      -- new sheet exists and is fully populated
-    (terminal, not stored) -- manifest updated locally AND uploaded to Drive
+    (terminal, not stored) -- ID file updated and saved (the manifest copy
+                              is then republished, but that is a copy: the
+                              daily refresh rebuilds it if a run stops first)
 
 A unit's entry is written *before* app state assumes a step succeeded and
 removed the moment the terminal state is reached, so **the journal file is
@@ -33,7 +35,7 @@ stays `(lang_id, class_name)` where `class_name` is the OLD class name (the
 one whose live sheet is actually being archived), and `detail` carries an
 extra `new_class_name` so recovery code and coordinator-facing reports can
 tell a rename apart and name both sides. The rename's own extra steps (local
-TSV directory rename, manifest key swap old->new instead of a value update)
+TSV directory rename, ID file key swap old->new instead of a value update)
 are deliberately treated as part of *finishing* NEW_SHEET_CREATED, not
 their own checkpoint -- neither is unsafe to redo or skip if a crash lands
 between them, unlike archiving or creating a sheet, so giving them a
@@ -58,8 +60,11 @@ A plain run and `--rename-class` both refuse to start while any unit, rename
 or not, is stuck. `format_incomplete_report()` is the summary
 `restructure_sheets.py` prints when it refuses: it names each stuck class
 (`old -> new` for a rename) and whether `--rollback` or `--resume` applies.
-The journal is cleared for a unit only after the manifest has been uploaded
-to Drive, which is why the local write and the upload are not two checkpoints.
+The journal is cleared for a unit only after the ID file has been saved,
+which is why recording the sheet and saving the file are not two checkpoints.
+A NEW_SHEET_CREATED entry's detail holds what finishing needs: the new
+sheet's ``spreadsheet_id``, ``url`` and ``version`` (and ``new_class_name``
+for a rename).
 """
 from __future__ import annotations
 
@@ -111,8 +116,8 @@ def record_checkpoint(lang_id: str, class_name: str, checkpoint: str, **detail) 
     succeeds -- e.g. right after `_lock_archived_sheet` returns for
     OLD_SHEET_ARCHIVED, right after the new sheet's tabs/status/reference are
     all written for NEW_SHEET_CREATED. `**detail` is whatever a resume or
-    rollback of this unit will need (spreadsheet IDs, version numbers,
-    construction params) -- see the callers in restructure_sheets.py for
+    rollback of this unit will need (spreadsheet IDs, version numbers)
+    -- see the callers in restructure_sheets.py for
     exactly what each checkpoint stores.
     """
     journal = load_journal()
@@ -127,7 +132,7 @@ def record_checkpoint(lang_id: str, class_name: str, checkpoint: str, **detail) 
 
 def clear_unit(lang_id: str, class_name: str) -> None:
     """Remove a unit's entry -- call once it reaches the terminal state
-    (manifest updated locally AND uploaded to Drive) or has been rolled back.
+    (ID file updated and saved) or has been rolled back.
     """
     journal = load_journal()
     journal.pop(_unit_key(lang_id, class_name), None)
@@ -169,7 +174,7 @@ def format_incomplete_report(journal: Dict[str, dict]) -> str:
         elif checkpoint == NEW_SHEET_CREATED:
             lines.append(
                 f"  [{lang_id}] {label}: new sheet created and populated, "
-                f"but the manifest was never updated to point at it -- it's "
+                f"but the ID file was never updated to point at it -- it's "
                 f"currently invisible to every other command. Run with --resume "
                 f"to finish (rollback isn't offered here -- the new sheet holds "
                 f"real carried-over data)."

@@ -21,21 +21,37 @@ from coding.notify import (
 # ---------------------------------------------------------------------------
 
 def test_first_change_creates_a_labelled_issue_and_records_it(github):
-    manifest = {"stan1293": {}}
-    number, created = ensure_notification_issue("stan1293", manifest)
+    config = {"stan1293": {}}
+    number, created = ensure_notification_issue("stan1293", config)
     assert created
-    assert manifest["stan1293"]["notification_issue"] == number
+    assert config["stan1293"]["notification_issue"] == number
     _, _, title, label, _ = github.calls_of("create")[0]
     assert (title, label) == ("Sheet updates — stan1293", "sheet-updates")
 
 
 def test_later_changes_reuse_the_recorded_issue_even_when_closed(github):
     number = github.seed_issue("Sheet updates — stan1293", "sheet-updates", state="CLOSED")
-    manifest = {"stan1293": {"notification_issue": number}}
-    assert ensure_notification_issue("stan1293", manifest) == (number, False)
+    config = {"stan1293": {"notification_issue": number}}
+    assert ensure_notification_issue("stan1293", config) == (number, False)
     post_notification_comment(number, "hello")
     assert github.comments[number] == ["hello"]
     assert github.calls_of("create") == []
+
+
+def test_a_lost_number_finds_the_open_issue_instead_of_making_a_duplicate(github):
+    number = github.seed_issue("Sheet updates — arao1248", "sheet-updates")
+    config = {"arao1248": {}}
+    assert ensure_notification_issue("arao1248", config) == (number, True)
+    assert config["arao1248"]["notification_issue"] == number
+    assert github.calls_of("create") == []
+
+
+def test_another_languages_open_issue_is_not_taken(github):
+    github.seed_issue("Sheet updates — stan1293", "sheet-updates")
+    config = {"arao1248": {}}
+    number, created = ensure_notification_issue("arao1248", config)
+    assert created and config["arao1248"]["notification_issue"] == number
+    assert len(github.calls_of("create")) == 1
 
 
 # ---------------------------------------------------------------------------
@@ -73,27 +89,27 @@ def test_changed_lang_ids_multiple_languages_first_seen_order():
 # ---------------------------------------------------------------------------
 
 def test_get_notification_issue_present():
-    manifest = {"stan1293": {"notification_issue": 243}}
-    assert get_notification_issue("stan1293", manifest) == 243
+    config = {"stan1293": {"notification_issue": 243}}
+    assert get_notification_issue("stan1293", config) == 243
 
 
 def test_get_notification_issue_absent_lang_field():
-    manifest = {"stan1293": {}}
-    assert get_notification_issue("stan1293", manifest) is None
+    config = {"stan1293": {}}
+    assert get_notification_issue("stan1293", config) is None
 
 
 def test_get_notification_issue_absent_lang_entirely():
-    manifest = {}
-    assert get_notification_issue("stan1293", manifest) is None
+    config = {}
+    assert get_notification_issue("stan1293", config) is None
 
 
 def test_get_notification_issue_does_not_confuse_languages():
-    manifest = {
+    config = {
         "stan1293": {"notification_issue": 243},
         "arao1248": {"notification_issue": 250},
     }
-    assert get_notification_issue("arao1248", manifest) == 250
-    assert get_notification_issue("stan1293", manifest) == 243
+    assert get_notification_issue("arao1248", config) == 250
+    assert get_notification_issue("stan1293", config) == 243
 
 
 # ---------------------------------------------------------------------------
@@ -111,9 +127,10 @@ def test_build_first_issue_body_says_subscribe_rather_than_watch_the_repository(
     assert "rather than watching the repository" in body
 
 
-def test_build_first_issue_body_mentions_manifest_field():
+def test_build_first_issue_body_names_the_id_file_field():
     body = build_first_issue_body("stan1293")
-    assert "sheets_manifest.json" in body
+    assert "drive_config.json" in body
+    assert "sheets_manifest.json" not in body
     assert "notification_issue" in body
 
 

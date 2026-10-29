@@ -1,5 +1,4 @@
 Connecting to Google APIs...
-Manifest backed up to manifest_backup.json (2 language(s))
 
 Language:    arao1248
 Planar file: planar_arao1248.tsv

@@ -33,7 +33,7 @@ from planars.schema_values import (
     STATUS_STATUS_COLUMN, STATUS_TAB, STATUS_VALUES,
 )
 
-from .drive import load_manifest
+from . import drive, drive_ids
 from .drive_doorway import get_doorway
 from .schemas import load_diagnostic_classes
 from .validate_coding import read_status_tab, write_status
@@ -64,12 +64,11 @@ def _waiting_dependents(class_name: str, construction: str) -> List[str]:
 def main(args: Optional[argparse.Namespace] = None) -> None:
     args = args or build_parser().parse_args()
     doorway = get_doorway()
-    sheets = load_manifest(doorway).get(args.lang, {}).get("sheets", {})
-    info = sheets.get(args.class_name)
-    if not info:
-        sys.exit(f"{args.lang} has no {args.class_name} sheet in the manifest "
+    sheets = drive_ids.class_sheets(drive._load_drive_config(), args.lang)
+    if args.class_name not in sheets:
+        sys.exit(f"{args.lang} has no {args.class_name} sheet in the ID file "
                  f"(its classes: {', '.join(sorted(sheets)) or 'none'}).")
-    ss = doorway.open_spreadsheet(info["spreadsheet_id"])
+    ss = doorway.open_spreadsheet(sheets[args.class_name])
     ws, rows = read_status_tab(ss)
     if ws is None or not rows:
         sys.exit(f"The {args.class_name} sheet for {args.lang} has no {STATUS_TAB} tab; "

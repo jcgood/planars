@@ -206,7 +206,7 @@ def _renumber_class_sheets(lang_id: str, old_df: pd.DataFrame, new_df: pd.DataFr
     from gspread.utils import rowcol_to_a1
 
     from . import drive_door
-    from .drive import load_manifest
+    from . import drive, drive_ids
     from .drive_doorway import get_doorway
     from .locked_tabs import system_tab_titles
     from .schemas import position_criteria
@@ -219,12 +219,9 @@ def _renumber_class_sheets(lang_id: str, old_df: pd.DataFrame, new_df: pd.DataFr
     system_tabs = set(system_tab_titles())
 
     doorway = get_doorway()
-    try:
-        manifest = load_manifest(doorway)
-    except SystemExit as exc:   # no manifest at all: no class sheets made yet
-        print(f"  no class sheets to renumber ({exc})")
-        manifest = {}
-    sheets = (manifest or {}).get(lang_id, {}).get("sheets", {})
+    sheets = drive_ids.class_sheets(drive._load_drive_config(), lang_id)
+    if not sheets:
+        print("  no class sheets to renumber (the language has none in the ID file)")
     record = _load_renumbering()
     done = record.get(lang_id, {})
     changed, unresolved = [], []
@@ -237,10 +234,7 @@ def _renumber_class_sheets(lang_id: str, old_df: pd.DataFrame, new_df: pd.DataFr
         record[lang_id] = done
         _save_renumbering(record)
 
-    for class_name, info in sorted(sheets.items()):
-        sid = info.get("spreadsheet_id") or info.get("id")
-        if not sid:
-            continue
+    for class_name, sid in sorted(sheets.items()):
         entry = done.get(sid, {})
         ss = doorway.open_spreadsheet(sid)
         if apply and "pending" in entry:

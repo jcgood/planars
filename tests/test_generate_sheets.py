@@ -13,7 +13,8 @@ Covers:
     algorithm (free_occurrence-derived core near the keystone, the language's own
     obligatory_positions list outside it)
   - _plan_language_creation: generate-sheets' dry-run planning core -- what would
-    be created/updated for one language, from manifest data only, no Drive calls
+    be created/updated for one language, from the ID file's entry and the tabs
+    each class sheet has, no Drive calls
 """
 from __future__ import annotations
 
@@ -42,40 +43,33 @@ from coding.generate_sheets import (
 
 class TestCheckForceAgainstExistingSheets:
     def test_raises_when_force_and_sheets_exist(self):
-        existing = {"sheets": {"ciscategorial": {"spreadsheet_id": "abc"}}}
+        existing = {"ciscategorial": "abc"}
         with pytest.raises(SystemExit):
-            _check_force_against_existing_sheets("arao1248", force=True, existing_lang_data=existing)
+            _check_force_against_existing_sheets("arao1248", force=True, class_sheets=existing)
 
     def test_passes_when_force_but_no_sheets(self):
         # --force on a brand-new language with no sheets yet is fine.
-        _check_force_against_existing_sheets("newlang", force=True, existing_lang_data={})
-
-    def test_passes_when_force_and_sheets_key_empty(self):
-        # sheets dict exists but is empty — no sheets to protect.
-        _check_force_against_existing_sheets("arao1248", force=True, existing_lang_data={"sheets": {}})
+        _check_force_against_existing_sheets("newlang", force=True, class_sheets={})
 
     def test_passes_when_no_force_and_sheets_exist(self):
         # Normal (non-force) run with existing sheets — should not raise.
-        existing = {"sheets": {"ciscategorial": {"spreadsheet_id": "abc"}}}
-        _check_force_against_existing_sheets("arao1248", force=False, existing_lang_data=existing)
+        existing = {"ciscategorial": "abc"}
+        _check_force_against_existing_sheets("arao1248", force=False, class_sheets=existing)
 
     def test_passes_when_no_force_and_no_sheets(self):
-        _check_force_against_existing_sheets("newlang", force=False, existing_lang_data={})
+        _check_force_against_existing_sheets("newlang", force=False, class_sheets={})
 
     def test_error_message_names_lang_id(self, capsys):
-        existing = {"sheets": {"ciscategorial": {"spreadsheet_id": "abc"}}}
+        existing = {"ciscategorial": "abc"}
         with pytest.raises(SystemExit):
-            _check_force_against_existing_sheets("arao1248", force=True, existing_lang_data=existing)
+            _check_force_against_existing_sheets("arao1248", force=True, class_sheets=existing)
         out = capsys.readouterr().out
         assert "arao1248" in out
 
     def test_error_message_names_existing_classes(self, capsys):
-        existing = {"sheets": {
-            "ciscategorial": {"spreadsheet_id": "abc"},
-            "stress": {"spreadsheet_id": "def"},
-        }}
+        existing = {"ciscategorial": "abc", "stress": "def"}
         with pytest.raises(SystemExit):
-            _check_force_against_existing_sheets("stan1293", force=True, existing_lang_data=existing)
+            _check_force_against_existing_sheets("stan1293", force=True, class_sheets=existing)
         out = capsys.readouterr().out
         assert "ciscategorial" in out
         assert "stress" in out
@@ -509,8 +503,9 @@ class TestRegenDependentsSimple:
         dep = d / "general.tsv"
         return source, dep
 
-    def _manifest(self, lang_id: str) -> dict:
-        return {lang_id: {"sheets": {"nonpermutability": {"spreadsheet_id": "fake_id"}}}}
+    def _config(self, lang_id: str) -> dict:
+        """The ID file with one class sheet for the language."""
+        return {lang_id: {"class_sheets": {"nonpermutability": {"id": "fake_id", "version": 1}}}}
 
     def test_skips_when_dep_tsv_has_rows(self, tmp_path, monkeypatch):
         monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
@@ -521,7 +516,7 @@ class TestRegenDependentsSimple:
         dep.write_text("Element_A\tElement_B\tscopal\na\tb\t\n", encoding="utf-8")
 
         with patch.object(_gs, "_regen_construction") as mock_regen:
-            _regen_dependents_simple(MagicMock(), self._manifest("lang0001"))
+            _regen_dependents_simple(MagicMock(), self._config("lang0001"))
         mock_regen.assert_not_called()
 
     def test_empty_dep_waits_while_source_in_progress(self, tmp_path, monkeypatch, capsys):
@@ -533,7 +528,7 @@ class TestRegenDependentsSimple:
         dep.write_text("Element_A\tElement_B\tscopal\n", encoding="utf-8")
 
         with patch.object(_gs, "_regen_construction") as mock_regen:
-            _regen_dependents_simple(MagicMock(), self._manifest("lang0001"))
+            _regen_dependents_simple(MagicMock(), self._config("lang0001"))
         mock_regen.assert_not_called()
         assert "waiting for 'element_prescreening'" in capsys.readouterr().out
 
@@ -549,7 +544,7 @@ class TestRegenDependentsSimple:
         dep.write_text("Element_A\tElement_B\tscopal\n", encoding="utf-8")
 
         with patch.object(_gs, "_regen_construction") as mock_regen:
-            failures = _regen_dependents_simple(MagicMock(), self._manifest("lang0001"))
+            failures = _regen_dependents_simple(MagicMock(), self._config("lang0001"))
         mock_regen.assert_called_once()
         assert mock_regen.mock_calls[0][1][3] == "general"
         assert failures == []
@@ -564,7 +559,7 @@ class TestRegenDependentsSimple:
         doorway.open_spreadsheet.side_effect = RuntimeError("no access")
 
         with patch.object(_gs, "_regen_construction") as mock_regen:
-            _regen_dependents_simple(doorway, self._manifest("lang0001"))
+            _regen_dependents_simple(doorway, self._config("lang0001"))
         mock_regen.assert_not_called()
 
     def test_skips_when_source_tsv_absent(self, tmp_path, monkeypatch):
@@ -573,7 +568,7 @@ class TestRegenDependentsSimple:
         (tmp_path / "lang0001" / "nonpermutability").mkdir(parents=True)
 
         with patch.object(_gs, "_regen_construction") as mock_regen:
-            _regen_dependents_simple(MagicMock(), self._manifest("lang0001"))
+            _regen_dependents_simple(MagicMock(), self._config("lang0001"))
         mock_regen.assert_not_called()
 
     def test_regenerates_when_dep_tsv_absent(self, tmp_path, monkeypatch):
@@ -583,7 +578,7 @@ class TestRegenDependentsSimple:
         source.write_text("Element\tscopal\na\ty\n", encoding="utf-8")
 
         with patch.object(_gs, "_regen_construction") as mock_regen:
-            failures = _regen_dependents_simple(MagicMock(), self._manifest("lang0001"))
+            failures = _regen_dependents_simple(MagicMock(), self._config("lang0001"))
         mock_regen.assert_called_once()
         _, call_args, _ = mock_regen.mock_calls[0]
         assert call_args[1] == "lang0001"
@@ -591,14 +586,14 @@ class TestRegenDependentsSimple:
         assert call_args[3] == "general"
         assert failures == []
 
-    def test_skips_lang_not_in_manifest(self, tmp_path, monkeypatch):
+    def test_skips_lang_not_in_the_id_file(self, tmp_path, monkeypatch):
         monkeypatch.setattr(_gs, "CODED_DATA", tmp_path)
         monkeypatch.setattr(_gs, "load_diagnostic_classes", lambda: _NONPERM_SCHEMA)
         source, _ = self._setup_lang(tmp_path, "lang0001")
         source.write_text("Element\tscopal\na\ty\n", encoding="utf-8")
 
         with patch.object(_gs, "_regen_construction") as mock_regen:
-            _regen_dependents_simple(MagicMock(), {})  # empty manifest
+            _regen_dependents_simple(MagicMock(), {})  # empty ID file
         mock_regen.assert_not_called()
 
     def test_a_regen_failure_is_returned_not_only_printed(self, tmp_path, monkeypatch, capsys):
@@ -613,7 +608,7 @@ class TestRegenDependentsSimple:
         source.write_text("Element\tscopal\na\ty\n", encoding="utf-8")
 
         with patch.object(_gs, "_regen_construction", side_effect=RuntimeError("boom")) as mock_regen:
-            failures = _regen_dependents_simple(MagicMock(), self._manifest("lang0001"))
+            failures = _regen_dependents_simple(MagicMock(), self._config("lang0001"))
         mock_regen.assert_called_once()
         assert failures == ["lang0001/nonpermutability/general: boom"]
         assert "ERROR: boom" in capsys.readouterr().out
@@ -1046,7 +1041,8 @@ class TestBuildPhrasalAccentPairs:
 
 
 class TestPlanLanguageCreation:
-    """generate-sheets' dry-run gate: what would be created, from manifest data only.
+    """generate-sheets' dry-run gate: what would be created, from the ID file's
+    entry for the language and the tabs each class sheet has.
 
     Fixes the gap where generate-sheets had no --apply/dry-run distinction at all
     (unlike every other mutating command) -- an accidental live sheet creation during
@@ -1062,8 +1058,13 @@ class TestPlanLanguageCreation:
         ],
     }
 
+    _IDS = {"folder_id": "f1", "notes_doc_id": "n1",
+            "planar_spreadsheet_id": "p1", "diagnostics_spreadsheet_id": "d1"}
+    _ALL_TABS = {"ciscategorial": ["general"],
+                 "coreference": ["prescreening", "reflexive_coreference"]}
+
     def test_brand_new_language_needs_everything(self):
-        plan = _plan_language_creation(self._ALL_CLASSES, {}, force=False)
+        plan = _plan_language_creation(self._ALL_CLASSES, {}, {})
         assert plan["needs_folder"]
         assert plan["needs_notes_doc"]
         assert plan["needs_planar_sheet"]
@@ -1073,17 +1074,7 @@ class TestPlanLanguageCreation:
         assert plan["anything"]
 
     def test_fully_existing_language_needs_nothing(self):
-        existing_lang_data = {
-            "folder_id": "f1",
-            "notes_doc_id": "n1",
-            "planar_spreadsheet_id": "p1",
-            "diagnostics_spreadsheet_id": "d1",
-            "sheets": {
-                "ciscategorial": {"constructions": ["general"]},
-                "coreference": {"constructions": ["prescreening", "reflexive_coreference"]},
-            },
-        }
-        plan = _plan_language_creation(self._ALL_CLASSES, existing_lang_data, force=False)
+        plan = _plan_language_creation(self._ALL_CLASSES, self._IDS, self._ALL_TABS)
         assert not plan["needs_folder"]
         assert not plan["needs_notes_doc"]
         assert not plan["needs_planar_sheet"]
@@ -1096,57 +1087,34 @@ class TestPlanLanguageCreation:
         """The exact scenario that motivated this: synth0001 already had some
         classes' sheets, but nonpermutability/coreference/etc. had never been
         created at all."""
-        existing_lang_data = {
-            "folder_id": "f1", "notes_doc_id": "n1",
-            "planar_spreadsheet_id": "p1", "diagnostics_spreadsheet_id": "d1",
-            "sheets": {"ciscategorial": {"constructions": ["general"]}},
-        }
-        plan = _plan_language_creation(self._ALL_CLASSES, existing_lang_data, force=False)
+        plan = _plan_language_creation(self._ALL_CLASSES, self._IDS,
+                                       {"ciscategorial": ["general"]})
         assert plan["new_classes"] == ["coreference"]
         assert plan["new_constructions"] == {}
         assert plan["anything"]
         assert not plan["needs_folder"]  # folder already exists -- must not be recreated
 
     def test_new_construction_on_existing_class(self):
-        existing_lang_data = {
-            "folder_id": "f1", "notes_doc_id": "n1",
-            "planar_spreadsheet_id": "p1", "diagnostics_spreadsheet_id": "d1",
-            "sheets": {
-                "ciscategorial": {"constructions": ["general"]},
-                "coreference": {"constructions": ["prescreening"]},  # reflexive_coreference missing
-            },
+        tabs = {
+            "ciscategorial": ["general"],
+            "coreference": ["prescreening"],  # reflexive_coreference missing
         }
-        plan = _plan_language_creation(self._ALL_CLASSES, existing_lang_data, force=False)
+        plan = _plan_language_creation(self._ALL_CLASSES, self._IDS, tabs)
         assert plan["new_classes"] == []
         assert plan["new_constructions"] == {"coreference": ["reflexive_coreference"]}
         assert plan["anything"]
 
-    def test_force_leaves_existing_planar_and_diagnostics_sheets_alone(self):
+    def test_existing_planar_and_diagnostics_sheets_are_not_remade(self):
         """They are read-only copies kept current by sync-planar and
         sync-diagnostics-yaml (unit 11b); --force once rewrote them."""
-        existing_lang_data = {
-            "folder_id": "f1", "notes_doc_id": "n1",
-            "planar_spreadsheet_id": "p1", "diagnostics_spreadsheet_id": "d1",
-            "sheets": {
-                "ciscategorial": {"constructions": ["general"]},
-                "coreference": {"constructions": ["prescreening", "reflexive_coreference"]},
-            },
-        }
-        plan = _plan_language_creation(self._ALL_CLASSES, existing_lang_data, force=True)
+        plan = _plan_language_creation(self._ALL_CLASSES, self._IDS, self._ALL_TABS)
         assert not plan["needs_planar_sheet"]
         assert not plan["needs_diagnostics_sheet"]
-        # force doesn't fabricate new classes/constructions that don't exist
         assert plan["new_classes"] == []
         assert plan["new_constructions"] == {}
 
     def test_missing_folder_alone_is_enough_to_need_action(self):
-        existing_lang_data = {
-            "notes_doc_id": "n1", "planar_spreadsheet_id": "p1", "diagnostics_spreadsheet_id": "d1",
-            "sheets": {
-                "ciscategorial": {"constructions": ["general"]},
-                "coreference": {"constructions": ["prescreening", "reflexive_coreference"]},
-            },
-        }
-        plan = _plan_language_creation(self._ALL_CLASSES, existing_lang_data, force=False)
+        ids = {k: v for k, v in self._IDS.items() if k != "folder_id"}
+        plan = _plan_language_creation(self._ALL_CLASSES, ids, self._ALL_TABS)
         assert plan["needs_folder"]
         assert plan["anything"]

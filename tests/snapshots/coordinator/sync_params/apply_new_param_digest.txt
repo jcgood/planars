@@ -1,12 +1,8 @@
 SUMMARY
      2  batch_request
      1  update
-     1  update_file
      1    └─ insertDimension
      1    └─ setDataValidation
-
-DRIVE OPERATIONS
-  update_file: file_id='fake_manifest_file', bytes=40462
 
 SHEET OPERATIONS
 

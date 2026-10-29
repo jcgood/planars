@@ -17,14 +17,12 @@ Splits:   ['free:free_left:free_right']
   [ciscategorial/general] Split: free not found — skipping
   [noninterruption/general] Split: free -> free_left, free_right
     Split applied.
-  [noninterruption/general] Manifest param_names updated
   [subspanrepetition/auxiliary_construction] Split: free not found — skipping
   [subspanrepetition/tso_clause_linkage] Split: free not found — skipping
   [nonpermutability/element_prescreening] Split: free not found — skipping
   [nonpermutability/general] Split: free not found — skipping
   [free_occurrence/general] Split: free -> free_left, free_right
     Split applied.
-  [free_occurrence/general] Manifest param_names updated
   [noninterruption] diagnostics criteria: 'free{y/n}, multiple{y/n}' -> 'free_left{y/n}, free_right{y/n}, multiple{y/n}'
   [free_occurrence] diagnostics criteria: 'free{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}' -> 'free_left{y/n}, free_right{y/n}, left-edge-of-free-form{y/n/na}, right-edge-of-free-form{y/n/na}, dependent-on-left{na/<position_number>}, dependent-on-right{na/<position_number>}'
   [stan1293] YAML updated → diagnostics_stan1293.yaml
@@ -47,13 +45,11 @@ Splits:   ['free:free_left:free_right']
   [subspanrepetition/asyndeticPart] Split: free not found — skipping
   [noninterruption/general] Split: free -> free_left, free_right
     Split applied.
-  [noninterruption/general] Manifest param_names updated
   [segmental/aspiration_prominence] Split: free not found — skipping
   [segmental/flapping] Split: free not found — skipping
   [metrical/stress_domain] Split: free not found — skipping
   [free_occurrence/general] Split: free -> free_left, free_right
     Split applied.
-  [free_occurrence/general] Manifest param_names updated
   [nonpermutability/element_prescreening] Split: free not found — skipping
   [nonpermutability/general] Split: free not found — skipping
   [coreference/prescreening] Split: free not found — skipping
@@ -89,7 +85,6 @@ Splits:   ['free:free_left:free_right']
   [subspanrepetition/asyndeticPart] Split: free not found — skipping
   [noninterruption/general] Split: free -> free_left, free_right
     Split applied.
-  [noninterruption/general] Manifest param_names updated
   [segmental/aspiration_prominence] Split: free not found — skipping
   [segmental/flapping] Split: free not found — skipping
   [metrical/stress_domain] Split: free not found — skipping
@@ -97,7 +92,6 @@ Splits:   ['free:free_left:free_right']
   [nonpermutability/general] Split: free not found — skipping
   [free_occurrence/general] Split: free -> free_left, free_right
     Split applied.
-  [free_occurrence/general] Manifest param_names updated
   [coreference/prescreening] Split: free not found — skipping
   [coreference/reflexive_coreference] Split: free not found — skipping
   [coreference/pronoun_coreference] Split: free not found — skipping
@@ -107,7 +101,5 @@ Splits:   ['free:free_left:free_right']
   [phrasal_accent/prescreening] Split: free not found — skipping
   [phrasal_accent/general] Split: free not found — skipping
 
-Manifest updated on Drive.
-
-Drive door (enforce): checked 43 write(s) to 7 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 42 write(s) to 6 tab(s) or file(s); 0 broke a rule.
 Local-file door: changed 3 file(s), previous versions archived and logged.

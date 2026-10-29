@@ -58,14 +58,19 @@ def env(monkeypatch, tmp_path):
     """
     doorway = FakeDriveDoorway.from_fixtures()
     use_frozen_coded_data(monkeypatch, tmp_path)
-    config = {"_planars_config_file_id": MANIFEST_FILE_ID,
-              "_root_folder_id": ROOT_FOLDER_ID}
+    # The ID file the command reads; a test changes it through run.config, and
+    # a save by the command lands in it (and in `saved`).
+    config = FakeDriveDoorway.drive_config()
     saved: Dict = {}
-    # sheets_manifest.json lives at the repo root; never let a test write it.
-    monkeypatch.setattr(gen, "MANIFEST_PATH", tmp_path / "sheets_manifest.json")
+
+    def save(new):
+        saved.update(new)
+        config.clear()
+        config.update(json.loads(json.dumps(new)))
+
     monkeypatch.setattr(gen, "_load_drive_config",
                         lambda: json.loads(json.dumps(config)))
-    monkeypatch.setattr(gen, "_save_drive_config", saved.update)
+    monkeypatch.setattr(gen, "_save_drive_config", save)
     monkeypatch.setattr(drive_module, "_load_drive_config",
                         lambda: json.loads(json.dumps(config)))
     drive_doorway.set_doorway(doorway)
@@ -83,6 +88,7 @@ def env(monkeypatch, tmp_path):
         out = re.sub(r"fake_file_\d+", "NEW_FOLDER_ID", out)
         return out
 
+    run.config = config
     try:
         yield doorway, run, saved
     finally:
@@ -210,23 +216,25 @@ def test_a_second_run_reuses_the_same_folder_and_spreadsheet(env):
     assert doorway.mutations_of("move_file") == []
 
 
-def test_the_manifest_records_where_the_sheet_is(env):
+def test_the_id_file_records_where_the_sheet_is(env):
     doorway, run, _ = env
     out = run(["gen", "--lang", "arao1248", "--apply"])
     ss = the_sheet(doorway, "status_arao1248")
+    assert run.config["arao1248"]["status_sheet_id"] == ss.id
+    # A new status sheet link is in the manifest copy, so it is republished.
+    assert "Manifest copy republished" in out
     manifest = doorway.download_file_json(MANIFEST_FILE_ID)
     assert manifest["arao1248"]["status_sheet_url"] == ss.url
-    assert "Manifest updated on Drive (status_sheet_url)." in out
 
 
-def test_a_second_run_with_no_url_change_does_not_rewrite_the_manifest(env):
+def test_a_second_run_with_no_new_sheet_does_not_republish_the_manifest(env):
     doorway, run, _ = env
     run(["gen", "--lang", "arao1248", "--apply"])
     doorway.clear_mutations()
 
     out = run(["gen", "--lang", "arao1248", "--apply"])
     assert doorway.mutations_of("update_file") == []
-    assert "Manifest updated on Drive" not in out
+    assert "Manifest copy republished" not in out
 
 
 # ---------------------------------------------------------------------------
@@ -310,9 +318,7 @@ def test_yellow_for_a_not_yet_complete_construction(env):
 
 def test_gray_for_a_missing_sheet(env):
     doorway, run, _ = env
-    manifest = doorway.download_file_json(MANIFEST_FILE_ID)
-    del manifest["arao1248"]["sheets"]["noninterruption"]
-    doorway.file(MANIFEST_FILE_ID).content = json.dumps(manifest).encode("utf-8")
+    del run.config["arao1248"]["class_sheets"]["noninterruption"]
 
     run(["gen", "--lang", "arao1248", "--apply"])
     ss = the_sheet(doorway, "status_arao1248")
@@ -346,9 +352,8 @@ def test_green_for_a_fully_complete_pair_row_construction(env):
     rather than relying on a captured tab that happens to be complete (the one
     this used to rely on, phrasal_accent/general, was rebuilt empty)."""
     doorway, run, _ = env
-    manifest = doorway.download_file_json(MANIFEST_FILE_ID)
-    sid = manifest["stan1293"]["sheets"]["nonpermutability"]["spreadsheet_id"]
-    tab = doorway.spreadsheet(sid).worksheet("general")
+    sid = run.config["stan1293"]["class_sheets"]["nonpermutability"]["id"]
+    tab =doorway.spreadsheet(sid).worksheet("general")
     values = tab.get_all_values()
     col = values[0].index("scopal")
     for r in range(1, len(values)):
@@ -372,15 +377,13 @@ def test_the_folder_link_in_the_banner_is_a_hyperlink_formula(env):
     ss = the_sheet(doorway, "status_arao1248")
     ws = ss.worksheet("Status")
     values = ws.get_all_values()
-    folder_url = doorway.download_file_json(MANIFEST_FILE_ID)["arao1248"]["folder_url"]
+    folder_url = "https://drive.google.com/drive/folders/" + run.config["arao1248"]["folder_id"]
     assert values[2][0] == f'=HYPERLINK("{folder_url}", "📁 Annotation folder for Araona [arao1248]")'
 
 
 def test_the_banner_links_each_chart_pdf_on_drive(env, monkeypatch):
     doorway, run, _ = env
-    config = {"_planars_config_file_id": MANIFEST_FILE_ID, "_root_folder_id": ROOT_FOLDER_ID,
-              "arao1248": {"charts_classes_file_id": "CLS", "charts_types_file_id": "TYP"}}
-    monkeypatch.setattr(gen, "_load_drive_config", lambda: json.loads(json.dumps(config)))
+    run.config["arao1248"].update(charts_classes_file_id="CLS", charts_types_file_id="TYP")
     run(["gen", "--lang", "arao1248", "--apply"])
     values = the_sheet(doorway, "status_arao1248").worksheet("Status").get_all_values()
     assert values[3][0].startswith('=HYPERLINK("https://drive.google.com/file/d/CLS/view", "📊 Charts by class')
@@ -393,9 +396,7 @@ def test_a_longer_banner_leaves_no_formatting_from_the_last_build(env, monkeypat
     old header's bold stayed on the second link."""
     doorway, run, _ = env
     run(["gen", "--lang", "arao1248", "--apply"])
-    config = {"_planars_config_file_id": MANIFEST_FILE_ID, "_root_folder_id": ROOT_FOLDER_ID,
-              "arao1248": {"charts_classes_file_id": "CLS", "charts_types_file_id": "TYP"}}
-    monkeypatch.setattr(gen, "_load_drive_config", lambda: json.loads(json.dumps(config)))
+    run.config["arao1248"].update(charts_classes_file_id="CLS", charts_types_file_id="TYP")
     run(["gen", "--lang", "arao1248", "--apply"])
     ws = the_sheet(doorway, "status_arao1248").worksheet("Status")
     values = ws.get_all_values()
@@ -425,7 +426,7 @@ def test_each_construction_cell_links_to_its_own_tab(env):
 def test_a_language_absent_from_the_manifest_is_skipped(env):
     doorway, run, _ = env
     out = run(["gen", "--lang", "nyan1308", "--apply"])
-    assert "not found in manifest — skipping" in out
+    assert "not found in the ID file — skipping" in out
     # The folder is created/locked up front, before any per-language work --
     # that is the only Drive activity unavoidable ahead of the skip.
     assert doorway.mutations_of("create_spreadsheet") == []
@@ -434,13 +435,7 @@ def test_a_language_absent_from_the_manifest_is_skipped(env):
 
 def test_a_language_with_no_lang_setup_dir_is_skipped(env, monkeypatch, tmp_path):
     doorway, run, _ = env
-    manifest = doorway.download_file_json(MANIFEST_FILE_ID)
-    manifest["fakelang0001"] = {
-        "folder_id": "fake_lang_folder_xyz",
-        "folder_url": "https://drive.google.com/drive/folders/fake_lang_folder_xyz",
-        "sheets": {},
-    }
-    doorway.file(MANIFEST_FILE_ID).content = json.dumps(manifest).encode("utf-8")
+    run.config["fakelang0001"] = {"folder_id": "fake_lang_folder_xyz"}
 
     out = run(["gen", "--lang", "fakelang0001", "--apply"])
     assert "no coded_data/fakelang0001/lang_setup/ found" in out
@@ -468,9 +463,10 @@ def test_an_unopenable_class_sheet_is_shown_and_fails_the_run(env):
     """It used to be a printed warning the daily refresh never saw, and the
     status sheet called the construction 'no sheet found'."""
     doorway, run, _ = env
-    manifest = doorway.download_file_json(MANIFEST_FILE_ID)
-    manifest["arao1248"]["sheets"]["noninterruption"]["spreadsheet_id"] = "no_such_sheet"
-    doorway.file(MANIFEST_FILE_ID).content = json.dumps(manifest).encode("utf-8")
+    # A first run records the status sheet, so the second does not republish
+    # the manifest copy (which would open every class sheet).
+    run(["gen", "--lang", "arao1248", "--apply"])
+    run.config["arao1248"]["class_sheets"]["noninterruption"]["id"] = "no_such_sheet"
 
     out = run(["gen", "--lang", "arao1248", "--apply"])
     ss = the_sheet(doorway, "status_arao1248")

@@ -26,7 +26,7 @@ The coordinator is a scientist doing work that a well-funded project would distr
 
 **The GitHub issue IS the instruction.** When a workflow files an issue, the issue body should contain everything the coordinator needs to resolve it: what happened, why it matters, and the exact sequence of commands to run. The coordinator should not need to consult the guide for a routine issue.
 
-**Issues stay open until verified.** An issue the tooling files should not close until there is evidence the problem is gone — a later run that finds it clean — not just coordinator confirmation. For changes that cannot be automated (e.g., manually adding a Sheet tab), check the actual artifact (Sheet, file, manifest) before closing.
+**Issues stay open until verified.** An issue the tooling files should not close until there is evidence the problem is gone — a later run that finds it clean — not just coordinator confirmation. For changes that cannot be automated (e.g., manually adding a Sheet tab), check the actual artifact (Sheet, file, ID file) before closing.
 
 **Dry-run by default; explicit opt-in for destructive actions.** Any command that archives, overwrites, or deletes should require an explicit flag (`--apply`, `--force`) and should describe the consequences in the dry-run output before the coordinator opts in.
 

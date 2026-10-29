@@ -23,10 +23,19 @@ Typical usage (coordinator CLI)
 
 Typical usage (Colab)
 ---------------------------------
-    from planars.reports import project_spans, language_report_data
+    from planars.from_sheets import open_language
+    from planars.reports import language_spans, language_report_data
 
-    df, lang_meta = project_spans(source="sheets", gc=gc, manifest=manifest)
-    data = language_report_data("arao1248", source="sheets", gc=gc, manifest=manifest)
+    lang = open_language("arao1248", drive_svc, gc)   # the sheets, found by label
+    df, lang_meta = language_spans("arao1248", source="local", repo_root=lang.root)
+    data = language_report_data("arao1248", source="local", repo_root=lang.root,
+                                status=lang.status)
+
+The older ``source="sheets"`` path (``gc`` plus the manifest) is what the
+notebooks published before unit 11c run; it is deleted with the manifest in
+11c-5, once the notebooks above are published (docs/ownership-design.md
+§ 6 item 7). The notebooks install this package from GitHub on every run,
+so it cannot go before then.
 """
 
 from __future__ import annotations
@@ -845,15 +854,20 @@ def language_report_data(
     repo_root=None,
     gc=None,
     manifest: Optional[dict] = None,
+    status: Optional[Dict[str, Dict[str, str]]] = None,
 ) -> dict:
     """Aggregated report bundle for one language.
+
+    ``status`` is each class sheet's Status tab, when the caller has read
+    it (``planars.from_sheets``); with ``source="sheets"`` it is read here.
 
     Returns a dict with keys:
         lang_id:        str — the Glottocode
         display_name:   str — "Name [glottocode]" if in languages.yaml, else bare code
         generated_at:   datetime.datetime — UTC timestamp
         completeness:   dict — from language_completeness()
-        status:         dict or None — from language_status() (None for source="local")
+        status:         dict or None — the ``status`` given, or language_status()
+                        for source="sheets"; else None
         spans:          pd.DataFrame or None — span rows for this language;
                         columns as project_spans() describes. Write to TSV
                         for R or other consumers.
@@ -869,8 +883,7 @@ def language_report_data(
         lang_id, source=source, repo_root=repo_root, gc=gc, manifest=manifest
     )
 
-    status = None
-    if source == "sheets" and gc is not None and manifest is not None:
+    if status is None and source == "sheets" and gc is not None and manifest is not None:
         status = language_status(lang_id, gc, manifest)
 
     spans = None
