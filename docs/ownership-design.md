@@ -415,6 +415,47 @@ the same commit.
    retired). As built: progress doc, Phase 10 row.
 7. **11c — Colab by labels, the manifest deleted, notebooks rebuilt daily**
    (needs 5f's sharing test for notebooks, and Q7's label test).
+   *Planned 2026-10-28 (Jeff: he runs the two tests with a second Google
+   account of his that does not own the files, so 11c no longer waits on
+   Adam).* What a survey found: the manifest is not only Colab's. It is the
+   one record of each class sheet's ID, and about 25 commands read it,
+   for facts that each have another home:
+
+   | Manifest field | Its one home after 11c |
+   |---|---|
+   | `sheets[class].spreadsheet_id`, `version` (counts restructures, names the archived copy) | the ID file, `drive_config.json` (`class_sheets: {class: {id, version}}`) |
+   | `status_sheet_url`, `notification_issue` | the ID file (`status_sheet_id`, `notification_issue`) |
+   | every `*_url` | none: built from the ID where shown |
+   | `sheets[class].constructions` | what should exist: the diagnostics YAML; what does exist: the sheet's construction tabs (their 5d labels) |
+   | `sheets[class].construction_params` | the tab's header and the YAML (already the rule since #272) |
+   | `planar` | the planar TSV (commands); the locked planar Sheet (Colab) |
+   | `glottolog`, `meta` | `schemas/languages.yaml` |
+
+   Steps, each a commit that leaves a working system:
+   - **11c-1, the ID file holds every ID.** One module reads and writes it
+     by name (class sheet, status sheet, notification issue …); a migration
+     copies the class-sheet IDs, versions, status sheet and issue numbers
+     from the manifest; every command that creates or retires a sheet
+     writes the ID file.
+   - **11c-2, commands stop reading the manifest,** each fact from its home
+     above, command by command. They keep writing it until 11c-5, because
+     the published notebooks read it until then; nothing else reads it,
+     and `integrity-check` stops comparing it with anything.
+   - **11c-3, one package function for Colab** (in `planars/`): given a
+     language, it finds its sheets by their labels, reads each tab's
+     criteria from its header and the planar from the locked planar Sheet.
+     The reports read what it returns instead of the manifest. Tested
+     against the offline fake and once live with Jeff's own account.
+   - **11c-4, notebooks hold no class lists** and call that function; the
+     daily refresh runs `generate-notebooks --apply`. Templates built and
+     tested, not yet published.
+   - **11c-5, live (name to Jeff first):** the two tests with Jeff's second
+     account (open one shared notebook; it finds the language's sheets by
+     label). If both pass: publish the notebooks, delete the manifest on
+     Drive and its kind in the door, `upload_manifest`, `load_manifest` and
+     `manifest_contract.py`. If the label test fails, 11c-5 waits (Q7: no
+     fallback to a manifest). The commands stop writing it in the same
+     commit, and `sheets_manifest.json` and `manifest_backup.json` go.
 8. **11d — the Instructions sentences into the schema.** *Built
    2026-10-28:* planar.yaml's `sheet_text`, read through
    `coding.schemas.sheet_text`. As built: progress doc, Phase 10 row.

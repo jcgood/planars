@@ -207,8 +207,10 @@ refresh: green, its "diagnostics sheet" step clean, and no
 clone must be pulled before his Claude runs the tooling, or it writes the
 TSV again (the 2026-10-28 refresh was green and no TSV came back).
 **11d is done (2026-10-28):** the Instructions sentences are in planar.yaml's
-`sheet_text`. **Next:** 11c, which waits on the two live tests with Adam's
-account (below; ask alongside the Sheets-access question on #318).
+`sheet_text`. **11c started 2026-10-28:** its steps 11c-1 to 11c-5 are in
+`docs/ownership-design.md` § 6 item 7. Jeff runs the two live tests
+(11c-5) with a second Google account of his that doesn't own the files,
+so 11c no longer waits on Adam; don't re-ask.
 
 **Where it stands:** class sheets are enforced live (2026-10-19, Jeff;
 `drive_door.LIVE_ENFORCED_KINDS`); every other kind now has its spec and is
@@ -235,8 +237,8 @@ proposal sheets, the refresh step, the collaborator guide section); 11b is
 done (2026-10-24, 2026-10-27); 11d done (2026-10-28). Then 11c, 16–18.
 
 **Live steps — name each to Jeff for approval first:** 5f's one-notebook
-sharing test and Q7's Colab label-search test (both need an annotator's
-account, so Adam takes part; they can run together).
+sharing test and Q7's Colab label-search test (11c-5; Jeff runs both with
+his second, non-owner account; they can run together).
 
 Check for an open `door-violation` issue first: each line is a command bug
 or a spec gap to fix.
