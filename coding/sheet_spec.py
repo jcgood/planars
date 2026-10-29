@@ -389,27 +389,12 @@ def proposal_sheet_title(lang_id: str) -> str:
 
 
 def proposal_instructions_rows(lang_id: str) -> Tuple[Tuple[str, ...], ...]:
-    """The Instructions tab. Short: an annotator reads it (Adam, #318). Moves
-    into the schema with the other sentences annotators read (unit 11d)."""
-    lines = (
-        proposal_sheet_title(lang_id),
-        "",
-        f"This sheet is for editing. The planar_{lang_id} and diagnostics_{lang_id} "
-        "sheets in this folder are read-only: they show the current versions.",
-        "",
-        "To suggest a change:",
-        "1. Edit the Planar or Diagnostics tab as you would like it to be: change a "
-        "cell, add a row, or delete one.",
-        "2. Say why in that row's What changed? cell. For a deleted row, give the "
-        "reason on the row just above it.",
-        "3. For a new position, add its row where it belongs and renumber the "
-        "positions after it.",
-        "",
-        "Within a day a GitHub issue lists your changes. The coordinator accepts or "
-        "declines each one. The outcome goes on the Last review tab, and the Planar "
-        "and Diagnostics tabs are refilled from the new versions.",
-    )
-    return tuple((line,) for line in lines)
+    """The Instructions tab, one row per line of planar.yaml's
+    sheet_text.proposal_sheet.instructions."""
+    from .schemas import sheet_text
+    text = sheet_text("proposal_sheet", "instructions",
+                      title=proposal_sheet_title(lang_id), lang_id=lang_id)
+    return tuple((line,) for line in text.splitlines())
 
 
 @dataclass(frozen=True)

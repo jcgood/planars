@@ -80,9 +80,10 @@ planar.yaml
     and key, the Status tab, the trailing columns appended to annotation
     tabs (``trailing_columns``, and per example style the ones a language's
     tabs leave out, ``example_styles``; to add one, edit it and run
-    ``update-sheets --apply``) and the locked tabs (``locked_tabs``). Read
-    in one place, ``planars/schema_values.py`` (locked tabs:
-    ``coding/locked_tabs.py``).
+    ``update-sheets --apply``), the locked tabs (``locked_tabs``) and the
+    fixed sentences on Instructions tabs (``sheet_text``). Read in one
+    place, ``planars/schema_values.py`` (locked tabs:
+    ``coding/locked_tabs.py``; sheet text: ``coding.schemas.sheet_text``).
 
 terms.yaml
     Source of truth for analytical terms (keystone, partial, complete,

@@ -205,7 +205,10 @@ pushes to the Sheet only (`--to-sheet` retired). Check the 2026-10-28
 refresh: green, its "diagnostics sheet" step clean, and no
 `diagnostics_*.tsv` back in planars-data (check-codebook check 7). Adam's
 clone must be pulled before his Claude runs the tooling, or it writes the
-TSV again. **Next:** 11c–d.
+TSV again (the 2026-10-28 refresh was green and no TSV came back).
+**11d is done (2026-10-28):** the Instructions sentences are in planar.yaml's
+`sheet_text`. **Next:** 11c, which waits on the two live tests with Adam's
+account (below; ask alongside the Sheets-access question on #318).
 
 **Where it stands:** class sheets are enforced live (2026-10-19, Jeff;
 `drive_door.LIVE_ENFORCED_KINDS`); every other kind now has its spec and is
@@ -221,7 +224,7 @@ the `overwrite` step now says how many changes it checked) and enforce
 each kind in watch once it has had a clean real write (below). The
 2026-10-23 refresh was the first with the proposal step and the local-file
 door enforcing: both clean. Unit 9 is done (2026-10-23). After that the
-order is 11c–d, then 16–18.
+order is 11c, then 16–18.
 
 **Waits on watching:** enforce for each kind still in watch (planar
 Sheet, notes Docs, notebooks, reports, manifest, folders: its own first
@@ -229,7 +232,7 @@ clean real write, then added to `LIVE_ENFORCED_KINDS`; class sheets,
 status sheets, the diagnostics Sheet and charts are enforced), and refusing
 unlabelled targets (last). **11a is live** (2026-10-22: the three
 proposal sheets, the refresh step, the collaborator guide section); 11b is
-done (2026-10-24, 2026-10-27). Then 11c–d, 16–18.
+done (2026-10-24, 2026-10-27); 11d done (2026-10-28). Then 11c, 16–18.
 
 **Live steps — name each to Jeff for approval first:** 5f's one-notebook
 sharing test and Q7's Colab label-search test (both need an annotator's

@@ -5,7 +5,8 @@ diagnostic_classes_status.yaml), diagnostic_criteria.yaml and planar.yaml so
 multiple callers in the same process share a single file read rather than each
 opening the file independently. Also holds the readers built on them
 (``criterion_values``, ``reads_from``, the value-placeholder helpers,
-``criteria_for``). ``criteria_for`` is the one reader of a tab's criteria;
+``criteria_for``, ``sheet_text``). ``criteria_for`` is the one reader of a
+tab's criteria; ``sheet_text`` of the Instructions sentences;
 ``placeholder``, ``placeholder_kind``, ``free_entry_kind`` and
 ``dropdown_values`` are the one reader of ``value_placeholders`` (a criterion
 with any placeholder value gets no dropdown; an undeclared ``<...>`` value
@@ -81,6 +82,32 @@ def load_planar_schema() -> Dict:
         else:
             _planar_schema_cache = {}
     return _planar_schema_cache
+
+
+def sheet_text(sheet: str, key: str, **fields) -> str:
+    """One of planar.yaml's ``sheet_text`` sentences, its {names} filled from
+    ``fields``. The one reader of that section. A missing entry, or a name
+    the caller does not supply, raises ValueError rather than printing a
+    half-filled sentence on an annotator's sheet."""
+    entry = _sheet_text_entry(sheet, key)
+    try:
+        return entry.format(**fields)
+    except (KeyError, IndexError) as exc:
+        raise ValueError(f"schemas/planar.yaml sheet_text {sheet}.{key} uses {exc} "
+                         f"(the code supplies: {', '.join(sorted(fields)) or 'nothing'})") from exc
+
+
+def sheet_text_prefix(sheet: str, key: str) -> str:
+    """The fixed text before an entry's first {name}: how a row written from
+    it is recognised again (a STEP line, to bold it)."""
+    return _sheet_text_entry(sheet, key).split("{", 1)[0]
+
+
+def _sheet_text_entry(sheet: str, key: str) -> str:
+    entry = (load_planar_schema().get("sheet_text") or {}).get(sheet, {}).get(key)
+    if not isinstance(entry, str):
+        raise ValueError(f"schemas/planar.yaml sheet_text has no {sheet}.{key}")
+    return entry
 
 
 def load_diagnostic_criteria() -> Dict:

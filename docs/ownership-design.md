@@ -415,7 +415,9 @@ the same commit.
    retired). As built: progress doc, Phase 10 row.
 7. **11c — Colab by labels, the manifest deleted, notebooks rebuilt daily**
    (needs 5f's sharing test for notebooks, and Q7's label test).
-8. **11d — the Instructions sentences into the schema.**
+8. **11d — the Instructions sentences into the schema.** *Built
+   2026-10-28:* planar.yaml's `sheet_text`, read through
+   `coding.schemas.sheet_text`. As built: progress doc, Phase 10 row.
 
 ## 7. Decisions (Jeff, 2026-10-18)
 

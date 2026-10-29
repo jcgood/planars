@@ -19,7 +19,8 @@ commands refreshed it.
 `protect` is the one way a whole tab is protected; sync-planar and
 sync-diagnostics-yaml use it too, for the planar and diagnostics Sheets'
 one tab. `locked_tab_contents` is the build itself (Instructions from the class's
-schema entry, Planar Structure from the planar TSV), which `sheet_spec.py`
+schema entry, worded in planar.yaml's `sheet_text.class_sheet`; Planar Structure
+from the planar TSV), which `sheet_spec.py`
 also reads. A rebuild removes a tab the class no longer carries.
 `reorder_tabs` puts first-placed locked tabs first, then the constructions,
 then last-placed locked tabs, then Status; `system_tab_titles()` is the one
@@ -37,10 +38,10 @@ from typing import Callable, Dict, List, Sequence, Tuple
 
 import pandas as pd
 
-from planars.schema_values import STATUS_TAB
+from planars.schema_values import STATUS_READY, STATUS_TAB
 
 from .drive_doorway import SpreadsheetHandle
-from .schemas import load_diagnostic_classes, load_planar_schema
+from .schemas import load_diagnostic_classes, load_planar_schema, sheet_text, sheet_text_prefix
 
 # Shown to anyone who tries to edit a locked tab, and how a rebuild recognises
 # a protection as its own.
@@ -101,7 +102,13 @@ def _included(spec: Dict, class_entry: Dict) -> bool:
 # Builders: (class_entry, lang_id, planar_path) -> (rows, format(sheet_id, rows))
 # ---------------------------------------------------------------------------
 
-_INSTRUCTIONS_HEADINGS = ("DETAILS", "WHAT THIS TESTS", "HOW TO ANNOTATE")
+def _text(key: str, **fields) -> str:
+    """A class sheet's Instructions sentence (planar.yaml sheet_text.class_sheet)."""
+    return sheet_text("class_sheet", key, **fields)
+
+
+def _indented(text: str) -> List[List[str]]:
+    return [[f"  {line}"] for line in text.splitlines()]
 
 
 def _instructions_rows(class_entry: Dict, lang_id: str, planar_path: Path) -> List[List[str]]:
@@ -124,22 +131,22 @@ def _instructions_rows(class_entry: Dict, lang_id: str, planar_path: Path) -> Li
     constructions_schema = class_entry.get("constructions", [])
 
     rows: List[List[str]] = []
-    rows.append([f"{display_name} — ANNOTATION INSTRUCTIONS"])
+    rows.append([_text("title", class_name=display_name)])
     rows.append([""])
 
     if applicability:
-        rows.append(["WHAT THIS TESTS"])
+        rows.append([_text("what_heading")])
         for line in applicability.splitlines():
             if line.strip():
                 rows.append([f"  {line.strip()}"])
         rows.append([""])
 
     if not constructions_schema and (required_criteria or optional_criteria):
-        rows.append(["HOW TO ANNOTATE"])
-        rows.append([f"  Fill in each criterion column for every element row: {', '.join(required_criteria)}"])
+        rows.append([_text("how_heading")])
+        rows += _indented(_text("fill_required", criteria=", ".join(required_criteria)))
         if optional_criteria:
-            rows.append([f"  Optional, fill in only if relevant: {', '.join(optional_criteria)}"])
-        rows.append(["  Leave a cell blank if unsure — mark 'na' only when the criterion genuinely does not apply."])
+            rows += _indented(_text("fill_optional", criteria=", ".join(optional_criteria)))
+        rows += _indented(_text("if_unsure"))
         rows.append([""])
 
     # Per-construction dependency-order section (multi-stage workflows only)
@@ -148,21 +155,19 @@ def _instructions_rows(class_entry: Dict, lang_id: str, planar_path: Path) -> Li
         depends_on = c.get("depends_on")
         row_type = c.get("row_type", "element")
 
-        rows.append([f"STEP {step} — {name}"])
+        rows.append([_text("step", number=step, construction=name)])
         if row_type in ("pair_rows", "keyed_rows") and depends_on:
-            rows.append([f"  This tab is generated after {depends_on} is imported."])
-            rows.append([f"  Do NOT annotate it until the coordinator confirms regeneration is complete."])
+            rows += _indented(_text("generated_tab", source=depends_on))
         else:
-            rows.append([f"  Annotate each element row in this tab."])
+            rows += _indented(_text("element_tab"))
         # A tab another tab is generated from (the middle of a chain too, e.g.
         # biuniqueness_deviations' morphemes) has to be marked finished.
         if any(cc.get("depends_on") == name for cc in constructions_schema):
-            rows.append([f"  When finished: mark '{name}' as 'ready-for-review' in the Status tab."])
-            rows.append([f"  The coordinator will then regenerate the dependent tab."])
+            rows += _indented(_text("feeds_another", construction=name, ready=STATUS_READY))
         rows.append([""])
 
     if sheet_instructions:
-        rows.append(["DETAILS"])
+        rows.append([_text("details_heading")])
         rows.append([""])
         for line in sheet_instructions.splitlines():
             rows.append([line])
@@ -170,9 +175,11 @@ def _instructions_rows(class_entry: Dict, lang_id: str, planar_path: Path) -> Li
 
 
 def _instructions_format(sheet_id: int, rows: List[List[str]]) -> List[Dict]:
+    headings = {_text(k) for k in ("what_heading", "how_heading", "details_heading")}
+    step_start = sheet_text_prefix("class_sheet", "step")
     bold_rows = [0] + [
         i for i, r in enumerate(rows)
-        if r and (r[0].startswith("STEP ") or r[0] in _INSTRUCTIONS_HEADINGS)
+        if r and (r[0].startswith(step_start) or r[0] in headings)
     ]
     return [
         {"repeatCell": {

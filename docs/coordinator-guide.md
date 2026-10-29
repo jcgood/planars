@@ -705,6 +705,10 @@ python -m coding refresh-dropdowns --apply      # fix them
 python -m coding refresh-dropdowns --lang stan1293 --apply   # one language only
 ```
 
+#### Changing the wording of an Instructions tab
+
+Every class sheet and every "planars and diagnostics" sheet opens on a locked Instructions tab. Its fixed sentences (headings, how-to lines, the STEP lines) are in `schemas/planar.yaml` under `sheet_text`; a class's own text is its `applicability_conditions` and `sheet_instructions` in `schemas/diagnostic_classes.yaml`. Edit the wording there, keep any `{name}` in braces as it is, and push. The daily refresh rewrites the tabs (`update-sheets --apply` for class sheets, `proposal-sheets --apply` for the others); run those two to see it at once.
+
 #### Collaborator status pages
 
 Adam needs to find current Sheet links and completion status without hunting through Drive or asking the coordinator each time. `generate-status-sheet` builds one locked, read-only `status_{lang_id}` spreadsheet per language listing every construction from `diagnostics_{lang_id}.yaml`, with a completeness percentage, a color-coded status cell, and a direct link to that construction's live tab:

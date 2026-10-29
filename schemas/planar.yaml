@@ -4,6 +4,8 @@
 #   - Structural column definitions (Element, Position_Name, Position_Number)
 #   - Element conventions: Class_Type categories, ALL CAPS label standards,
 #     brace notation, reserved labels
+#   - The sheets' fixed parts: Status tab, trailing columns, locked tabs, and
+#     the fixed sentences on Instructions tabs (sheet_text)
 #
 # THIS FILE IS NOT THE SOURCE OF TRUTH FOR:
 #   - Diagnostic criterion names and values
@@ -200,6 +202,49 @@ locked_tabs:
     place: last
     include: opt_in
     opt_in_field: include_planar_reference_tab
+
+# The fixed sentences on Instructions tabs, kept here so the wording changes
+# without touching code (Phase 10 unit 11d). Annotators read them: keep them
+# short (CLAUDE.md, Adam #318). Read only through coding.schemas.sheet_text,
+# which fills the {names} in braces and fails on a missing entry or a name it
+# does not supply (each entry's comment lists the names it may use). A
+# literal brace is written twice: {{ }}.
+#   class_sheet     a class sheet's Instructions tab (coding/locked_tabs.py),
+#                   around the class's own text from diagnostic_classes.yaml
+#                   (applicability_conditions, sheet_instructions). Lines
+#                   under a heading are indented by the code.
+#   proposal_sheet  the "planars and diagnostics" sheet (coding/sheet_spec.py,
+#                   coding/proposal_sheets.py)
+sheet_text:
+  class_sheet:
+    title: "{class_name} — ANNOTATION INSTRUCTIONS"   # display name, upper case
+    what_heading: WHAT THIS TESTS
+    how_heading: HOW TO ANNOTATE
+    details_heading: DETAILS
+    fill_required: "Fill in each criterion column for every element row: {criteria}"
+    fill_optional: "Optional, fill in only if relevant: {criteria}"
+    if_unsure: "Leave a cell blank if unsure — mark 'na' only when the criterion genuinely does not apply."
+    step: "STEP {number} — {construction}"   # the code bolds rows starting with the text before {number}
+    element_tab: Annotate each element row in this tab.
+    generated_tab: |-   # {source}: the tab it is made from
+      This tab is generated after {source} is imported.
+      Do NOT annotate it until the coordinator confirms regeneration is complete.
+    feeds_another: |-   # {ready}: status_tab's ready value
+      When finished: mark '{construction}' as '{ready}' in the Status tab.
+      The coordinator will then regenerate the dependent tab.
+  proposal_sheet:
+    instructions: |-   # {title}: the sheet's name; {lang_id}
+      {title}
+
+      This sheet is for editing. The planar_{lang_id} and diagnostics_{lang_id} sheets in this folder are read-only: they show the current versions.
+
+      To suggest a change:
+      1. Edit the Planar or Diagnostics tab as you would like it to be: change a cell, add a row, or delete one.
+      2. Say why in that row's What changed? cell. For a deleted row, give the reason on the row just above it.
+      3. For a new position, add its row where it belongs and renumber the positions after it.
+
+      Within a day a GitHub issue lists your changes. The coordinator accepts or declines each one. The outcome goes on the Last review tab, and the Planar and Diagnostics tabs are refilled from the new versions.
+    first_review: No changes reviewed yet.   # Last review, before any review
 
 # ---------------------------------------------------------------------------
 # ELEMENT CONVENTIONS

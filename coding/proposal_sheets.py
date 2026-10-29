@@ -9,7 +9,8 @@ On Drive it is called "English [stan1293] planars and diagnostics"
 told annotators nothing). Its tabs (``sheet_spec.proposal_sheet_spec``):
 **Instructions** (locked: the sheet is for editing, unlike the read-only
 planar and diagnostics Sheets, and how), **Last review** (the tooling's;
-what the last review accepted and rejected), then **Planar** and
+what the last review accepted and rejected), both worded in planar.yaml's
+``sheet_text.proposal_sheet``, then **Planar** and
 **Diagnostics**, each a copy of its source plus a **What changed?** column,
 every cell the annotator's. Every run brings an existing sheet's title,
 Instructions tab and tab order up to date (``_bring_up_to_date``). It sits
@@ -62,6 +63,7 @@ from . import drive_door, file_door
 from .drive import _load_drive_config, _save_drive_config, ensure_user_permission
 from .drive_doorway import get_doorway
 from .proposal_diff import compare, describe
+from .schemas import sheet_text
 from .sheet_spec import (PROPOSAL_INSTRUCTIONS_TAB, PROPOSAL_TABS, REVIEW_TAB_TITLE,
                          WHAT_CHANGED_COLUMN, proposal_instructions_rows,
                          proposal_sheet_spec, proposal_sheet_title)
@@ -70,10 +72,6 @@ CODED_DATA = drive_door.CODED_DATA
 ID_KEY = "proposal_spreadsheet_id"
 LABEL = "planars-and-diagnostics"      # schemas/issue_labels.yaml
 
-# What Last review says before any change has been reviewed (how to suggest
-# one is on the Instructions tab). Moves into the schema with the other
-# sentences annotators read (unit 11d).
-FIRST_REVIEW_TEXT = ("No changes reviewed yet.",)
 
 
 def sheet_name(lang_id: str) -> str:
@@ -151,7 +149,10 @@ def _write_base(lang_id: str, base: Dict[str, List[List[str]]], why: str) -> Non
 
 
 def _review_rows() -> List[List[str]]:
-    return [[REVIEW_TAB_TITLE]] + [[line] for line in FIRST_REVIEW_TEXT]
+    """Last review before any change has been reviewed (how to suggest one is
+    on the Instructions tab)."""
+    first = sheet_text("proposal_sheet", "first_review")
+    return [[REVIEW_TAB_TITLE]] + [[line] for line in first.splitlines()]
 
 
 def _create(doorway, lang_id: str, folder_id: str, fills: Dict[str, List[List[str]]]):
