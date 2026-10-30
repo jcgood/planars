@@ -585,7 +585,8 @@ def test_a_server_error_or_dropped_connection_is_retried(env, exc):
 
 
 def test_a_certificate_error_is_not_retried():
-    assert not drive_door._dropped_connection(ssl.SSLCertVerificationError(1, "certificate verify failed"))
+    from planars.google_retry import dropped_connection
+    assert not dropped_connection(ssl.SSLCertVerificationError(1, "certificate verify failed"))
 
 
 def test_a_create_that_landed_before_the_error_is_not_made_twice(env):

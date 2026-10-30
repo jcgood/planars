@@ -49,6 +49,29 @@ def test_languages_are_those_with_a_planar_sheet():
     assert languages(lambda q: fake.list_files(q, fields="files(id, name, properties)")) == LANGS_SORTED
 
 
+def test_a_busy_google_is_waited_out(tmp_path, monkeypatch):
+    """Google's per-minute read limit (429) is retried, as the Drive door
+    retries it, rather than failing the annotator's notebook."""
+    from planars import google_retry
+    from tests.fake_drive import api_error
+    monkeypatch.setattr(google_retry, "WAITS", (0,))
+    fake = FakeDriveDoorway.from_fixtures()
+    busy = {"left": 1}
+
+    def open_spreadsheet(sid):
+        if busy["left"]:
+            busy["left"] -= 1
+            raise api_error(429, "Quota exceeded for quota metric 'Read requests'")
+        return fake.open_spreadsheet(sid)
+
+    got = download_language(
+        "synth0001", tmp_path,
+        list_files=lambda q: fake.list_files(q, fields="files(id, name, properties)"),
+        open_spreadsheet=open_spreadsheet)
+    assert busy["left"] == 0
+    assert (got.root / "coded_data" / "synth0001" / "lang_setup" / "planar_synth0001.tsv").exists()
+
+
 def test_planar_and_status_are_read(tmp_path):
     got = _download("stan1293", tmp_path)
     planar = got.root / "coded_data" / "stan1293" / "lang_setup" / "planar_stan1293.tsv"

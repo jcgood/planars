@@ -22,6 +22,11 @@ on Drive; ``validate-coding`` reports that to the coordinator.
 
 It also returns each class sheet's Status tab (``planars.schema_values.status_map``).
 
+Every read is retried when Google says "busy, try again" (its per-minute
+read limit, which a language with many tabs can reach) or the connection
+drops, by the rule the Drive door uses (``planars.google_retry``), so an
+annotator's notebook waits rather than failing.
+
 ``open_language`` (one language) and ``open_all_languages`` (every language
 with a planar Sheet, ``languages``) are the Colab entry points: they take
 the notebook's Drive service and gspread client. Tests call
@@ -36,6 +41,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from planars import drive_labels as L
+from planars.google_retry import retry
 from planars.schema_values import STATUS_TAB, status_map
 
 ListFiles = Callable[[str], List[Dict[str, Any]]]
@@ -76,14 +82,14 @@ def _write_tsv(path: Path, values: List[List[str]]) -> None:
 
 def _construction_tabs(ss) -> List[Any]:
     """(construction, worksheet) for each tab labelled as a construction."""
-    meta = ss.fetch_sheet_metadata(params={"fields": _TAB_FIELDS})
+    meta = retry(lambda: ss.fetch_sheet_metadata(params={"fields": _TAB_FIELDS}))
     names = {}
     for sheet in meta.get("sheets", []):
         labels = {m["metadataKey"]: m.get("metadataValue", "")
                   for m in sheet.get("developerMetadata", [])}
         if labels.get(L.TAB_KIND) == L.CONSTRUCTION_TAB and labels.get(L.TAB_NAME):
             names[sheet["properties"]["sheetId"]] = labels[L.TAB_NAME]
-    return [(names[ws.id], ws) for ws in ss.worksheets() if ws.id in names]
+    return [(names[ws.id], ws) for ws in retry(ss.worksheets) if ws.id in names]
 
 
 def download_language(lang_id: str, dest: Path, *, list_files: ListFiles,
@@ -93,16 +99,16 @@ def download_language(lang_id: str, dest: Path, *, list_files: ListFiles,
     lang_dir = dest / "coded_data" / lang_id
     result = Language(lang_id, dest)
 
-    planars_ = _live(list_files(_query(L.PLANAR_SHEET, lang_id)))
+    planars_ = _live(retry(lambda: list_files(_query(L.PLANAR_SHEET, lang_id))))
     if len(planars_) != 1:
         raise RuntimeError(f"expected one planar Sheet labelled for {lang_id}, "
                            f"found {len(planars_)}")
-    planar = open_spreadsheet(planars_[0]["id"])
+    planar = retry(lambda: open_spreadsheet(planars_[0]["id"]))
     _write_tsv(lang_dir / "lang_setup" / f"planar_{lang_id}.tsv",
-               planar.worksheets()[0].get_all_values())
+               retry(lambda: planar.worksheets()[0].get_all_values()))
 
     by_class: Dict[str, str] = {}
-    for f in _live(list_files(_query(L.CLASS_SHEET, lang_id))):
+    for f in _live(retry(lambda: list_files(_query(L.CLASS_SHEET, lang_id)))):
         cls = (f.get("properties") or {}).get(L.CLASS)
         if not cls:
             raise RuntimeError(f"class sheet {f.get('name')!r} ({f['id']}) has no class label")
@@ -112,12 +118,12 @@ def download_language(lang_id: str, dest: Path, *, list_files: ListFiles,
         by_class[cls] = f["id"]
 
     for cls, sid in sorted(by_class.items()):
-        ss = open_spreadsheet(sid)
+        ss = retry(lambda: open_spreadsheet(sid))
         for construction, ws in _construction_tabs(ss):
-            _write_tsv(lang_dir / cls / f"{construction}.tsv", ws.get_all_values())
-        status_ws = next((ws for ws in ss.worksheets() if ws.title == STATUS_TAB), None)
+            _write_tsv(lang_dir / cls / f"{construction}.tsv", retry(ws.get_all_values))
+        status_ws = next((ws for ws in retry(ss.worksheets) if ws.title == STATUS_TAB), None)
         if status_ws is not None:
-            statuses = status_map(status_ws.get_all_values())
+            statuses = status_map(retry(status_ws.get_all_values))
             if statuses:
                 result.status[cls] = statuses
     return result
@@ -125,8 +131,8 @@ def download_language(lang_id: str, dest: Path, *, list_files: ListFiles,
 
 def languages(list_files: ListFiles) -> List[str]:
     """Every language with a planar Sheet (each language has exactly one), sorted."""
-    found = list_files(f"properties has {{ key='{L.KIND}' and value='{L.PLANAR_SHEET}' }} "
-                       "and trashed=false")
+    found = retry(lambda: list_files(
+        f"properties has {{ key='{L.KIND}' and value='{L.PLANAR_SHEET}' }} and trashed=false"))
     return sorted({(f.get("properties") or {}).get(L.LANG) for f in _live(found)} - {None})
 
 
