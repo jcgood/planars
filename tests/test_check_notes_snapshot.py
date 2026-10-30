@@ -37,7 +37,7 @@ from coding import check_notes, drive_doorway, state_files
 from coding import drive as drive_module
 from coding.drive import _ACK_PREFIX, _strip_acknowledgment_lines
 from command_runner import run_command
-from fake_drive import MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway
+from fake_drive import ROOT_FOLDER_ID, FakeDriveDoorway
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "check_notes"
@@ -281,9 +281,6 @@ def test_the_new_docs_id_is_written_back_to_the_id_file(env):
     env.run(["check-notes", "--lang", LANG, "--apply"])
     new_id = env.doorway.mutations_of("create_file")[0]["file_id"]
     assert env.saved[LANG]["notes_doc_id"] == new_id
-    # The manifest copy is republished with it.
-    manifest = env.doorway.download_file_json(MANIFEST_FILE_ID)
-    assert manifest[LANG]["notes_doc_id"] == new_id
 
 
 # ---------------------------------------------------------------------------

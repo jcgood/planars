@@ -68,9 +68,8 @@ What this does per spreadsheet:
   5. Leaves unmatched rows blank for re-annotation
   6. [--apply] Records the new spreadsheet in the ID file (drive_config.json,
      through `drive_ids.set_class_sheet`, version + 1; the archived copy is
-     named with the old version) and, when the run replaced any sheet,
-     republishes the manifest copy the Colab notebooks read
-     (`manifest_copy.publish`). The sheets to restructure are the ID file's
+     named with the old version). The Colab notebooks find the new sheet by
+     its labels. The sheets to restructure are the ID file's
      class sheets; the tabs a sheet holds are read from the sheet itself.
 
 Each tab's local annotation TSV is rewritten to match, through the local-file
@@ -145,7 +144,7 @@ from .drive import (
     _load_drive_config, _save_drive_config,
     remove_anyone_permission, set_user_role,
 )
-from . import drive_ids, manifest_copy
+from . import drive_ids
 from .drive_doorway import SpreadsheetHandle, WorksheetHandle, WorksheetNotFound, get_doorway
 from .generate_sheets import (
     _annotator_email,
@@ -1509,8 +1508,8 @@ def main(args: argparse.Namespace | None = None) -> None:
     archives the existing spreadsheet to _archived/ in Drive (renamed to include _v{N}), creates a new
     spreadsheet from the updated planar structure, and carries over matching
     annotations by (Element, Position_Name). Unmatched rows are left blank for
-    re-annotation. Records each new sheet in the ID file, and republishes the
-    manifest copy at the end of a run that replaced any sheet.
+    re-annotation. Records each new sheet in the ID file (the Colab notebooks
+    find it by its labels, and leave the archived one out by its label).
     In dry-run mode (no --apply) only prints what would change.
 
     With --rename-class old:new, renames the class across all languages: archives
@@ -1938,10 +1937,6 @@ def main(args: argparse.Namespace | None = None) -> None:
             # restructure_journal.py's module docstring).
             for lang_id, class_name in done_units:
                 restructure_journal.clear_unit(lang_id, class_name)
-            # The notebooks read the manifest copy: tell it about the new sheets now.
-            manifest_copy.publish(doorway, config)
-            _save_drive_config(config)
-            print("Manifest copy republished on Drive.")
 
     if not apply:
         print("\nRun with --apply to make these changes.")

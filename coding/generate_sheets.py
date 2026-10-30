@@ -12,8 +12,8 @@ docs/tooling-design.md) — no Drive writes happen without --apply. On the first
 construction. On subsequent runs, only creates sheets for classes with no sheet in the
 ID file, drive_config.json (e.g. a newly added aspiration class; each new sheet's ID is
 recorded there), and adds tabs for constructions newly added to an existing class (what
-a sheet holds is read from its tabs). Existing tabs are left untouched. A run that made
-anything refreshes the notebooks' copy of the manifest on Drive (manifest_copy.publish).
+a sheet holds is read from its tabs). Existing tabs are left untouched. The notebooks
+find each new sheet by its labels (planars.from_sheets).
 
 To sync param column changes to existing sheets: python -m coding sync-params --apply
 
@@ -103,7 +103,7 @@ from . import validate_diagnostics as _val_diag
 from . import biuniqueness_rows as _br
 from . import people as _people
 from . import issues as _issues
-from . import drive_door, drive_ids, manifest_copy
+from . import drive_door, drive_ids
 from .drive import (
     _load_drive_config,
     _save_drive_config,
@@ -252,8 +252,8 @@ def _warn_if_language_metadata_incomplete(lid: str) -> None:
     Reads languages.yaml directly by path (not via the cached loader in
     coding.schemas) because ``python -m coding lookup-lang`` may write a new
     entry earlier in the same session and the just-written state is needed.
-    The manifest copy for the notebooks reads languages.yaml itself
-    (``manifest_copy``), so nothing is copied anywhere.
+    The notebooks read the name from languages.yaml through the package
+    (``planars.languages``), so nothing is copied anywhere.
     """
     _lang_yaml = ROOT / "schemas" / "languages.yaml"
     _langs = {}
@@ -2217,9 +2217,8 @@ def main(args: argparse.Namespace | None = None) -> None:
       --force). Each sheet has one tab per construction with dropdown validation.
       Each new sheet's ID goes into the ID file (drive_config.json) as soon as it exists.
     - Adds the tabs of constructions a class's existing sheet lacks.
-    - If it made anything, refreshes the notebooks' manifest copy on Drive once
-      at the end (manifest_copy.publish: rebuilt from the ID file, never edited).
-    - Regenerates contributor notebooks at the end.
+    - Regenerates contributor notebooks at the end (they find a new sheet by
+      its labels, so nothing else tells them about it).
     """
     if args is None:
         args = build_parser().parse_args()
@@ -2321,9 +2320,6 @@ def main(args: argparse.Namespace | None = None) -> None:
         _check_force_against_existing_sheets(
             lang_id, force, drive_ids.class_sheets(config, lang_id))
 
-    # Whether this run made or changed anything the notebooks' manifest copy shows.
-    changed = False
-
     for planar_file in planar_files:
         planar_dir = planar_file.parent
         lang_id = _infer_language_id_from_planar_filename(planar_file.name)
@@ -2408,7 +2404,6 @@ def main(args: argparse.Namespace | None = None) -> None:
             continue
 
         # Resolve/create Drive folder.
-        changed = True
         folder_id = (
             ids.get("folder_id")
             or doorway.get_or_create_folder(lang_id, parent_id=root_folder_id,
@@ -2512,12 +2507,6 @@ def main(args: argparse.Namespace | None = None) -> None:
         print("\nRun with --apply to make these changes.")
         return
 
-    # The manifest is a copy for the published Colab notebooks, rebuilt whole
-    # from the ID file; refresh it when this run made or changed a sheet.
-    if changed:
-        file_id = manifest_copy.publish(doorway, config)
-        _save_drive_config(config)
-        print(f"Notebook manifest copy refreshed on Drive (id: {file_id})")
     print("drive_config.json written.")
 
     print("\nEach language's folder and sheets are shared with the annotator named in "

@@ -2,7 +2,9 @@
 
 planars uses Colab notebooks for browser-based access to results. No local installation is required to use them — collaborators and coordinators open shared Drive links and choose **Runtime → Run all**.
 
-Notebooks are generated automatically by `python -m coding generate-notebooks` (which runs as part of `generate-sheets`, `sync-params --apply`, and `restructure-sheets --apply`) and uploaded directly to Google Drive. You do not manage notebook files manually.
+Notebooks are generated automatically by `python -m coding generate-notebooks --apply` (which runs in the daily refresh and at the end of `generate-sheets`, `sync-params --apply`, and `restructure-sheets --apply`) and uploaded directly to Google Drive. You do not manage notebook files manually.
+
+A notebook finds a language's sheets by the labels the tooling puts on every sheet it makes (`planars/from_sheets.py`), so it works for anyone the sheets are shared with, and a new or replaced sheet needs no new notebook. The tests it shows come from the tabs it finds, so the notebook names no class either. (Until 2026-10-29 the notebooks read a list of sheet IDs, the manifest, from a file on Drive; it went stale more than once and was deleted.)
 
 ---
 
@@ -12,14 +14,14 @@ Notebooks are generated automatically by `python -m coding generate-notebooks` (
 **Audience:** Collaborators (annotators) and coordinators
 **Location:** Language Drive folder
 
-One notebook per language. Shows a domain chart for that language and per-construction text reports for each analysis class. This is the primary way collaborators see the effect of their annotations.
+One notebook per language. Shows how complete each construction is (with its review status), a text report per construction under **Results by test**, and a domain chart for that language. This is the primary way collaborators see the effect of their annotations.
 
 ### How to use
 
 1. Open the shared notebook link from your Drive folder — it opens in Colab automatically
 2. Choose **Runtime → Run all**
 3. When prompted, sign in with your Google account and allow access
-4. The domain chart and text reports appear at the bottom of the notebook
+4. The completeness list, the text reports and the domain chart appear in that order
 
 ### How to read the domain chart
 
@@ -34,7 +36,7 @@ Longer segments mean broader domains. A strict span will always be contained wit
 
 ### Text reports
 
-Below the chart, each analysis class produces a text report listing:
+Under **Results by test**, each construction that produces spans gets a text report listing:
 - The keystone position
 - Which positions are complete and partial
 - The four span values in human-readable form (e.g., `positions 4–15 (vpref–tamesuf)`)
@@ -47,7 +49,7 @@ Below the chart, each analysis class produces a text report listing:
 **Audience:** Project coordinators
 **Location:** Top-level `ConstituencyTypology` Drive folder
 
-A single notebook covering all languages in the manifest copy (rebuilt daily from the ID file). Shows per-construction text reports and one domain chart per language. Useful for cross-linguistic comparison and project oversight.
+A single notebook covering every language whose sheets you can open (found by their labels). Shows completeness, per-construction text reports and one domain chart per language. Useful for cross-linguistic comparison and project oversight.
 
 ### How to use
 
@@ -90,13 +92,13 @@ Notebooks are built from templates in `notebooks/templates/`:
 | `all_languages_boilerplate.ipynb` | Coordinator notebook |
 | `report_boilerplate.ipynb` | Per-language report notebooks |
 
-To update the boilerplate (setup cell, chart cell, etc.), edit the template and re-run:
+To update the boilerplate (setup cell, chart cell, etc.), edit the template; `tests/test_notebook_templates.py` runs every cell after Setup against the saved test data, so run it before pushing. The daily refresh then publishes the change to every notebook, or publish it at once:
 
 ```bash
-python -m coding generate-notebooks
+python -m coding generate-notebooks --apply
 ```
 
-This uploads fresh notebooks to Drive for all languages. It also runs automatically at the end of `generate-sheets`, `sync-params --apply`, and `restructure-sheets --apply`. See the [Coordinator guide](coordinator-guide.md#regenerating-notebooks) for when to run this manually.
+This uploads fresh notebooks to Drive for all languages, keeping each notebook's link. It also runs automatically in the daily refresh and at the end of `generate-sheets`, `sync-params --apply`, and `restructure-sheets --apply`, so run it by hand only to publish a template change before the next refresh.
 
 The predecessor notebooks (`sync_colab.ipynb`, `span_results_colab.ipynb`) are archived in `notebooks/archive/` for reference.
 

@@ -5,8 +5,8 @@ the schema made on 2026-10-23. Whichever name the frozen data has (it is
 recaptured after the live rename), the test first gives English and synth0001
 the old name everywhere — tab, Status row, diagnostics file, TSV — so it
 always starts from the state the live run started from. (The ID file holds
-sheet IDs, not tab names, so the rename leaves it alone; the manifest copy
-on Drive lists the tab names and is republished after a renamed tab.)
+sheet IDs, not tab names, so the rename leaves it alone; the Colab notebooks
+take each tab's construction from its label, which must follow the rename.)
 """
 from __future__ import annotations
 
@@ -21,7 +21,8 @@ import pytest
 from coding import drive_doorway, drive_ids
 from coding import rename_construction as rc
 from command_runner import run_command
-from fake_drive import MANIFEST_FILE_ID, FakeDriveDoorway, use_frozen_coded_data
+from fake_drive import FakeDriveDoorway, use_frozen_coded_data
+from planars.from_sheets import _construction_tabs
 from planars.schema_values import STATUS_CONSTRUCTION_COLUMN, STATUS_TAB
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -37,8 +38,10 @@ RENAMES = {"reflexivization": "reflexive_coreference",
 SPECS = [f"{CLS}:{o}:{n}" for o, n in RENAMES.items()]
 
 
-def _manifest(doorway):
-    return doorway.download_file_json(MANIFEST_FILE_ID)
+def _labelled_tabs(doorway, lang):
+    """The constructions the notebooks find on the language's sheet, by label."""
+    sheet_id = drive_ids.class_sheet_id(FakeDriveDoorway.drive_config(), lang, CLS)
+    return {name for name, _ws in _construction_tabs(doorway.spreadsheet(sheet_id))}
 
 
 def _status_names(ws):
@@ -80,7 +83,7 @@ def env(monkeypatch, tmp_path):
     coded = use_frozen_coded_data(monkeypatch, tmp_path)
     for mod in (rc, sys.modules["coding.drive"]):
         monkeypatch.setattr(mod, "_load_drive_config", FakeDriveDoorway.drive_config)
-        monkeypatch.setattr(mod, "_save_drive_config", lambda cfg: None)
+    monkeypatch.setattr(sys.modules["coding.drive"], "_save_drive_config", lambda cfg: None)
     drive_doorway.set_doorway(doorway)
     _give_old_names(doorway, coded)
 
@@ -99,10 +102,10 @@ def env(monkeypatch, tmp_path):
 
 def test_a_dry_run_changes_nothing(env):
     doorway, coded, run = env
-    before = json.dumps(_manifest(doorway), sort_keys=True)
+    doorway.clear_mutations()
     out = run(*SPECS)
     assert "rename tab np_reference → np_coreference" in out
-    assert json.dumps(_manifest(doorway), sort_keys=True) == before
+    assert doorway.mutations == []
     assert (coded / "stan1293" / CLS / f"{OLD}.tsv").exists()
 
 
@@ -114,14 +117,10 @@ def test_apply_renames_everywhere_and_keeps_the_answers(env):
 
     out = run(*SPECS, "--apply")
     assert "0 broke a rule" in out, out
-    assert "Manifest copy republished" in out
 
-    manifest = _manifest(doorway)
     for lang in LANGS:
-        info = manifest[lang]["sheets"][CLS]
-        # The ID file is untouched: same sheet. The manifest copy lists the new tab names.
-        assert info["spreadsheet_id"] == drive_ids.class_sheet_id(ids, lang, CLS)
-        ss = doorway.spreadsheet(info["spreadsheet_id"])
+        # The ID file is untouched: same sheet.
+        ss = doorway.spreadsheet(drive_ids.class_sheet_id(ids, lang, CLS))
         titles = [ws.title for ws in ss.worksheets()]
         assert set(RENAMES.values()) <= set(titles) and not set(RENAMES) & set(titles)
         assert NEW in _status_names(ss.worksheet(STATUS_TAB))
@@ -131,27 +130,25 @@ def test_apply_renames_everywhere_and_keeps_the_answers(env):
         assert (coded / lang / CLS / f"{NEW}.tsv").exists()
         assert not (coded / lang / CLS / f"{OLD}.tsv").exists()
     # Same spreadsheet, same answers: only the tab's name changed.
-    assert manifest["stan1293"]["sheets"][CLS]["spreadsheet_id"] == sheet_id
     assert doorway.spreadsheet(sheet_id).worksheet(NEW).get_all_values() == answers
 
 
-def test_the_republished_manifest_copy_lists_the_new_tab_names(env):
+def test_the_notebooks_find_the_tabs_under_their_new_names(env):
+    """They read each tab's construction from its label, not its title."""
     doorway, _, run = env
     run(*SPECS, "--apply")
     for lang in LANGS:
-        info = _manifest(doorway)[lang]["sheets"][CLS]
-        assert set(RENAMES.values()) <= set(info["constructions"])
-        assert not set(RENAMES) & set(info["constructions"])
+        found = _labelled_tabs(doorway, lang)
+        assert set(RENAMES.values()) <= found
+        assert not set(RENAMES) & found
 
 
 def test_a_second_run_changes_nothing(env):
     doorway, coded, run = env
     run(*SPECS, "--apply")
-    manifest = json.dumps(_manifest(doorway), sort_keys=True)
     out = run(*SPECS, "--apply")
     assert "rename tab" not in out and "local:" not in out
     assert "already renamed" in out and "Done: 0 language(s)" in out
-    assert json.dumps(_manifest(doorway), sort_keys=True) == manifest
 
 
 def test_refused_until_the_schema_is_renamed(env):

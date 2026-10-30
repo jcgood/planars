@@ -27,7 +27,7 @@ import pytest
 
 from coding import drive_doorway, setup_root_folder
 from command_runner import run_command
-from fake_drive import FIXTURE_DIR, MANIFEST_FILE_ID, FakeDriveDoorway, api_error
+from fake_drive import FakeDriveDoorway, api_error
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "setup_root_folder"
@@ -45,17 +45,14 @@ def env(monkeypatch):
     outside the root folder, which is the state this command exists to fix.
     """
     doorway = FakeDriveDoorway()
-    manifest = json.loads(
-        (FIXTURE_DIR / "manifest.json").read_text(encoding="utf-8"))
+    ids = FakeDriveDoorway.drive_config()
     config: dict = {}
-    for lang, entry in sorted(manifest.items()):
-        if not entry.get("folder_id"):
+    for lang, entry in sorted(ids.items()):
+        if lang.startswith("_") or not entry.get("folder_id"):
             continue
         doorway.seed_file(f"planars — {lang}", FOLDER_MIME, [], file_id=entry["folder_id"])
         config[lang] = {"folder_id": entry["folder_id"]}
-    doorway.seed_json_file("manifest.json", manifest, [], file_id=MANIFEST_FILE_ID)
     doorway.seed_file("all_languages.ipynb", "application/json", [], file_id=NOTEBOOK_ID)
-    config["_planars_config_file_id"] = MANIFEST_FILE_ID
     config["_all_languages_notebook_file_id"] = NOTEBOOK_ID
 
     saved: dict = {}
@@ -121,8 +118,7 @@ def test_first_run_moves_every_language_folder_into_the_root(env, monkeypatch):
     moved = {m["file_id"]: m["to_parent"] for m in doorway.mutations_of("move_file")}
     for lang in langs:
         assert moved[config[lang]["folder_id"]] == root_id
-    # manifest.json and the coordinator notebook move too.
-    assert moved[MANIFEST_FILE_ID] == root_id
+    # The coordinator notebook moves too.
     assert moved[NOTEBOOK_ID] == root_id
 
 
@@ -247,16 +243,13 @@ def test_a_language_without_a_folder_id_is_reported_and_skipped(env, monkeypatch
         m["file_id"] for m in doorway.mutations_of("move_file")}
 
 
-def test_absent_manifest_and_notebook_are_reported_with_the_fix(env, monkeypatch):
+def test_an_absent_notebook_is_reported_with_the_fix(env, monkeypatch):
     """The message has to say what to run — nobody memorises this command's order."""
     doorway, config, _ = env
     bare = {k: v for k, v in config.items() if not k.startswith("_")}
     monkeypatch.setattr(setup_root_folder, "_load_drive_config",
                         lambda: json.loads(json.dumps(bare)))
     out = run(monkeypatch)
-    assert "No manifest.json found" in out
     assert "No all_languages.ipynb found" in out
-    # The manifest is made by generate-sheets (generate-notebooks only reads
-    # it); the notebook by generate-notebooks, also named in the closing list.
-    assert out.count("generate-sheets --apply to create it") == 1
+    # Made by generate-notebooks, also named in the closing list.
     assert out.count("generate-notebooks --apply") == 2

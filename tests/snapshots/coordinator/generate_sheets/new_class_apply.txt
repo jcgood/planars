@@ -33,8 +33,7 @@ Planar file: planar_synth0001.tsv
 Classes:     ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent']
   All classes already have sheets. Skipping synth0001.
   (use --force to regenerate)
-Notebook manifest copy refreshed on Drive (id: fake_manifest_file)
 drive_config.json written.
 
 Each language's folder and sheets are shared with the annotator named in people.yaml; for a language with none listed, add one there and re-run with --apply.
-Drive door (enforce): checked 33 write(s) to 11 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 32 write(s) to 10 tab(s) or file(s); 0 broke a rule.

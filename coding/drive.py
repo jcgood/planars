@@ -1,19 +1,17 @@
 """Google Drive and Sheets client helpers shared across coding/ modules.
 
-All OAuth2 authentication, Drive config I/O and manifest upload/download
-live here so that individual command modules stay focused on their own
-logic. Retrying on a rate limit is the Drive door's (coding/drive_door.py),
-not this module's.
+All OAuth2 authentication and Drive config I/O live here so that individual
+command modules stay focused on their own logic. Retrying on a rate limit is
+the Drive door's (coding/drive_door.py), not this module's.
 
 Drive config: coded_data/drive_config.json (private planars-data; the ID
 file, ``state_files.ID_FILE``, written only through the local-file door) is
 the one record of where every Drive file the tooling made is — the root
-folder (_root_folder_id), the manifest file (_planars_config_file_id), and
-each language's folder, sheets, notes Doc and the rest; its class sheets,
-status sheet and notification issue are read and written through
-``drive_ids.py`` (unit 11c). The manifest (manifest.json on Drive) is a copy
-for the Colab notebooks, rebuilt whole by ``manifest_copy.publish``; no
-command reads or edits it.
+folder (_root_folder_id) and each language's folder, sheets, notes Doc and
+the rest; its class sheets, status sheet and notification issue are read
+and written through ``drive_ids.py`` (unit 11c). Until unit 11c-5
+(2026-10-29) a copy of it, the manifest (manifest.json on Drive), was
+uploaded for the Colab notebooks; they now find their sheets by label.
 
 Sharing: project data is shared with named people only. Helpers (all take the
 doorway): ``ensure_user_permission`` (at least ``role``), ``set_user_role``
@@ -25,11 +23,6 @@ and keep "anyone with the link": ``ensure_anyone_permission`` and
 generate_reports.py). Other shared helpers: ``get_or_create_spreadsheet``
 (generate_status_sheet.py), ``create_notes_doc`` and ``acknowledgment_line``
 (the only text the tooling appends to a notes Doc, the Drive door's rule 8).
-
-``upload_manifest`` (called only by ``manifest_copy.publish``) updates the
-manifest by its recorded ID, else the one Drive holds (found by its label),
-and creates one only when Drive holds none. What it sends is checked by the
-Drive door against ``manifest_contract.check()``.
 
 ``_check_coded_data_clean`` (abort if ``coded_data/`` has uncommitted changes
 to files with given extensions, so a command never acts on a half-written or
@@ -50,13 +43,11 @@ import os
 import re
 import subprocess
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import gspread
 from googleapiclient.discovery import build as google_build
 from googleapiclient.http import MediaIoBaseDownload
-
-from planars import drive_labels
 
 from . import drive_door
 
@@ -122,7 +113,7 @@ def _save_drive_config(config: Dict) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Drive manifest upload/download
+# Drive file download
 # ---------------------------------------------------------------------------
 
 def _download_file_json(drive, file_id: str) -> Dict:
@@ -134,144 +125,6 @@ def _download_file_json(drive, file_id: str) -> Dict:
     while not done:
         _, done = downloader.next_chunk()
     return json.loads(buffer.getvalue().decode("utf-8"))
-
-
-
-def _ordered_manifest_bytes(full_config: Dict) -> bytes:
-    """The manifest as it is written to Drive, with each language's keys ordered.
-
-    Human-readable metadata comes first, so anyone opening manifest.json sees
-    the language before the machinery.
-    """
-    _KEY_ORDER = [
-        "glottolog", "meta",
-        "folder_id", "folder_url",
-        "notes_doc_id",
-        "planar_spreadsheet_id", "planar_spreadsheet_url",
-        "diagnostics_spreadsheet_id", "diagnostics_spreadsheet_url",
-        "sheets",
-    ]
-    ordered = {}
-    for lid, entry in full_config.items():
-        if isinstance(entry, dict):
-            ordered[lid] = {k: entry[k] for k in _KEY_ORDER if k in entry}
-            ordered[lid].update({k: v for k, v in entry.items() if k not in _KEY_ORDER})
-        else:
-            ordered[lid] = entry
-    return json.dumps(ordered, indent=2).encode("utf-8")
-
-
-def upload_manifest(doorway, full_config: Dict, root_folder_id: str,
-                    existing_file_id: str = None) -> str:
-    """Write the merged manifest.json (``{lang_id: {folder_id, sheets, ...}}``)
-    to Drive through the doorway, updating it in place if ``existing_file_id``
-    is known, else the manifest Drive holds (found by its identity label),
-    and creating one only when Drive holds none. Returns the file ID, which
-    callers save to ``drive_config.json``.
-
-    The Drive door checks what is sent against ``manifest_contract.check()``
-    (``sheet_spec.content_problems``), as it checks every manifest write:
-    reported in the ``door-violation`` issue while the manifest is in watch
-    mode. ``integrity-check`` runs the same check on the manifest as it is.
-    """
-    from .sheet_spec import file_spec
-    identity = drive_door.manifest()
-    spec = file_spec(identity)
-    content = _ordered_manifest_bytes(full_config)
-
-    def labelled() -> Optional[str]:
-        found = doorway.list_files(
-            f"properties has {{ key='{drive_labels.KIND}' and value='manifest' }} "
-            "and trashed=false")
-        return found[0]["id"] if found else None
-
-    return _upload_manifest_with(
-        lambda file_id: doorway.update_file(file_id, content=content,
-                                            mimetype=spec.mimetype),
-        lambda: doorway.create_file(spec.name, [root_folder_id],
-                                    content=content, mimetype=spec.mimetype,
-                                    identity=identity),
-        existing_file_id, labelled,
-    )
-
-
-def _upload_manifest_with(update, create, existing_file_id: str = None,
-                          find=lambda: None) -> str:
-    """Update manifest.json in place if we know its ID; else update the one
-    ``find`` finds on Drive; else create it.
-
-    The fallback matters: a failed update used to mean the manifest silently
-    stopped being written. Until 2026-10-19 the fallback was always to create
-    a second manifest, leaving the first, which other copies of
-    drive_config.json still named, unused; the Drive door now refuses a
-    second one, so the one Drive holds is found by its label first.
-    """
-    if existing_file_id:
-        try:
-            update(existing_file_id)
-            return existing_file_id
-        except Exception as e:
-            print(f"  WARNING: could not update manifest.json {existing_file_id} ({e}); "
-                  "looking for the one Drive holds.")
-    found = find()
-    if found and found != existing_file_id:
-        update(found)
-        return found
-    return create()
-
-
-def load_manifest(doorway) -> Dict:
-    """Load the full manifest through a ``drive_doorway.DriveDoorway``."""
-    return _load_manifest_with(doorway.download_file_json)
-
-
-def _load_manifest_with(download_json: Callable[[str], Dict]) -> Dict:
-    """Load the full manifest, given a way to download a JSON file by ID.
-
-    Tries the new merged manifest.json first. Falls back to reading the
-    old per-language ``manifest_{lang_id}.json`` files if the merged format is
-    not yet in place (migration path for setups predating issue #30).
-
-    Returns:
-        Dict mapping lang_id to lang_data, where lang_data contains at minimum
-        ``folder_id``, ``folder_url``, and ``sheets``.
-    """
-    config = _load_drive_config()
-    if not config:
-        raise SystemExit(
-            "drive_config.json not found. Run: python -m coding generate-sheets --apply"
-        )
-
-    # New merged format: single manifest.json with full manifest data.
-    file_id = config.get("_planars_config_file_id")
-    if file_id:
-        try:
-            full_config = download_json(file_id)
-            # Distinguish new format (has 'sheets' per language) from old (just folder_id).
-            if any("sheets" in v for v in full_config.values() if isinstance(v, dict)):
-                return full_config
-        except Exception as exc:
-            print(f"  Warning: could not load merged config ({exc}), falling back.")
-
-    # Old format fallback: per-language manifest_{lang_id}.json files.
-    print("  Note: loading per-language manifests (pre-#30 format).")
-    print("  Run python -m coding generate-sheets --apply to upgrade to merged manifest.json.")
-    manifest: Dict = {}
-    for lang_id, lang_config in config.items():
-        if lang_id.startswith("_") or not isinstance(lang_config, dict):
-            continue
-        mfid = lang_config.get("manifest_file_id")
-        if not mfid:
-            continue
-        lang_data = download_json(mfid)
-        lang_data.setdefault("folder_id", lang_config.get("folder_id", ""))
-        manifest[lang_id] = lang_data
-    if not manifest:
-        raise SystemExit(
-            "No manifest data found in drive_config.json. "
-            "Run python -m coding generate-sheets --apply first."
-        )
-    return manifest
 
 
 # ---------------------------------------------------------------------------

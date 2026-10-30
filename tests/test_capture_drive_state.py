@@ -25,7 +25,7 @@ from contextlib import redirect_stdout
 
 from coding import capture_drive_state as cds
 from coding.capture_drive_state import _capture_spreadsheet, _capture_worksheet
-from fake_drive import FIXTURE_DIR, MANIFEST_FILE_ID, FakeDriveDoorway
+from fake_drive import FIXTURE_DIR, FakeDriveDoorway
 
 
 _TAB_LABELS = [
@@ -175,14 +175,17 @@ def test_a_protection_is_recorded_without_who_may_edit_it():
 
 def test_apply_refreezes_sheets_and_local_folders_together(tmp_path, monkeypatch):
     """`--apply --lang stan1293` replaces stan1293's saved Sheets AND its frozen
-    local folder, and leaves the other languages' saved Sheets in the index.
-    Main() is driven against the stand-in Drive through a minimal `gc` shim."""
+    local folder, and leaves the other languages' saved Sheets in the index
+    and their entries in the saved ID file. Main() is driven against the
+    stand-in Drive through a minimal `gc` shim."""
     doorway = FakeDriveDoorway.from_fixtures()
-    manifest = doorway.download_file_json(MANIFEST_FILE_ID)
 
     fixture_dir = tmp_path / "fx" / "drive_state"
     fixture_dir.mkdir(parents=True)
     shutil.copy(FIXTURE_DIR / "index.json", fixture_dir / "index.json")
+    saved_before = json.loads((FIXTURE_DIR / cds.ID_FILE_NAME).read_text(encoding="utf-8"))
+    (fixture_dir / cds.ID_FILE_NAME).write_text(
+        json.dumps({**saved_before, "stan1293": {"stale": True}}), encoding="utf-8")
     frozen = tmp_path / "fx" / "coded_data"
     (frozen / "stan1293").mkdir(parents=True)
     (frozen / "stan1293" / "stale.tsv").write_text("old\n", encoding="utf-8")
@@ -196,10 +199,14 @@ def test_apply_refreezes_sheets_and_local_folders_together(tmp_path, monkeypatch
     monkeypatch.setattr(cds, "ROOT", tmp_path)
     monkeypatch.setattr(cds, "_get_clients", lambda: (_GCFor(doorway), _DriveV3(doorway)))
     monkeypatch.setattr(cds, "_load_drive_config", FakeDriveDoorway.drive_config)
-    monkeypatch.setattr(cds, "_download_file_json", lambda drive, file_id: manifest)
 
     with redirect_stdout(io.StringIO()):
         cds.main(argparse.Namespace(apply=True, lang="stan1293"))
+
+    saved = json.loads((fixture_dir / cds.ID_FILE_NAME).read_text(encoding="utf-8"))
+    assert saved["stan1293"] == FakeDriveDoorway.drive_config()["stan1293"]
+    assert {k: v for k, v in saved.items() if k != "stan1293"} == {
+        k: v for k, v in saved_before.items() if k != "stan1293"}
 
     index = json.loads((fixture_dir / "index.json").read_text(encoding="utf-8"))
     langs = {e["lang_id"] for e in index["spreadsheets"]}

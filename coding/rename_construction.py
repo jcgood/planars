@@ -22,9 +22,9 @@ Then, for each language whose diagnostics file has CLASS with OLD, ``--apply``:
   4. carries check-comments' record of what it has seen on the tab over to
      the new name, so those comments are not reported again.
 
-When an ``--apply`` run renamed a tab, it ends by republishing the manifest
-copy the Colab notebooks read (``manifest_copy.publish``), which lists each
-sheet's tab names.
+The Colab notebooks take a tab's construction from its label, which the
+Drive door rewrites under the new name when the command ends, so they need
+no telling.
 
 Archived TSVs, change logs, provenance lines and saved copies keep the old
 name: they are history.
@@ -49,8 +49,8 @@ from gspread.utils import rowcol_to_a1
 from planars.schema_values import STATUS_CONSTRUCTION_COLUMN, STATUS_TAB, _class_entry
 
 from . import check_comments, file_door
-from . import drive_ids, manifest_copy
-from .drive import _load_drive_config, _save_drive_config
+from . import drive_ids
+from .drive import _load_drive_config
 from .drive_doorway import WorksheetNotFound, get_doorway
 from .make_forms import _dump_diagnostics_yaml, _load_diagnostics_yaml_for_edit
 from .sync_diagnostics_yaml import _sync_to_sheet
@@ -236,7 +236,6 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
     print(("" if apply else "DRY RUN — ") + "renaming: "
           + ", ".join(f"{c}/{o} → {n}" for c, o, n in renames))
     touched = 0
-    sheets_renamed = False
     for lang_id in langs:
         print(f"\n{lang_id}:")
         mine, changed = _rename_yaml(lang_id, renames, apply)
@@ -248,20 +247,12 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
         sheets = drive_ids.class_sheets(config, lang_id)
         for cls, old, new in mine:
             if cls in sheets:
-                on_sheet = _rename_on_sheet(doorway, sheets[cls], cls, old, new, apply)
-                changed |= on_sheet
-                sheets_renamed |= on_sheet
+                changed |= _rename_on_sheet(doorway, sheets[cls], cls, old, new, apply)
             changed |= _rename_local(lang_id, cls, old, new, apply)
         if changed:
             touched += 1
         else:
             print("  already renamed")
-    if apply and sheets_renamed:
-        # The IDs are unchanged, but the manifest copy the Colab notebooks
-        # read lists each sheet's tab names: republish it.
-        manifest_copy.publish(doorway, config)
-        _save_drive_config(config)
-        print("\nManifest copy republished on Drive (it lists the tab names).")
     if not apply:
         print(f"\nDry run: {touched} language(s) would change. Run with --apply to make "
               f"the changes.")

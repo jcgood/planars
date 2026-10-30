@@ -186,8 +186,9 @@ SHEET_KINDS: FrozenSet[str] = frozenset({CLASS_SHEET, *COPY_SHEETS, STATUS_SHEET
 FILE_KINDS: FrozenSet[str] = frozenset({NOTES_DOC, "report", "charts", "manifest", "notebook",
                                         "folder"})
 # The kinds of file that may be put in Drive's trash (rule 8): the tooling
-# writes every cell of them, so nobody's work is in one.
-TRASHABLE_KINDS: FrozenSet[str] = frozenset({"notebook"})
+# writes every cell of them, so nobody's work is in one. "manifest" only
+# until migrations/trash_manifest.py has run (unit 11c-5), when the kind goes.
+TRASHABLE_KINDS: FrozenSet[str] = frozenset({"notebook", "manifest"})
 
 # Every batch_update request type the tooling sends, each checked below.
 # A new one is added here, with its check, before any command can use it.

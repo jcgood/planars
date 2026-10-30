@@ -14,5 +14,4 @@ Annotation Status folder: https://drive.google.com/drive/folders/NEW_FOLDER_ID
     Created: https://docs.google.com/spreadsheets/d/NEW_SHEET_ID
 
 Done.
-Manifest copy republished (new status sheet link).
-Drive door (enforce): checked 11 write(s) to 4 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 10 write(s) to 3 tab(s) or file(s); 0 broke a rule.

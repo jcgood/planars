@@ -53,7 +53,7 @@ from coding import drive_doorway, drive_ids
 from coding import generate_notebooks as gn
 from coding import sync_params as sp
 from command_runner import run_command
-from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, point_coded_data_at
+from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, point_coded_data_at
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
 

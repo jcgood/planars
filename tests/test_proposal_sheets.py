@@ -23,7 +23,7 @@ from coding.sheet_spec import (PROPOSAL_DIAGNOSTICS_TAB, PROPOSAL_INSTRUCTIONS_T
                                PROPOSAL_PLANAR_TAB, REVIEW_TAB_TITLE, WHAT_CHANGED_COLUMN)
 from coding.proposal_diff import compare, describe, normal, three_way
 from command_runner import run_command
-from fake_drive import FIXTURE_DIR, FakeDriveDoorway, use_frozen_coded_data
+from fake_drive import FakeDriveDoorway, use_frozen_coded_data
 
 ANNOTATOR = "annotator@example.org"  # tests/conftest.py's placeholder address
 LANG = "stan1293"
@@ -40,9 +40,8 @@ def env(monkeypatch, tmp_path):
     # frozen data holds the real ones since 2026-10-22.
     for base in coded.glob("*/lang_setup/proposal_base_*.json"):
         base.unlink()
-    manifest = json.loads((FIXTURE_DIR / "manifest.json").read_text(encoding="utf-8"))
     config = FakeDriveDoorway.drive_config()
-    for lang_id, entry in manifest.items():
+    for lang_id, entry in list(config.items()):
         if isinstance(entry, dict) and entry.get("folder_id"):
             config[lang_id] = {"folder_id": entry["folder_id"]}
     state_files.ID_FILE.parent.mkdir(parents=True, exist_ok=True)

@@ -13,7 +13,8 @@ These IDs were kept only in the manifest; from 11c every command reads them
 from the ID file, and the manifest becomes a copy rebuilt from it
 (``coding/manifest_copy.py``) until 11c-5 deletes it.
 Run: 2026-10-28 on Jeff's machine, before the 11c-2 commit that switches the
-commands to the ID file.
+commands to the ID file. It no longer runs: 11c-5 (2026-10-29) deleted the
+manifest, ``load_manifest`` and ``drive_ids.copy_from_manifest``.
 
 Usage:
     python migrations/ids_from_manifest.py           # dry run

@@ -44,8 +44,7 @@ from coding import sync_diagnostics_yaml as sdy
 from coding.locked_tabs import PROTECTION_DESCRIPTION, protect
 from coding.make_forms import _yaml_to_grid_df
 from command_runner import run_command
-from fake_drive import (MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway,
-                        use_frozen_coded_data)
+from fake_drive import ROOT_FOLDER_ID, FakeDriveDoorway, use_frozen_coded_data
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "sync_diagnostics_yaml"

@@ -112,9 +112,9 @@ Language: stan1293
     [prescreening] split: her -> heracc, herdat (2 new, old answers in a note on each)
     Archived to _archived/coreference_stan1293_v4
     [prescreening] wrote: carried 140, new blank 3, dropped 2
-    [reflexive_coreference] (pair tab) copied 168 rows, 0 cell(s) renamed, 10 row(s) split (blank, old judgment quoted in a note)
-    [pronoun_coreference] (pair tab) copied 168 rows, 0 cell(s) renamed, 10 row(s) split (blank, old judgment quoted in a note)
-    [np_coreference] (pair tab) copied 168 rows, 0 cell(s) renamed, 10 row(s) split (blank, old judgment quoted in a note)
+    [reflexive_coreference] (pair tab) copied 207 rows, 0 cell(s) renamed, 12 row(s) split (blank, old judgment quoted in a note)
+    [pronoun_coreference] (pair tab) copied 207 rows, 0 cell(s) renamed, 12 row(s) split (blank, old judgment quoted in a note)
+    [np_coreference] (pair tab) copied 207 rows, 0 cell(s) renamed, 12 row(s) split (blank, old judgment quoted in a note)
     Locked tab Instructions: create
     Locked tab Instructions: protect
     Locked tab Planar Structure: create
@@ -168,7 +168,6 @@ Language: stan1293
     New sheet (v2): https://docs.google.com/spreadsheets/d/fake_ss_0022
 
 ID file updated.
-Manifest copy republished on Drive.
 
 Done.
 
@@ -198,5 +197,5 @@ Done.
 
 --- Notifying language tracking issues ---
   [stan1293] commented on issue #999
-Drive door (enforce): checked 290 write(s) to 83 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 289 write(s) to 82 tab(s) or file(s); 0 broke a rule.
 Local-file door: changed 16 file(s), previous versions archived and logged.

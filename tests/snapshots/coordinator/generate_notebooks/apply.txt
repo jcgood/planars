@@ -1,8 +1,5 @@
 Notebook generation
-Languages:              ['arao1248', 'stan1293', 'synth0001']
-Classes (all langs):    ['ciscategorial', 'noninterruption', 'nonpermutability', 'free_occurrence', 'subspanrepetition', 'proform', 'metrical', 'segmental', 'coreference', 'phrasal_accent', 'biuniqueness_deviations']
-
-Using manifest.json (id: fake_manifest_file)
+Languages: ['arao1248', 'stan1293', 'synth0001']
   [arao1248] Uploaded domains_arao1248.ipynb (viewer)
   [stan1293] Uploaded domains_stan1293.ipynb (viewer)
   [synth0001] Uploaded domains_synth0001.ipynb (viewer)

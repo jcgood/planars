@@ -32,9 +32,9 @@ precedent -- what this harness diffs is restructure_sheets.py's own Drive
 interaction, not theirs). stdout, the mutation log, the manifest writes, and
 every `coded_data/` TSV written all came back byte-identical between the
 unmigrated and migrated code across all thirteen. (Since unit 11c the
-command reads and records its sheets in the ID file, not the manifest; the
-tests below hand it an ID file and read the sheets back from it. The manifest
-on Drive is only republished from the ID file at the end of an apply run.)
+command reads and records its sheets in the ID file, not the manifest, which
+was deleted in 11c-5; the tests below hand it an ID file and read the sheets
+back from it.)
 
 The harness lesson already named in docs/data-layer-progress.md's decisions
 log: `_autocommit_data` reads *that module's own* `CODED_DATA` constant rather
@@ -65,8 +65,7 @@ from coding import restructure_journal as rj
 from coding import restructure_sheets as rs
 from coding import validate_coding as vc
 from command_runner import run_command
-from fake_drive import (FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, api_error,
-                        point_coded_data_at)
+from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, api_error, point_coded_data_at
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
 from planars.schema_values import ELEMENT_ROW_COLUMNS
@@ -655,10 +654,13 @@ def test_a_second_identical_apply_after_a_real_restructure_archives_nothing_furt
 
 
 # ---------------------------------------------------------------------------
-# The ID file and the manifest copy
+# The ID file, and what the notebooks find by label
 # ---------------------------------------------------------------------------
 
-def test_the_new_sheet_is_recorded_in_the_id_file_and_the_manifest_copy_republished(env):
+def test_the_new_sheet_is_recorded_in_the_id_file_and_only_it_is_found_by_label(env):
+    """The notebooks find a language's sheets by label: the new sheet is the
+    live one for its class, and the replaced one is labelled archived."""
+    from planars.from_sheets import download_language
     old_id = env.sheet_id("stan1293", "proform")
     old_version = env.version("stan1293", "proform")
     env.rename_position("stan1293", "v:npsubj1", "v:npsubj1new")
@@ -668,33 +670,20 @@ def test_the_new_sheet_is_recorded_in_the_id_file_and_the_manifest_copy_republis
     new_id = env.sheet_id("stan1293", "proform")
     assert new_id != old_id
     assert env.version("stan1293", "proform") == old_version + 1
-    # The manifest copy on Drive was rebuilt from the ID file.
-    assert [m["file_id"] for m in env.doorway.mutations_of("update_file")
-           if m["file_id"] == MANIFEST_FILE_ID]
-    published = env.doorway.download_file_json(MANIFEST_FILE_ID)
-    assert published["stan1293"]["sheets"]["proform"]["spreadsheet_id"] == new_id
+    assert env.doorway.get_file(old_id, fields="properties")["properties"].get(
+        "planars_state") == "archived"
+    opened = []
+    download_language(
+        "stan1293", env.coded.parent / "from_sheets",
+        list_files=lambda q: env.doorway.list_files(q, fields="files(id, name, properties)"),
+        open_spreadsheet=lambda sid: opened.append(sid) or env.doorway.spreadsheet(sid))
+    assert new_id in opened and old_id not in opened
 
 
-def test_the_republished_manifest_copy_lists_the_new_sheets_constructions(env):
-    env.rename_position("stan1293", "v:npsubj1", "v:npsubj1new")
-    env.run(["--apply", "--lang", "stan1293",
-            "--rename-map", "v:npsubj1:v:npsubj1new"])
-    published = env.doorway.download_file_json(MANIFEST_FILE_ID)
-    assert published["stan1293"]["sheets"]["proform"]["constructions"]
-
-
-def test_nothing_is_saved_or_published_by_a_dry_run(env):
+def test_nothing_is_saved_by_a_dry_run(env):
     env.rename_position("stan1293", "v:npsubj1", "v:npsubj1new")
     env.run(["--lang", "stan1293", "--rename-map", "v:npsubj1:v:npsubj1new"])
     assert env.saved_configs == []
-    assert not any(m["file_id"] == MANIFEST_FILE_ID
-                  for m in env.doorway.mutations_of("update_file"))
-
-
-def test_nothing_is_published_when_no_sheet_was_replaced(env):
-    env.run(["--apply", "--lang", "stan1293"])
-    assert not any(m["file_id"] == MANIFEST_FILE_ID
-                  for m in env.doorway.mutations_of("update_file"))
 
 
 # ---------------------------------------------------------------------------
@@ -847,11 +836,9 @@ def test_resume_finishes_a_new_sheet_created_unit_then_continues(env):
     # pass didn't also recreate it, and the --lang-filtered main loop never
     # touched stan1293 at all.
     assert len(env.doorway.mutations_of("create_spreadsheet")) == 1
-    # The resumed class is saved to the ID file, and the manifest copy
-    # republished, at the end of the run -- confirm both fired.
+    # The resumed class is saved to the ID file at the end of the run.
     assert env.saved_configs
     assert "ID file updated." in out
-    assert "Manifest copy republished on Drive." in out
     # Resuming is bookkeeping on Drive: no local file changes, so the
     # local-file door has nothing to commit (tests/test_file_door.py covers
     # that it commits whatever a run does write).

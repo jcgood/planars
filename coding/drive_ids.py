@@ -5,7 +5,8 @@ Phase 10 unit 11c (``docs/ownership-design.md`` § 6 item 7): the ID file is
 the one record of where every Drive file the tooling made is. Until 11c the
 class sheets' IDs, the status sheet and the notification issue were kept
 only in the manifest on Drive, a copy that went stale; they live here now,
-and the manifest is written from them until it is deleted.
+and the manifest was deleted in 11c-5 (2026-10-29). The Colab notebooks
+don't read this file: they find the sheets by label (``planars.from_sheets``).
 
 Every function takes the ID file's contents as loaded by the command
 (``drive._load_drive_config()``) and, for the setters, changes them in place;
@@ -101,23 +102,3 @@ def set_notification_issue(config: Dict, lang_id: str, number: int) -> None:
     config.setdefault(lang_id, {})[NOTIFICATION_ISSUE] = int(number)
 
 
-def copy_from_manifest(config: Dict, lang_id: str, entry: Dict) -> None:
-    """Record what one language's manifest entry says about its class sheets,
-    status sheet and notification issue. Used once by
-    ``migrations/ids_from_manifest.py`` and by the tests' offline Drive,
-    whose saved data has a manifest but no ID file; both go with the
-    manifest in 11c-5. The other IDs the live ID file already holds (folder,
-    notes Doc, planar and diagnostics Sheets) are copied only where missing."""
-    lang = config.setdefault(lang_id, {})
-    for key in ("folder_id", "notes_doc_id",
-                "planar_spreadsheet_id", "diagnostics_spreadsheet_id"):
-        if entry.get(key) and not lang.get(key):
-            lang[key] = entry[key]
-    for class_name, info in (entry.get("sheets") or {}).items():
-        set_class_sheet(config, lang_id, class_name, info["spreadsheet_id"],
-                        info.get("version", 1))
-    url = entry.get("status_sheet_url")
-    if url:
-        set_status_sheet_id(config, lang_id, url.rstrip("/").rsplit("/", 1)[-1])
-    if entry.get("notification_issue"):
-        set_notification_issue(config, lang_id, entry["notification_issue"])

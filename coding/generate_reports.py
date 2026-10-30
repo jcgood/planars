@@ -21,9 +21,9 @@ Requires weasyprint and kaleido (both in requirements.txt). WeasyPrint also
 needs system libraries: libpango-1.0-0, libpangocairo-1.0-0, libcairo2
 (installed automatically in CI; on macOS install via Homebrew: pango cairo).
 
-Uses source="local" (reads from coded_data/ TSVs) so it works in CI without
-requiring live Google Sheets access during the data collection step. Drive
-access is still needed for the upload step.
+Reads the imported coded_data/ TSVs, so it works in CI without live Google
+Sheets access during the data collection step. Drive access is still needed
+for the upload step.
 
 Authentication: same OAuth2 setup as generate_sheets.py.
     PLANARS_OAUTH_CREDENTIALS  — path to OAuth2 Desktop App credentials
@@ -85,7 +85,7 @@ def _run(apply: bool) -> None:
 
         print(f"  [{lang_id}] Collecting data...", end=" ", flush=True)
         try:
-            data = language_report_data(lang_id, source="local", repo_root=ROOT)
+            data = language_report_data(lang_id, ROOT)
         except Exception as e:
             print(f"ERROR: {e}")
             continue

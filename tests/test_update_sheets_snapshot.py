@@ -53,8 +53,7 @@ from coding import drive_doorway, drive_ids
 from coding import update_sheets as us
 from coding.locked_tabs import locked_tab_titles
 from command_runner import run_command
-from fake_drive import (FIXTURE_DIR, FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID,
-                        point_coded_data_at)
+from fake_drive import FIXTURE_DIR, FROZEN_CODED_DATA, FakeDriveDoorway, point_coded_data_at
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
 from planars.schema_values import TRAILING_COLUMNS, trailing_columns_for

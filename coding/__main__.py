@@ -62,7 +62,6 @@ _COMMANDS = {
     "check-comments":              "coding.check_comments",
     "refresh-dropdowns":           "coding.refresh_dropdowns",
     "set-tab-status":              "coding.set_tab_status",
-    "publish-manifest":            "coding.manifest_copy",
     "sync-planar":                 "coding.sync_planar",
     "generate-status-sheet":       "coding.generate_status_sheet",
     "proposal-sheets":             "coding.proposal_sheets",

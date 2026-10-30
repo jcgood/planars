@@ -207,14 +207,14 @@ refresh: green, its "diagnostics sheet" step clean, and no
 clone must be pulled before his Claude runs the tooling, or it writes the
 TSV again (the 2026-10-28 refresh was green and no TSV came back).
 **11d is done (2026-10-28):** the Instructions sentences are in planar.yaml's
-`sheet_text`. **11c-1 to 11c-3 done 2026-10-28** (steps and as-built in
-`docs/ownership-design.md` § 6 item 7): no command reads the manifest; the
-ID file holds every ID. **Next: the two live tests (11c-5)**, which Jeff
-runs with a second Google account of his that doesn't own the files (don't
-re-ask; 11c doesn't wait on Adam): share synth0001 with that account, one
-small test notebook that finds the sheets by label. Then 11c-4 and 11c-5 in
-one commit. Adam's clone must be pulled before his Claude runs the tooling:
-older code records a new sheet only in the manifest.
+`sheet_text`. **11c is done (2026-10-29;** as-built in
+`docs/ownership-design.md` § 6 item 7): Jeff's two live tests passed, the
+notebooks find their sheets by label, the manifest is gone. **Next:** check
+the 2026-10-30 refresh (green, its new `notebooks` step clean, no
+`door-violation`), then rename what still says "manifest" (the plan's
+"Left" bullet there: `prune-manifest`, `--check-manifest`, the
+`stale-manifest` label), then 16–18. Adam's clone must be pulled before his
+Claude runs the tooling.
 
 **Where it stands:** class sheets are enforced live (2026-10-19, Jeff;
 `drive_door.LIVE_ENFORCED_KINDS`); every other kind now has its spec and is
@@ -229,20 +229,17 @@ rule 8 especially) is a command bug or a spec gap to fix.
 the `overwrite` step now says how many changes it checked) and enforce
 each kind in watch once it has had a clean real write (below). The
 2026-10-23 refresh was the first with the proposal step and the local-file
-door enforcing: both clean. Unit 9 is done (2026-10-23). After that the
-order is 11c, then 16–18.
+door enforcing: both clean. Unit 9 is done (2026-10-23). 11c is done
+(2026-10-29); next the "manifest" renames, then 16–18.
 
 **Waits on watching:** enforce for each kind still in watch (planar
-Sheet, notes Docs, notebooks, reports, manifest, folders: its own first
+Sheet, notes Docs, notebooks, reports, folders: its own first
 clean real write, then added to `LIVE_ENFORCED_KINDS`; class sheets,
 status sheets, the diagnostics Sheet and charts are enforced), and refusing
-unlabelled targets (last). **11a is live** (2026-10-22: the three
-proposal sheets, the refresh step, the collaborator guide section); 11b is
-done (2026-10-24, 2026-10-27); 11d done (2026-10-28). Then 11c, 16–18.
-
-**Live steps — name each to Jeff for approval first:** 5f's one-notebook
-sharing test and Q7's Colab label-search test (11c-5; Jeff runs both with
-his second, non-owner account; they can run together).
+unlabelled targets (last). Notebooks now get a real write every day (the
+refresh's `notebooks` step), so they can be enforced after a clean week.
+**11a is live** (2026-10-22); 11b done (2026-10-24, 2026-10-27); 11d done
+(2026-10-28); 11c done (2026-10-29).
 
 Check for an open `door-violation` issue first: each line is a command bug
 or a spec gap to fix.

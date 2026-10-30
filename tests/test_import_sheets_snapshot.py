@@ -120,7 +120,7 @@ from coding import drive as drive_module
 from coding import drive_doorway, drive_ids, file_door
 from coding import import_sheets as is_
 from command_runner import run_command
-from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, point_coded_data_at
+from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, point_coded_data_at
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -569,17 +569,6 @@ def test_a_bad_id_reached_on_a_dry_run_warns_and_previews_every_other_language(e
     assert other_classes, "expected stan1293 to have more than one class sheet"
     for cls in other_classes:
         assert f"\n  {cls}" in out
-
-
-# ---------------------------------------------------------------------------
-# The manifest is not this command's: it never writes it
-# ---------------------------------------------------------------------------
-
-def test_the_manifest_is_never_written(env):
-    out, _ = env.run(["import-sheets", "--lang", "arao1248", "--apply"])
-    assert "manifest" not in out
-    assert not any(m["op"] == "update_file" and m["file_id"] == MANIFEST_FILE_ID
-                  for m in env.doorway.mutations)
 
 
 # ---------------------------------------------------------------------------

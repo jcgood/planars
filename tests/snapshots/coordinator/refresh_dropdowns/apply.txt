@@ -98,7 +98,7 @@ Refreshing sheet dropdowns
 
   [stan1293] phrasal_accent
     prescreening 'accented': no dropdown → y, n, both
-    general 'joint_accent': no dropdown → always, sometimes, never
+    general 'joint_accent': no dropdown → always, sometimes, never, untestable
     Status 'Status': no dropdown → in-progress, ready-for-review
 
   [stan1293] biuniqueness_deviations

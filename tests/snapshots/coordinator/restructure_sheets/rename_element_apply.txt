@@ -100,9 +100,9 @@ Language: stan1293
     [prescreening] carry over 140; rename 1; new blank 1; drop 1 (NP{P,T}@v:obj-part)
     Archived to _archived/coreference_stan1293_v4
     [prescreening] wrote: carried 141, new blank 1, dropped 1
-    [reflexive_coreference] (pair tab) copied 163 rows, 0 cell(s) renamed
-    [pronoun_coreference] (pair tab) copied 163 rows, 0 cell(s) renamed
-    [np_coreference] (pair tab) copied 163 rows, 0 cell(s) renamed
+    [reflexive_coreference] (pair tab) copied 201 rows, 0 cell(s) renamed
+    [pronoun_coreference] (pair tab) copied 201 rows, 0 cell(s) renamed
+    [np_coreference] (pair tab) copied 201 rows, 0 cell(s) renamed
     Locked tab Instructions: create
     Locked tab Instructions: protect
     Locked tab Planar Structure: create
@@ -152,7 +152,6 @@ Language: stan1293
     New sheet (v2): https://docs.google.com/spreadsheets/d/fake_ss_0022
 
 ID file updated.
-Manifest copy republished on Drive.
 
 Done.
 
@@ -182,5 +181,5 @@ Done.
 
 --- Notifying language tracking issues ---
   [stan1293] commented on issue #999
-Drive door (enforce): checked 270 write(s) to 83 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 269 write(s) to 82 tab(s) or file(s); 0 broke a rule.
 Local-file door: changed 16 file(s), previous versions archived and logged.

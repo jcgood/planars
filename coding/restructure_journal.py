@@ -17,9 +17,7 @@ to either finish forward from there or (only when safe — see below) undo it:
 
     OLD_SHEET_ARCHIVED    -- old sheet renamed, moved to _archived/, locked
     NEW_SHEET_CREATED      -- new sheet exists and is fully populated
-    (terminal, not stored) -- ID file updated and saved (the manifest copy
-                              is then republished, but that is a copy: the
-                              daily refresh rebuilds it if a run stops first)
+    (terminal, not stored) -- ID file updated and saved
 
 A unit's entry is written *before* app state assumes a step succeeded and
 removed the moment the terminal state is reached, so **the journal file is

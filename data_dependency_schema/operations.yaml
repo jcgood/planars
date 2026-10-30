@@ -28,13 +28,14 @@
   writes_to_drive: false
   writes_locally: false
   description: >-
-    Records live Drive/Sheets state (every annotation spreadsheet plus the
-    manifest) to coded_data/.test_fixtures/drive_state/, and at the same
-    moment freezes a copy of each captured language's local folder to
+    Records live Drive/Sheets state (every spreadsheet the ID file lists,
+    and the ID file's entries for them) to
+    coded_data/.test_fixtures/drive_state/, and at the same moment freezes
+    a copy of each captured language's local folder to
     coded_data/.test_fixtures/coded_data/ -- the two inputs every other
     command's tests run against. Both live in planars-data (private).
   side_effects:
-    - "overwrites coded_data/.test_fixtures/drive_state/{lang}/*.json, manifest.json, and index.json (index entries for languages not captured this run are kept)"
+    - "overwrites coded_data/.test_fixtures/drive_state/{lang}/*.json, id_file.json, and index.json (entries for languages not captured this run are kept in both)"
     - "deletes a captured language's recording of any spreadsheet the ID file (drive_config.json) no longer lists (kept if its capture failed this run)"
     - "replaces coded_data/.test_fixtures/coded_data/{lang}/ with a copy of coded_data/{lang}/ for each captured language"
     - "leaves those changes uncommitted in planars-data; the coordinator regenerates the saved test outputs, reviews, and commits"
@@ -71,9 +72,7 @@
       creates/updates the language's Drive folder, notes doc,
       planar/diagnostics reference sheets, one spreadsheet per class, Status
       tabs; records each new class sheet's ID, the folder, notes doc and
-      planar/diagnostics sheet IDs in drive_config.json (the ID file); when it
-      made anything, rebuilds the notebooks' manifest copy on Drive once at
-      the end (manifest_copy.publish)
+      planar/diagnostics sheet IDs in drive_config.json (the ID file)
     - >-
       --force: refused for any language whose class sheets the ID file
       records, before anything is touched (Finding 15 fixed: the check runs
@@ -81,8 +80,7 @@
   idempotent: true
   idempotency_note: >-
     A second --apply finds every class sheet in the ID file and every
-    construction tab on its sheet, and writes nothing (no manifest rebuild
-    either).
+    construction tab on its sheet, and writes nothing to the sheets.
   apply_gate: "--apply"
   preconditions: []
   facts_touched:
@@ -367,7 +365,7 @@
     own actual header and the current diagnostics YAML, so a crash mid-run
     leaves already-updated tabs correctly matching the YAML, and a retry
     finds nothing left to do for them. It reads which sheets a language has
-    from the ID file and records nothing in the manifest (unit 11c). Not
+    from the ID file (unit 11c). Not
     safe against a concurrent edit to the same tab by another actor while
     this command is running -- a different, non-retry hazard.
   apply_gate: "--apply"
@@ -573,7 +571,6 @@
     - "rewrites the class's annotation TSVs through the local-file door (previous versions archived, change-log lines)"
     - "--rename-class: moves the class's annotation TSVs to the new class's folder (file_door.move_class), swaps the class's entry in the ID file"
     - "records each new sheet in the ID file (drive_ids.set_class_sheet, version + 1) and saves it at once; reads the sheets to restructure from the ID file and each sheet's tabs from the sheet itself, never the manifest"
-    - "when any sheet was replaced, republishes the notebooks' manifest copy once at the end (manifest_copy.publish)"
     - "notifies the language's tracking issue via notify.py after sheets actually change (the issue number is kept in the ID file; an open issue with the language's title is found before a new one is made)"
     - "commits and pushes the files it wrote in planars-data when it ends (the local-file door)"
     - >-
@@ -732,14 +729,13 @@
   description: >-
     Removes a retired class's sheet from the ID file (the command keeps its
     old name), archives its local TSVs, and moves its Drive spreadsheet to
-    _archived/; warns if the sheet was edited within 14 days. Republishes
-    the notebooks' manifest copy once at the end.
+    _archived/, labelled archived (so the Colab notebooks leave it out);
+    warns if the sheet was edited within 14 days.
   side_effects:
     - "removes coded_data/{lang}/{class}/ TSVs through the local-file door, which keeps each one's last version in coded_data/{lang}/archive/{class}/ and writes a change-log line; commits and pushes them when it ends (until Phase 10 unit 6a it left them uncommitted)"
     - "moves the class's Drive spreadsheet to the _archived/ subfolder"
     - "makes that spreadsheet read-only for everyone but its owner (drive.make_read_only, since 2026-10-13)"
     - "removes the class's sheet from the ID file (drive_ids.remove_class_sheet), saving it after each class through the local-file door, which commits it in planars-data"
-    - "republishes the notebooks' manifest copy once at the end (manifest_copy.publish)"
   idempotent: true
   idempotency_note: >-
     Which classes are stale (_find_stale) is recomputed fresh from the
@@ -776,12 +772,11 @@
     has it, after the schema has been renamed: the diagnostics file, the
     tab and its Status row in place (same sheet, same link, same answers;
     the ID file holds sheet IDs, so it is unchanged), the local TSV and
-    check-comments' record (#318 d), then republishes the notebooks' manifest
-    copy, which lists tab names.
+    check-comments' record (#318 d). The Drive door relabels the renamed
+    tab when the command ends, and the Colab notebooks read that label.
   side_effects:
     - "edits the construction's name in diagnostics_{lang_id}.yaml (comments and layout kept) and pushes it to the diagnostics Sheet"
     - "renames the tab and its Status-tab row on the live class sheet"
-    - "republishes the notebooks' manifest copy at the end of an --apply run that renamed a tab (manifest_copy.publish); edits nothing in the manifest or the ID file"
     - "moves coded_data/{lang}/{class}/OLD.tsv to NEW.tsv through the local-file door (old version archived, both logged)"
     - "renames the tab's keys in check-comments' state file"
     - "commits and pushes the files it wrote in planars-data when it ends (the local-file door)"
@@ -887,28 +882,6 @@
   preconditions: []
   facts_touched:
     - {fact: sheet_dropdown_values, role: writes}
-  cascades_triggered: []
-  modes: []
-
-- id: publish_manifest
-  cli_command: publish-manifest
-  writes_to_drive: true
-  # The ID file, when the manifest's own ID is first recorded.
-  writes_locally: true
-  description: >-
-    Rebuilds the manifest on Drive (the copy the published Colab notebooks
-    read) from the ID file, the sheets' tabs and the sources, and uploads
-    it. Daily, in the refresh; the commands that make or retire a sheet run
-    the same rebuild themselves. Deleted with the manifest in unit 11c-5.
-  side_effects:
-    - "replaces manifest.json in the root Drive folder with the rebuilt copy"
-  idempotent: true
-  idempotency_note: >-
-    The copy is rebuilt whole from its sources each run, so a second run
-    uploads the same content.
-  apply_gate: "--apply"
-  preconditions: [coded_data_git_identity_configured]
-  facts_touched: []
   cascades_triggered: []
   modes: []
 

@@ -2,7 +2,7 @@
 """Retire analysis classes: remove them from the ID file and archive their TSVs and sheets.
 
 (The command keeps its old name, prune-manifest; what it prunes is the ID file's
-list of class sheets, and the manifest copy is republished from it.)
+list of class sheets. The manifest it once pruned was deleted in unit 11c-5.)
 
 When an analysis class is removed from diagnostics_{lang_id}.yaml (and the TSV regenerated
 via `sync-diagnostics-yaml --apply`), the ID file (drive_config.json) retains the stale
@@ -29,9 +29,9 @@ For each stale class (a class sheet in the ID file but not in diagnostics_{lang_
 
 Without --all it asks about each class. The ID file is saved right after each
 class is archived, not once at the end, so a crash partway through never
-leaves it listing an already-archived class. When any class was retired, the
-manifest copy the Colab notebooks read is then republished once
-(`manifest_copy.publish`). A stale class here means a retired one; to rename
+leaves it listing an already-archived class. The Colab notebooks leave an
+archived sheet out by its label (`planars.from_sheets`), so nothing else
+needs telling. A stale class here means a retired one; to rename
 a class instead, use `restructure-sheets --rename-class`.
 
 The Drive sheet is moved to _archived/, not deleted — annotation data is irreplaceable.
@@ -59,7 +59,7 @@ from .drive import (
     _save_drive_config,
 )
 from .drive_doorway import get_doorway
-from . import drive_door, drive_ids, manifest_copy
+from . import drive_door, drive_ids
 from .sheet_spec import ARCHIVE_FOLDER_NAME
 from . import file_door
 
@@ -213,13 +213,11 @@ def _find_stale(config: dict) -> Dict[str, List[str]]:
 def build_parser() -> argparse.ArgumentParser:
     """Build the argument parser for `python -m coding prune-manifest`."""
     ap = argparse.ArgumentParser(
-        description="Archive retired class TSVs and sheets and remove them from the ID file "
-                    "(then republish the manifest copy)."
+        description="Archive retired class TSVs and sheets and remove them from the ID file."
     )
     ap.add_argument(
         "--apply", action="store_true",
-        help="archive TSVs, move Drive sheet, remove it from the ID file, "
-             "republish the manifest copy (default: dry run)",
+        help="archive TSVs, move Drive sheet, remove it from the ID file (default: dry run)",
     )
     ap.add_argument(
         "--all", action="store_true", dest="skip_prompts",
@@ -315,9 +313,6 @@ def main(args: argparse.Namespace | None = None) -> None:
         print()
 
     if any_changes:
-        # The notebooks read the manifest copy: republish it without the retired sheets.
-        manifest_copy.publish(doorway, config)
-        _save_drive_config(config)
-        print("ID file updated; manifest copy republished on Drive.")
+        print("ID file updated.")
     else:
         print("No changes made (all classes skipped).")

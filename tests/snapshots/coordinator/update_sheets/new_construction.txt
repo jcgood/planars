@@ -58,7 +58,6 @@ Languages: ['arao1248', 'stan1293', 'synth0001']
   phrasal_accent
     [prescreening] up to date
     [general] up to date (pair-row tab — row updates skipped)
-    [locked tab] Instructions: refresh (its source has changed)
 
   biuniqueness_deviations
     [elements] up to date
@@ -107,4 +106,4 @@ Languages: ['arao1248', 'stan1293', 'synth0001']
     [locked tab] Instructions: refresh (its source has changed)
 
 Done.
-Drive door (enforce): checked 49 write(s) to 42 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 46 write(s) to 41 tab(s) or file(s); 0 broke a rule.

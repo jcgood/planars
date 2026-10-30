@@ -77,7 +77,7 @@ def _unattended_modules() -> Set[str]:
         for cmd in _unattended_commands()
         if cmd in _COMMANDS
     }
-    # drive.py (manifest upload, load_manifest), file_door.py (every local
+    # drive.py (sharing and file helpers), file_door.py (every local
     # write and its commit) and __main__.py's _warn_pending (runs on every
     # single invocation) are common code every command above passes
     # through, but none is itself a value in _COMMANDS, so they'd otherwise
@@ -167,18 +167,6 @@ _KNOWN_SITES: Dict[Site, str] = {
     ("update_sheets.py", 'print(f"    [{construction}] WARNING: planar structure has changed:")', 1):
         "correctly escalated: sets any_drift, which drives exit 1, which the "
         "sheet-drift issue mechanism dumps in full -- not a gap",
-    ("drive.py", 'print(f"  WARNING: could not update manifest.json {existing_file_id} ({e}); "', 1):
-        "self-healing -- upload_manifest() then updates the manifest Drive "
-        "holds (found by its label), and every caller saves the id it returns "
-        "to drive_config.json; a second manifest is never made while one "
-        "exists (the Drive door refuses it)",
-    ("drive.py", 'print(f"  Warning: could not load merged config ({exc}), falling back.")', 1):
-        "found by this test's own regex, not the original manual sweep (issue "
-        "#283 predates this entry) -- load_manifest()'s merged-config parse "
-        "failure, falls back to the old per-language format silently. Never "
-        "affects exit code, no capture in the workflow. Arguably the most "
-        "consequential site in this whole file, since load_manifest() runs first "
-        "in nearly every command -- filed as a follow-up to #283",
     ("file_door.py", 'print(f"WARNING: committed {run.command}\'s files in planars-data but could not "', 1):
         "deliberately non-raising by design -- see file_door._commit's "
         "docstring: the commit already succeeded locally, only the remote lags "

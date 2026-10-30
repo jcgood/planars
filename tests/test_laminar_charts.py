@@ -17,7 +17,7 @@ import pytest
 
 from coding import drive_doorway, laminar_charts, state_files
 from command_runner import run_command
-from fake_drive import MANIFEST_FILE_ID, FakeDriveDoorway
+from fake_drive import FakeDriveDoorway
 from laminar import contributor_charts as cc
 from laminar import planars_language
 
@@ -38,8 +38,8 @@ def env(monkeypatch):
     """Fake doorway; two languages; spans and drawing stubbed; a fingerprint
     a test can change."""
     doorway = FakeDriveDoorway.from_fixtures()
-    manifest = json.loads(doorway.file(MANIFEST_FILE_ID).content.decode())
-    config = {lang: {"folder_id": manifest[lang]["folder_id"]} for lang in LANGS}
+    ids = FakeDriveDoorway.drive_config()
+    config = {lang: {"folder_id": ids[lang]["folder_id"]} for lang in LANGS}
     state_files.ID_FILE.parent.mkdir(parents=True, exist_ok=True)
     state_files.ID_FILE.write_text(json.dumps(config), encoding="utf-8")
     fingerprints = {lang: f"fp-{lang}" for lang in LANGS}

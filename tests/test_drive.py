@@ -34,7 +34,6 @@ from coding.drive import (
     get_or_create_spreadsheet,
     make_read_only,
     set_user_role,
-    upload_manifest,
 )
 from fake_drive import FakeDriveDoorway
 
@@ -246,31 +245,6 @@ class TestCreateOrUpdateSharedFile:
                 door, b"%PDF-1.4 v2", folder_id, existing_file_id=file_id, identity=report)
         assert doorway.mutations_of("update_file")
         assert doorway.mutations_of("create_permission") == []  # already shared
-
-
-# ---------------------------------------------------------------------------
-# upload_manifest -- manifest_contract check (Phase 6 boundary 4, issue #271)
-# ---------------------------------------------------------------------------
-
-class TestUploadManifestShapeCheck:
-    """The Drive door checks every manifest write against the contract
-    (sheet_spec.content_problems); tests run the door in enforce mode."""
-
-    def test_well_shaped_manifest_writes(self):
-        doorway = FakeDriveDoorway()
-        folder_id = doorway.seed_folder("root", identity=drive_door.folder("root"))
-        with _through_door(doorway) as door:
-            upload_manifest(door, {"lang0001": {"folder_id": "abc"}}, folder_id)
-        created, = doorway.mutations_of("create_file")
-        assert created["properties"] == drive_door.manifest().labels()
-
-    def test_malformed_manifest_is_refused(self):
-        doorway = FakeDriveDoorway()
-        folder_id = doorway.seed_folder("root", identity=drive_door.folder("root"))
-        with _through_door(doorway) as door, \
-                pytest.raises(drive_door.DoorViolation, match="does not match its contract"):
-            upload_manifest(door, {"lang0001": "not-a-dict"}, folder_id)
-        assert not doorway.mutations_of("create_file")
 
 
 # ---------------------------------------------------------------------------

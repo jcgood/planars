@@ -39,7 +39,7 @@ import pytest
 from coding import drive as drive_module
 from coding import drive_door, drive_doorway, drive_ids, prune_manifest
 from command_runner import run_command
-from fake_drive import (FROZEN_CODED_DATA, MANIFEST_FILE_ID, ROOT_FOLDER_ID, point_coded_data_at,
+from fake_drive import (FROZEN_CODED_DATA, ROOT_FOLDER_ID, point_coded_data_at,
                         FakeDriveDoorway, api_error)
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -158,11 +158,6 @@ def sheets_of(id_file) -> Dict[str, str]:
     return drive_ids.class_sheets(id_file, LANG)
 
 
-def manifest_of(doorway) -> Dict:
-    """The manifest copy on Drive."""
-    return doorway.download_file_json(MANIFEST_FILE_ID)
-
-
 def active_tsvs(coded: Path) -> List[str]:
     d = coded / LANG / RETIRED
     return sorted(p.name for p in d.glob("*.tsv")) if d.exists() else []
@@ -241,7 +236,9 @@ def test_the_drive_sheet_is_moved_into_archived_not_removed(env):
         ["Element", "accented"], ["also", "y"]]
 
 
-def test_the_retired_class_leaves_the_id_file_and_the_manifest_copy(env):
+def test_the_retired_class_leaves_the_id_file_and_is_labelled_archived(env):
+    """The ID file drops it; the notebooks, which find sheets by label, leave
+    it out by its archived label (planars.from_sheets)."""
     doorway, run, _, id_file = env
     before = set(sheets_of(id_file))
     run(["prune-manifest", "--apply"], ["y"])
@@ -250,9 +247,8 @@ def test_the_retired_class_leaves_the_id_file_and_the_manifest_copy(env):
     # And nothing else was dropped along the way.
     assert before - {RETIRED} == after
     assert id_file.saves >= 1
-    # The manifest copy on Drive was rebuilt from the ID file, without it.
-    published = manifest_of(doorway)[LANG]["sheets"]
-    assert RETIRED not in published and set(published) == after
+    assert doorway.get_file(SHEET_ID, fields="properties")["properties"].get(
+        "planars_state") == "archived"
 
 
 # ---------------------------------------------------------------------------

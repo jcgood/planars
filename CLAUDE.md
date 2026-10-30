@@ -238,9 +238,9 @@ should make sense to someone who has never written a test.
   `python -m coding lookup-lang <glottocode>`. IDs starting with `synth` are
   reserved for synthetic test languages (`synth0001`, built by
   `tests/make_synthetic_lang.py`) and skip Glottocode checks.
-- **Edit sources, never their copies:** `schemas/languages.yaml`, not the
-  manifest copy; `diagnostics_{lang_id}.yaml`, not the diagnostics Sheet (the
-  daily refresh copies it there). Rules for the YAML: `schemas/__init__.py`.
+- **Edit sources, never their copies:** `planar_{lang_id}.tsv` and
+  `diagnostics_{lang_id}.yaml`, not the planar and diagnostics Sheets (the
+  daily refresh copies them there). Rules for the YAML: `schemas/__init__.py`.
 - **Imported TSVs** are `coded_data/{lang_id}/{class_name}/{construction}.tsv`;
   archives go under `coded_data/{lang_id}/archive/{class_name}/`.
 - **The keystone** is the row with `Position_Name == 'v:verbstem'`; it anchors

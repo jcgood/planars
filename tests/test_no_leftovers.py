@@ -45,11 +45,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PACKAGES = ("coding", "planars", "laminar")
 
 # file (repo-relative) -> why nothing reaches it and it stays anyway.
-KEPT: Dict[str, str] = {
-    "planars/from_sheets.py": (
-        "the Colab notebooks' reader (unit 11c-3); the notebook templates call it "
-        "from 11c-5, which deletes this entry (docs/ownership-design.md § 6 item 7)"),
-}
+KEPT: Dict[str, str] = {}
 
 
 def _module_files() -> Dict[str, Path]:

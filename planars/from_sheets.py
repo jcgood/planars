@@ -16,7 +16,7 @@ That list was the manifest, which went stale.
 Each construction tab is found by its tab labels, so a tab renamed by hand
 is still found. Each is written exactly as the sheet holds it: its header,
 and every row padded or cut to the header's width. The reports then read
-``dest`` as their ``repo_root`` (``source="local"``). What the diagnostics
+``dest`` as their ``repo_root`` (``planars.reports``). What the diagnostics
 YAML expects but no sheet has yet is not known here, since the YAML is not
 on Drive; ``validate-coding`` reports that to the coordinator.
 

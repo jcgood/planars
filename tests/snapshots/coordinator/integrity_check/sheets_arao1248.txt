@@ -22,7 +22,7 @@
   ✓  Araona [arao1248]: nonpermutability/element_prescreening → general
 
 ── SHARING ─────────────────────────────────────────────────────────────
-  ✓  37 file(s) shared as their sharing rule says
+  ✓  36 file(s) shared as their sharing rule says
 
 ── ANNOTATION SHEETS ───────────────────────────────────────────────────
   ✓  Araona [arao1248] · ciscategorial · general

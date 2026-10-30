@@ -2,8 +2,8 @@
 """Create the ConstituencyTypology root Drive folder and migrate global files into it.
 
 Run once after the initial generate-sheets setup to establish a shared root folder
-that houses the coordinator notebook and manifest.json — files that span all
-languages and do not belong in any single language folder.
+that houses the coordinator notebook — a file that spans all languages and
+does not belong in any single language folder.
 
     python -m coding setup-root-folder
 
@@ -12,9 +12,8 @@ What this does:
   2. Removes any "anyone with the link" access (data is shared by name only)
   3. Moves all existing language folders into the root folder
   4. Renames language folders from 'planars — {lang_id}' to plain '{lang_id}'
-  5. Moves manifest.json to the root folder (if it exists on Drive)
-  6. Moves all_languages.ipynb to the root folder (if it exists on Drive)
-  7. Saves _root_folder_id to drive_config.json
+  5. Moves all_languages.ipynb to the root folder (if it exists on Drive)
+  6. Saves _root_folder_id to drive_config.json
 
 Moving a folder in Drive does not break existing shares — contributor links remain
 valid after the move. After running this, new language folders created by generate-sheets
@@ -168,20 +167,7 @@ def main(args: argparse.Namespace | None = None) -> None:
             doorway.update_file(lang_folder_id, name=lang_id)
             print(f"Renamed '{current_name}' → '{lang_id}'.")
 
-    # Step 5a: Move manifest.json to root folder (if it exists)
-    planars_config_id = config.get("_planars_config_file_id")
-    if planars_config_id:
-        fi = doorway.get_file(planars_config_id, fields="parents")
-        if root_id in fi.get("parents", []):
-            print("manifest.json already in root folder — skipping.")
-        else:
-            doorway.move_file(planars_config_id, root_id)
-            print(f"Moved manifest.json (id: {planars_config_id}) to root folder.")
-    else:
-        print("No manifest.json found in drive_config.json — skipping.")
-        print("  (Run python -m coding generate-sheets --apply to create it.)")
-
-    # Step 5b: Move all_languages.ipynb to root folder (if it exists)
+    # Step 5: Move all_languages.ipynb to root folder (if it exists)
     all_langs_id = config.get("_all_languages_notebook_file_id")
     if all_langs_id:
         fi = doorway.get_file(all_langs_id, fields="parents")
@@ -207,8 +193,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         "\n  - New language folders will be created inside this root folder automatically."
         "\n  - Share the root folder by name with coordinators who need all_languages.ipynb"
         "\n    (link sharing is off by policy)."
-        "\n  - Run python -m coding generate-notebooks --apply to regenerate notebooks"
-        "\n    (confirms manifest.json points to the correct location)."
+        "\n  - Run python -m coding generate-notebooks --apply to regenerate notebooks."
     )
 
 

@@ -472,6 +472,35 @@ the same commit.
      fallback to a manifest). `manifest_copy.py` goes in the same commit,
      with the `publish-manifest` command and its refresh step, and
      `from_sheets.py`'s entry in `tests/test_no_leftovers.py` `KEPT`.
+   - *Built 2026-10-29 (11c-4 and 11c-5).* Jeff's tests passed: as his
+     second account, the shared synth0001 notebook opened and got as far as
+     reading the manifest, which it could not see (the dependency being
+     removed); a fresh notebook running `open_language` found all eleven
+     class folders and the planar, tab counts matching the local copy. As
+     built: the templates' Setup calls `open_language` /
+     `open_all_languages`; the per-class cells became one
+     `planars.reports.print_class_reports(root, lang)`, which takes the
+     classes from the tabs found, and the completeness loop
+     `print_completeness`; `tests/test_notebook_templates.py` runs every
+     cell after Setup against the saved sheets. The report functions take
+     `repo_root` only (`source`, `gc`, `manifest` and `language_status`
+     gone). The refresh's `manifest copy` step became `notebooks`
+     (`generate-notebooks --apply`). A retired or replaced sheet is left
+     out by its archived label, and a renamed tab is found by its label,
+     which the door rewrites; tests check both. The test data saves each
+     language's ID-file entry (`id_file.json`, by `capture-drive-state`)
+     in place of the manifest, so `drive_ids.copy_from_manifest` went too.
+     Two commits, because the door must still know the manifest's kind to
+     let `migrations/trash_manifest.py` put it in the trash (Q7: a test
+     notebook, then the manifest): the first carries all of the above and
+     lets a manifest into the trash; after the live run the second removes
+     the kind, its spec and `manifest_contract.py`.
+   - *Left:* names that still say "manifest" for what is now the ID file:
+     the `prune-manifest` command, `integrity-check --check-manifest`, the
+     `stale-manifest` label (its issue title says "Stale manifest entries")
+     and the `manifest` entity in `data_dependency_schema`. Renaming a
+     command and a live label is its own unit (docs, workflow, the label on
+     GitHub through the registry); planned next, before 16–18.
 8. **11d — the Instructions sentences into the schema.** *Built
    2026-10-28:* planar.yaml's `sheet_text`, read through
    `coding.schemas.sheet_text`. As built: progress doc, Phase 10 row.

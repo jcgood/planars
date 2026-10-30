@@ -37,8 +37,8 @@ def test_spans_from_sheets_match_spans_from_tsvs(lang_id, tmp_path):
     got = _download(lang_id, tmp_path / "sheets")
     local_root = tmp_path / "local"
     shutil.copytree(FROZEN_CODED_DATA / lang_id, local_root / "coded_data" / lang_id)
-    want_df, want_meta = reports.language_spans(lang_id, source="local", repo_root=local_root)
-    got_df, got_meta = reports.language_spans(lang_id, source="local", repo_root=got.root)
+    want_df, want_meta = reports.language_spans(lang_id, local_root)
+    got_df, got_meta = reports.language_spans(lang_id, got.root)
     assert not want_df.empty
     pd.testing.assert_frame_equal(_sorted(got_df), _sorted(want_df))
     assert got_meta == want_meta

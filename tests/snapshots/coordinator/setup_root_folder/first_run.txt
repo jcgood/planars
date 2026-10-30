@@ -7,7 +7,6 @@ Moved language folder 'synth0001' (id: 1F9y3SyErwY7ieexHGUmv3k17TNFd2hOH) into r
 Renamed 'planars — arao1248' → 'arao1248'.
 Renamed 'planars — stan1293' → 'stan1293'.
 Renamed 'planars — synth0001' → 'synth0001'.
-Moved manifest.json (id: fake_manifest_file) to root folder.
 Moved all_languages.ipynb (id: fake_notebook_file) to root folder.
 
 Done. drive_config.json updated with _root_folder_id.
@@ -19,6 +18,5 @@ Next steps:
   - New language folders will be created inside this root folder automatically.
   - Share the root folder by name with coordinators who need all_languages.ipynb
     (link sharing is off by policy).
-  - Run python -m coding generate-notebooks --apply to regenerate notebooks
-    (confirms manifest.json points to the correct location).
-Drive door (enforce): checked 9 write(s) to 6 tab(s) or file(s); 0 broke a rule.
+  - Run python -m coding generate-notebooks --apply to regenerate notebooks.
+Drive door (enforce): checked 8 write(s) to 5 tab(s) or file(s); 0 broke a rule.

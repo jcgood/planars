@@ -14,7 +14,7 @@ Before migrating, the old code was driven from a stand-in Drive through thin
 lesson from files 5/15/16 — patching `coding.drive`'s copy of a name is not
 enough for a module that imported it by name), across twelve scenarios: a dry
 run and a true no-op `--apply` over the real fixture data (all three languages
-already have every class); a brand-new language (`arao1248` with its manifest
+already have every class); a brand-new language (`arao1248` with its
 entry removed from the ID file — real annotation data untouched, since the fixture is a private
 copy) both dry-run and `--apply`, the full creation path — folder, notes doc,
 planar/diagnostics sheets, one sheet per class, Status tabs; a new class added
@@ -68,7 +68,7 @@ from coding import generate_notebooks as gn
 from coding import generate_sheets as gs
 from coding import state_files
 from command_runner import run_command
-from fake_drive import (FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, point_coded_data_at,
+from fake_drive import (FROZEN_CODED_DATA, FakeDriveDoorway, point_coded_data_at,
                         ROOT_FOLDER_ID, api_error)
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
@@ -103,10 +103,6 @@ class Env:
         self.run = run
 
     # -- the ID file ---------------------------------------------------
-    def manifest(self) -> Dict:
-        """The notebooks' manifest copy on Drive (rebuilt by the command)."""
-        return self.doorway.download_file_json(MANIFEST_FILE_ID)
-
     def sheet_id(self, lang: str, class_name: str) -> str:
         return drive_ids.class_sheet_id(self.config, lang, class_name)
 
@@ -250,8 +246,7 @@ def test_apply_noop_baseline_transcript(env):
     """Real data as committed: a sheet is made for each class a language lists
     with no sheet yet, and for nothing else. Which classes those are comes from
     the data, not from this test: since the 2026-10-19 refreeze, arao1248's
-    proform stub (#279) has none. With nothing to make, the notebooks'
-    manifest copy is not re-uploaded.
+    proform stub (#279) has none. With nothing to make, no file is updated.
     """
     missing = sorted(
         f"{cls}_{lang}"
@@ -651,18 +646,8 @@ def test_nothing_criterion_shaped_is_written_onto_trailing_columns_on_regen(env)
 
 
 # ---------------------------------------------------------------------------
-# The manifest
+# The ID file
 # ---------------------------------------------------------------------------
-
-def test_manifest_copy_is_refreshed_on_creation_and_lists_the_new_sheets(env):
-    env.forget_language("arao1248")
-    env.run(["generate-sheets", "--apply"])
-    updates = [m["file_id"] for m in env.doorway.mutations_of("update_file")]
-    assert MANIFEST_FILE_ID in updates
-    sheets = env.manifest()["arao1248"]["sheets"]
-    assert {c: s["spreadsheet_id"] for c, s in sheets.items()} == \
-        drive_ids.class_sheets(env.config, "arao1248")
-
 
 def test_new_sheets_are_recorded_in_the_id_file(env):
     env.forget_language("arao1248")
@@ -672,7 +657,7 @@ def test_new_sheets_are_recorded_in_the_id_file(env):
     assert env.saved_configs[-1] is env.config
 
 
-def test_manifest_is_never_touched_by_a_dry_run(env):
+def test_no_file_is_touched_by_a_dry_run(env):
     env.forget_language("arao1248")
     env.run(["generate-sheets"])
     assert env.doorway.mutations_of("update_file") == []

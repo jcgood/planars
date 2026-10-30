@@ -160,7 +160,7 @@ def span_table(lang_id: str, repo_root: Path = REPO) -> pd.DataFrame:
     are none, SpanTableError when the spans can't be placed. ``repo_root``
     is a folder whose ``coded_data/`` holds the annotation: the live clone,
     or a past version of it (chapters.data reads one)."""
-    spans, _meta = language_spans(lang_id, source="local", repo_root=repo_root)
+    spans, _meta = language_spans(lang_id, repo_root)
     if spans.empty:
         raise NoSpansYet(f"{get_display_name(lang_id)}: the annotation gives no spans yet.")
     types = class_domain_types()
@@ -231,7 +231,7 @@ def _git(*args: str) -> str:
 
 
 def source_record(lang_id: str, grouping: str, selection: str, table: pd.DataFrame) -> dict:
-    completeness = language_completeness(lang_id, source="local", repo_root=REPO)
+    completeness = language_completeness(lang_id, REPO)
     summary = completeness_summary(completeness)
     return {
         "language": lang_id,

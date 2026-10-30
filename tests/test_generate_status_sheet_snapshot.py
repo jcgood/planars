@@ -37,8 +37,7 @@ from coding import drive as drive_module
 from coding import drive_doorway
 from coding import generate_status_sheet as gen
 from command_runner import run_command
-from fake_drive import (MANIFEST_FILE_ID, ROOT_FOLDER_ID, FakeDriveDoorway, api_error,
-                        use_frozen_coded_data)
+from fake_drive import ROOT_FOLDER_ID, FakeDriveDoorway, api_error, use_frozen_coded_data
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "generate_status_sheet"
@@ -218,23 +217,18 @@ def test_a_second_run_reuses_the_same_folder_and_spreadsheet(env):
 
 def test_the_id_file_records_where_the_sheet_is(env):
     doorway, run, _ = env
-    out = run(["gen", "--lang", "arao1248", "--apply"])
+    run(["gen", "--lang", "arao1248", "--apply"])
     ss = the_sheet(doorway, "status_arao1248")
     assert run.config["arao1248"]["status_sheet_id"] == ss.id
-    # A new status sheet link is in the manifest copy, so it is republished.
-    assert "Manifest copy republished" in out
-    manifest = doorway.download_file_json(MANIFEST_FILE_ID)
-    assert manifest["arao1248"]["status_sheet_url"] == ss.url
 
 
-def test_a_second_run_with_no_new_sheet_does_not_republish_the_manifest(env):
+def test_a_second_run_writes_no_file(env):
     doorway, run, _ = env
     run(["gen", "--lang", "arao1248", "--apply"])
     doorway.clear_mutations()
 
-    out = run(["gen", "--lang", "arao1248", "--apply"])
+    run(["gen", "--lang", "arao1248", "--apply"])
     assert doorway.mutations_of("update_file") == []
-    assert "Manifest copy republished" not in out
 
 
 # ---------------------------------------------------------------------------
@@ -463,8 +457,7 @@ def test_an_unopenable_class_sheet_is_shown_and_fails_the_run(env):
     """It used to be a printed warning the daily refresh never saw, and the
     status sheet called the construction 'no sheet found'."""
     doorway, run, _ = env
-    # A first run records the status sheet, so the second does not republish
-    # the manifest copy (which would open every class sheet).
+    # A first run makes and records the status sheet.
     run(["gen", "--lang", "arao1248", "--apply"])
     run.config["arao1248"]["class_sheets"]["noninterruption"]["id"] = "no_such_sheet"
 

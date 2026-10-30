@@ -10,10 +10,10 @@ drive_config.json.
 **The notebook templates are stubbed.** The real ones are large and are edited
 independently of this command, so leaving them in would make every template
 edit show up here as a changed byte count — noise in the one artifact that is
-supposed to say what the command did to Drive. Token substitution and per-class
-cell insertion are still exercised, against small stand-in templates, because
-that is this command's own logic. `test_the_real_templates_load_and_carry_their
-_markers` covers what stubbing gives up.
+supposed to say what the command did to Drive. Token substitution is still
+exercised, against small stand-in templates, because that is this command's
+own logic. `tests/test_notebook_templates.py` covers what stubbing gives up:
+it runs the real templates' cells.
 
 **drive_config.json is never written by these tests.** The real one holds live
 Drive IDs; `_save_drive_config` is patched to capture into a dict instead.
@@ -37,11 +37,9 @@ from pathlib import Path
 
 import pytest
 
-from coding import drive_door, drive_doorway, generate_notebooks
-from coding.make_forms import _read_diagnostics_for_language
+from coding import drive_door, drive_doorway, drive_ids, generate_notebooks
 from command_runner import run_command
-from fake_drive import (FROZEN_CODED_DATA, MANIFEST_FILE_ID, ROOT_FOLDER_ID,
-                        FakeDriveDoorway, use_frozen_coded_data)
+from fake_drive import ROOT_FOLDER_ID, FakeDriveDoorway, use_frozen_coded_data
 from render_mutations import render
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -53,34 +51,26 @@ pytestmark = pytest.mark.skipif(
     reason="coded_data/ (planars-data) is not checked out",
 )
 
-# Stand-in templates: one cell per token the real template bakes in, plus the
-# marker cell the coordinator and contributor notebooks expand into per-class
-# sections. Small enough that the uploaded byte counts stay readable.
+# Stand-in templates: one cell per token the real template bakes in. Small
+# enough that the uploaded byte counts stay readable.
 _STUB_TEMPLATES = {
     "domains_boilerplate.ipynb": {
         "cells": [
             {"cell_type": "markdown", "metadata": {}, "source": ["# {{LANG_DISPLAY}}"]},
             {"cell_type": "code", "execution_count": None, "metadata": {}, "outputs": [],
-             "source": ["LANG_ID = '{{LANG_ID}}'\n", "CONFIG = '{{CONFIG_FILE_ID}}'"]},
-            {"cell_type": "code", "execution_count": None, "metadata": {}, "outputs": [],
-             "source": ["# __CLASS_CELLS_MARKER__\n"]},
+             "source": ["LANG_ID = '{{LANG_ID}}'"]},
         ],
     },
     "report_boilerplate.ipynb": {
         "cells": [
             {"cell_type": "markdown", "metadata": {}, "source": ["# report {{LANG_DISPLAY}}"]},
             {"cell_type": "code", "execution_count": None, "metadata": {}, "outputs": [],
-             "source": ["LANG_ID = '{{LANG_ID}}'\n", "CONFIG = '{{CONFIG_FILE_ID}}'\n",
-                        "FOLDER = '{{FOLDER_ID}}'"]},
+             "source": ["LANG_ID = '{{LANG_ID}}'\n", "FOLDER = '{{FOLDER_ID}}'"]},
         ],
     },
     "all_languages_boilerplate.ipynb": {
         "cells": [
             {"cell_type": "markdown", "metadata": {}, "source": ["# all languages"]},
-            {"cell_type": "code", "execution_count": None, "metadata": {}, "outputs": [],
-             "source": ["CONFIG = '{{CONFIG_FILE_ID}}'"]},
-            {"cell_type": "code", "execution_count": None, "metadata": {}, "outputs": [],
-             "source": ["# __CLASS_CELLS_MARKER__\n"]},
         ],
     },
 }
@@ -94,11 +84,12 @@ def env(monkeypatch, tmp_path):
     """Fake doorway, stand-in templates, and a captured drive_config."""
     doorway = FakeDriveDoorway.from_fixtures()
     use_frozen_coded_data(monkeypatch, tmp_path)
-    manifest = json.loads(doorway.file(MANIFEST_FILE_ID).content.decode())
-    config = dict(FakeDriveDoorway.drive_config())
-    for lang, entry in manifest.items():
-        if isinstance(entry, dict) and entry.get("folder_id"):
-            config[lang] = {"folder_id": entry["folder_id"]}
+    ids = FakeDriveDoorway.drive_config()
+    # Only what this command reads: the root folder and each language's folder.
+    config = {k: v for k, v in ids.items() if k.startswith("_")}
+    for lang in drive_ids.languages(ids):
+        if ids[lang].get("folder_id"):
+            config[lang] = {"folder_id": ids[lang]["folder_id"]}
     saved: dict = {}
 
     monkeypatch.setattr(generate_notebooks, "_load_template",
@@ -124,13 +115,6 @@ def run(argv, monkeypatch) -> str:
 def use_config(monkeypatch, config: dict) -> None:
     monkeypatch.setattr(generate_notebooks, "_load_drive_config",
                         lambda: json.loads(json.dumps(config)))
-
-
-def declared_classes(lang_id: str) -> set:
-    """The classes this language's diagnostics YAML declares."""
-    specs = _read_diagnostics_for_language(
-        lang_id, FROZEN_CODED_DATA / lang_id / "lang_setup")
-    return {class_name for class_name, _, _, _ in specs}
 
 
 def uploaded(doorway, name: str) -> dict:
@@ -251,29 +235,13 @@ def test_no_placeholder_survives_into_an_uploaded_notebook(env, monkeypatch):
             assert "{{" not in f.content.decode(), f.name
 
 
-def test_a_language_notebook_carries_that_language_s_classes_only(env, monkeypatch):
+def test_a_language_notebook_is_told_its_language(env, monkeypatch):
     doorway, config, _ = env
     run(["generate-notebooks", "--apply"], monkeypatch)
-
     for lang in (lang for lang in config if not lang.startswith("_")):
         nb = uploaded(doorway, f"domains_{lang}.ipynb")
         source = "".join("".join(cell["source"]) for cell in nb["cells"])
         assert f"LANG_ID = '{lang}'" in source
-
-        imported = {line.split()[-1] for line in source.splitlines()
-                    if line.startswith("from planars import ")}
-        assert imported == declared_classes(lang)
-        for class_name in imported:
-            assert f"show_class_reports(gc, manifest, '{class_name}'" in source
-
-    # The coordinator notebook carries the union, so it is a superset of each.
-    coord = "".join("".join(c["source"]) for c in uploaded(doorway, "all_languages.ipynb")["cells"])
-    for lang in (lang for lang in config if not lang.startswith("_")):
-        nb = uploaded(doorway, f"domains_{lang}.ipynb")
-        source = "".join("".join(cell["source"]) for cell in nb["cells"])
-        for line in source.splitlines():
-            if line.startswith("from planars import "):
-                assert line in coord
 
 
 def test_the_report_notebook_is_told_which_folder_to_write_its_html_into(env, monkeypatch):
@@ -284,24 +252,6 @@ def test_the_report_notebook_is_told_which_folder_to_write_its_html_into(env, mo
         nb = uploaded(doorway, f"report_{lang}.ipynb")
         source = "".join("".join(cell["source"]) for cell in nb["cells"])
         assert f"FOLDER = '{config[lang]['folder_id']}'" in source
-
-
-def test_the_real_templates_load_and_carry_their_markers(env):
-    """What template-stubbing gives up: that the shipped templates are usable.
-
-    A template that is not valid JSON, or a coordinator template that has lost
-    its marker cell, would produce a notebook with no per-class sections at all
-    — silently, since nothing else checks.
-    """
-    for name in _STUB_TEMPLATES:
-        nb = generate_notebooks._load_template(name)
-        assert nb["cells"], name
-    for name in ("domains_boilerplate.ipynb", "all_languages_boilerplate.ipynb"):
-        nb = generate_notebooks._load_template(name)
-        sources = ["".join(c["source"]) if not isinstance(c["source"], str) else c["source"]
-                   for c in nb["cells"]]
-        assert any(s.strip() == generate_notebooks._CLASS_CELLS_MARKER.strip()
-                   for s in sources), name
 
 
 # ---------------------------------------------------------------------------
@@ -435,18 +385,6 @@ def test_the_dry_run_names_the_same_languages_the_apply_run_uploads_for(env, mon
     run(["generate-notebooks", "--apply"], monkeypatch)
     assert set(re.findall(r"\w+\.ipynb", dry)) == {
         c["name"] for c in doorway.mutations_of("create_file")}
-
-
-def test_no_manifest_file_id_recorded_stops_with_the_command_to_run(env, monkeypatch):
-    doorway, config, _ = env
-    without = json.loads(json.dumps(config))
-    without.pop("_planars_config_file_id")
-    use_config(monkeypatch, without)
-
-    with pytest.raises(SystemExit) as excinfo:
-        run(["generate-notebooks"], monkeypatch)
-    assert "python -m coding generate-sheets --apply" in str(excinfo.value)
-    assert doorway.mutations == []
 
 
 def test_with_no_root_folder_recorded_it_stops_and_says_what_to_run(env, monkeypatch):

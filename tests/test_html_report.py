@@ -189,7 +189,7 @@ class TestRenderWithRealData:
 
     def test_arao1248_report_renders(self):
         from planars.reports import language_report_data
-        data = language_report_data("arao1248", source="local", repo_root=ROOT)
+        data = language_report_data("arao1248", ROOT)
         html = render_language_report(data)
         assert isinstance(html, str)
         assert "arao1248" in html
@@ -197,6 +197,6 @@ class TestRenderWithRealData:
 
     def test_real_report_contains_analysis_classes(self):
         from planars.reports import language_report_data
-        data = language_report_data("arao1248", source="local", repo_root=ROOT)
+        data = language_report_data("arao1248", ROOT)
         html = render_language_report(data)
         assert "ciscategorial" in html

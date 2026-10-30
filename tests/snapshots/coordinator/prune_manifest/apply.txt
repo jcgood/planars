@@ -18,6 +18,6 @@ Stale class sheets found in the ID file:
     archived Drive sheet: 'stress_stan1293' → _archived/
     removed from the ID file: stan1293/stress
 
-ID file updated; manifest copy republished on Drive.
-Drive door (enforce): checked 4 write(s) to 3 tab(s) or file(s); 0 broke a rule.
+ID file updated.
+Drive door (enforce): checked 3 write(s) to 2 tab(s) or file(s); 0 broke a rule.
 Local-file door: changed 2 file(s), previous versions archived and logged.

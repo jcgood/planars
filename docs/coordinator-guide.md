@@ -648,7 +648,7 @@ python -m coding prune-manifest --apply --all    # same, skipping per-class conf
 For each retired class, `--apply`:
 1. Removes each TSV in `coded_data/{lang}/{class}/`, keeping its last version in `coded_data/{lang}/archive/{class}/` and logging it in the language's `changes.tsv` (committed and pushed when the command ends)
 2. Moves the Drive spreadsheet into an `_archived/` subfolder inside the language's Drive folder
-3. Removes the class sheet from the ID file (`coded_data/drive_config.json`; its history in planars-data is the record), then republishes the manifest copy the Colab notebooks read
+3. Removes the class sheet from the ID file (`coded_data/drive_config.json`; its history in planars-data is the record). The Colab notebooks leave the archived sheet out by its label.
 
 The Drive sheet is moved, not deleted — annotation data is irreplaceable. A warning is shown if the sheet was edited within the last 14 days (possible unapplied annotation work). If the move fails for any reason, a warning is printed and the sheet can be moved manually from Drive; the sheet is still removed from the ID file.
 
@@ -937,7 +937,7 @@ Each issue closes by itself on the next clean run. The run's summary page on Git
 
 ### Drive folder structure
 
-`coded_data/drive_config.json` (in planars-data), the ID file, is the one record of where the Drive files are — it holds `_root_folder_id`, `_planars_config_file_id` (the manifest copy on Drive, rebuilt from the ID file for the Colab notebooks by `publish-manifest`), and per-language `folder_id`, `planar_spreadsheet_id`, `diagnostics_spreadsheet_id`, `class_sheets`, `status_sheet_id` and `notification_issue`. It contains no credentials, only IDs; they point at unpublished data, so it lives in the private repo.
+`coded_data/drive_config.json` (in planars-data), the ID file, is the one record of where the Drive files are — it holds `_root_folder_id`, the notebooks' file IDs, and per-language `folder_id`, `planar_spreadsheet_id`, `diagnostics_spreadsheet_id`, `class_sheets`, `status_sheet_id` and `notification_issue`. It contains no credentials, only IDs; they point at unpublished data, so it lives in the private repo.
 
 `drive_config.json` is created and updated automatically — you never need to edit it by hand. `generate-sheets` writes per-language IDs as it creates Drive folders and files; `setup-root-folder` adds the top-level `_root_folder_id`.
 

@@ -16,7 +16,7 @@ Typical usage
     from planars.html_report import render_language_report, render_language_report_pdf
     from pathlib import Path
 
-    data = language_report_data("arao1248", source="local", repo_root=Path("."))
+    data = language_report_data("arao1248", Path("."))
 
     # HTML — browser / Colab
     Path("arao1248_report.html").write_text(render_language_report(data), encoding="utf-8")

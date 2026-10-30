@@ -1,11 +1,11 @@
 SUMMARY
      6  append_rows
-   143  batch_request
-     3  clear
-     3  update
-   116    └─ repeatCell
+   134  batch_request
+     2  clear
+     2  update
+   108    └─ repeatCell
     18    └─ setDataValidation
-     2    └─ updateDimensionProperties
+     1    └─ updateDimensionProperties
      7    └─ updateSheetProperties
 
 SHEET OPERATIONS
@@ -157,23 +157,6 @@ SHEET OPERATIONS
 
   stan1293/class:phrasal_accent  tab=prescreening
     repeatCell: col 3 (accented) rows 0-1
-
-  stan1293/class:phrasal_accent  tab=Instructions
-    clear: 
-    update: anchor A1 raw=True 28x1
-      | ['PHRASAL (PITCH) ACCENT GROUPING — ANNOTATION INSTRUCTIONS']
-      | ['']
-      | ['WHAT THIS TESTS']
-      | ...
-    repeatCell: col 0 (PHRASAL (PITCH) ACCENT GROUPING — ANNOTATION INSTRUCTIONS) rows 0-1
-    repeatCell: col 0 (PHRASAL (PITCH) ACCENT GROUPING — ANNOTATION INSTRUCTIONS) rows 2-3
-    repeatCell: col 0 (PHRASAL (PITCH) ACCENT GROUPING — ANNOTATION INSTRUCTIONS) rows 5-6
-    repeatCell: col 0 (PHRASAL (PITCH) ACCENT GROUPING — ANNOTATION INSTRUCTIONS) rows 10-11
-    repeatCell: col 0 (PHRASAL (PITCH) ACCENT GROUPING — ANNOTATION INSTRUCTIONS) rows 14-15
-    repeatCell: col 0 (PHRASAL (PITCH) ACCENT GROUPING — ANNOTATION INSTRUCTIONS) rows 16-17
-    repeatCell: col 0 (PHRASAL (PITCH) ACCENT GROUPING — ANNOTATION INSTRUCTIONS) rows 22-23
-    repeatCell: (whole sheet)
-    updateDimensionProperties: (whole sheet)
 
   stan1293/class:biuniqueness_deviations  tab=elements
     repeatCell: col 3 (has_allomorphs) rows 0-1

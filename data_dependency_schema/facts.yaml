@@ -77,22 +77,23 @@
   description: a language's Glottolog metadata plus project metadata (source, author, annotation_status)
   locations:
     - {entity: schema_yaml, detail: "schemas/languages.yaml -- the source of truth"}
-    - {entity: manifest, detail: "the manifest copy on Drive, rebuilt whole by publish-manifest (coding/manifest_copy.py) for the Colab notebooks"}
+    - {entity: derived_artifact, detail: "each Colab notebook's title and chart title, the language's display name baked in by generate-notebooks (coding/generate_notebooks.py _lang_display)"}
   authoritative: schema_yaml
   cascade:
     direction: automatic
     mechanism: >-
-      publish-manifest rebuilds the manifest copy from
-      schemas/languages.yaml (CLAUDE.md: "Always edit languages.yaml, not the
-      manifest copy"); it runs in the daily refresh and at the end of every
-      command that makes or retires a sheet.
+      generate-notebooks --apply rebuilds every notebook from its template
+      and schemas/languages.yaml; it runs in the daily refresh and at the
+      end of generate-sheets, sync-params and restructure-sheets. Until
+      unit 11c-5 (2026-10-29) the manifest on Drive held a second copy of
+      each entry.
   drift_risk:
     possible: true
     note: >-
-      If someone edits the manifest copy directly, that edit is silently
-      overwritten on the next publish-manifest run -- or, until then, the
-      two simply disagree. No command reads the manifest copy.
-    caught_by: "nothing yet -- no automated check compares the two copies."
+      A name changed in languages.yaml shows in the notebooks' titles only
+      from the next refresh. An edit made to a notebook on Drive by hand is
+      overwritten then.
+    caught_by: "the daily refresh's notebooks step, which rebuilds every notebook."
 
 - id: span_rule_semantics
   description: the prose description of how a class's span logic works
@@ -326,8 +327,7 @@
     direction: manual
     mechanism: >-
       sync-params --apply diffs the tab's own header against the current
-      diagnostics YAML and inserts/deletes/renames columns to match; it
-      records nothing in the manifest copy (unit 11c). Nothing runs this
+      diagnostics YAML and inserts/deletes/renames columns to match. Nothing runs this
       automatically -- a criterion added, removed, or renamed in the YAML has
       no effect on the live sheet until a coordinator notices and runs it.
   drift_risk:
@@ -385,18 +385,18 @@
 - id: drive_state_test_fixtures
   description: >-
     the recorded live Drive state (every annotation spreadsheet's tab order,
-    grid size, and cell values, plus the manifest) replayed by the fake Drive
-    backend in tests
+    grid size, and cell values, plus where each is: the ID file's entries)
+    replayed by the fake Drive backend in tests
   locations:
     - {entity: annotation_sheet, detail: "the live spreadsheets themselves -- the only real state"}
-    - {entity: manifest, detail: "manifest.json on Drive (Drive-ID bookkeeping for every language/class)"}
-    - {entity: test_fixture, detail: "coded_data/.test_fixtures/drive_state/{lang}/*.json and manifest.json, written by capture-drive-state --apply, together with the frozen local folders in coded_data/.test_fixtures/coded_data/{lang}/. In planars-data (private), since it is real annotation content"}
+    - {entity: manifest, detail: "drive_config.json (the ID file: Drive-ID bookkeeping for every language/class)"}
+    - {entity: test_fixture, detail: "coded_data/.test_fixtures/drive_state/{lang}/*.json and id_file.json, written by capture-drive-state --apply, together with the frozen local folders in coded_data/.test_fixtures/coded_data/{lang}/. In planars-data (private), since it is real annotation content"}
   authoritative: annotation_sheet
   cascade:
     direction: automatic
     mechanism: >-
       python -m coding capture-drive-state --apply re-records every listed
-      spreadsheet and the manifest, overwriting the fixtures. Read-only against
+      spreadsheet and the ID file's entries, overwriting the fixtures. Read-only against
       Drive: it is the one live call permitted before Phase 9 of the data layer
       plan. Nothing cascades in the other direction, by design -- the fixtures
       are never written back.

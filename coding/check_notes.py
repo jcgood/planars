@@ -12,8 +12,7 @@ New content is detected by a hash of the Doc's text with the acknowledgment
 lines stripped, kept per language in ``notes_state.json``
 (``state_files.NOTES_STATE_PATH``, written through the local-file door). A
 language with no notes Doc yet gets one made on ``--apply``; its ID goes in
-the ID file (drive_config.json), which also lists the languages checked, and
-the manifest copy is republished. One issue per
+the ID file (drive_config.json), which also lists the languages checked. One issue per
 annotator covers every language that annotator has: the issue number is
 stored in the state (``_annotator_issues``) and preferred over a title
 search, so renaming the issue doesn't start a second thread. A closed issue
@@ -178,7 +177,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         _strip_acknowledgment_lines, _load_drive_config, _save_drive_config,
         acknowledgment_line,
     )
-    from . import drive_ids, manifest_copy
+    from . import drive_ids
     from .drive_doorway import get_doorway
     from planars.languages import get_display_name, get_entry
 
@@ -300,9 +299,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         print("\nnotes_state.json updated.")
         if config_dirty:
             _save_drive_config(config)
-            manifest_copy.publish(doorway, config)
-            _save_drive_config(config)
-            print("ID file updated with new notes_doc_id(s); manifest copy republished.")
+            print("ID file updated with new notes_doc_id(s).")
 
     if not annotator_notes:
         print("\nNo new notes to report.")

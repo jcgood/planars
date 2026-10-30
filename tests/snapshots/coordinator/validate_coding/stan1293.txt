@@ -6,9 +6,9 @@ stan1293
   [biuniqueness_deviations/morphs] 396 blank cell(s) — annotation in progress
   [ciscategorial/general] no issues
   [coreference/prescreening] no issues
-  [coreference/reflexive_coreference] no issues
-  [coreference/pronoun_coreference] no issues
-  [coreference/np_coreference] no issues
+  [coreference/reflexive_coreference] 38 blank cell(s) — annotation in progress
+  [coreference/pronoun_coreference] 38 blank cell(s) — annotation in progress
+  [coreference/np_coreference] 38 blank cell(s) — annotation in progress
   [free_occurrence/general] 10 issue(s):
     [WARNING] general row 24 'he': unexpected value '3,4' in 'dependent-on-left' (write 3|4, not commas: | between positions means any one of them is enough)
     [WARNING] general row 24 'he': unexpected value '8, 12, 18, 22, 31' in 'dependent-on-right' (write 8|12|18|22|31, not commas: | between positions means any one of them is enough)
@@ -26,7 +26,7 @@ stan1293
   [nonpermutability/element_prescreening] no issues
   [nonpermutability/general] no issues
   [phrasal_accent/prescreening] no issues
-  [phrasal_accent/general] 2268 blank cell(s) — annotation in progress
+  [phrasal_accent/general] 853 blank cell(s) — annotation in progress
   [proform/do_so_substitution] no issues
   [proform/vp_ellipsis] 4 issue(s):
     [WARNING] vp_ellipsis row 6 'NP{S,A,P}': unexpected value 'y/unclear' in 'shareable_proform_replace' (should be one of: ?, both, n, na, unclear, y)
@@ -44,4 +44,4 @@ stan1293
 ──────────────────────────────────────────────────
 Validated 23 sheet(s).  Errors: 1
 Cell highlighting and each sheet's Status tab updated in Google Sheets.
-Drive door (enforce): checked 28 write(s) to 23 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 31 write(s) to 23 tab(s) or file(s); 0 broke a rule.

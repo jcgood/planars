@@ -34,7 +34,7 @@ import pytest
 
 from coding import drive_doorway, generate_reports
 from command_runner import run_command
-from fake_drive import MANIFEST_FILE_ID, FakeDriveDoorway
+from fake_drive import FakeDriveDoorway
 from render_mutations import render
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -51,13 +51,14 @@ pytestmark = pytest.mark.skipif(
 def env(monkeypatch):
     """Fake doorway, stubbed PDF rendering, and a captured drive_config."""
     doorway = FakeDriveDoorway.from_fixtures()
-    manifest = json.loads(doorway.file(MANIFEST_FILE_ID).content.decode())
+    ids = FakeDriveDoorway.drive_config()
     config = {lang: {"folder_id": entry["folder_id"]}
-              for lang, entry in manifest.items() if entry.get("folder_id")}
+              for lang, entry in ids.items()
+              if not lang.startswith("_") and entry.get("folder_id")}
     saved: dict = {}
 
     monkeypatch.setattr(generate_reports, "language_report_data",
-                        lambda lang_id, source, repo_root: {"lang_id": lang_id})
+                        lambda lang_id, repo_root: {"lang_id": lang_id})
     monkeypatch.setattr(generate_reports, "render_language_report_pdf",
                         lambda data: f"%PDF-1.4 {data['lang_id']}".encode())
     monkeypatch.setattr(generate_reports, "_load_drive_config",

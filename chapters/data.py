@@ -264,7 +264,7 @@ def _diagnostics(lang_dir: Path, lang_id: str) -> pd.DataFrame:
 
 
 def _completeness(lang_id: str, root: Path) -> tuple[pd.DataFrame, dict]:
-    completeness = language_completeness(lang_id, source="local", repo_root=root)
+    completeness = language_completeness(lang_id, root)
     rows = []
     for cls, constructions in completeness.items():
         for construction, stats in constructions.items():
@@ -420,7 +420,7 @@ def chapter_data(lang_id: str, version: Optional[str] = None) -> ChapterData:
         values["diagnostics.constructions"] = len(diagnostics)
         completeness, annotation = _completeness(lang_id, root)
         values.update({f"annotation.{k}": v for k, v in annotation.items()})
-        spans, meta = language_spans(lang_id, source="local", repo_root=root)
+        spans, meta = language_spans(lang_id, root)
         pos_to_name = (meta.get(lang_id) or {}).get("pos_to_name", {})
         values.update(_span_values(spans, pos_to_name))
         without_spans = sorted(set(completeness["Class"]) - set(spans.get("Analysis", [])))

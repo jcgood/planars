@@ -490,7 +490,7 @@ def test_only_a_notebook_goes_to_the_trash(env):
     notebook = fake.seed_file(spec.name, spec.mimetype, identity=identity)
     with drive_door.running("migration test", may_write=True):
         door.trash_file(notebook)
-        with pytest.raises(DoorViolation, match="only a notebook goes to the trash"):
+        with pytest.raises(DoorViolation, match="goes to the trash, not ciscategorial_"):
             door.trash_file(sheet_id)
     assert fake.file(notebook).trashed
     assert not fake.file(sheet_id).trashed
@@ -535,11 +535,14 @@ def test_a_comment_may_mention_only_the_sheets_annotator(env):
 
 
 def test_a_comment_goes_only_on_a_class_sheet(env):
+    from coding.sheet_spec import file_spec
     fake, door, _, _ = env
-    manifest_id = next(fid for fid, f in fake._files.items() if f.name == "manifest.json")
+    identity = drive_door.notebook("domains", LANG)
+    spec = file_spec(identity)
+    notebook = fake.seed_file(spec.name, spec.mimetype, identity=identity)
     with drive_door.running("validate-coding", NOTIFY):
         with pytest.raises(DoorViolation, match="only on class sheets"):
-            door.create_comment(manifest_id, "hello")
+            door.create_comment(notebook, "hello")
 
 
 def test_a_comment_that_landed_before_the_error_is_not_posted_twice(env):

@@ -61,8 +61,8 @@ languages.yaml
     written, one of planar.yaml's ``example_styles`` (glossed, or unglossed
     for a language that is its own metalanguage, i.e. English); it decides
     which example columns its annotation tabs carry and how the chapters
-    print its examples.  Always edit this file, never the copy in the manifest
-    (generate-sheets and import-sheets write that copy).  No email addresses
+    print its examples.  It has no copies to keep in step (the Colab
+    notebooks read it from the installed package).  No email addresses
     here (this repo is public): the annotator's address lives in private
     planars-data, ``coded_data/people.yaml``, keyed by the ``annotator``
     name, and is read only through ``coding/people.py``.

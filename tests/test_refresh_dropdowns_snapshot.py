@@ -39,8 +39,7 @@ import pytest
 
 from coding import drive, drive_doorway, refresh_dropdowns
 from command_runner import run_command
-from fake_drive import (FIXTURE_DIR, FakeDriveDoorway, MANIFEST_FILE_ID,
-                        use_frozen_coded_data)
+from fake_drive import FIXTURE_DIR, FakeDriveDoorway, use_frozen_coded_data
 from mutation_checks import assert_no_criterion_writes_onto_trailing_columns
 from render_mutations import render
 

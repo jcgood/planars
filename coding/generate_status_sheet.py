@@ -40,9 +40,8 @@ for keyed-row tabs; ``restructure_sheets._get_pair_row_constructions`` /
 spreadsheet created for a status sheet is found or made with
 ``drive.get_or_create_spreadsheet``. Which class sheets exist, and each
 language's folder, come from the ID file (drive_config.json); a status sheet's
-ID is recorded there (``drive_ids.set_status_sheet_id``), and only when that
-is new does the run republish the manifest copy (``manifest_copy.publish``),
-which carries the link. The daily refresh rebuilds every status
+ID is recorded there (``drive_ids.set_status_sheet_id``) for the commands that
+link to it. The daily refresh rebuilds every status
 sheet after ``update-sheets``, so the percentages never lag the sheets.
 
 Re-running with --apply overwrites the existing status_{lang_id} spreadsheet
@@ -80,7 +79,7 @@ from .drive import (
     _save_drive_config,
 )
 from .drive_doorway import WorksheetNotFound, get_doorway
-from . import drive_door, drive_ids, manifest_copy
+from . import drive_door, drive_ids
 from .people import annotator_email
 from .make_forms import (
     _read_diagnostics_for_language,
@@ -502,7 +501,6 @@ def main(args: argparse.Namespace | None = None) -> None:
     doorway = get_doorway()
     config = _load_drive_config()
     pair_row_constructions = _get_pair_row_constructions()
-    status_sheet_recorded = False
 
     lang_ids = [lang_filter] if lang_filter else drive_ids.languages(config)
     # Anything that leaves a language's status sheet wrong or unbuilt. The run
@@ -572,17 +570,12 @@ def main(args: argparse.Namespace | None = None) -> None:
         # sheet-change comments) can link to it without a live Drive search.
         if drive_ids.status_sheet_id(config, lang_id) != ss.id:
             drive_ids.set_status_sheet_id(config, lang_id, ss.id)
-            status_sheet_recorded = True
             _save_drive_config(config)
 
     if not apply:
         print("\nRun with --apply to create/update the sheet(s) on Drive.")
     else:
         print("\nDone.")
-        if status_sheet_recorded:
-            manifest_copy.publish(doorway, config)
-            _save_drive_config(config)
-            print("Manifest copy republished (new status sheet link).")
 
     if problems:
         print("\nERROR: some status sheets are wrong or were not rebuilt:")

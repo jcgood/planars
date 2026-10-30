@@ -96,11 +96,46 @@ _SPREADSHEET_MIME = "application/vnd.google-apps.spreadsheet"
 _FOLDER_MIME = "application/vnd.google-apps.folder"
 _DOC_MIME = "application/vnd.google-apps.document"
 
-# Stable IDs for the two Drive objects every command bootstraps from. Real IDs
-# live in the gitignored drive_config.json; tests patch _load_drive_config to
-# return FakeDriveDoorway.drive_config(), which names these.
-MANIFEST_FILE_ID = "fake_manifest_file"
+# A stable ID for the root folder every command bootstraps from. Real IDs
+# live in drive_config.json; tests patch _load_drive_config to return
+# FakeDriveDoorway.drive_config(), which names this.
 ROOT_FOLDER_ID = "fake_root_folder"
+
+
+# The ID-file keys the stand-in Drive serves: the folder, the notes Doc and
+# the sheets the capture records, and where each class sheet, status sheet
+# and notification issue is (coding/drive_ids.py). The others name files the
+# capture doesn't record (notebooks, reports, chart PDFs, proposal sheets),
+# so a command handed them would update a file the fake doesn't have instead
+# of making one, as it does for a new language. A key not listed here or in
+# _UNSERVED_ID_KEYS fails loudly, so a new kind of ID gets a decision.
+_SERVED_ID_KEYS = ("folder_id", "notes_doc_id", "planar_spreadsheet_id",
+                   "diagnostics_spreadsheet_id", "class_sheets", "status_sheet_id",
+                   "notification_issue")
+_UNSERVED_ID_KEYS = ("planar_spreadsheet_url", "diagnostics_spreadsheet_url",
+                     "proposal_spreadsheet_id", "domains_notebook_file_id",
+                     "report_notebook_file_id", "report_file_id",
+                     "charts_classes_file_id", "charts_types_file_id")
+
+
+def _saved_ids(fixture_dir: Path) -> Dict[str, Any]:
+    """Each captured language's entry in the ID file, as capture-drive-state
+    saved it (``id_file.json``), keeping the keys the stand-in Drive serves;
+    nothing if none was saved."""
+    path = fixture_dir / "id_file.json"
+    if not path.exists():
+        return {}
+    saved = {}
+    for lang_id, entry in json.loads(path.read_text(encoding="utf-8")).items():
+        if not isinstance(entry, dict):
+            continue
+        unknown = set(entry) - set(_SERVED_ID_KEYS) - set(_UNSERVED_ID_KEYS)
+        if unknown:
+            raise ValueError(f"id_file.json: {lang_id} has ID-file keys the stand-in Drive "
+                             f"doesn't know: {sorted(unknown)}; list each in "
+                             "tests/fake_drive.py _SERVED_ID_KEYS or _UNSERVED_ID_KEYS")
+        saved[lang_id] = {k: v for k, v in entry.items() if k in _SERVED_ID_KEYS}
+    return saved
 
 
 def use_frozen_coded_data(monkeypatch, tmp_path: Path) -> Path:
@@ -926,12 +961,10 @@ class FakeDriveDoorway:
         Skips the calling test when planars-data is not checked out, since the
         saved data lives there.
 
-        Loads the recorded spreadsheets, the recorded ``manifest.json`` (as a
-        downloadable Drive file under a root folder), and a folder per language
-        at the ``folder_id`` the manifest names — enough Drive shape for a
-        command to bootstrap exactly as it does live. The root folder, the
-        manifest and the language folders carry their identity labels, as
-        the live ones do.
+        Loads the recorded spreadsheets, a root folder, and a folder per
+        language at the ``folder_id`` the saved ID file names — enough Drive
+        shape for a command to bootstrap exactly as it does live. The
+        folders carry their identity labels, as the live ones do.
         """
         if not (fixture_dir / "index.json").exists():
             import pytest
@@ -947,36 +980,23 @@ class FakeDriveDoorway:
             path = fixture_dir / entry["path"]
             doorway.seed_spreadsheet(json.loads(path.read_text(encoding="utf-8")))
 
-        manifest_path = fixture_dir / "manifest.json"
-        if manifest_path.exists():
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            if langs is not None:
-                manifest = {k: v for k, v in manifest.items() if k in langs}
-            doorway.seed_json_file("manifest.json", manifest, [ROOT_FOLDER_ID],
-                                   file_id=MANIFEST_FILE_ID, identity=drive_door.manifest())
-            for lang_id, entry in manifest.items():
-                if isinstance(entry, dict) and entry.get("folder_id"):
-                    doorway.seed_folder(lang_id, ROOT_FOLDER_ID, file_id=entry["folder_id"],
-                                        identity=drive_door.folder("language", lang_id))
+        for lang_id, entry in _saved_ids(fixture_dir).items():
+            if langs is not None and lang_id not in langs:
+                continue
+            if entry.get("folder_id"):
+                doorway.seed_folder(lang_id, ROOT_FOLDER_ID, file_id=entry["folder_id"],
+                                    identity=drive_door.folder("language", lang_id))
         return doorway
 
     @staticmethod
     def drive_config() -> Dict[str, Any]:
-        """The ID file (drive_config.json) as commands read it: the two
-        bootstrap IDs, and each language's class sheets, status sheet and
-        notification issue (``coding/drive_ids.py``), taken from the saved
-        manifest, which recorded them when the data was captured. A fresh
-        dict each call, so a command that changes it changes no other test's.
-        """
-        from coding import drive_ids
-        config: Dict[str, Any] = {"_root_folder_id": ROOT_FOLDER_ID,
-                                  "_planars_config_file_id": MANIFEST_FILE_ID}
-        manifest_path = FIXTURE_DIR / "manifest.json"
-        if manifest_path.exists():
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            for lang_id, entry in manifest.items():
-                if isinstance(entry, dict):
-                    drive_ids.copy_from_manifest(config, lang_id, entry)
+        """The ID file (drive_config.json) as commands read it: the root
+        folder, and each language's entry as the capture saved it
+        (``id_file.json``: its folder, sheets, status sheet, notification
+        issue). A fresh dict each call, so a command that changes it changes
+        no other test's."""
+        config: Dict[str, Any] = {"_root_folder_id": ROOT_FOLDER_ID}
+        config.update(_saved_ids(FIXTURE_DIR))
         return config
 
     def seed_spreadsheet(self, data: Mapping[str, Any]) -> FakeSpreadsheet:

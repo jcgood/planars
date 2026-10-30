@@ -1,6 +1,6 @@
 SUMMARY
     48  add_worksheet
-   465  batch_request
+   471  batch_request
      1  create_file
     11  create_permission
     11  create_spreadsheet
@@ -8,11 +8,11 @@ SUMMARY
     22  move_file
     11  reorder_worksheets
     48  update
-    34  update_file
+    33  update_file
     11  update_permission
     14    └─ addProtectedRange
     96    └─ createDeveloperMetadata
-   245    └─ repeatCell
+   251    └─ repeatCell
     62    └─ setDataValidation
     11    └─ updateDimensionProperties
     37    └─ updateSheetProperties
@@ -96,7 +96,6 @@ DRIVE OPERATIONS
   update_file: file_id='fake_ss_0022', properties={'planars_kind': 'class_sheet', 'planars_lang': 'stan1293', 'planars_class': 'biuniqueness_deviations'}
   move_file: file_id='fake_ss_0022', from_parents=[], to_parent='1dHcB2uPEToUqZbO2sFRMJNY8dPkjYW-3'
   create_permission: file_id='fake_ss_0022', type='user', role='writer', email='annotator@example.org', notify=False
-  update_file: file_id='fake_manifest_file', bytes=39742
 
 SHEET OPERATIONS
 
@@ -686,8 +685,8 @@ SHEET OPERATIONS
     repeatCell: col 3 (BEYOND HEADER) rows 131-132
 
   fake_ss_0016  tab=reflexive_coreference
-    add_worksheet: rows=171, cols=10, index=None, sheet_id=2
-    update: anchor A1 raw=True 169x8
+    add_worksheet: rows=210, cols=10, index=None, sheet_id=2
+    update: anchor A1 raw=True 208x8
       | ['Element_A', 'Position_A', 'Position_B', 'Direction', 'reflexive_allowed', 'Example', 'Source', 'Comments']
       | ['NP{S,A,P}', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', '*then Sarah, John spoke to herself (otherwise not sure how to construct this sentence, but I perhaps needed to think harder about fronted NPs in this position)', '', '']
       | ['QWORDS', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'y', 'Whom has spoken to himself.', '', '']
@@ -696,21 +695,23 @@ SHEET OPERATIONS
   fake_ss_0016  tab=sheetId=2
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
-    setDataValidation: col 4 (BEYOND HEADER) rows 1-169 -> ['y', 'n', 'untestable'] (strict=False)
-    repeatCell: col 4 (BEYOND HEADER) rows 80-81
-    repeatCell: col 4 (BEYOND HEADER) rows 81-82
-    repeatCell: col 4 (BEYOND HEADER) rows 87-88
-    repeatCell: col 4 (BEYOND HEADER) rows 88-89
-    repeatCell: col 4 (BEYOND HEADER) rows 103-104
-    repeatCell: col 4 (BEYOND HEADER) rows 104-105
-    repeatCell: col 4 (BEYOND HEADER) rows 155-156
-    repeatCell: col 4 (BEYOND HEADER) rows 156-157
-    repeatCell: col 4 (BEYOND HEADER) rows 163-164
-    repeatCell: col 4 (BEYOND HEADER) rows 164-165
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-208 -> ['y', 'n', 'untestable'] (strict=False)
+    repeatCell: col 4 (BEYOND HEADER) rows 112-113
+    repeatCell: col 4 (BEYOND HEADER) rows 113-114
+    repeatCell: col 4 (BEYOND HEADER) rows 119-120
+    repeatCell: col 4 (BEYOND HEADER) rows 120-121
+    repeatCell: col 4 (BEYOND HEADER) rows 126-127
+    repeatCell: col 4 (BEYOND HEADER) rows 127-128
+    repeatCell: col 4 (BEYOND HEADER) rows 142-143
+    repeatCell: col 4 (BEYOND HEADER) rows 143-144
+    repeatCell: col 4 (BEYOND HEADER) rows 194-195
+    repeatCell: col 4 (BEYOND HEADER) rows 195-196
+    repeatCell: col 4 (BEYOND HEADER) rows 202-203
+    repeatCell: col 4 (BEYOND HEADER) rows 203-204
 
   fake_ss_0016  tab=pronoun_coreference
-    add_worksheet: rows=171, cols=10, index=None, sheet_id=3
-    update: anchor A1 raw=True 169x8
+    add_worksheet: rows=210, cols=10, index=None, sheet_id=3
+    update: anchor A1 raw=True 208x8
       | ['Element_A', 'Position_A', 'Position_B', 'Direction', 'pronoun_allowed', 'Example', 'Source', 'Comments']
       | ['NP{S,A,P}', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', '', '', 'I struggle with the test sentences here.']
       | ['QWORDS', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', 'Who has John spoken to him', '', '']
@@ -719,21 +720,23 @@ SHEET OPERATIONS
   fake_ss_0016  tab=sheetId=3
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
-    setDataValidation: col 4 (BEYOND HEADER) rows 1-169 -> ['y', 'n', 'untestable'] (strict=False)
-    repeatCell: col 4 (BEYOND HEADER) rows 80-81
-    repeatCell: col 4 (BEYOND HEADER) rows 81-82
-    repeatCell: col 4 (BEYOND HEADER) rows 87-88
-    repeatCell: col 4 (BEYOND HEADER) rows 88-89
-    repeatCell: col 4 (BEYOND HEADER) rows 103-104
-    repeatCell: col 4 (BEYOND HEADER) rows 104-105
-    repeatCell: col 4 (BEYOND HEADER) rows 155-156
-    repeatCell: col 4 (BEYOND HEADER) rows 156-157
-    repeatCell: col 4 (BEYOND HEADER) rows 163-164
-    repeatCell: col 4 (BEYOND HEADER) rows 164-165
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-208 -> ['y', 'n', 'untestable'] (strict=False)
+    repeatCell: col 4 (BEYOND HEADER) rows 112-113
+    repeatCell: col 4 (BEYOND HEADER) rows 113-114
+    repeatCell: col 4 (BEYOND HEADER) rows 119-120
+    repeatCell: col 4 (BEYOND HEADER) rows 120-121
+    repeatCell: col 4 (BEYOND HEADER) rows 126-127
+    repeatCell: col 4 (BEYOND HEADER) rows 127-128
+    repeatCell: col 4 (BEYOND HEADER) rows 142-143
+    repeatCell: col 4 (BEYOND HEADER) rows 143-144
+    repeatCell: col 4 (BEYOND HEADER) rows 194-195
+    repeatCell: col 4 (BEYOND HEADER) rows 195-196
+    repeatCell: col 4 (BEYOND HEADER) rows 202-203
+    repeatCell: col 4 (BEYOND HEADER) rows 203-204
 
   fake_ss_0016  tab=np_coreference
-    add_worksheet: rows=171, cols=10, index=None, sheet_id=4
-    update: anchor A1 raw=True 169x8
+    add_worksheet: rows=210, cols=10, index=None, sheet_id=4
+    update: anchor A1 raw=True 208x8
       | ['Element_A', 'Position_A', 'Position_B', 'Direction', 'np_allowed', 'Example', 'Source', 'Comments']
       | ['NP{S,A,P}', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', '', '', '']
       | ['QWORDS', '2 (v:frontedXP)', '35 (v:rec)', 'forward', 'n', '', '', '']
@@ -742,17 +745,19 @@ SHEET OPERATIONS
   fake_ss_0016  tab=sheetId=4
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
-    setDataValidation: col 4 (BEYOND HEADER) rows 1-169 -> ['y', 'n', 'untestable'] (strict=False)
-    repeatCell: col 4 (BEYOND HEADER) rows 80-81
-    repeatCell: col 4 (BEYOND HEADER) rows 81-82
-    repeatCell: col 4 (BEYOND HEADER) rows 87-88
-    repeatCell: col 4 (BEYOND HEADER) rows 88-89
-    repeatCell: col 4 (BEYOND HEADER) rows 103-104
-    repeatCell: col 4 (BEYOND HEADER) rows 104-105
-    repeatCell: col 4 (BEYOND HEADER) rows 155-156
-    repeatCell: col 4 (BEYOND HEADER) rows 156-157
-    repeatCell: col 4 (BEYOND HEADER) rows 163-164
-    repeatCell: col 4 (BEYOND HEADER) rows 164-165
+    setDataValidation: col 4 (BEYOND HEADER) rows 1-208 -> ['y', 'n', 'untestable'] (strict=False)
+    repeatCell: col 4 (BEYOND HEADER) rows 112-113
+    repeatCell: col 4 (BEYOND HEADER) rows 113-114
+    repeatCell: col 4 (BEYOND HEADER) rows 119-120
+    repeatCell: col 4 (BEYOND HEADER) rows 120-121
+    repeatCell: col 4 (BEYOND HEADER) rows 126-127
+    repeatCell: col 4 (BEYOND HEADER) rows 127-128
+    repeatCell: col 4 (BEYOND HEADER) rows 142-143
+    repeatCell: col 4 (BEYOND HEADER) rows 143-144
+    repeatCell: col 4 (BEYOND HEADER) rows 194-195
+    repeatCell: col 4 (BEYOND HEADER) rows 195-196
+    repeatCell: col 4 (BEYOND HEADER) rows 202-203
+    repeatCell: col 4 (BEYOND HEADER) rows 203-204
 
   fake_ss_0016  tab=Sheet1
     del_worksheet: 
@@ -914,14 +919,14 @@ SHEET OPERATIONS
     add_worksheet: rows=2285, cols=8, index=None, sheet_id=2
     update: anchor A1 raw=True 2283x6
       | ['Element_A', 'Element_B', 'joint_accent', 'Example', 'Source', 'Comments']
-      | ['AD-S', 'AD-V', '', '', '', '']
-      | ['AD-S', 'AD-VP', '', '', '', '']
+      | ['AD-S', 'AD-V', 'sometimes', 'shared: She probably comPLETely destroyed the car. | independent: She PROBably comPLETely destroyed the car.', 'Claude draft (Adam, 2026-10-27)', 'Why is example y or n?']
+      | ['AD-S', 'AD-VP', 'sometimes', 'shared: She probably inTENtionally destroyed the car. | independent: She PROBably inTENtionally destroyed the car.', 'Claude draft (Adam, 2026-10-27)', '']
       | ...
 
   fake_ss_0020  tab=sheetId=2
     updateSheetProperties: (whole sheet)
     repeatCell: rows 0-1
-    setDataValidation: col 2 (BEYOND HEADER) rows 1-2283 -> ['always', 'sometimes', 'never'] (strict=False)
+    setDataValidation: col 2 (BEYOND HEADER) rows 1-2283 -> ['always', 'sometimes', 'never', 'untestable'] (strict=False)
     repeatCell: col 2 (BEYOND HEADER) rows 56-57
     repeatCell: col 2 (BEYOND HEADER) rows 57-58
     repeatCell: col 2 (BEYOND HEADER) rows 138-139

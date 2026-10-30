@@ -55,7 +55,7 @@ from coding import drive_doorway, drive_ids
 from coding import validate_coding as vc
 from command_runner import run_command
 from planars.schema_values import STATUS_STATUS_COLUMN
-from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, MANIFEST_FILE_ID, point_coded_data_at
+from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, point_coded_data_at
 from render_mutations import render
 
 ROOT = Path(__file__).resolve().parent.parent

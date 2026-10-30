@@ -32,6 +32,15 @@ Both halves live in planars-data, which is private, because they are real
 annotation content and planars is public. After ``--apply``, regenerate the
 saved test outputs, review the diff, and commit inside ``coded_data/``.
 
+Where the sheets are: ``id_file.json``
+--------------------------------------
+Each captured language's entry in the ID file (drive_config.json: its folder,
+sheets, status sheet, notification issue) is saved beside the recordings as
+``id_file.json``, so the fake Drive's commands find the same IDs the live
+ones do (``FakeDriveDoorway.drive_config``). Until unit 11c-5 (2026-10-29)
+the manifest on Drive was saved instead, and the tests' ID file rebuilt
+from it.
+
 Why raw responses
 -----------------
 The plan requires the fake to be built from *recorded real responses* rather
@@ -70,7 +79,6 @@ from pathlib import Path
 from typing import Dict, List
 
 from .drive import (
-    _download_file_json,
     _get_clients,
     _load_drive_config,
     _open_spreadsheet,
@@ -86,6 +94,8 @@ CODED_DATA = ROOT / "coded_data"
 FIXTURE_ROOT = CODED_DATA / ".test_fixtures"
 FIXTURE_DIR = FIXTURE_ROOT / "drive_state"
 FROZEN_CODED_DATA = FIXTURE_ROOT / "coded_data"
+# The captured languages' entries in the ID file, saved beside the recordings.
+ID_FILE_NAME = "id_file.json"
 
 # Spreadsheet roles recorded per language from the ID file (drive_config.json), beyond
 # the per-class annotation sheets.
@@ -223,12 +233,10 @@ def main(args: argparse.Namespace | None = None) -> None:
     print("Connecting to Google APIs (read-only)...")
     gc, drive = _get_clients()
     config = _load_drive_config()
-    file_id = config.get("_planars_config_file_id")
-    manifest = _download_file_json(drive, file_id) if file_id else {}
-    if not manifest:
-        raise SystemExit("No manifest found on Drive — nothing to capture.")
-
     langs = [lang_filter] if lang_filter else drive_ids.languages(config)
+    if not langs or any(lang_id not in config for lang_id in langs):
+        raise SystemExit(f"The ID file (drive_config.json) has no entry for "
+                         f"{lang_filter or 'any language'} — nothing to capture.")
     targets = _plan(config, langs)
 
     if not apply:
@@ -244,11 +252,14 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     FIXTURE_DIR.mkdir(parents=True, exist_ok=True)
 
-    # The manifest copy is Drive state too, and the fake still serves it until
-    # unit 11c-5 (the published notebooks read it). Recorded verbatim, same
-    # rule as everything else here.
-    (FIXTURE_DIR / "manifest.json").write_text(
-        json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+    # Where the captured sheets are: each language's entry in the ID file,
+    # verbatim. With --lang the other languages' entries are kept.
+    id_path = FIXTURE_DIR / ID_FILE_NAME
+    saved_ids = (json.loads(id_path.read_text(encoding="utf-8"))
+                 if id_path.exists() else {})
+    saved_ids.update({lang_id: config[lang_id] for lang_id in langs})
+    id_path.write_text(json.dumps(dict(sorted(saved_ids.items())), indent=2,
+                                  ensure_ascii=False) + "\n", encoding="utf-8")
 
     captured, failed = [], []
 
@@ -286,7 +297,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         "captured_at": datetime.now(timezone.utc).isoformat(),
         "note": "Raw recorded API responses. Do not normalise, pad, or tidy — "
                 "see coding/capture_drive_state.py for why raggedness is load-bearing.",
-        "manifest": "manifest.json",
+        "id_file": ID_FILE_NAME,
         "spreadsheets": kept + captured,
         "failed": failed,
     }

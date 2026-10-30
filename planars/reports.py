@@ -12,35 +12,39 @@ are the central data product of the pipeline. They feed chart rendering
 analysis, and HTML reports. All span collection lives here; planars.charts
 imports from this module, not the reverse.
 
+Every function reads a folder laid out like the repo root (``repo_root``,
+holding ``coded_data/{lang_id}/…``): the coordinator's own checkout, or, in
+Colab, the folder ``planars.from_sheets`` writes the sheets into.
+
 Typical usage (coordinator CLI)
 ---------------------------------
     from planars.reports import project_spans, language_report_data
     from pathlib import Path
 
     repo_root = Path(".")
-    df, lang_meta = project_spans(source="local", repo_root=repo_root)
-    data = language_report_data("arao1248", source="local", repo_root=repo_root)
+    df, lang_meta = project_spans(repo_root)
+    data = language_report_data("arao1248", repo_root)
 
 Typical usage (Colab)
 ---------------------------------
     from planars.from_sheets import open_language
-    from planars.reports import language_spans, language_report_data
+    from planars.reports import language_spans, language_report_data, print_class_reports
 
     lang = open_language("arao1248", drive_svc, gc)   # the sheets, found by label
-    df, lang_meta = language_spans("arao1248", source="local", repo_root=lang.root)
-    data = language_report_data("arao1248", source="local", repo_root=lang.root,
-                                status=lang.status)
+    df, lang_meta = language_spans("arao1248", lang.root)
+    data = language_report_data("arao1248", lang.root, status=lang.status)
+    print_class_reports(lang.root, "arao1248")
 
-The older ``source="sheets"`` path (``gc`` plus the manifest) is what the
-notebooks published before unit 11c run; it is deleted with the manifest in
-11c-5, once the notebooks above are published (docs/ownership-design.md
-§ 6 item 7). The notebooks install this package from GitHub on every run,
-so it cannot go before then.
+Until unit 11c-5 (2026-10-29) the notebooks read the sheets here instead
+(``source="sheets"``, with the list of sheet IDs the manifest on Drive kept,
+which went stale); they now find them by label (docs/ownership-design.md
+§ 6 item 7).
 """
 
 from __future__ import annotations
 
 import datetime
+import importlib
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
@@ -65,12 +69,10 @@ from planars import pausing as _pausing
 from planars import proform as _proform
 from planars import play_language as _play
 from planars import idiom as _idiom
-from planars.elements import wrap_element
-from planars.io import load_filled_sheet
 from planars.languages import get_display_name
 from planars.spans import gained_position_counts
 from planars.schema_values import (
-    ELEMENT_ROWS, TRAILING_COLUMNS, header_shape, is_keystone, row_columns, row_type,
+    ELEMENT_ROWS, TRAILING_COLUMNS, is_keystone, row_columns, row_type,
 )
 
 # ---------------------------------------------------------------------------
@@ -310,13 +312,8 @@ _REPORTABLE_CONSTRUCTIONS: Dict[str, frozenset] = {
 # Span collection (primary analytical output)
 # ---------------------------------------------------------------------------
 
-def project_spans(
-    source: str = "local",
-    repo_root=None,
-    gc=None,
-    manifest: Optional[dict] = None,
-) -> Tuple[pd.DataFrame, dict]:
-    """Collect spans for all languages.
+def project_spans(repo_root) -> Tuple[pd.DataFrame, dict]:
+    """Collect spans for all languages under ``repo_root/coded_data``.
 
     Returns (DataFrame, lang_meta) where:
       DataFrame columns: Language, Test_Labels, Analysis, Span_Key, Left_Edge,
@@ -331,46 +328,45 @@ def project_spans(
     For R or other downstream consumers, write the DataFrame to TSV:
         df.to_csv("spans.tsv", sep="\\t", index=False)
     """
-    if source == "local":
-        if repo_root is None:
-            raise ValueError("repo_root is required when source='local'")
-        return _collect_spans_local(Path(repo_root))
-    elif source == "sheets":
-        if gc is None or manifest is None:
-            raise ValueError("gc and manifest are required when source='sheets'")
-        return _collect_spans_sheets(gc, manifest)
-    else:
-        raise ValueError(f"Unknown source: {source!r}. Expected 'local' or 'sheets'.")
+    return _collect_spans(Path(repo_root))
 
 
-def language_spans(
-    lang_id: str,
-    source: str = "local",
-    repo_root=None,
-    gc=None,
-    manifest: Optional[dict] = None,
-) -> Tuple[pd.DataFrame, dict]:
+def language_spans(lang_id: str, repo_root) -> Tuple[pd.DataFrame, dict]:
     """Collect spans for one language.
 
     Returns (DataFrame, lang_meta) with the same structure as project_spans,
     but restricted to lang_id. More efficient than project_spans for single-
-    language use because it only processes that language's TSVs/sheets.
+    language use because it only processes that language's TSVs.
 
     lang_meta is a single-entry dict: {lang_id: {"keystone_pos": int, "pos_to_name": dict}}
     """
-    if source == "local":
-        if repo_root is None:
-            raise ValueError("repo_root is required when source='local'")
-        return _collect_spans_local(Path(repo_root), lang_id=lang_id)
-    elif source == "sheets":
-        if gc is None or manifest is None:
-            raise ValueError("gc and manifest are required when source='sheets'")
-        return _collect_spans_sheets(gc, manifest, lang_id=lang_id)
-    else:
-        raise ValueError(f"Unknown source: {source!r}. Expected 'local' or 'sheets'.")
+    return _collect_spans(Path(repo_root), lang_id=lang_id)
 
 
-def _collect_spans_local(repo_root: Path, lang_id: Optional[str] = None):
+def _lang_dirs(repo_root: Path, lang_id: Optional[str] = None) -> list:
+    """The language folders under ``repo_root/coded_data`` (just ``lang_id``'s
+    if given)."""
+    coded_data = Path(repo_root) / "coded_data"
+    if lang_id is not None:
+        return [coded_data / lang_id]
+    return sorted(d for d in coded_data.iterdir()
+                  if d.is_dir() and not d.name.startswith("."))
+
+
+def _span_tabs(lang_dir: Path):
+    """(class_name, construction, tsv) for every tab that produces spans, in
+    the order of ``_CLASS_HANDLERS``."""
+    for class_name in _CLASS_HANDLERS:
+        class_dir = lang_dir / class_name
+        if not class_dir.exists():
+            continue
+        allowed = _REPORTABLE_CONSTRUCTIONS.get(class_name)
+        for tsv in sorted(class_dir.glob("*.tsv")):
+            if allowed is None or tsv.stem in allowed:
+                yield class_name, tsv.stem, tsv
+
+
+def _collect_spans(repo_root: Path, lang_id: Optional[str] = None):
     """Internal: collect spans from coded_data/ TSVs.
 
     If lang_id is given, process only that language's directory.
@@ -378,176 +374,53 @@ def _collect_spans_local(repo_root: Path, lang_id: Optional[str] = None):
     rows = []
     lang_meta = {}
 
-    coded_data = repo_root / "coded_data"
-    if lang_id is not None:
-        lang_dirs = [coded_data / lang_id]
-    else:
-        lang_dirs = sorted(
-            d for d in coded_data.iterdir()
-            if d.is_dir() and not d.name.startswith(".")
-        )
-
-    for lang_dir in lang_dirs:
+    for lang_dir in _lang_dirs(repo_root, lang_id):
         if not lang_dir.is_dir():
             continue
         lid = lang_dir.name
-        for class_name, (derive_fn, row_fn) in _CLASS_HANDLERS.items():
-            class_dir = lang_dir / class_name
-            if not class_dir.exists():
-                continue
-            allowed = _REPORTABLE_CONSTRUCTIONS.get(class_name)
-            for tsv in sorted(class_dir.glob("*.tsv")):
-                if allowed is not None and tsv.stem not in allowed:
-                    continue
-                result = derive_fn(tsv, strict=False)
-                rows.extend(_span_rows(class_name, tsv.stem, result, lid))
-                if lid not in lang_meta:
-                    lang_meta[lid] = {
-                        "keystone_pos": result["keystone_position"],
-                        "pos_to_name":  result["position_number_to_name"],
-                    }
+        for class_name, construction, tsv in _span_tabs(lang_dir):
+            derive_fn = _CLASS_HANDLERS[class_name][0]
+            result = derive_fn(tsv, strict=False)
+            rows.extend(_span_rows(class_name, construction, result, lid))
+            if lid not in lang_meta:
+                lang_meta[lid] = {
+                    "keystone_pos": result["keystone_position"],
+                    "pos_to_name":  result["position_number_to_name"],
+                }
 
     return pd.DataFrame(rows), lang_meta
 
 
-def _collect_spans_sheets(gc, manifest, lang_id: Optional[str] = None):
-    """Internal: collect spans directly from Google Sheets.
+def _class_display_names() -> Dict[str, str]:
+    """``{class_name: display_name}`` from schemas/diagnostic_classes.yaml."""
+    text = _res_files("schemas").joinpath("diagnostic_classes.yaml").read_text(encoding="utf-8")
+    return {c["name"]: c.get("display_name") or c["name"]
+            for c in (yaml.safe_load(text) or {}).get("classes", [])}
 
-    If lang_id is given, process only that language's manifest entry.
-    """
-    rows = []
-    lang_meta = {}
 
-    items = (
-        [(lang_id, manifest[lang_id])] if lang_id is not None
-        else manifest.items()
-    )
-
-    for lid, lang_data in items:
-        for class_name, (derive_fn, row_fn) in _CLASS_HANDLERS.items():
-            sheet_info = lang_data.get("sheets", {}).get(class_name)
-            if not sheet_info:
-                continue
+def print_class_reports(repo_root, lang_id: Optional[str] = None) -> None:
+    """Print each analysis's own summary (its module's ``format_result``)
+    for every tab that produces spans, class by class: one language's, or
+    every language's. What the Colab notebooks show under "Results by test";
+    the classes come from the folders present, so a notebook names none."""
+    names = _class_display_names()
+    rule = "─" * 60
+    found_any = False
+    for lang_dir in _lang_dirs(repo_root, lang_id):
+        if not lang_dir.is_dir():
+            continue
+        for class_name, construction, tsv in _span_tabs(lang_dir):
+            found_any = True
+            print(f"\n{rule}\n  {names.get(class_name, class_name)}  "
+                  f"[{lang_dir.name}]  —  {construction}\n{rule}")
+            module = importlib.import_module(f"planars.{class_name}")
             try:
-                ss = gc.open_by_key(sheet_info["spreadsheet_id"])
+                result = _CLASS_HANDLERS[class_name][0](tsv, strict=False)
+                print(module.format_result(result))
             except Exception as e:
-                print(f"  WARNING: could not open {class_name} sheet for {lid}: {e}")
-                continue
-            construction_params = sheet_info.get("construction_params", {})
-            allowed = _REPORTABLE_CONSTRUCTIONS.get(class_name)
-            for construction in sheet_info["constructions"]:
-                if allowed is not None and construction not in allowed:
-                    continue
-                try:
-                    ws = ss.worksheet(construction)
-                except Exception:
-                    print(f"  WARNING: tab '{construction}' not found in {class_name} sheet")
-                    continue
-
-                # Nonpermutability general uses a pairs schema (Element_A, Element_B)
-                # that load_filled_sheet cannot parse. Reconstruct the planar structures
-                # from the manifest entry written by generate-sheets / import-sheets.
-                if class_name == "nonpermutability" and "planar" in lang_data:
-                    try:
-                        raw_rows = ws.get_all_values()
-                        header = raw_rows[0] if raw_rows else []
-                        if header_shape(header) == "element_pairs":
-                            pair_df = (pd.DataFrame(raw_rows[1:], columns=header)
-                                       if len(raw_rows) > 1
-                                       else pd.DataFrame(columns=header))
-                            planar = lang_data["planar"]
-                            keystone_pos = planar["keystone_pos"]
-                            pos_to_name = {p["pos"]: p["name"] for p in planar["positions"]}
-                            pos_type    = {p["pos"]: p["type"] for p in planar["positions"]}
-                            pos_to_elements = {p["pos"]: p["elements"] for p in planar["positions"]}
-                            elem_to_positions: dict = {}
-                            for p in planar["positions"]:
-                                for e in p["elements"]:
-                                    elem_to_positions.setdefault(e, set()).add(p["pos"])
-                            _data = (pair_df, keystone_pos, pos_to_name, pos_type,
-                                     pos_to_elements, elem_to_positions)
-                            result = derive_fn(_data=_data, strict=False)
-                            rows.extend(_span_rows(class_name, construction, result, lid))
-                            if lid not in lang_meta:
-                                lang_meta[lid] = {
-                                    "keystone_pos": result["keystone_position"],
-                                    "pos_to_name":  result["position_number_to_name"],
-                                }
-                    except Exception as e:
-                        print(f"  WARNING: could not derive {class_name}/{construction} for {lid}: {e}")
-                    continue  # skip standard load_filled_sheet path
-
-                # Coreference uses pair rows (Element_A, Position_A, Position_B, Direction,
-                # <criterion>); positions are derived from the manifest planar entry.
-                if class_name == "coreference" and "planar" in lang_data:
-                    try:
-                        raw_rows = ws.get_all_values()
-                        header = raw_rows[0] if raw_rows else []
-                        if header_shape(header) == "position_pairs":
-                            pair_df = (pd.DataFrame(raw_rows[1:], columns=header)
-                                       if len(raw_rows) > 1
-                                       else pd.DataFrame(columns=header))
-                            planar = lang_data["planar"]
-                            keystone_pos = planar["keystone_pos"]
-                            pos_to_name = {p["pos"]: p["name"] for p in planar["positions"]}
-                            elem_to_positions: dict = {}
-                            for p in planar["positions"]:
-                                for elem in p.get("elements", []):
-                                    elem_to_positions.setdefault(wrap_element(elem), set()).add(p["pos"])
-                            _data = (pair_df, keystone_pos, pos_to_name, elem_to_positions)
-                            result = derive_fn(_data=_data, strict=False,
-                                               construction=construction)
-                            rows.extend(_span_rows(class_name, construction, result, lid))
-                            if lid not in lang_meta:
-                                lang_meta[lid] = {
-                                    "keystone_pos": result["keystone_position"],
-                                    "pos_to_name":  result["position_number_to_name"],
-                                }
-                    except Exception as e:
-                        print(f"  WARNING: could not derive {class_name}/{construction} for {lid}: {e}")
-                    continue  # skip standard load_filled_sheet path
-
-                # Biuniqueness deviations reads two tabs (morphs, plus morphemes
-                # beside it) and takes positions from the manifest planar entry.
-                if class_name == "biuniqueness_deviations" and "planar" in lang_data:
-                    try:
-                        def _tab_df(tab):
-                            raw = ss.worksheet(tab).get_all_values()
-                            return (pd.DataFrame(raw[1:], columns=raw[0]) if len(raw) > 1
-                                    else pd.DataFrame(columns=raw[0] if raw else []))
-                        planar = lang_data["planar"]
-                        pos_to_name = {p["pos"]: p["name"] for p in planar["positions"]}
-                        from planars.biuniqueness_deviations import MORPHEMES_TAB
-                        _data = (_tab_df(MORPHEMES_TAB), _tab_df(construction),
-                                 planar["keystone_pos"], pos_to_name)
-                        result = derive_fn(_data=_data, strict=False)
-                        rows.extend(_span_rows(class_name, construction, result, lid))
-                        if lid not in lang_meta:
-                            lang_meta[lid] = {
-                                "keystone_pos": result["keystone_position"],
-                                "pos_to_name":  result["position_number_to_name"],
-                            }
-                    except Exception as e:
-                        print(f"  WARNING: could not derive {class_name}/{construction} for {lid}: {e}")
-                    continue  # skip standard load_filled_sheet path
-
-                required = set(
-                    construction_params.get(construction, {}).get("param_names", [])
-                )
-                try:
-                    loaded = load_filled_sheet(ws, required_criteria=required, strict=False)
-                except Exception as e:
-                    print(f"  WARNING: could not parse {class_name}/{construction} sheet for {lid}: {e}")
-                    continue
-                result = derive_fn(_data=loaded, strict=False)
-                rows.extend(_span_rows(class_name, construction, result, lid))
-                if lid not in lang_meta:
-                    lang_meta[lid] = {
-                        "keystone_pos": result["keystone_position"],
-                        "pos_to_name":  result["position_number_to_name"],
-                    }
-
-    return pd.DataFrame(rows), lang_meta
+                print(f"  (No result for this tab yet: {e})")
+    if not found_any:
+        print("No annotation tabs found.")
 
 
 # ---------------------------------------------------------------------------
@@ -580,11 +453,6 @@ def _read_expected_constructions(lang_dir: Path) -> Dict[str, list]:
 # Trailing sheet columns that are not annotation criteria (e.g. free-text notes),
 # from schemas/planar.yaml.
 _TRAILING_COLS = set(TRAILING_COLUMNS)
-
-# Name of the per-spreadsheet tab that records construction review status.
-from planars.schema_values import STATUS_TAB as _STATUS_TAB  # noqa: E402
-from planars.schema_values import status_map as _status_map  # noqa: E402
-
 
 def _criterion_cols_only(criterion_cols: list) -> list:
     """Filter out trailing columns (e.g. Comments) from criterion_cols."""
@@ -640,19 +508,15 @@ def _rows_completeness(class_name: str, construction: str,
 # Public API — completeness
 # ---------------------------------------------------------------------------
 
-def language_completeness(
-    lang_id: str,
-    source: str = "local",
-    repo_root=None,
-    gc=None,
-    manifest: Optional[dict] = None,
-) -> Dict[str, Dict[str, dict]]:
+def language_completeness(lang_id: str, repo_root) -> Dict[str, Dict[str, dict]]:
     """Per-construction completeness stats for one language.
 
-    Covers three layers for source="local":
+    Covers three layers:
       Layer 1 — construction completeness: constructions declared in
         diagnostics_{lang_id}.yaml but not yet present in coded_data/ are
         included with {"total": 0, "filled": 0, "blank": 0, "missing": True}.
+        (In Colab there is no diagnostics file, so only the tabs the sheets
+        have are listed.)
       Layer 2 — cell completeness: for present TSVs, counts filled vs. blank
         criterion cells (excluding Comments and structural columns).
       Layer 3 — structural completeness: not covered here; use validate-coding.
@@ -664,94 +528,58 @@ def language_completeness(
         "missing": True  — construction expected but TSV not yet present (Layer 1)
         "error": str     — TSV present but could not be loaded
     """
-    if source == "local":
-        if repo_root is None:
-            raise ValueError("repo_root is required when source='local'")
-        lang_dir = Path(repo_root) / "coded_data" / lang_id
+    lang_dir = Path(repo_root) / "coded_data" / lang_id
 
-        # Layer 1: expected constructions from diagnostics_{lang_id}.yaml.
-        expected = _read_expected_constructions(lang_dir)
+    # Layer 1: expected constructions from diagnostics_{lang_id}.yaml.
+    expected = _read_expected_constructions(lang_dir)
 
-        # Collect all class names: declared in diagnostics + present in coded_data.
-        present_dirs = {
-            d.name for d in lang_dir.iterdir()
-            if d.is_dir() and d.name not in {"lang_setup", "archive"}
-        } if lang_dir.exists() else set()
-        all_class_names = sorted(set(expected.keys()) | present_dirs)
+    # Collect all class names: declared in diagnostics + present in coded_data.
+    present_dirs = {
+        d.name for d in lang_dir.iterdir()
+        if d.is_dir() and d.name not in {"lang_setup", "archive"}
+    } if lang_dir.exists() else set()
+    all_class_names = sorted(set(expected.keys()) | present_dirs)
 
-        result: Dict[str, Dict[str, dict]] = {}
-        for class_name in all_class_names:
-            class_dir = lang_dir / class_name
-            exp_constructions = expected.get(class_name, [])
-            actual: Dict[str, Path] = (
-                {tsv.stem: tsv for tsv in sorted(class_dir.glob("*.tsv"))}
-                if class_dir.exists() else {}
-            )
-            # Ordered union: expected first (preserving diagnostics order), then extras.
-            seen: set = set()
-            ordered: list = []
-            for c in exp_constructions:
-                if c not in seen:
-                    ordered.append(c)
-                    seen.add(c)
-            for c in sorted(actual):
-                if c not in seen:
-                    ordered.append(c)
-                    seen.add(c)
-            if not ordered:
-                continue
-            constructions: Dict[str, dict] = {}
-            for construction in ordered:
-                if construction in actual:
-                    try:
-                        tsv = pd.read_csv(actual[construction], sep="\t", dtype=str,
-                                          keep_default_na=False)
-                        constructions[construction] = _rows_completeness(
-                            class_name, construction, list(tsv.columns), tsv.values.tolist())
-                    except Exception as e:
-                        constructions[construction] = {
-                            "total": 0, "filled": 0, "blank": 0, "error": str(e)
-                        }
-                else:
-                    # Expected by diagnostics but not yet present in coded_data (Layer 1).
-                    constructions[construction] = {
-                        "total": 0, "filled": 0, "blank": 0, "missing": True
-                    }
-            result[class_name] = constructions
-        return result
-
-    elif source == "sheets":
-        if gc is None or manifest is None:
-            raise ValueError("gc and manifest are required when source='sheets'")
-        lang_data = manifest.get(lang_id, {})
-        result = {}
-        for class_name, sheet_info in lang_data.get("sheets", {}).items():
-            try:
-                ss = gc.open_by_key(sheet_info["spreadsheet_id"])
-            except Exception as e:
-                result[class_name] = {"_error": str(e)}
-                continue
-            constructions = {}
-            for construction in sheet_info.get("constructions", []):
+    result: Dict[str, Dict[str, dict]] = {}
+    for class_name in all_class_names:
+        class_dir = lang_dir / class_name
+        exp_constructions = expected.get(class_name, [])
+        actual: Dict[str, Path] = (
+            {tsv.stem: tsv for tsv in sorted(class_dir.glob("*.tsv"))}
+            if class_dir.exists() else {}
+        )
+        # Ordered union: expected first (preserving diagnostics order), then extras.
+        seen: set = set()
+        ordered: list = []
+        for c in exp_constructions:
+            if c not in seen:
+                ordered.append(c)
+                seen.add(c)
+        for c in sorted(actual):
+            if c not in seen:
+                ordered.append(c)
+                seen.add(c)
+        if not ordered:
+            continue
+        constructions: Dict[str, dict] = {}
+        for construction in ordered:
+            if construction in actual:
                 try:
-                    ws = ss.worksheet(construction)
-                except Exception:
-                    continue
-                try:
-                    raw_rows = ws.get_all_values()
-                    header = raw_rows[0] if raw_rows else []
+                    tsv = pd.read_csv(actual[construction], sep="\t", dtype=str,
+                                      keep_default_na=False)
                     constructions[construction] = _rows_completeness(
-                        class_name, construction, header, raw_rows[1:])
+                        class_name, construction, list(tsv.columns), tsv.values.tolist())
                 except Exception as e:
                     constructions[construction] = {
                         "total": 0, "filled": 0, "blank": 0, "error": str(e)
                     }
-            if constructions:
-                result[class_name] = constructions
-        return result
-
-    else:
-        raise ValueError(f"Unknown source: {source!r}. Expected 'local' or 'sheets'.")
+            else:
+                # Expected by diagnostics but not yet present in coded_data (Layer 1).
+                constructions[construction] = {
+                    "total": 0, "filled": 0, "blank": 0, "missing": True
+                }
+        result[class_name] = constructions
+    return result
 
 
 def completeness_summary(completeness: Dict[str, Dict[str, dict]]) -> dict:
@@ -775,73 +603,41 @@ def completeness_summary(completeness: Dict[str, Dict[str, dict]]) -> dict:
     return {"filled": filled, "total": total, "by_construction": by_construction}
 
 
-def project_completeness(
-    source: str = "local",
-    repo_root=None,
-    gc=None,
-    manifest: Optional[dict] = None,
-) -> Dict[str, Dict[str, Dict[str, dict]]]:
+def project_completeness(repo_root) -> Dict[str, Dict[str, Dict[str, dict]]]:
     """Per-language, per-construction completeness for the whole project.
 
     Returns:
         {lang_id: {class_name: {construction: {"total": int, "filled": int, "blank": int}}}}
     """
-    if source == "local":
-        if repo_root is None:
-            raise ValueError("repo_root is required when source='local'")
-        coded_data = Path(repo_root) / "coded_data"
-        return {
-            lang_dir.name: language_completeness(
-                lang_dir.name, source="local", repo_root=repo_root
-            )
-            for lang_dir in sorted(coded_data.iterdir())
-            if lang_dir.is_dir() and not lang_dir.name.startswith(".")
-        }
-    elif source == "sheets":
-        if gc is None or manifest is None:
-            raise ValueError("gc and manifest are required when source='sheets'")
-        return {
-            lang_id: language_completeness(
-                lang_id, source="sheets", gc=gc, manifest=manifest
-            )
-            for lang_id in sorted(manifest)
-        }
-    else:
-        raise ValueError(f"Unknown source: {source!r}. Expected 'local' or 'sheets'.")
+    return {lang_dir.name: language_completeness(lang_dir.name, repo_root)
+            for lang_dir in _lang_dirs(repo_root)}
 
 
-# ---------------------------------------------------------------------------
-# Public API — status
-# ---------------------------------------------------------------------------
-
-def language_status(lang_id: str, gc, manifest: dict) -> Dict[str, Dict[str, str]]:
-    """Status tab contents for one language (Google Sheets only).
-
-    Reads the Status tab from each annotation spreadsheet for lang_id.
-
-    Returns:
-        {class_name: {construction: status_string}}
-        e.g. {"ciscategorial": {"general": "ready-for-review"}}
-
-    The tab's cells are read by planars.schema_values.status_map, the same
-    reader coding/ uses (it lives in planars/ because Colab installs only
-    planars/).
-    """
-    lang_data = manifest.get(lang_id, {})
-    result: Dict[str, Dict[str, str]] = {}
-    for class_name, sheet_info in lang_data.get("sheets", {}).items():
-        try:
-            ss = gc.open_by_key(sheet_info["spreadsheet_id"])
-        except Exception:
-            continue
-        try:
-            ws = ss.worksheet(_STATUS_TAB)
-        except Exception:
-            continue
-        statuses = _status_map(ws.get_all_values())
-        if statuses:
-            result[class_name] = statuses
-    return result
+def print_completeness(completeness: Dict[str, Dict[str, dict]],
+                       status: Optional[Dict[str, Dict[str, str]]] = None) -> bool:
+    """Print one language's ``language_completeness`` a line per construction,
+    each with its review status from ``status`` (``from_sheets.Language.status``)
+    when given. Returns whether every construction is complete."""
+    status = status or {}
+    all_complete = True
+    for class_name, constructions in sorted(completeness.items()):
+        for construction, stats in sorted(constructions.items()):
+            label = f"{class_name} / {construction}"
+            badge = status.get(class_name, {}).get(construction, "")
+            badge_str = f"  [{badge}]" if badge else ""
+            if "error" in stats:
+                print(f"  {label:<45}  ERROR: {stats['error']}")
+                all_complete = False
+            elif stats.get("missing"):
+                print(f"  {label:<45}  no tab yet")
+                all_complete = False
+            elif stats["blank"] == 0:
+                print(f"  {label:<45}  {stats['filled']}/{stats['total']} filled  ✓{badge_str}")
+            else:
+                print(f"  {label:<45}  {stats['filled']}/{stats['total']} filled  "
+                      f"⚠  {stats['blank']} blank{badge_str}")
+                all_complete = False
+    return all_complete
 
 
 # ---------------------------------------------------------------------------
@@ -850,24 +646,20 @@ def language_status(lang_id: str, gc, manifest: dict) -> Dict[str, Dict[str, str
 
 def language_report_data(
     lang_id: str,
-    source: str = "local",
-    repo_root=None,
-    gc=None,
-    manifest: Optional[dict] = None,
+    repo_root,
     status: Optional[Dict[str, Dict[str, str]]] = None,
 ) -> dict:
     """Aggregated report bundle for one language.
 
     ``status`` is each class sheet's Status tab, when the caller has read
-    it (``planars.from_sheets``); with ``source="sheets"`` it is read here.
+    it (``planars.from_sheets``).
 
     Returns a dict with keys:
         lang_id:        str — the Glottocode
         display_name:   str — "Name [glottocode]" if in languages.yaml, else bare code
         generated_at:   datetime.datetime — UTC timestamp
         completeness:   dict — from language_completeness()
-        status:         dict or None — the ``status`` given, or language_status()
-                        for source="sheets"; else None
+        status:         dict or None — the ``status`` given, else None
         spans:          pd.DataFrame or None — span rows for this language;
                         columns as project_spans() describes. Write to TSV
                         for R or other consumers.
@@ -879,19 +671,12 @@ def language_report_data(
     display_name = get_display_name(lang_id)
     generated_at = datetime.datetime.now(datetime.timezone.utc)
 
-    completeness = language_completeness(
-        lang_id, source=source, repo_root=repo_root, gc=gc, manifest=manifest
-    )
-
-    if status is None and source == "sheets" and gc is not None and manifest is not None:
-        status = language_status(lang_id, gc, manifest)
+    completeness = language_completeness(lang_id, repo_root)
 
     spans = None
     lang_meta_entry = None
     try:
-        df, lm = language_spans(
-            lang_id, source=source, repo_root=repo_root, gc=gc, manifest=manifest
-        )
+        df, lm = language_spans(lang_id, repo_root)
         spans = df if not df.empty else None
         lang_meta_entry = lm.get(lang_id)
     except Exception:
