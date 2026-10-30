@@ -12,8 +12,8 @@ the planar and diagnostics Sheets (`copy_sheet_spec`), the status sheets
 tooling's), the proposal sheets (`proposal_sheet_spec`, titled
 `proposal_sheet_title`: a locked Instructions tab, Last review, the
 tooling's, then Planar and Diagnostics, copies of the two sources plus a
-What changed? column, every cell the annotator's), and the files that are not spreadsheets — notes Docs, the
-manifest, notebooks, PDF reports, contributor chart PDFs and folders (`file_spec`: name, folder,
+What changed? column, every cell the annotator's), and the files that are not spreadsheets — notes Docs,
+notebooks, PDF reports, contributor chart PDFs and folders (`file_spec`: name, folder,
 type, what may be written into it, `content_problems`,
 `appended_text_problems`). Sharing is specified for every kind
 (`sharing_spec`: who gets which role, and whether a link share is allowed; one
@@ -461,14 +461,13 @@ def status_sheet_spec(lang_id: str, data_dir: Path) -> StatusSheetSpec:
 
 
 # ---------------------------------------------------------------------------
-# Files that are not spreadsheets: notes Docs, the manifest, notebooks,
-# PDF reports, contributor chart PDFs and folders
+# Files that are not spreadsheets: notes Docs, notebooks, PDF reports,
+# contributor chart PDFs and folders
 # ---------------------------------------------------------------------------
 
 # What may be written into a file of each kind (``content_problems``).
 NO_CONTENT = "nothing"                    # a folder
 ACKNOWLEDGMENTS = "acknowledgment lines"  # the notes Doc: the annotator's text
-MANIFEST_JSON = "the manifest"            # JSON the manifest contract accepts
 NOTEBOOK_JSON = "a notebook"              # a Jupyter notebook's JSON
 PDF = "a PDF"
 
@@ -498,7 +497,7 @@ class FileSpec:
 
 
 def file_spec(identity) -> FileSpec:
-    """The spec for a notes Doc, report, charts PDF, notebook, the manifest or a folder
+    """The spec for a notes Doc, report, charts PDF, notebook or folder
     (``identity`` is a ``drive_door.Identity``). The one place each is named:
     the commands that make these files call this for the name."""
     from planars.languages import get_display_name
@@ -521,8 +520,6 @@ def file_spec(identity) -> FileSpec:
                             NOTEBOOK_JSON, True)
         return FileSpec(f"{identity.name}_{lang}.ipynb", folder("language", lang),
                         _JSON_MIME, NOTEBOOK_JSON, True)
-    if kind == "manifest":
-        return FileSpec("manifest.json", folder("root"), _JSON_MIME, MANIFEST_JSON, True)
     if kind == "folder" and identity.name == "root":
         return FileSpec(ROOT_FOLDER_NAME, None, _FOLDER_MIME, NO_CONTENT, True)
     if kind == "folder" and identity.name == "status":
@@ -553,10 +550,6 @@ def content_problems(spec: FileSpec, content: bytes) -> List[str]:
         data = json.loads(content.decode("utf-8"))
     except (UnicodeDecodeError, ValueError) as exc:
         return [f"what is sent is not JSON ({exc})"]
-    if spec.content == MANIFEST_JSON:
-        from . import manifest_contract
-        return [f"the manifest does not match its contract: {p}"
-                for p in manifest_contract.check(data)]
     if spec.content == NOTEBOOK_JSON:
         if not (isinstance(data, dict) and isinstance(data.get("cells"), list)
                 and isinstance(data.get("nbformat"), int)):
@@ -619,7 +612,6 @@ _SHARING: Dict[str, Dict[str, Optional[str]]] = {
     # coordinators have the root's writer; no link share, since they come
     # from unpublished annotation.
     "charts":            {"who": _NOBODY, "role": None, "link": None},
-    "manifest":          {"who": _NOBODY, "role": None, "link": None},
 }
 # Folders differ by which folder: a language folder lets its annotator see
 # their files; the Annotation Status folder holds every language's status

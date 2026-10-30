@@ -33,9 +33,9 @@ Exit code 0 if no errors; 1 if any errors (warnings do not fail).
 Writes nothing. Drive is reached through the doorway, by two independent
 read-only entry points: --sheets (open each spreadsheet, list its tabs, read
 its header, comparing the tabs and criteria columns with the diagnostics YAML)
-and --check-manifest (the ID file and the YAML, no Drive calls). The manifest
-is not read: it is a copy rebuilt from the ID file (unit 11c), and the Drive
-door checks it against manifest_contract.py whenever it is written.
+and --check-manifest (the ID file and the YAML, no Drive calls; the name is
+older than the ID file, and the manifest it once read was deleted in unit
+11c-5).
 
 Usage:
     python -m coding integrity-check

@@ -16,6 +16,8 @@ from __future__ import annotations
 import time
 from typing import Any, Callable, Optional, Sequence
 
+# Google's answers that mean "try again shortly". 502 and 504 were added on
+# 2026-10-22, when a 502 stopped sync-params in the daily refresh.
 RETRYABLE = (429, 500, 502, 503, 504)
 
 # Seconds to wait before each retry. Google's read limit is not a plain

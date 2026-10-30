@@ -1065,11 +1065,6 @@ class FakeDriveDoorway:
         return self.seed_file(name, _FOLDER_MIME, [parent_id] if parent_id else [],
                               file_id=file_id, identity=identity)
 
-    def seed_json_file(self, name: str, data: Any, parents: Sequence[str] = (),
-                       file_id: Optional[str] = None, identity=None) -> str:
-        return self.seed_file(name, "application/json", parents,
-                              json.dumps(data).encode("utf-8"), file_id, identity=identity)
-
     def seed_doc(self, name: str, text: str = "", parent_id: Optional[str] = None,
                  file_id: Optional[str] = None, identity=None) -> str:
         doc_id = self.seed_file(name, _DOC_MIME, [parent_id] if parent_id else [],
@@ -1245,12 +1240,6 @@ class FakeDriveDoorway:
     def trash_file(self, file_id: str) -> None:
         self._require_file(file_id).trashed = True
         self._record("trash_file", file_id=file_id)
-
-    def download_file_json(self, file_id: str) -> Any:
-        f = self._require_file(file_id)
-        if f.content is None:
-            raise api_error(400, f"File {file_id} has no downloadable content.")
-        return json.loads(f.content.decode("utf-8"))
 
     def get_or_create_folder(self, name: str, parent_id: Optional[str] = None) -> str:
         parent_clause = f" and '{parent_id}' in parents" if parent_id else ""

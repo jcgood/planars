@@ -94,7 +94,6 @@ from typing import Any, Dict, List, Mapping, Optional, Protocol, Sequence, runti
 import gspread
 
 from .drive import (
-    _download_file_json,
     _get_clients,
     _get_docs_client,
     _get_or_create_folder,
@@ -329,8 +328,8 @@ class DriveDoorway(Protocol):
         """Create a Drive file; returns its ID.
 
         Covers both the metadata-only form (folders, Docs — pass a Google
-        mimetype and no content) and the media-upload form (manifest.json,
-        notebooks, PDFs). ``properties`` are the file's Drive properties: the
+        mimetype and no content) and the media-upload form (notebooks,
+        PDFs). ``properties`` are the file's Drive properties: the
         Drive door's identity labels (``planars_kind`` and so on). Public
         properties, not ``appProperties``, which only the OAuth client that
         wrote them can read; a second coordinator's client must see them too.
@@ -344,10 +343,9 @@ class DriveDoorway(Protocol):
         (merged into the file's own; a key set to None is removed).
 
         ``name`` is deliberately independent of ``content``: callers differ on
-        whether an update renames (the manifest upload does not;
-        ``drive.create_or_update_shared_file``, for notebooks and reports,
-        does), and ``restructure_sheets`` renames without touching content at
-        all. The doorway lets each caller choose rather than picking one as
+        whether an update renames (``drive.create_or_update_shared_file``,
+        for notebooks and reports, does), and ``restructure_sheets`` renames
+        without touching content at all. The doorway lets each caller choose rather than picking one as
         canonical.
         """
 
@@ -357,8 +355,6 @@ class DriveDoorway(Protocol):
     def trash_file(self, file_id: str) -> None:
         """Move a file to Drive's trash, where it stays restorable for 30
         days; never a permanent delete."""
-
-    def download_file_json(self, file_id: str) -> Dict: ...
 
     def get_or_create_folder(self, name: str, parent_id: Optional[str] = None) -> str:
         """Find-or-create by name; returns the folder ID. Idempotent.
@@ -514,9 +510,6 @@ class GspreadDoorway:
 
     def trash_file(self, file_id: str) -> None:
         self.drive.files().update(fileId=file_id, body={"trashed": True}).execute()
-
-    def download_file_json(self, file_id: str) -> Dict:
-        return _download_file_json(self.drive, file_id)
 
     def get_or_create_folder(self, name: str, parent_id: Optional[str] = None) -> str:
         return _get_or_create_folder(self.drive, name, parent_id)

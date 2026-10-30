@@ -270,7 +270,7 @@ def test_every_kind_is_shared_with_its_annotator_at_its_role_and_never_by_link(
 
 
 @pytest.mark.parametrize("identity", [
-    drive_door.manifest(), drive_door.folder("root"), drive_door.folder("archive", LANG),
+    drive_door.folder("root"), drive_door.folder("archive", LANG),
     drive_door.charts("classes", LANG),
 ])
 def test_files_shared_with_nobody_take_no_grant(env, identity):
@@ -447,8 +447,6 @@ def test_a_notes_doc_is_made_once_with_its_name_in_its_language_folder(env):
 
 
 @pytest.mark.parametrize("identity, good, bad, message", [
-    (drive_door.manifest(), b'{"stan1293": {"folder_id": "f"}}', b'{"stan1293": "x"}',
-     "does not match its contract"),
     (drive_door.notebook("domains", LANG), b'{"cells": [], "nbformat": 4}', b'{"cells": 1}',
      "not a notebook"),
     (drive_door.lang_file("report", LANG), b"%PDF-1.7 ...", b"<html></html>", "not a PDF"),
@@ -810,7 +808,8 @@ def test_a_command_that_writes_nothing_logs_nothing(env):
 @pytest.mark.parametrize("make, message", [
     (lambda: drive_door.Identity("spreadsheet", "stan1293"), "unknown kind"),
     (lambda: drive_door.Identity(drive_door.CLASS_SHEET, "stan1293"), "needs its class"),
-    (lambda: drive_door.Identity("manifest", "stan1293"), "has no language"),
+    # The manifest's kind, gone since unit 11c-5 (2026-10-29).
+    (lambda: drive_door.Identity("manifest"), "unknown kind"),
     (lambda: drive_door.notebook("domains"), "needs its language"),
     (lambda: drive_door.notebook("all_languages", "stan1293"), "has no language"),
     (lambda: drive_door.folder("language"), "needs its language"),
@@ -822,7 +821,7 @@ def test_an_identity_the_door_cannot_place_cannot_be_made(make, message):
 
 
 def test_labels_round_trip():
-    for identity in (drive_door.class_sheet(LANG, CLASS), drive_door.manifest(),
+    for identity in (drive_door.class_sheet(LANG, CLASS), drive_door.charts("types", LANG),
                      drive_door.notebook("all_languages"), drive_door.folder("archive", LANG)):
         assert drive_door.Identity.from_labels(identity.labels()) == identity
     assert drive_door.Identity.from_labels({}) is None

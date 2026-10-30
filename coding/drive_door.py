@@ -71,10 +71,11 @@ tests). Reads pass straight through. Every write is checked first:
   their order and protection, and that each proposal tab written has its
   source's columns and What changed?.
 - **Rule 8, the files that are not spreadsheets** (``FILE_KINDS``: notes
-  Docs, reports, contributor charts, notebooks, the manifest, folders; design § 8, "5f";
+  Docs, reports, contributor charts, notebooks, folders; design § 8, "5f";
   ``sheet_spec.file_spec``): a create, rename, move or upload sends only the
-  spec's name, folder, type and kind of content (the manifest's checked
-  against ``manifest_contract``, a notebook's and a PDF's by their form); a
+  spec's name, folder, type and kind of content (a notebook's and a PDF's
+  checked by their form; the manifest, checked against its contract, was
+  deleted in unit 11c-5); a
   notes Doc's text is never replaced, and only an acknowledgment line is
   appended to it; a file only one of which may exist (all but archive
   folders) is not made a second time; and only a notebook
@@ -184,12 +185,11 @@ COPY_SHEETS: Dict[str, Tuple[str, str]] = {
 NOTES_DOC = "notes_doc"
 SHEET_KINDS: FrozenSet[str] = frozenset({CLASS_SHEET, *COPY_SHEETS, STATUS_SHEET,
                                          PROPOSAL_SHEET})
-FILE_KINDS: FrozenSet[str] = frozenset({NOTES_DOC, "report", "charts", "manifest", "notebook",
-                                        "folder"})
+FILE_KINDS: FrozenSet[str] = frozenset({NOTES_DOC, "report", "charts", "notebook", "folder"})
 # The kinds of file that may be put in Drive's trash (rule 8): the tooling
-# writes every cell of them, so nobody's work is in one. "manifest" only
-# until migrations/trash_manifest.py has run (unit 11c-5), when the kind goes.
-TRASHABLE_KINDS: FrozenSet[str] = frozenset({"notebook", "manifest"})
+# writes every cell of them, so nobody's work is in one. (The manifest was
+# one too, for one run of migrations/trash_manifest.py, 2026-10-29.)
+TRASHABLE_KINDS: FrozenSet[str] = frozenset({"notebook"})
 
 # Every batch_update request type the tooling sends, each checked below.
 # A new one is added here, with its check, before any command can use it.
@@ -200,8 +200,6 @@ REQUEST_TYPES = frozenset({
 })
 
 VIOLATION_LABEL = "door-violation"
-# Google's answers that mean "try again shortly". 502 and 504 were added on
-# 2026-10-22, when a 502 stopped sync-params in the daily refresh.
 _SPREADSHEET_MIME = "application/vnd.google-apps.spreadsheet"
 _FOLDER_MIME = "application/vnd.google-apps.folder"
 _DOC_MIME = "application/vnd.google-apps.document"
@@ -243,7 +241,6 @@ KINDS: Dict[str, Dict[str, Any]] = {
     # A language's contributor charts, one PDF per grouping
     # (laminar/contributor_charts.py; coding/laminar_charts.py).
     "charts":            {"lang": _LANG, "class": None, "name": {"classes", "types"}},
-    "manifest":          {"lang": None, "class": None, "name": None},
     # These two depend on the name: see Identity.__post_init__. (A
     # "validation" notebook was retired 2026-10-23,
     # migrations/retire_validation_notebooks.py; the ones made are in the trash.)
@@ -355,10 +352,6 @@ def lang_file(kind: str, lang_id: str) -> Identity:
 def charts(grouping: str, lang_id: str) -> Identity:
     """A language's contributor charts PDF, by ``classes`` or ``types``."""
     return Identity("charts", lang_id, name=grouping)
-
-
-def manifest() -> Identity:
-    return Identity("manifest")
 
 
 def notebook(name: str, lang_id: Optional[str] = None) -> Identity:
@@ -1124,9 +1117,6 @@ class CheckedDoorway:
         return _retry(lambda: self._inner.get_file(
             file_id, fields=fields, supports_all_drives=supports_all_drives))
 
-    def download_file_json(self, file_id: str) -> Dict:
-        return _retry(lambda: self._inner.download_file_json(file_id))
-
     def list_permissions(self, file_id: str,
                          fields: str = "permissions(id,type)") -> List[Dict]:
         return _retry(lambda: self._inner.list_permissions(file_id, fields=fields))
@@ -1268,8 +1258,8 @@ class CheckedDoorway:
                        parents: Optional[Sequence[str]] = None,
                        mimetype: Optional[str] = None, content: Optional[bytes] = None,
                        creating: bool = False) -> List[str]:
-        """What is wrong with a write to a notes Doc, report, notebook, the
-        manifest or a folder, from its spec (``sheet_spec.file_spec``): each
+        """What is wrong with a write to a notes Doc, report, charts PDF,
+        notebook or folder, from its spec (``sheet_spec.file_spec``): each
         part the write sends (name, folder, type, content) must be the
         spec's, and a file only one of which may exist is not made twice.
         Nothing for a spreadsheet, or a file the door can't place."""
@@ -1308,7 +1298,7 @@ class CheckedDoorway:
 
     def _duplicate_problems(self, identity: Identity) -> List[str]:
         """A second live file with this identity: the commands keep the first
-        one's id (manifest, drive_config.json), so a second would be found by
+        one's id (drive_config.json), so a second would be found by
         no one, and a notes Doc's notes would be split between the two."""
         clauses = [f"properties has {{ key='{k}' and value='{_quote(v)}' }}"
                    for k, v in identity.labels().items()] + ["trashed=false"]

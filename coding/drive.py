@@ -37,7 +37,6 @@ Authentication (OAuth2):
 """
 from __future__ import annotations
 
-import io
 import json
 import os
 import re
@@ -47,7 +46,6 @@ from typing import Dict, List, Optional, Tuple
 
 import gspread
 from googleapiclient.discovery import build as google_build
-from googleapiclient.http import MediaIoBaseDownload
 
 from . import drive_door
 
@@ -110,21 +108,6 @@ def _save_drive_config(config: Dict) -> None:
     local-file door, which commits it when the command ends."""
     from . import file_door
     file_door.write_state(file_door.id_file(), json.dumps(config, indent=2))
-
-
-# ---------------------------------------------------------------------------
-# Drive file download
-# ---------------------------------------------------------------------------
-
-def _download_file_json(drive, file_id: str) -> Dict:
-    """Download and parse a JSON file from Drive by file ID."""
-    request = drive.files().get_media(fileId=file_id)
-    buffer = io.BytesIO()
-    downloader = MediaIoBaseDownload(buffer, request)
-    done = False
-    while not done:
-        _, done = downloader.next_chunk()
-    return json.loads(buffer.getvalue().decode("utf-8"))
 
 
 # ---------------------------------------------------------------------------

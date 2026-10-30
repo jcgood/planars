@@ -504,13 +504,13 @@ def test_parse_query_handles_every_shape_built_by_coding():
                       "trashed": "false"}
 
 
-def test_file_create_update_move_and_download(doorway):
-    file_id = doorway.create_file("manifest.json", ["folder_root"],
+def test_file_create_update_and_move(doorway):
+    file_id = doorway.create_file("notes.json", ["folder_root"],
                                   content=json.dumps({"a": 1}).encode(),
                                   mimetype="application/json")
-    assert doorway.download_file_json(file_id) == {"a": 1}
+    assert json.loads(doorway.file(file_id).content) == {"a": 1}
     doorway.update_file(file_id, content=json.dumps({"a": 2}).encode())
-    assert doorway.download_file_json(file_id) == {"a": 2}
+    assert json.loads(doorway.file(file_id).content) == {"a": 2}
     # Rename independent of content — the four upload implementations disagree
     # on whether an update renames, so the doorway lets each caller choose.
     doorway.update_file(file_id, name="renamed.json")
