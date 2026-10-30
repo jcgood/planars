@@ -111,7 +111,6 @@ Languages: ['arao1248', 'stan1293', 'synth0001']
   phrasal_accent
     [prescreening] up to date
     [general] up to date (pair-row tab — row updates skipped)
-    [locked tab] Instructions: refresh (its source has changed)
 
 Done.
-Drive door (enforce): checked 55 write(s) to 39 tab(s) or file(s); 0 broke a rule.
+Drive door (enforce): checked 52 write(s) to 38 tab(s) or file(s); 0 broke a rule.

@@ -213,11 +213,9 @@ notebooks find their sheets by label, the manifest is gone. **Next:** check
 the 2026-10-30 refresh (green, its new `notebooks` step clean, no
 `door-violation`), then rename what still says "manifest" (the plan's
 "Left" bullet there: `prune-manifest`, `--check-manifest`, the
-`stale-manifest` label), then 16–18. **Owed by Jeff:** take his second
-account (`jcgood@buffalo.edu`, which people.yaml lists as the owner) off
-the synth0001 folder, then recapture synth0001
-(`capture-drive-state --apply --lang synth0001`; its saved data was kept at
-the 2026-10-26 capture because the share was on it). Q4 (notebooks shared
+`stale-manifest` label), then 16–18. The live tests' share to Jeff's
+second account came off the synth0001 folder and synth0001 was recaptured
+(2026-10-30, `migrations/remove_synth0001_test_share.py`). Q4 (notebooks shared
 by name only) is still open: test 1 ran with the link share on. Adam's
 clone must be pulled before his Claude runs the tooling.
 
