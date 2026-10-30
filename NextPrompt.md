@@ -209,9 +209,10 @@ TSV again (the 2026-10-28 refresh was green and no TSV came back).
 **11d is done (2026-10-28):** the Instructions sentences are in planar.yaml's
 `sheet_text`. **11c is done (2026-10-29;** as-built in
 `docs/ownership-design.md` § 6 item 7): Jeff's two live tests passed, the
-notebooks find their sheets by label, the manifest is gone. **Next:** check
-the 2026-10-30 refresh (green, its new `notebooks` step clean, no
-`door-violation`), then rename what still says "manifest" (the plan's
+notebooks find their sheets by label, the manifest is gone. The 2026-10-30
+refresh was green, its `notebooks` step clean, no `door-violation`; its
+#331 (the test share on synth0001) was fixed after it ran and closes at
+the next refresh. **Next:** rename what still says "manifest" (the plan's
 "Left" bullet there: `prune-manifest`, `--check-manifest`, the
 `stale-manifest` label), then 16–18. The live tests' share to Jeff's
 second account came off the synth0001 folder and synth0001 was recaptured
