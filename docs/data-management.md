@@ -45,7 +45,9 @@ schemas/
   diagnostic_classes_status.yaml  Process/tracking state for the same classes (status, collection_required, etc.)
   planar.yaml                   Planar structure ontology (structural columns, element conventions)
   terms.yaml                    Analytical vocabulary (strict/loose span, etc.) and chart labels
-  codebook.yaml                 Redirect stub — see the five files above
+  languages.yaml                Per-language metadata (Glottolog fields, annotator, example style)
+  issue_labels.yaml             The GitHub issue labels
+  decisions.tsv                 The framework's decision log (written by record-decision)
 docs/                           Documentation (this directory)
 ```
 
