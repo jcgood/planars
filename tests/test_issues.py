@@ -81,6 +81,20 @@ def test_file_comments_on_the_open_issue_by_default(github):
     assert github.comments[open_number] == ["new"]
 
 
+def test_no_email_address_reaches_github(github):
+    # planars is public; text quoted from a notes Doc or a Drive comment
+    # (a +mention) can carry an address.
+    text = "From jo.smith+x@uni.example.ac.uk: ask @adamtallman, see pkg@1.2.3"
+    number = issues.create("import-error", f"About {text}", text)
+    issues.comment(number, text)
+    issues.edit(number, text, text)
+    issues.file_issue("import-error", text, text, replace=True)
+    sent = [github.issue(number)["title"], github.issue(number)["body"]] + github.comments[number]
+    for out in sent:
+        assert "jo.smith" not in out and issues.ADDRESS_REMOVED in out
+        assert "@adamtallman" in out and "pkg@1.2.3" in out
+
+
 def test_file_with_replace_rewrites_the_open_issue(github):
     open_number = github.seed_issue("Import error (yesterday)", "import-error", body="old")
     issues.file_issue("import-error", "Import error (today)", "new", replace=True)

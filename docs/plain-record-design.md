@@ -92,8 +92,16 @@ The doorway gets one read-only call, `list_revisions(file_id, since)`: Drive's
 revisions of a file, each with its author and time. The change log gets a
 seventh column, **edited by**: the people whose revisions fall between the
 previous import and this one, by name. Names come from `people.yaml`
-(`people.name_for_email`). Someone not in `people.yaml` is recorded by the
-name Drive gives, and email addresses never go into a file.
+(`people.name_for_email`), never from the name someone gives themselves in
+Drive, which anyone can set to "Adam Tallman". Someone not in `people.yaml`
+is recorded as "someone not in people.yaml" (`people.UNLISTED_EDITOR`):
+their own name doesn't belong in a public issue, and since the files are
+shared only with people in `people.yaml`, such an edit means a file is open
+wider than it should be. The import that finds one says so in the
+`data-overwrite` check's issue, naming the file, so the coordinator can
+check its sharing. Email addresses never go into a file, and
+`coding/issues.py` removes any from issue text on its way to GitHub (a
+notes Doc or a Drive comment's +mention can carry one).
 
 It applies wherever a person's typing is imported: class sheets
 (`import-sheets`), notes Docs (`check-notes`), proposal sheets
@@ -125,7 +133,7 @@ language's Drive comment threads (class sheets, the proposal sheet, the notes
 Doc): the annotators' own comments and their replies to the tooling's. New
 ones go into the same issue under their own heading, and all of them are saved
 to `records/drive_comments.tsv` (file, thread, author, time, text,
-resolved). The doorway's `list_comments` asks for authors, times and replies,
+resolved). The author is named as in § 3.3, never by address or Drive name. The doorway's `list_comments` asks for authors, times and replies,
 not only `id` and `content`. This fixes the unread-reply gap in § 1 whatever
 § 7 decides.
 

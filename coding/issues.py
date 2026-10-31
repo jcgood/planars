@@ -38,8 +38,9 @@ What lives here:
 
 - **The operations callers use**: `find_open`, `file_issue` (comment on the
   open issue, or replace its title and body, or create one), `create`,
-  `comment`, `close`, `close_open`, `remind_stale`, `last_closed`, `is_open`,
-  `body_of`.
+  `comment`, `edit`, `replace_body`, `close`, `close_open`, `remind_stale`,
+  `last_closed`, `is_open`, `body_of`. Each one that writes text removes any
+  email address from it first (`public`): the repository is public.
 
 Choosing *which* issue a caller means stays with the caller, because it is a
 fact about that caller: `check-notes` keeps one issue per annotator by stored
@@ -50,6 +51,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import tempfile
 from datetime import datetime, timedelta, timezone
@@ -302,18 +304,39 @@ def ensure_label(label: str) -> None:
     gh.create_label(label, str(entry["color"]), entry["description"])
 
 
+_ADDRESS = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}")
+ADDRESS_REMOVED = "[address removed]"
+
+
+def public(text: Optional[str]) -> Optional[str]:
+    """`text` with every email address replaced by ADDRESS_REMOVED.
+
+    planars is public, and addresses live only in the private people.yaml.
+    Issue text often quotes what someone typed (a notes Doc, a Comments cell,
+    a Drive comment, where a +mention puts an address in the text), so every
+    title, body and comment is filtered here, on its way out, rather than
+    trusting each caller to remember. An @-mention of a GitHub username has
+    nothing before the @ and is left alone."""
+    return _ADDRESS.sub(ADDRESS_REMOVED, text) if text else text
+
+
 def create(label: str, title: str, body: str) -> int:
     ensure_label(check_label(label))
-    return get_github().create_issue(title, label, body)
+    return get_github().create_issue(public(title), label, public(body))
 
 
 def comment(number: int, body: str) -> None:
-    get_github().comment(number, body)
+    get_github().comment(number, public(body))
+
+
+def edit(number: int, title: Optional[str], body: Optional[str]) -> None:
+    """Replace an issue's title and/or body in place (None keeps it). Notifies nobody."""
+    get_github().edit_issue(number, public(title), public(body))
 
 
 def replace_body(number: int, body: str) -> None:
     """Rewrite an issue's body in place. Unlike a comment, this notifies nobody."""
-    get_github().edit_issue(number, None, body)
+    edit(number, None, body)
 
 
 def file_issue(label: str, title: str, body: str, *, replace: bool = False,
@@ -329,7 +352,7 @@ def file_issue(label: str, title: str, body: str, *, replace: bool = False,
     if number is None:
         return create(label, title, body), True
     if replace:
-        get_github().edit_issue(number, title, body)
+        edit(number, title, body)
     else:
         comment(number, body)
     return number, False

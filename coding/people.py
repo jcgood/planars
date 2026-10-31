@@ -95,6 +95,9 @@ def name_for_email(email: Optional[str]) -> Optional[str]:
     return None
 
 
+UNLISTED_EDITOR = "someone not in people.yaml"
+
+
 def editors(revisions: List[dict], since: Optional[str] = None) -> List[str]:
     """Who edited a Drive file after ``since`` (an ISO UTC time; all of its
     history if None), by name, in the order they first appear. ``revisions``
@@ -103,9 +106,12 @@ def editors(revisions: List[dict], since: Optional[str] = None) -> List[str]:
     The account the tooling runs as (``me``) is left out: every write the
     tooling makes is a revision by it, so it can't be told apart from a hand
     edit from the same account (docs/plain-record-design.md § 3.3). A name
-    comes from people.yaml by address; someone not in it is named as Drive
-    names them. No address is ever returned, so the result may go in a file
-    or an issue."""
+    comes from people.yaml by address, never from the name Drive shows,
+    which anyone can set to anything. Anyone else is UNLISTED_EDITOR:
+    the files are shared only with people in people.yaml, so an edit by
+    someone else means a file is open wider than it should be, and their
+    own name doesn't belong in a public issue. No address is ever returned,
+    so the result may go in a file or an issue."""
     from datetime import datetime
 
     def when(text: str) -> datetime:
@@ -118,7 +124,7 @@ def editors(revisions: List[dict], since: Optional[str] = None) -> List[str]:
         if user.get("me") or (after and when(r["modifiedTime"]) <= after):
             continue
         name = (name_for_email(user.get("emailAddress")) if user.get("emailAddress") else None) \
-            or (user.get("displayName") or "").strip() or "someone Drive does not name"
+            or UNLISTED_EDITOR
         if name not in names:
             names.append(name)
     return names

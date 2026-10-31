@@ -190,7 +190,7 @@ def notify(lang_id: str, sheets: Sequence[SheetProblems], doorway=None) -> str:
         number = issues.create(LABEL, title, body)
         action = f"filed #{number}"
     else:
-        issues.get_github().edit_issue(number, title, body)
+        issues.edit(number, title, body)
         action = f"updated #{number}"
     marked = _marked_comment(lang_id, sheets, told_before, github)
     if marked:
