@@ -113,7 +113,8 @@ TSVs, the planar file, the diagnostics YAML. Every such write goes
 through the local-file door (`coding/file_door.py`), which keeps the
 previous version in the language's `archive/` folder, adds a line to the
 language's `changes.tsv` (when, which file, what changed, which command,
-why, where the previous version went), and commits and pushes the files
+why, where the previous version went, and, for a file read from a sheet or
+Doc, who edited it there since the file last changed), and commits and pushes the files
 when the command ends. `changes.tsv` opens in a spreadsheet: it is the
 place to look for what changed in a file and why, without git. Only your
 own hand edits (to the YAML or the planar) still need committing by hand.

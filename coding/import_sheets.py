@@ -14,7 +14,8 @@ coded_data/{lang_id}/{class_name}/.
 Every file is written through the local-file door (coding/file_door.py): a
 TSV whose downloaded content is unchanged is skipped; a changed one's
 previous version goes to coded_data/{lang_id}/archive/{class_name}/, the
-change goes in the language's changes.tsv, and the files written are
+change goes in the language's changes.tsv (its "edited by" naming who
+edited the sheet since that file's previous line; unit 16c), and the files written are
 committed and pushed in planars-data when the command ends. Refuses to run
 with --apply while coded_data/ has uncommitted changes (precondition
 coded_data_clean_tree, checked by the dispatcher).
@@ -61,6 +62,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import functools
 import io
 import sys
 from pathlib import Path
@@ -483,6 +485,8 @@ def main(args: argparse.Namespace | None = None) -> None:
     print("Connecting to Google...")
     doorway = get_doorway()
     config = _load_drive_config()
+    # Each sheet's Drive revisions, read at most once per run.
+    revisions_of = functools.cache(doorway.list_revisions)
 
     if apply:
         _verify_sheet_ids(doorway, config, lang_filter)
@@ -510,6 +514,9 @@ def main(args: argparse.Namespace | None = None) -> None:
         # {class: its Status tab's rows}, for the language's tab-status record.
         lang_statuses: Dict[str, List[List[str]]] = {}
         lang_classes = drive_ids.class_sheets(config, lang_id)
+        # The sheets opened, for the change log's "edited by" (unit 16c):
+        # each sheet's revisions are read once, and only if a file changes.
+        opened: List[str] = []
 
         for class_name, spreadsheet_id in lang_classes.items():
             print(f"\n  {class_name}")
@@ -521,6 +528,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                 lang_warning_lines.append(f"ERROR: {msg}")
                 total_import_errors += 1
                 continue
+            opened.append(spreadsheet_id)
 
             status_rows = _val.read_status_tab(ss)[1]
             lang_statuses[class_name] = _status_cells(status_rows)
@@ -668,7 +676,8 @@ def main(args: argparse.Namespace | None = None) -> None:
                 # logs the change in the language's changes.tsv.
                 file_door.write(file_door.annotation(lang_id, class_name, construction),
                                 file_door.tsv_text(header, records),
-                                why=f"imported from the annotator's sheet ({sheet_status})")
+                                why=f"imported from the annotator's sheet ({sheet_status})",
+                                revisions=lambda sid=spreadsheet_id: revisions_of(sid))
 
                 # Count rows with at least one blank param cell (for status line).
                 # Pair-row and keyed-row sheets have no keystone; element-row
@@ -696,7 +705,9 @@ def main(args: argparse.Namespace | None = None) -> None:
         record = _status_record_text(lang_id, lang_classes, lang_statuses)
         if apply:
             file_door.write(file_door.tab_status(lang_id), record,
-                            why="read from the class sheets' Status tabs")
+                            why="read from the class sheets' Status tabs",
+                            revisions=lambda ids=tuple(opened): [
+                                r for sid in ids for r in revisions_of(sid)])
         elif record != file_door.read(file_door.tab_status(lang_id)):
             print(f"\n  Would update {lang_id}'s tab-status record "
                   f"({file_door.tab_status(lang_id).relpath})")

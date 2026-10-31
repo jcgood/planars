@@ -217,15 +217,13 @@ progress doc, Phase 10 row). **Next:** check the 2026-10-31 refresh
 (its `labels` step creates `stale-class-sheets`; its `stale sheets` step
 clean; no `label-drift`). **Unit 16 is designed** (2026-10-30,
 `docs/plain-record-design.md`; Jeff answered its § 7 the same day, don't
-re-ask). 16a and 16b are built (2026-10-30). **Next:** check the 2026-10-31
-refresh made each language's `records/tab_status.tsv` and `records/notes.txt`
-(notes: no new `collaborator-notes` issue, since the old hash matches), then
-build 16c (who edited; read the design's § 3.3 finding first), 16d, 16e.
-Their Drive side is pushed (`list_revisions`, `people.editors`, richer
-`list_comments`); nothing calls it yet. Editors and comment authors are
-named only from people.yaml, anyone else as `people.UNLISTED_EDITOR`, and
-`issues.py` strips addresses from all issue text (2026-10-31; § 3.3).
-Where it stands is the progress doc's Phase 10 row. Then 17–18. The live tests' share to Jeff's
+re-ask). 16a, 16b (2026-10-30) and 16c (2026-10-31: the change log's
+*edited by* column) are built; the 2026-10-31 refresh made the records
+files. **Next:** check the 2026-11-01 refresh is green and its change-log
+lines for imported files fill *edited by* (Adam's name when he edited;
+empty when only the tooling did); then build 16d (Drive comment threads:
+`list_comments` already returns authors and replies, nothing calls it
+yet), then 16e. Where it stands is the progress doc's Phase 10 row. Then 17–18. The live tests' share to Jeff's
 second account came off the synth0001 folder and synth0001 was recaptured
 (2026-10-30, `migrations/remove_synth0001_test_share.py`). Q4 (notebooks shared
 by name only) is still open: test 1 ran with the link share on. Adam's

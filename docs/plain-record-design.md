@@ -2,7 +2,8 @@
 
 **Status: drafted 2026-10-30; Jeff answered § 7's Q1–Q4 the same day (each
 the recommended option), and Q5 took its recommendation unless he says
-otherwise. Building follows § 6; 16a and 16b are built (2026-10-30). Where it
+otherwise. Building follows § 6; 16a and 16b are built (2026-10-30), 16c
+(2026-10-31). Where it
 stands is the progress doc's Phase 10 row.** What is done and next is the Phase 10 row of
 `docs/data-layer-progress.md`. The unit comes from the
 [implementation plan](data-layer-implementation-plan.md), Phase 10 table:
@@ -91,7 +92,9 @@ re-read every earlier note whenever he adds one.
 The doorway gets one read-only call, `list_revisions(file_id, since)`: Drive's
 revisions of a file, each with its author and time. The change log gets a
 seventh column, **edited by**: the people whose revisions fall between the
-previous import and this one, by name. Names come from `people.yaml`
+file's previous change-log line and this one, by name. (As built, 16c: the
+log already holds that time, so no import time is kept; a file unchanged
+for weeks names everyone who touched its sheet in those weeks.) Names come from `people.yaml`
 (`people.name_for_email`), never from the name someone gives themselves in
 Drive, which anyone can set to "Adam Tallman". Someone not in `people.yaml`
 is recorded as "someone not in people.yaml" (`people.UNLISTED_EDITOR`):

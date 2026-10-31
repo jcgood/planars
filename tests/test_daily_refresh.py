@@ -207,7 +207,8 @@ def test_the_refresh_replacing_another_commands_change_files_data_overwrite(
         if cmd == "import-sheets":
             with open(log, "a", encoding="utf-8") as f:
                 f.write(f"{dr.now()}\tmetrical/stress_domain.tsv\t1 cell(s) changed\t"
-                        f"import-sheets (daily refresh)\timported\tarchive/metrical/b.tsv\n")
+                        f"import-sheets (daily refresh)\timported\tarchive/metrical/b.tsv\t"
+                        f"Adam Tallman; someone not in people.yaml\n")
         return real_run(cmd, *argv)
     monkeypatch.setattr(dr, "run", import_logs)
     dr.refresh()
@@ -215,6 +216,10 @@ def test_the_refresh_replacing_another_commands_change_files_data_overwrite(
     assert "`stan1293/metrical/stress_domain.tsv`" in issue["body"]
     assert "`sort-examples` made on 2026-10-01" in issue["body"]
     assert "`stan1293/archive/metrical/b.tsv`" in issue["body"]
+    # Unit 16c: who edited the sheet, and the unlisted editor's file.
+    assert "edited by Adam Tallman; someone not in people.yaml since" in issue["body"]
+    assert "### Edited by someone not in people.yaml" in issue["body"]
+    assert "check who the sheet or Doc is shared with" in issue["body"]
 
 
 def test_codebook_failure_attaches_the_rule_update_prompts(refresh_env, github):

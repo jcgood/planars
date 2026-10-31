@@ -32,7 +32,10 @@ file from an earlier run is deleted first; a door
 violation is no longer reported twice; the overwrite check's issue is
 filed even when an earlier step broke). Since Phase 10 unit 6c
 (2026-10-22) the overwrite check and its issue read each language's change
-log (``file_door.overwrites``), not planars-data's git history.
+log (``file_door.overwrites``), not planars-data's git history. Since unit
+16c (2026-10-31) the same issue names who edited the sheet behind a
+replaced file, and lists files read from a sheet or Doc that someone not in
+people.yaml edited (``file_door.unlisted_edits``).
 """
 from __future__ import annotations
 
@@ -47,7 +50,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, List, Optional, Sequence
+from typing import Callable, List, Optional, Sequence, Tuple
 
 from planars.layout import class_folders
 
@@ -378,23 +381,41 @@ def integrity_error_body(text: str) -> str:
     return "".join(out)
 
 
-def overwrite_body(found: List[file_door.Overwrite]) -> str:
-    lines = [f"- `{o.lang_id}/{o.file}`: today's `{o.by}` replaced the change "
-             f"`{o.replaced_by}` made on {o.replaced_when[:10]} (\"{o.replaced_why}\"); "
-             f"that version is kept as `{o.lang_id}/{o.replaced_version}`."
-             for o in found]
-    return (
-        f"## Someone's change may have been overwritten — {today()}\n\n"
-        "Today's refresh replaced files whose last change was made by a command someone "
-        "ran (a migration, restructure-sheets), not by an import from the same sheet. "
-        "If that change never reached the Google Sheet, the import has undone it.\n\n"
-        + "\n".join(lines) + "\n\n"
+def overwrite_body(found: List[file_door.Overwrite],
+                   unlisted: Sequence[Tuple[str, str]] = ()) -> str:
+    """The data-overwrite issue: files today's refresh replaced, and files
+    read from a Drive file someone not in people.yaml edited."""
+    parts = [f"## Someone's change may have been overwritten — {today()}\n\n"]
+    if found:
+        lines = [f"- `{o.lang_id}/{o.file}`: today's `{o.by}` replaced the change "
+                 f"`{o.replaced_by}` made on {o.replaced_when[:10]} (\"{o.replaced_why}\"); "
+                 f"that version is kept as `{o.lang_id}/{o.replaced_version}`."
+                 + (f" The sheet was edited by {o.edited_by} since." if o.edited_by else "")
+                 for o in found]
+        parts.append(
+            "Today's refresh replaced files whose last change was made by a command someone "
+            "ran (a migration, restructure-sheets), not by an import from the same sheet. "
+            "If that change never reached the Google Sheet, the import has undone it.\n\n"
+            + "\n".join(lines) + "\n\n")
+    if unlisted:
+        parts.append(
+            "### Edited by someone not in people.yaml\n\n"
+            "These files were read from a sheet or Doc that someone not listed in "
+            "planars-data's `people.yaml` edited. The files are shared only with people "
+            "listed there, so the sheet or Doc is probably shared too widely.\n\n"
+            + "\n".join(f"- `{lang_id}/{file}`" for lang_id, file in unlisted) + "\n\n")
+    parts.append(
         "## What to do\n\n"
-        "For each file, compare the kept version with the current file. If the change "
-        "is gone, make it again in the Sheet (or re-run the command that made it). "
-        "Each language's `changes.tsv` in planars-data has the full history. Then "
-        "close this issue; it also closes by itself after a refresh with no such "
-        "overwrite.\n")
+        + ("For each replaced file, compare the kept version with the current file. If "
+           "the change is gone, make it again in the Sheet (or re-run the command that "
+           "made it). " if found else "")
+        + ("For each file edited by someone not listed, check who the sheet or Doc is "
+           "shared with (Share, in Google), and remove anyone who shouldn't have it or "
+           "add them to `people.yaml`. " if unlisted else "")
+        + "Each language's `changes.tsv` in planars-data has the full history. Then "
+        "close this issue; it also closes by itself after a refresh that finds "
+        "neither.\n")
+    return "".join(parts)
 
 
 def status_sheet_error_body(output: str) -> str:
@@ -562,17 +583,21 @@ def snapshots(r: Refresh) -> None:
 def overwrite_check(r: Refresh) -> None:
     """Did today's refresh replace someone's change to a file? (#121 gap 2.)
     Read from the change log since Phase 10 unit 6c (ownership-design § 5.3);
-    until then, from git history."""
+    until then, from git history. Also: did it read a file someone not in
+    people.yaml edited? (unit 16c; plain-record-design § 3.3)."""
     found = file_door.overwrites(r.started) if r.started else []
+    unlisted = file_door.unlisted_edits(r.started) if r.started else []
     for o in found:
         print(f"Overwrote {o.lang_id}/{o.file} ({o.replaced_by}, {o.replaced_when})")
+    for lang_id, file in unlisted:
+        print(f"Edited by someone not in people.yaml: {lang_id}/{file}")
     if not found:
         checked = file_door.refresh_writes(r.started) if r.started else 0
         print(f"Checked {checked} change(s) this refresh made; "
               "none replaced another command's change.")
-    r.report("data-overwrite", bool(found),
+    r.report("data-overwrite", bool(found or unlisted),
              "Someone's change may have been overwritten by data-refresh",
-             lambda: overwrite_body(found), "No one's change overwritten")
+             lambda: overwrite_body(found, unlisted), "No one's change overwritten")
 
 
 def commit_snapshots(r: Refresh) -> None:
@@ -693,7 +718,8 @@ STEPS: List[Step] = [
          chapters),
     Step("overleaf", "sync-overleaf --apply (files its own overleaf-sync issue)", overleaf),
     Step("snapshots", "generate_snapshots.py", snapshots, always=True),
-    Step("overwrite", "change log: did the refresh replace someone's change? → data-overwrite",
+    Step("overwrite", "change log: did the refresh replace someone's change, or read a "
+         "file someone unlisted edited? → data-overwrite",
          overwrite_check, always=True),
     Step("commit snapshots", "commit tests/snapshots/ to planars", commit_snapshots, always=True),
     Step("sheet updates", "update-sheets --apply → sheet-drift", update_sheets),

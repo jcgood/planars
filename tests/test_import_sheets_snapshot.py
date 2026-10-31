@@ -103,6 +103,7 @@ Regenerate: PLANARS_UPDATE_SNAPSHOTS=1 pytest tests/test_import_sheets_snapshot.
 """
 from __future__ import annotations
 
+import csv
 import io
 import json
 import os
@@ -390,6 +391,24 @@ def test_content_change_archives_before_overwriting(env):
     assert env.output_tsv("arao1248", "ciscategorial", "general").read_text() != before
 
 
+def test_the_change_log_names_who_edited_the_sheet(env):
+    """Unit 16c: the sheet's Drive revisions since the file's last change-log
+    line, by people.yaml name, the tooling's own account left out."""
+    env.run(["import-sheets", "--lang", "arao1248", "--apply"])  # materialize
+    sheet = env.sheet_id("arao1248", "ciscategorial")
+    env.doorway.seed_revision(sheet, "2999-01-01T00:00:00Z", "Jeff Good", me=True)
+    env.doorway.seed_revision(sheet, "2999-01-01T00:00:01Z", "adam t", "annotator@example.org")
+    env.tab("arao1248", "ciscategorial", "general")._cell(1, 3).value = "y"
+
+    out, exit_code = env.run(["import-sheets", "--lang", "arao1248", "--apply"])
+
+    assert_finished(out, exit_code)
+    with open(env.coded / "arao1248" / "changes.tsv", encoding="utf-8", newline="") as f:
+        lines = list(csv.DictReader(f, delimiter="\t"))
+    line = [l for l in lines if l["file"] == "ciscategorial/general.tsv"][-1]
+    assert line["edited by"] == "Adam Tallman"
+
+
 # ---------------------------------------------------------------------------
 # The planar and diagnostics Sheets are never read back (unit 11b)
 # ---------------------------------------------------------------------------
@@ -499,9 +518,12 @@ def test_a_status_change_is_logged_tab_by_tab(env):
 
 
 def test_a_dry_run_writes_no_status_record(env):
+    record = env.coded / "arao1248" / "records" / "tab_status.tsv"
+    before = record.read_bytes() if record.exists() else None
+    env.set_status("arao1248", "ciscategorial", "general", "ready-for-review")
     out, exit_code = env.run(["import-sheets", "--lang", "arao1248"])
     assert_finished(out, exit_code)
-    assert not (env.coded / "arao1248" / "records" / "tab_status.tsv").exists()
+    assert (record.read_bytes() if record.exists() else None) == before
 
 
 def test_a_sheet_that_could_not_be_read_keeps_its_previous_status_rows(env):

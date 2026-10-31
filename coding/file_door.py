@@ -17,8 +17,12 @@ table can't be named.
   archive date format), never over an earlier copy;
 - appends one line to the language's change log, ``{lang}/changes.tsv``
   (``CHANGE_LOG_COLUMNS``): when, which file, what changed (worked out by the
-  door), which command, why (the caller's reason) and where the previous
-  version went;
+  door), which command, why (the caller's reason), where the previous
+  version went, and, for a file read from a Drive file people type in, who
+  edited that Drive file since the file's previous line (*edited by*, from
+  the caller's ``revisions``; unit 16c, plain-record-design § 3.3; empty on
+  lines written before 2026-10-31). A log whose header is not
+  ``CHANGE_LOG_COLUMNS`` is refused rather than given lines of another shape;
 - when the command ends, however it ends, commits and pushes exactly the
   files it wrote (with their archive copies and change-log lines), with a
   message made from the change-log lines (``finish``, called by
@@ -98,7 +102,9 @@ refresh says so in its ``by`` column (``import-sheets (daily refresh)``), so
 ``overwrites(since)`` can answer from the log alone whether the refresh
 replaced a file whose last change was made by someone running a different
 command (a migration, restructure-sheets): the daily refresh's
-``data-overwrite`` issue. A hand edit leaves no line, so it is not seen
+``data-overwrite`` issue, which also names who edited the sheet the refresh
+read. The same issue lists files ``unlisted_edits`` finds edited by
+someone not in people.yaml. A hand edit leaves no line, so it is not seen
 until unit 17 requires one.
 
 Not here: test data under ``.test_fixtures/`` (``capture-drive-state`` is
@@ -115,7 +121,7 @@ import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, FrozenSet, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Dict, FrozenSet, Iterator, List, Optional, Sequence, Tuple, Union
 
 from planars.layout import ARCHIVE_FOLDER, RECORDS_FOLDER, SETUP_FOLDER
 
@@ -191,7 +197,11 @@ SOURCES: FrozenSet[str] = frozenset({PLANAR, DIAGNOSTICS_YAML})
 # not an overwrite (``overwrites``).
 BUILT: FrozenSet[str] = frozenset({PROPOSAL_BASE})
 CHANGE_LOG_NAME = "changes.tsv"
-CHANGE_LOG_COLUMNS = ("when (UTC)", "file", "what changed", "by", "why", "previous version")
+CHANGE_LOG_COLUMNS = ("when (UTC)", "file", "what changed", "by", "why", "previous version",
+                      "edited by")
+# Who edited the Drive file a write was read from (unit 16c): the names in
+# the "edited by" cell are joined with this.
+EDITORS_SEPARATOR = "; "
 # Sorts as text in time order, which overwrites() relies on.
 CHANGE_LOG_TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
@@ -582,10 +592,19 @@ def finish(succeeded: bool) -> None:
 # ---------------------------------------------------------------------------
 
 def write(target: LocalFile, text: str, *, why: str, drops: Optional[str] = None,
-          what: Optional[str] = None) -> bool:
+          what: Optional[str] = None,
+          revisions: Optional[Callable[[], List[dict]]] = None) -> bool:
     """Write ``text`` to ``target`` if it differs from what is there. True if
     written. ``why`` goes in the change log; ``what`` replaces the door's own
     description of the change.
+
+    ``revisions``, for a file read from something a person types in on Drive
+    (a class sheet, a notes Doc, a proposal sheet), returns that Drive file's
+    revisions (the doorway's ``list_revisions``; several files' together for
+    a record built from several). It is called only when the file changes.
+    The change log's *edited by* then names everyone with a revision since
+    this file's previous change-log line (``people.editors``;
+    plain-record-design § 3.3).
 
     ``drops`` says why answered rows may go (rule 4): for a command that
     matches rows its own way and accounts for them itself (restructure-sheets
@@ -614,8 +633,23 @@ def write(target: LocalFile, text: str, *, why: str, drops: Optional[str] = None
     description = what or _describe(target, old, text)
     if lost and drops:
         description += f"; answered rows not matched in the new version ({drops})"
-    _log(run, target, description, why, previous, path)
+    edited_by = _editors(target, revisions) if revisions is not None else ""
+    _log(run, target, description, why, previous, path, edited_by)
     return True
+
+
+def _editors(target: LocalFile, revisions: Callable[[], List[dict]]) -> str:
+    """Who edited the Drive file ``target`` is read from since ``target``'s
+    previous change-log line (all its history if it has none)."""
+    from .people import editors
+    since = None
+    log = change_log(target.lang_id)
+    if log.exists():
+        with open(log, encoding="utf-8", newline="") as f:
+            for line in csv.DictReader(f, delimiter="\t"):
+                if line["file"] == target.relpath:
+                    since = line["when (UTC)"]
+    return EDITORS_SEPARATOR.join(editors(revisions(), since))
 
 
 def remove(target: LocalFile, *, why: str) -> bool:
@@ -1002,7 +1036,7 @@ def _archive(path: Path, target: LocalFile) -> Path:
 
 
 def _log(run: Optional[_Run], target: LocalFile, what: str, why: str,
-         previous: Optional[Path], path: Path) -> None:
+         previous: Optional[Path], path: Path, edited_by: str = "") -> None:
     lang_dir = CODED_DATA / target.lang_id
     log = change_log(target.lang_id)
     by = run.command if run else "(no command)"
@@ -1011,15 +1045,25 @@ def _log(run: Optional[_Run], target: LocalFile, what: str, why: str,
     when = datetime.now(timezone.utc).strftime(CHANGE_LOG_TIME_FORMAT)
     prev = str(previous.relative_to(lang_dir)) if previous else ""
     new_log = not log.exists()
+    if not new_log:
+        with open(log, encoding="utf-8", newline="") as f:
+            header = tuple(next(csv.reader(f, delimiter="\t"), []))
+        if header != CHANGE_LOG_COLUMNS:
+            raise RuntimeError(
+                f"{log.relative_to(CODED_DATA.parent)} has the columns {list(header)}, "
+                f"not {list(CHANGE_LOG_COLUMNS)}; nothing was logged. Pull coded_data/; "
+                f"if it is still so, bring the log's header up to date (the last change "
+                f"was migrations/add_edited_by_to_change_logs.py).")
     log.parent.mkdir(parents=True, exist_ok=True)
     with open(log, "a", encoding="utf-8", newline="") as f:
         writer = csv.writer(f, delimiter="\t", lineterminator="\n")
         if new_log:
             writer.writerow(CHANGE_LOG_COLUMNS)
-        writer.writerow([when, target.relpath, what, by, why, prev])
+        writer.writerow([when, target.relpath, what, by, why, prev, edited_by])
     if run is not None:
         run.written += [path, log] + ([previous] if previous else [])
-        run.lines.append(f"{target.lang_id}/{target.relpath}: {what} ({why})")
+        edits = f"; edited by {edited_by}" if edited_by else ""
+        run.lines.append(f"{target.lang_id}/{target.relpath}: {what} ({why}{edits})")
 
 
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:
@@ -1093,6 +1137,7 @@ class Overwrite:
     replaced_by: str
     replaced_why: str
     replaced_version: str  # the archive copy holding it, within the language's folder
+    edited_by: str = ""    # who edited the Drive file the refresh read it from
 
 
 def _command_of(by: str) -> str:
@@ -1136,5 +1181,18 @@ def overwrites(since: str) -> List[Overwrite]:
                 continue
             found.append(Overwrite(lang_id, line["file"], line["when (UTC)"],
                                    line["by"], before["when (UTC)"], before["by"],
-                                   before["why"], line["previous version"]))
+                                   before["why"], line["previous version"],
+                                   line.get("edited by") or ""))
     return found
+
+
+def unlisted_edits(since: str) -> List[Tuple[str, str]]:
+    """``(lang_id, file)`` for every change-log line at or after ``since``
+    whose Drive file was edited by someone not in people.yaml
+    (``people.UNLISTED_EDITOR``): the files are shared only with people in
+    it, so the file is open wider than it should be (plain-record-design
+    § 3.3)."""
+    from .people import UNLISTED_EDITOR
+    return [(lang_id, line["file"]) for lang_id, lines in _change_logs() for line in lines
+            if line["when (UTC)"] >= since
+            and UNLISTED_EDITOR in (line.get("edited by") or "").split(EDITORS_SEPARATOR)]

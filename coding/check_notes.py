@@ -224,12 +224,14 @@ def main(args: argparse.Namespace | None = None) -> None:
     to_acknowledge: List[Tuple[str, str, str]] = []
     config_dirty = False
 
-    def record(lang_id: str, text: str, why: str) -> None:
-        """Keep the Doc's text as the language's record, and drop the
-        language's old state entry (its hash), which the record replaces."""
+    def record(lang_id: str, doc_id: str, text: str, why: str) -> None:
+        """Keep the Doc's text as the language's record (its change-log line
+        naming who edited the Doc, unit 16c), and drop the language's old
+        state entry (its hash), which the record replaces."""
         if not apply:
             return
-        file_door.write(file_door.notes_text(lang_id), text, why=why)
+        file_door.write(file_door.notes_text(lang_id), text, why=why,
+                        revisions=lambda: doorway.list_revisions(doc_id))
         if state.pop(lang_id, None) is not None:
             _save_notes_state(state)
 
@@ -275,7 +277,7 @@ def main(args: argparse.Namespace | None = None) -> None:
             # old hash says whether the Doc holds only what was reported.
             old = state.get(lang_id, {}).get("notes_hash")
             if old is not None and old == _old_hash(collaborator_text):
-                record(lang_id, collaborator_text,
+                record(lang_id, doc_id, collaborator_text,
                        "the notes Doc as it stood when its text began to be kept "
                        "(all of it reported before)")
                 print(f"[{lang_id}] No new notes.")
@@ -290,7 +292,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         if not new:
             # Emptied, or notes deleted: nothing for anyone to read, but the
             # record keeps the change (and the archive what was there).
-            record(lang_id, collaborator_text, "read from the notes Doc (nothing added)")
+            record(lang_id, doc_id, collaborator_text, "read from the notes Doc (nothing added)")
             print(f"[{lang_id}] Notes doc changed with nothing added — recorded, no issue.")
             continue
 
@@ -327,7 +329,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                     print(f"[{lang_id}] Acknowledgment appended to notes doc.")
                 except Exception as e:
                     print(f"[{lang_id}] Could not append acknowledgment: {e}")
-            record(lang_id, text, "read from the notes Doc; the new lines reported on "
+            record(lang_id, doc_id, text, "read from the notes Doc; the new lines reported on "
                                   "the annotator's collaborator-notes issue")
 
     # The ID file, if a notes Doc was made.

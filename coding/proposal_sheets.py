@@ -275,7 +275,7 @@ def _one_language(doorway, lang_id: str, config: Dict, apply: bool,
     if apply and new_base != base:
         _write_base(lang_id, new_base, "the sources' changes taken into the proposal sheet")
     if apply:
-        _keep_copy(lang_id, as_left, found)
+        _keep_copy(lang_id, as_left, found, lambda: doorway.list_revisions(ss.id))
     _report(lang_id, ss.url, found, apply)
 
 
@@ -291,17 +291,19 @@ def _trimmed(grid: List[List[str]]) -> List[List[str]]:
 
 
 def _keep_copy(lang_id: str, as_left: Dict[str, List[List[str]]],
-               found: Dict[str, Dict[str, List[str]]]) -> None:
+               found: Dict[str, Dict[str, List[str]]], revisions) -> None:
     """The proposal sheet's record (Phase 10 unit 16; plain-record-design
     § 3.5): while the sheet holds a proposal, a copy of it as the annotator
-    left it; once it holds none (reviewed, or withdrawn), the copy goes, its
+    left it, its change-log line naming who edited the sheet (``revisions``,
+    unit 16c); once it holds none (reviewed, or withdrawn), the copy goes, its
     last version kept in the archive. accept-proposal's accepted changes are
     in the sources' change log; its rejected ones are on the sheet's Last
     review tab (and, from unit 16e, in the decisions log)."""
     target = file_door.proposal_sheet_copy(lang_id)
     if any(f["changes"] or f["conflicts"] for f in found.values()):
         file_door.write(target, json.dumps(as_left, indent=2, ensure_ascii=False) + "\n",
-                        why="the proposal sheet as the annotator left it")
+                        why="the proposal sheet as the annotator left it",
+                        revisions=revisions)
     else:
         file_door.remove(target, why="the proposal sheet holds no proposal")
 

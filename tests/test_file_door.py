@@ -351,6 +351,72 @@ def test_the_refresh_replacing_another_commands_change_is_an_overwrite(coded):
     assert o.replaced_version == _log(coded)[1]["previous version"]
 
 
+def _revision(when: str, email: str):
+    return {"id": when, "modifiedTime": when,
+            "lastModifyingUser": {"displayName": "x", "emailAddress": email, "me": False}}
+
+
+def _answer_read_from_drive(value: str, revisions, *commands: str) -> None:
+    rows = _rows(file_door.read(_target()))
+    rows[1][3] = value
+    with contextlib.ExitStack() as stack:
+        for command in commands:
+            stack.enter_context(drive_door.running(command, may_write=True))
+        file_door.write(_target(), _text(rows), why="test", revisions=lambda: revisions)
+
+
+def test_the_log_names_who_edited_the_sheet_since_the_files_last_line(coded):
+    """Unit 16c: edited by is everyone with a revision after the file's
+    previous change-log line, by people.yaml name; a write given no
+    revisions leaves it empty."""
+    _change("y", "a-migration")
+    revisions = [_revision("2000-01-01T00:00:00Z", "visitor@example.org"),
+                 _revision("2999-01-01T00:00:00Z", "annotator@example.org")]
+    _answer_read_from_drive("n", revisions, "import-sheets")
+    lines = _log(coded)
+    assert [l["edited by"] for l in lines] == ["", "Adam Tallman"]
+    assert list(lines[0]) == list(file_door.CHANGE_LOG_COLUMNS)
+
+
+def test_with_no_earlier_line_every_revision_counts(coded):
+    revisions = [_revision("2000-01-01T00:00:00Z", "visitor@example.org"),
+                 _revision("2001-01-01T00:00:00Z", "annotator@example.org")]
+    _answer_read_from_drive("y", revisions, "import-sheets")
+    assert _log(coded)[0]["edited by"] == "someone not in people.yaml; Adam Tallman"
+
+
+def test_revisions_are_not_read_when_nothing_changes(coded):
+    def never():
+        raise AssertionError("read revisions for an unchanged file")
+    with drive_door.running("import-sheets", may_write=True):
+        assert not file_door.write(_target(), file_door.read(_target()), why="test",
+                                   revisions=never)
+
+
+def test_a_log_with_another_header_is_refused(coded):
+    (coded / LANG / "changes.tsv").write_text("when (UTC)\tfile\n", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="add_edited_by_to_change_logs"):
+        _change("y", "import-sheets")
+
+
+def test_an_overwrite_names_who_edited_the_sheet(coded):
+    _change("y", "a-migration")
+    _answer_read_from_drive("n", [_revision("2999-01-01T00:00:00Z", "annotator@example.org")],
+                            "daily-refresh", "import-sheets")
+    [o] = file_door.overwrites("2000-01-01T00:00:00Z")
+    assert o.edited_by == "Adam Tallman"
+
+
+def test_a_file_edited_by_someone_unlisted_is_found(coded):
+    _answer_read_from_drive("y", [_revision("2999-01-01T00:00:00Z", "annotator@example.org")],
+                            "daily-refresh", "import-sheets")
+    assert file_door.unlisted_edits("2000-01-01T00:00:00Z") == []
+    _answer_read_from_drive("n", [_revision("2999-01-01T00:00:00Z", "visitor@example.org")],
+                            "daily-refresh", "import-sheets")
+    assert file_door.unlisted_edits("2000-01-01T00:00:00Z") == [(LANG, f"{CLASS}/general.tsv")]
+    assert file_door.unlisted_edits("2999-12-31T00:00:00Z") == []
+
+
 def test_the_same_command_or_an_earlier_refresh_is_not_an_overwrite(coded):
     _change("y", "import-sheets")
     _change("n", "daily-refresh", "import-sheets")

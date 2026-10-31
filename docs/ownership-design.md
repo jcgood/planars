@@ -279,7 +279,9 @@ door:
 | 2026-10-20T15:02:44Z | `lang_setup/planar_stan1293.tsv` | element added at 12 | accept-proposal | #320: "'em is a clitic form of them" | `archive/lang_setup/planar_stan1293_20261020_150244.tsv` |
 
 It's a TSV so it opens in a spreadsheet, and anyone can read it without the
-tooling. A project-wide log beside `schemas/` follows in unit 17.
+tooling. A project-wide log beside `schemas/` follows in unit 17. Unit 16c
+(2026-10-31) added a seventh column, *edited by*: who edited the Drive file
+a line's file was read from (plain-record-design § 3.3).
 
 ### 5.3 What reads the log instead of git
 
