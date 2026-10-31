@@ -1,0 +1,39 @@
+issue	lang	date	decided by	decision	scope
+2	stan1293	2026-08-01	Jeff Good	English adverbs need no separate treatment by adverb class for nonpermutability: sentence, VP and verb adverbs already sit in different positions. Whether a class needs its own qualification rule was left to a new issue if a case arises.	nonpermutability
+4	stan1293	2026-08-01	Jeff Good	No new double-object position for English: v:obj-R and v:rec already cover the double-object and dative alternation.	v:obj-R; v:rec
+21		2026-03-23	Jeff Good	Diagnostic classes are defined in their own schema file (diagnostic_classes.yaml), separate from the codebook of criteria; each language lists the classes and constructions it uses in its own diagnostics file.	diagnostic classes
+39	arao1248	2026-03-24	Jeff Good	Araona's ciscategorial diagnostics add a PRED-combines criterion for predicative elements (English needs only V-combines); a position qualifies only if every *-combines criterion is n.	ciscategorial; PRED-combines
+47		2026-03-20	Jeff Good	The Elements column of a planar structure follows written conventions (listed elements; open and closed position types; open classes as ALL-CAPS labels, optionally with braces), checked with warnings rather than refusals.	planar structure
+60		2026-03-29	Jeff Good	The separate aspiration class is retired and folded into the segmental class as two constructions: aspiration (prominence), prosodically conditioned, and aspiration (fusion), the Yukuna-type segmental pattern.	segmental; aspiration
+66		2026-08-01	Jeff Good	No decision here: the question moved to #265, where it is to be decided.	
+67		2026-08-01	Jeff Good	No decision here: the question moved to #265, where it is to be decided.	
+71		2026-03-29	Jeff Good	An intonational class is added: a position belongs to the domain when the intonational pattern applies there (one criterion). Its span rule is auto-derived and awaits review.	intonational
+99		2026-04-24	Jeff Good; Adam Tallman	Free occurrence has its own sheet. The free/bound answer comes from noninterruption; only bound elements are asked the new columns (left and right edge of a free form, dependent-on-left, dependent-on-right), others get na. It yields a minimal span (the keystone, plus what it depends on if bound) and a maximal one.	free_occurrence
+104		2026-04-04	Jeff Good	Whether the keystone takes part in an analysis is declared per class, overridable per construction: morphosyntactic classes default to not (keystone coded na), phonological blocked-span classes (metrical, segmental) default to yes.	keystone_active
+106		2026-03-29	Jeff Good	The criterion stressed is renamed accented in the metrical and segmental classes, so it is neutral between stress, pitch accent and other kinds of accent.	metrical; segmental
+107		2026-04-04	Jeff Good	No separate decision: na for the keystone is covered by #104; na for other elements waits for a concrete case.	na
+116		2026-04-24	Adam Tallman; Jeff Good	Nonpermutability is coded in two stages: each element is first marked scopal y, n or both (n removes it), then only the remaining pairs of variably ordered elements are coded. Strict non-permutability comes from the planar structure; flexible spans have minimal and maximal forms.	nonpermutability
+117		2026-04-02	Adam Tallman; Jeff Good	The segmental criterion is named aspirated (was applies), as Adam proposed; obligatoriness is not coded separately on the aspiration sheet.	segmental; aspirated
+162		2026-08-01	Jeff Good	No decision here: the question moved to #264, where it is to be decided.	
+163		2026-04-24	Adam Tallman; Jeff Good	Reflexivization is coded as a binder/bindee diagnostic over pairs of elements at positions, covering reflexive pronouns and reflexive voice, with minimal and maximal spans; the binder and bindee domains assume nothing about c-command.	reflexivization
+164		2026-08-01	Jeff Good	No decision here: the question moved to #264, where it is to be decided.	
+165		2026-08-01	Jeff Good	No decision here: the question moved to #264, where it is to be decided.	
+167		2026-08-01	Jeff Good	No decision here: the question moved to #264, where it is to be decided.	
+189	stan1293	2026-04-28	Adam Tallman	The English elements coded scopal n at some positions (the modals and AD-S) are scopal both at all their positions; the n values were a coding mistake.	nonpermutability
+200		2026-04-30	Jeff Good	The reflexivization sheet asks whether an element at one position can control a reflexive at another, shown with each position and a direction (forward/backward) rather than every pairing of elements; parallel sheets cover ordinary pronouns and full NPs, to test Principles A, B and C without assuming them.	reflexivization; coreference
+218		2026-07-30	Jeff Good	Superseded by #58: suppletive forms such as went are coded as allomorphy, not as n on the biunique criterion (decided on #238).	biuniqueness
+219	stan1293	2026-05-15	Jeff Good	English flapping is a construction in the segmental class with one criterion (flapped), coded across position boundaries; there is no separate within-position diagnostic.	segmental; flapping
+228		2026-05-14	Jeff Good	Whether an element's scopal value can differ by position is left open: it is treated as a property of the element, and a difference by position is flagged as a question when a language shows one.	nonpermutability
+236	stan1293	2026-07-28	Jeff Good	English subject and object pronouns are listed one by one in v:npsubj1 and v:obj-part (replacing the PRON class), with no new positions and one you for singular and plural.	v:npsubj1; v:obj-part
+238		2026-07-30	Jeff Good	Biuniqueness deviations are scoped by Tallman & Auderset's (2023) four categories: coded for English now, built so the other subtypes can be added. English allomorphy (including suppletion) goes through #58. The rest of the thread moved to #263.	biuniqueness
+239		2026-08-01	Jeff Good	No decision here: the question moved to #263, where it is to be decided.	
+240		2026-08-01	Jeff Good	No decision here: the question moved to #263, where it is to be decided.	
+241		2026-07-31	Jeff Good	When an element is split, each pair sheet mentioning it gets a new row per new element, left blank for the annotator with the old judgment quoted, never filled in from the old answer.	split elements
+250		2026-08-01	Jeff Good	No decision here: the question moved to #263, where it is to be decided.	
+251		2026-08-01	Jeff Good	No decision here: the question moved to #263, where it is to be decided.	
+252		2026-08-01	Jeff Good	No decision here: the question moved to #263, where it is to be decided.	
+253		2026-08-01	Jeff Good	No decision here: the question moved to #263, where it is to be decided.	
+262		2026-08-01	Jeff Good	No decision here: the question moved to #263, where it is to be decided.	
+270		2026-08-01	Jeff Good	A new position type, mixed, is for a position holding both an open class and an exhaustive list of closed forms; English v:npsubj1 and v:obj-part (NPs plus the pronoun paradigms) are mixed.	Class_Type
+275	stan1293	2026-08-02	Jeff Good	English phrasal_accent/general is a pair sheet, as the schema says; the old element-row sheet was stale and is rebuilt with pairs once prescreening is coded.	phrasal_accent
+285		2026-08-19	Jeff Good	Whether coreference's referential value can differ for one element by position is left open, as for scopal (#228): it is treated as a property of the element, and a difference by position is flagged as a question when a language shows one.	coreference

@@ -229,11 +229,12 @@ someone comments. **16e is built (2026-10-31):** decision logs,
 `record-decision`, the refresh's `decisions` step (reopens a
 diagnostics/linguistics issue closed with no line; from
 `decisions.CHECK_FROM` = 2026-11-01). Check the 2026-11-01 refresh's
-`decisions` step reopened nothing. **Next: the backfill** (plain-record-design
-§ 7 Q4, decided — don't re-ask): draft one line per issue closed under the
-two labels before 2026-11-01 (relabel the tooling bugs), Jeff and Adam
-approve the batch, record it, move `CHECK_FROM` back. Where it stands is
-the progress doc's Phase 10 row. Then 17–18. The live tests' share to Jeff's
+`decisions` step reopened nothing. **The backfill is drafted and Jeff
+approved it (2026-10-31):** `migrations/backfill_decisions.py` (38 lines
+in `migrations/decision_backfill.tsv`, 8 relabels). **Waiting on Adam
+(#332)** for the lines naming him or about English; then correct the TSV,
+run it with `--apply`, move `CHECK_FROM` back. Where it stands is the
+progress doc's Phase 10 row. Then 17–18. The live tests' share to Jeff's
 second account came off the synth0001 folder and synth0001 was recaptured
 (2026-10-30, `migrations/remove_synth0001_test_share.py`). Q4 (notebooks shared
 by name only) is still open: test 1 ran with the link share on. Adam's
