@@ -95,6 +95,8 @@ FROZEN_CODED_DATA = FIXTURE_ROOT / "coded_data"
 _SPREADSHEET_MIME = "application/vnd.google-apps.spreadsheet"
 _FOLDER_MIME = "application/vnd.google-apps.folder"
 _DOC_MIME = "application/vnd.google-apps.document"
+# The time the fake gives a comment it was not told the time of.
+_FAKE_TIME = "2026-01-01T00:00:00.000Z"
 
 # A stable ID for the root folder every command bootstraps from. Real IDs
 # live in drive_config.json; tests patch _load_drive_config to return
@@ -947,6 +949,7 @@ class FakeDriveDoorway:
         self._files: Dict[str, _DriveFile] = {}
         self._permissions: Dict[str, List[Dict[str, Any]]] = {}
         self._comments: Dict[str, List[Dict[str, Any]]] = {}
+        self._revisions: Dict[str, List[Dict[str, Any]]] = {}
         self._docs: Dict[str, str] = {}
         self._counter = 0
         self._fail_after: Dict[str, int] = {}
@@ -1071,6 +1074,18 @@ class FakeDriveDoorway:
                                 file_id=file_id, identity=identity)
         self._docs[doc_id] = text
         return doc_id
+
+    def seed_revision(self, file_id: str, when: str, name: str,
+                      email: Optional[str] = None, me: bool = False) -> None:
+        """A revision of a file by someone (``me``: the account the tooling
+        runs as). The fake's own writes make no revisions; a test seeds the
+        ones it means."""
+        user = {"displayName": name, "me": me}
+        if email:
+            user["emailAddress"] = email
+        self._revisions.setdefault(file_id, []).append(
+            {"id": str(len(self._revisions.get(file_id, [])) + 1),
+             "modifiedTime": when, "lastModifyingUser": user})
 
     # -- inspection ---------------------------------------------------------
     def spreadsheet(self, spreadsheet_id: str) -> FakeSpreadsheet:
@@ -1298,14 +1313,40 @@ class FakeDriveDoorway:
     # -- comments -----------------------------------------------------------
     def list_comments(self, file_id: str) -> List[Dict[str, Any]]:
         self._require_file(file_id)
-        return [dict(c) for c in self._comments.get(file_id, [])]
+        return [json.loads(json.dumps(c)) for c in self._comments.get(file_id, [])]
+
+    def list_revisions(self, file_id: str) -> List[Dict[str, Any]]:
+        self._require_file(file_id)
+        return [json.loads(json.dumps(r)) for r in self._revisions.get(file_id, [])]
 
     def create_comment(self, file_id: str, content: str) -> str:
+        """A comment by the account the tooling runs as (``me``), as Drive
+        reports it: with its author, time, resolved state and no replies."""
         self._require_file(file_id)
         comment_id = self._new_id("comment")
-        self._comments.setdefault(file_id, []).append({"id": comment_id, "content": content})
+        self._comments.setdefault(file_id, []).append({
+            "id": comment_id, "content": content, "createdTime": _FAKE_TIME,
+            "resolved": False, "author": {"displayName": "Jeff Good", "me": True},
+            "replies": []})
         self._record("create_comment", file_id=file_id, content=content)
         return comment_id
+
+    def seed_comment(self, file_id: str, content: str, name: str,
+                     email: Optional[str] = None, when: str = _FAKE_TIME,
+                     reply_to: Optional[str] = None) -> str:
+        """Someone else's comment on a file, or their reply to comment
+        ``reply_to`` (Drive keeps replies inside their thread)."""
+        author = {"displayName": name, "me": False}
+        if email:
+            author["emailAddress"] = email
+        new_id = self._new_id("comment")
+        item = {"id": new_id, "content": content, "createdTime": when, "author": author}
+        threads = self._comments.setdefault(file_id, [])
+        if reply_to is None:
+            threads.append({**item, "resolved": False, "replies": []})
+        else:
+            next(t for t in threads if t["id"] == reply_to)["replies"].append(item)
+        return new_id
 
     # -- docs ---------------------------------------------------------------
     def create_doc(self, name: str, parent_id: str,

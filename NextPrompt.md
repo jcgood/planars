@@ -221,6 +221,9 @@ re-ask). 16a and 16b are built (2026-10-30). **Next:** check the 2026-10-31
 refresh made each language's `records/tab_status.tsv` and `records/notes.txt`
 (notes: no new `collaborator-notes` issue, since the old hash matches), then
 build 16c (who edited; read the design's § 3.3 finding first), 16d, 16e.
+Their Drive side is a local, unpushed work-in-progress commit ("WIP unit
+16c-d", 2026-10-30: `list_revisions`, `people.editors`, richer
+`list_comments`): build on it, run the full suite, then push.
 Where it stands is the progress doc's Phase 10 row. Then 17–18. The live tests' share to Jeff's
 second account came off the synth0001 folder and synth0001 was recaptured
 (2026-10-30, `migrations/remove_synth0001_test_share.py`). Q4 (notebooks shared

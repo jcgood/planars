@@ -1127,6 +1127,9 @@ class CheckedDoorway:
     def list_comments(self, file_id: str) -> List[Dict]:
         return _retry(lambda: self._inner.list_comments(file_id))
 
+    def list_revisions(self, file_id: str) -> List[Dict]:
+        return _retry(lambda: self._inner.list_revisions(file_id))
+
     # -- creating -----------------------------------------------------------
     def _same_named(self, name: str, mimetype: Optional[str],
                     parents: Optional[Sequence[str]]) -> set:

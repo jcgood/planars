@@ -116,6 +116,12 @@ APIError = gspread.exceptions.APIError
 SpreadsheetNotFound = gspread.exceptions.SpreadsheetNotFound
 NoAccess = PermissionError
 
+# What list_comments asks Drive for: each thread with its author, time,
+# whether it is resolved, and its replies.
+_AUTHOR = "author(displayName,emailAddress,me)"
+_COMMENT_FIELDS = (f"nextPageToken,comments(id,content,createdTime,resolved,{_AUTHOR},"
+                   f"replies(id,content,createdTime,{_AUTHOR}))")
+
 
 # ---------------------------------------------------------------------------
 # Protocols
@@ -377,9 +383,22 @@ class DriveDoorway(Protocol):
 
     def update_permission(self, file_id: str, permission_id: str, role: str) -> None: ...
 
+    # -- Revisions (who edited a file; Phase 10 unit 16) ---------------------
+    def list_revisions(self, file_id: str) -> List[Dict]:
+        """Every revision of the file, oldest first, read page by page: each
+        ``{"id", "modifiedTime", "lastModifyingUser": {"displayName",
+        "emailAddress", "me"}}``. ``me`` marks the account the tooling runs
+        as, so its own writes are revisions too (docs/plain-record-design.md
+        § 3.3). Read-only."""
+
     # -- Comments (telling an annotator about problems, #309) ----------------
     def list_comments(self, file_id: str) -> List[Dict]:
-        """The file's comments, each ``{"id", "content"}``, oldest first."""
+        """The file's comment threads, oldest first: each ``{"id", "content",
+        "createdTime", "resolved", "author", "replies"}``, an author being
+        ``{"displayName", "emailAddress", "me"}`` and each reply ``{"id",
+        "content", "createdTime", "author"}`` (``_COMMENT_FIELDS``). The
+        authors and replies are for Phase 10 unit 16d: an annotator's reply
+        to the tooling's comment is read, not lost."""
 
     def create_comment(self, file_id: str, content: str) -> str:
         """Add a comment to the file (not anchored to a cell); returns its id.
@@ -546,12 +565,28 @@ class GspreadDoorway:
             fileId=file_id, permissionId=permission_id, body={"role": role}).execute()
 
     # -- comments -----------------------------------------------------------
+    # -- revisions ----------------------------------------------------------
+    def list_revisions(self, file_id: str) -> List[Dict]:
+        revisions: List[Dict] = []
+        token = None
+        while True:
+            kwargs: Dict[str, Any] = {
+                "fileId": file_id, "pageSize": 200,
+                "fields": ("nextPageToken,revisions(id,modifiedTime,"
+                           "lastModifyingUser(displayName,emailAddress,me))")}
+            if token:
+                kwargs["pageToken"] = token
+            page = self.drive.revisions().list(**kwargs).execute()
+            revisions += page.get("revisions", [])
+            token = page.get("nextPageToken")
+            if not token:
+                return revisions
+
     def list_comments(self, file_id: str) -> List[Dict]:
         comments: List[Dict] = []
         token = None
         while True:
-            kwargs: Dict[str, Any] = {"fileId": file_id,
-                                      "fields": "nextPageToken,comments(id,content)"}
+            kwargs: Dict[str, Any] = {"fileId": file_id, "fields": _COMMENT_FIELDS}
             if token:
                 kwargs["pageToken"] = token
             page = self.drive.comments().list(**kwargs).execute()

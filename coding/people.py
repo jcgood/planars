@@ -95,6 +95,35 @@ def name_for_email(email: Optional[str]) -> Optional[str]:
     return None
 
 
+def editors(revisions: List[dict], since: Optional[str] = None) -> List[str]:
+    """Who edited a Drive file after ``since`` (an ISO UTC time; all of its
+    history if None), by name, in the order they first appear. ``revisions``
+    is the doorway's ``list_revisions``.
+
+    The account the tooling runs as (``me``) is left out: every write the
+    tooling makes is a revision by it, so it can't be told apart from a hand
+    edit from the same account (docs/plain-record-design.md § 3.3). A name
+    comes from people.yaml by address; someone not in it is named as Drive
+    names them. No address is ever returned, so the result may go in a file
+    or an issue."""
+    from datetime import datetime
+
+    def when(text: str) -> datetime:
+        return datetime.fromisoformat(text.replace("Z", "+00:00"))
+
+    after = when(since) if since else None
+    names: List[str] = []
+    for r in revisions:
+        user = r.get("lastModifyingUser") or {}
+        if user.get("me") or (after and when(r["modifiedTime"]) <= after):
+            continue
+        name = (name_for_email(user.get("emailAddress")) if user.get("emailAddress") else None) \
+            or (user.get("displayName") or "").strip() or "someone Drive does not name"
+        if name not in names:
+            names.append(name)
+    return names
+
+
 def github_for(name: str) -> Optional[str]:
     """The GitHub username of the person called `name`, or None if they have
     none on file (`github:` in people.yaml). Not everyone has one: an
