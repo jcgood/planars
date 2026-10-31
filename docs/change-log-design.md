@@ -1,6 +1,7 @@
 # Unit 17: logging hand edits to the sources, and versions read from the log
 
-**Status: drafted 2026-10-31, waiting on Jeff's answers to § 8.** Phase 10
+**Status: drafted 2026-10-31; Jeff answered § 8 the same day (each took
+its recommendation; don't re-ask). Next: build in § 9's order.** Phase 10
 unit 17 (issue #271; implementation plan, Phase 10 table). Where it stands:
 `docs/data-layer-progress.md`, Phase 10 row.
 
@@ -190,8 +191,9 @@ not have yet and gains with this unit.
 
 ## 8. Questions for Jeff
 
-**Answered 2026-10-31:** a change that moves results only counts as
-breaking (§ 6.1).
+**Answered 2026-10-31 (don't re-ask):** a change that moves results only
+counts as breaking (§ 6.1); Q1 start at a baseline today; Q2 the status
+file is not logged; Q3 the refresh files an issue and carries on.
 
 **Q1. History before today.** Recommended: start every stream at a baseline
 today. The schemas' history since March stays in git and can be logged later
