@@ -44,9 +44,17 @@ diagnostic_criteria.yaml
         blank, kept as typed; ``<position_number>``). A criterion with one
         gets no dropdown (``coding/schemas.py``, ``dropdown_values``).
 
+decisions.tsv
+    The framework's decision log: one line per decision about a class,
+    criterion, term, span rule or convention (date, issue, decided by,
+    decision, scope), written by ``python -m coding record-decision``
+    (``coding/decisions.py``), never by hand. A language's decisions are in
+    its own log in planars-data, ``coded_data/{lang_id}/decisions.tsv``.
+    Not used in Colab.
+
 issue_labels.yaml
     The one definition of the project's GitHub issue labels (name, colour,
-    short description, meaning, who files it). Read by ``coding/issues.py``,
+    short description, meaning, who files it, ``needs_decision``). Read by ``coding/issues.py``,
     which refuses any label not listed; GitHub's labels and CLAUDE.md's
     Labels table are both rebuilt from it (see the file's header). Not used
     in Colab.

@@ -70,7 +70,8 @@ def accept(monkeypatch, answers: List[str], *flags: str):
     from coding import accept_proposal
     replies = iter(answers)
     monkeypatch.setattr("builtins.input", lambda prompt="": next(replies))
-    monkeypatch.setattr(sys, "argv", ["accept-proposal", "--lang", LANG, *flags])
+    by = ["--by", "Adam Tallman"] if "--apply" in flags else []
+    monkeypatch.setattr(sys, "argv", ["accept-proposal", "--lang", LANG, *flags, *by])
     buf, code = io.StringIO(), 0
     try:
         with redirect_stdout(buf):
@@ -451,6 +452,20 @@ def test_a_rejected_change_goes_back_to_the_source_with_the_reason(env, monkeypa
     assert "Not accepted:" in review_text(doorway)
     assert "so is an adverb here" in review_text(doorway)
     assert open_proposals(github) == []
+    # A rejection changes no file, so it is on record in the decision log.
+    log = (coded / LANG / "decisions.tsv").read_text(encoding="utf-8")
+    assert "Adam Tallman" in log and "Reason: so is an adverb here" in log
+
+
+def test_apply_without_by_writes_nothing(env, monkeypatch):
+    doorway, run, coded = env
+    propose_so(doorway, run)
+    from coding import accept_proposal
+    monkeypatch.setattr(sys, "argv", ["accept-proposal", "--lang", LANG, "--apply"])
+    with pytest.raises(SystemExit) as exc:
+        run_command(accept_proposal, "accept-proposal")
+    assert "--apply needs --by" in str(exc.value)
+    assert planar_cell(coded, "Elements") == "and, also, then, CONJUNCT"
 
 
 def test_a_conflict_kept_as_the_source_has_it(env, monkeypatch, github):

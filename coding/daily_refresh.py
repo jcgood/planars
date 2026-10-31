@@ -35,7 +35,9 @@ filed even when an earlier step broke). Since Phase 10 unit 6c
 log (``file_door.overwrites``), not planars-data's git history. Since unit
 16c (2026-10-31) the same issue names who edited the sheet behind a
 replaced file, and lists files read from a sheet or Doc that someone not in
-people.yaml edited (``file_door.unlisted_edits``).
+people.yaml edited (``file_door.unlisted_edits``). Since unit 16e the
+``decisions`` step reopens any diagnostics or linguistics issue closed
+without its decision in a log (``coding/decisions.py``).
 """
 from __future__ import annotations
 
@@ -565,6 +567,18 @@ def integrity(r: Refresh) -> None:
              lambda: integrity_error_body(result.output), "Integrity check passed")
 
 
+def decisions_recorded(r: Refresh) -> None:
+    """Reopen each diagnostics/linguistics issue closed without its decision
+    in a log (unit 16e; plain-record-design § 4.3), with the command that
+    records it. A GitHub failure here is the refresh failing to file."""
+    from . import decisions
+    reopened = decisions.reopen_unrecorded()
+    print(f"Reopened {', '.join(f'#{n}' for n in reopened)}: closed without a recorded "
+          "decision." if reopened else
+          f"Every issue that needs one, closed since {decisions.CHECK_FROM}, has its decision "
+          "recorded.")
+
+
 def chapters(r: Refresh) -> None:
     """After the checks, so a chapter is compared with data that passed them.
     Files its own chapter-behind issues; a crash shows the run red."""
@@ -714,6 +728,8 @@ STEPS: List[Step] = [
     Step("codebook", "check-codebook (+ generate-rule-update-prompt) → codebook-error", codebook),
     Step("stale sheets", "integrity-check --check-stale-sheets → stale-class-sheets", stale_class_sheets),
     Step("integrity", "integrity-check → integrity-error", integrity),
+    Step("decisions", "reopen diagnostics/linguistics issues closed with no recorded decision",
+         decisions_recorded),
     Step("chapters", "build-chapters --check --apply (files its own chapter-behind issues)",
          chapters),
     Step("overleaf", "sync-overleaf --apply (files its own overleaf-sync issue)", overleaf),

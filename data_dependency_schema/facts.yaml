@@ -587,3 +587,32 @@
       nothing needs to for the lag: the next run rewrites the record. The
       record is never edited by hand (records are copies, plain-record-design
       § 2).
+
+- id: decision_record
+  description: >-
+    what was decided on a diagnostics or linguistics issue (or a proposal
+    change not accepted, and why), by whom and when; including a decision to
+    change nothing
+  locations:
+    - {entity: decision_log, detail: "schemas/decisions.tsv (the framework) or coded_data/{lang}/decisions.tsv (one language; file_door.decisions), one line per decision (coding/decisions.py COLUMNS)"}
+    - {entity: github_issue, detail: "the issue's thread: the discussion leading to the decision, and record-decision's comment quoting it"}
+  authoritative: decision_log
+  cascade:
+    direction: automatic
+    mechanism: >-
+      record-decision --apply writes the line, then comments it on the issue
+      and closes it; accept-proposal --apply writes a line per change it does
+      not accept. The daily refresh's decisions step
+      (decisions.reopen_unrecorded) reopens any issue under a needs_decision
+      label (schemas/issue_labels.yaml) closed on or after
+      decisions.CHECK_FROM with no line in either log.
+  drift_risk:
+    possible: true
+    note: >-
+      An issue closed by hand, or by a commit's "Closes #N", has no line
+      until someone records it. A line whose words were changed by hand
+      afterwards no longer matches the comment on the issue (the log is the
+      record; the comment is a copy made when it was written).
+    caught_by: >-
+      the refresh's decisions step, which reopens the issue with the command
+      that records it; integrity-check's DECISIONS section lists the same.

@@ -2,8 +2,8 @@
 
 **Status: drafted 2026-10-30; Jeff answered § 7's Q1–Q4 the same day (each
 the recommended option), and Q5 took its recommendation unless he says
-otherwise. Building follows § 6; 16a and 16b are built (2026-10-30), 16c
-and 16d (2026-10-31). Where it
+otherwise. Building follows § 6; 16a and 16b are built (2026-10-30), 16c,
+16d and 16e (2026-10-31; the backfill is next). Where it
 stands is the progress doc's Phase 10 row.** What is done and next is the Phase 10 row of
 `docs/data-layer-progress.md`. The unit comes from the
 [implementation plan](data-layer-implementation-plan.md), Phase 10 table:
@@ -196,6 +196,14 @@ The coordinator's Claude drafts the wording from the thread and the
 coordinator approves it, the same hand-off as `accept-proposal`.
 `accept-proposal` calls the same function for its rejections (§ 3.5).
 
+**As built (16e, 2026-10-31):** `--by` is required, not optional, and
+checked against people.yaml (several names separated by `; `): a default
+would put one person's name on another's decision. `--keep-open` records
+one decision on an issue that settles several (#318). The framework log is
+not in planars-data, so the command commits and pushes that one file in
+planars itself; the refresh reads it from GitHub. `accept-proposal --apply`
+takes `--by` for the same reason.
+
 A decision that changes nothing is still a line ("Keep `vp_ellipsis` as one
 construction; #319"). A closed issue that needed no linguistic decision (a
 tooling bug filed under `diagnostics`) gets its label corrected rather than an
@@ -212,6 +220,13 @@ date (§ 7 Q4). If its number is in neither decision log, the check **reopens
 it**, with a comment giving the `record-decision` command (§ 7 Q3). The check
 is a section of `integrity-check` (checkers don't multiply), and the reopening
 is a refresh step through `coding/issues.py`.
+
+**As built (16e):** the start date is `decisions.CHECK_FROM`, 2026-11-01,
+so the check went live without reopening the ~50 older issues; it moves
+back once the backfill batch is recorded. integrity-check reports the
+issues as warnings, since the reopened issue is itself the reminder. A
+tooling bug filed under `diagnostics` is relabelled with
+`python -m coding issue --relabel N --remove diagnostics --add bug`.
 
 ## 5. Not in this unit
 

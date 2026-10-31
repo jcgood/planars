@@ -5,6 +5,7 @@
     python -m coding issue --remind LABEL --older-than-days 7 --message TEXT
     python -m coding issue --sync-labels [--apply]
     python -m coding issue --write-label-table
+    python -m coding issue --relabel N [--add LABEL] [--remove LABEL]
 
 Phase 10 unit 10 (issue #271). Before this, seven Python functions and a
 shell script each had their own copy of "is gh signed in, is an issue with
@@ -39,7 +40,10 @@ What lives here:
 - **The operations callers use**: `find_open`, `file_issue` (comment on the
   open issue, or replace its title and body, or create one), `create`,
   `comment`, `edit`, `replace_body`, `close`, `close_open`, `remind_stale`,
-  `last_closed`, `is_open`, `body_of`. Each one that writes text removes any
+  `reopen`, `relabel`, `list_closed`, `last_closed`, `is_open`, `body_of`;
+  and `decision_labels`, the labels marked `needs_decision` (unit 16e: an
+  issue closed under one is reopened until its decision is in a log,
+  coding/decisions.py). Each one that writes text removes any
   email address from it first (`public`): the repository is public.
 
 Choosing *which* issue a caller means stays with the caller, because it is a
@@ -92,8 +96,17 @@ def load_labels(path: Path = LABELS_PATH) -> List[Dict]:
         if len(entry["description"]) > 100:
             raise ValueError(f"{path.name}: {entry['name']!r} description is over "
                              "GitHub's 100-character limit")
+        if not isinstance(entry.get("needs_decision", False), bool):
+            raise ValueError(f"{path.name}: {entry['name']!r} needs_decision is "
+                             f"{entry['needs_decision']!r}; write true or false")
         seen.add(entry["name"])
     return labels
+
+
+def decision_labels() -> List[str]:
+    """The labels whose issues end in a recorded decision (`needs_decision:
+    true`; docs/plain-record-design.md § 4.3), in registry order."""
+    return [e["name"] for e in load_labels() if e.get("needs_decision")]
 
 
 def check_label(label: str) -> str:
@@ -150,6 +163,8 @@ class GitHub(Protocol):
     def edit_issue(self, number: int, title: Optional[str], body: Optional[str]) -> None: ...
     def comment(self, number: int, body: str) -> None: ...
     def close_issue(self, number: int) -> None: ...
+    def reopen_issue(self, number: int) -> None: ...
+    def edit_labels(self, number: int, add: List[str], remove: List[str]) -> None: ...
     def list_labels(self) -> List[Dict]: ...
     def create_label(self, name: str, color: str, description: str) -> None: ...
     def edit_label(self, name: str, color: str, description: str) -> None: ...
@@ -213,6 +228,17 @@ class GhCli:
 
     def close_issue(self, number: int) -> None:
         self._run(["issue", "close", str(number)])
+
+    def reopen_issue(self, number: int) -> None:
+        self._run(["issue", "reopen", str(number)])
+
+    def edit_labels(self, number: int, add: List[str], remove: List[str]) -> None:
+        args = ["issue", "edit", str(number)]
+        for label in add:
+            args += ["--add-label", label]
+        for label in remove:
+            args += ["--remove-label", label]
+        self._run(args)
 
     def list_labels(self) -> List[Dict]:
         out = self._run(["label", "list", "--limit", "1000",
@@ -375,6 +401,33 @@ def close(number: int, message: Optional[str] = None) -> None:
     get_github().close_issue(number)
 
 
+def reopen(number: int, message: str) -> None:
+    """Reopen an issue, saying why in a comment."""
+    comment(number, message)
+    get_github().reopen_issue(number)
+
+
+def relabel(number: int, add: List[str], remove: List[str]) -> None:
+    """Put the labels `add` on an issue and take `remove` off it. Every one
+    must be registered; only a label added must also not be retired."""
+    for label in add:
+        check_label(label)
+    registered = {e["name"] for e in load_labels()}
+    unknown = [l for l in remove if l not in registered]
+    if unknown:
+        raise UnknownLabel(f"not in schemas/issue_labels.yaml: {', '.join(unknown)}")
+    for label in add:
+        ensure_label(label)
+    get_github().edit_labels(number, list(add), list(remove))
+
+
+def list_closed(label: str) -> List[Dict]:
+    """Every closed issue under `label` ({number, title, closedAt, ...})."""
+    if label not in {e["name"] for e in load_labels()}:
+        raise UnknownLabel(f"GitHub label {label!r} is not in schemas/issue_labels.yaml.")
+    return sorted(get_github().list_issues(label, state="closed"), key=lambda i: i["number"])
+
+
 def last_closed(label: str) -> Optional[datetime]:
     """When the most recently closed issue under `label` was closed, or None."""
     check_label(label)
@@ -502,6 +555,13 @@ def build_parser() -> argparse.ArgumentParser:
                         help="make GitHub's labels match the registry (dry run without --apply)")
     action.add_argument("--write-label-table", action="store_true",
                         help="rewrite the Labels table in CLAUDE.md from the registry")
+    action.add_argument("--relabel", type=int, metavar="N",
+                        help="change issue N's labels (--add, --remove): e.g. a tooling bug "
+                             "filed under diagnostics, which needs no recorded decision")
+    ap.add_argument("--add", action="append", default=[], metavar="LABEL",
+                    help="--relabel: a label to put on (repeatable)")
+    ap.add_argument("--remove", action="append", default=[], metavar="LABEL",
+                    help="--relabel: a label to take off (repeatable)")
     ap.add_argument("--title", help="issue title (--file)")
     ap.add_argument("--body-file", type=Path, metavar="BODY.md", help="issue body (--file)")
     ap.add_argument("--replace", action="store_true",
@@ -533,6 +593,18 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     if args.sync_labels:
         sync_labels(args.apply)
+        return
+
+    if args.relabel is not None:
+        if not args.add and not args.remove:
+            ap.error("--relabel needs --add or --remove")
+        relabel(args.relabel, args.add, args.remove)
+        done = []
+        if args.add:
+            done.append(f"added {', '.join(args.add)}")
+        if args.remove:
+            done.append(f"removed {', '.join(args.remove)}")
+        print(f"Issue #{args.relabel}: {'; '.join(done)}.")
         return
 
     if args.file:

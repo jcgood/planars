@@ -25,6 +25,7 @@
         "filename_convention",
         "record_file",
         "drive_comment",
+        "decision_log",
         "test_fixture"
       ]
     },

@@ -86,6 +86,12 @@ def coordinator_githubs() -> List[str]:
                   and github_for(name))
 
 
+def known_names() -> List[str]:
+    """Every name people.yaml lists, in file order: who may be named as
+    having decided something (coding/decisions.py)."""
+    return list(_load_people())
+
+
 def name_for_email(email: Optional[str]) -> Optional[str]:
     """The name people.yaml files this address under, or None. For reports
     that go where addresses must not (GitHub issues: planars is public)."""

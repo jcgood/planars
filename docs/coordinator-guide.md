@@ -499,6 +499,31 @@ The expert works through the classes with their own Claude, using a language who
 
 Answers on one class often settle a question several classes share, such as what `na` means to a span (#133). Record those on the shared issue as well, so later classes start from them.
 
+### Closing a decision issue
+
+An issue labelled `diagnostics` or `linguistics` ends in a decision, and the record of that decision is a line in a decision log, not the GitHub thread (Phase 10 unit 16e; `docs/plain-record-design.md` § 4). There are two logs:
+
+- `schemas/decisions.tsv` in planars: decisions about the framework (a class, a criterion, a term, a span rule, a convention);
+- `{lang_id}/decisions.tsv` in planars-data: decisions about one language (its planar, how a construction is coded, a proposal change not accepted).
+
+Each line gives the date, the issue, who decided (names as in planars-data's `people.yaml`), the decision in a sentence or two, and optionally its scope. A decision to change nothing is still a line ("Keep `vp_ellipsis` as one construction").
+
+To close one, ask Claude to draft the decision from the thread, check the wording (Adam checks a linguistic one), then:
+
+```bash
+python -m coding record-decision --issue N --by "Adam Tallman" --decision "…"                 # dry run: shows the line
+python -m coding record-decision --issue N --by "Adam Tallman" --decision "…" --apply         # framework log
+python -m coding record-decision --issue N --by "Adam Tallman" --decision "…" --lang stan1293 --apply   # a language's log
+```
+
+`--apply` writes the line, comments it on the issue (the repository is public, so the words are posted there) and closes the issue. `--keep-open` records one decision on an issue that settles several, such as #318, and leaves it open. Several deciders go in one `--by`, separated by `; `. A framework line is committed and pushed in planars by the command itself; a language line in planars-data.
+
+**An issue closed without its line is reopened** by the daily refresh (its `decisions` step), with a comment giving the command. Issues closed before 2026-11-01 are exempt until the one-time backfill is recorded (`decisions.CHECK_FROM`). An issue that needed no linguistic decision (a tooling bug filed under `diagnostics`) gets its label corrected instead, then is closed:
+
+```bash
+python -m coding issue --relabel N --remove diagnostics --add bug
+```
+
 ---
 
 ### Schema changes
@@ -529,7 +554,7 @@ python -m coding sync-diagnostics-yaml --apply --lang {lang_id}          # copy 
 `planar_{lang_id}.tsv` and `diagnostics_{lang_id}.yaml` in planars-data are the only places to change a language's planar structure or diagnostics. The planar and diagnostics Google Sheets are read-only copies for the annotator (Phase 10 unit 11b, 2026-10-24): nothing is ever read back from them, and the daily refresh rebuilds them (`sync-planar --apply`, `sync-diagnostics-yaml --apply`).
 
 - **You** edit the file, commit it in planars-data, and let the daily refresh carry it to the Sheets (or run the command now).
-- **An annotator** suggests a change on the language's "planars and diagnostics" sheet (e.g. "English [stan1293] planars and diagnostics"; in the code, the proposal sheet); you review it with `accept-proposal`, which writes the accepted parts to the file. See [the collaborator guide](collaborator-guide.md#suggesting-changes-to-the-planar-structure-or-the-diagnostics).
+- **An annotator** suggests a change on the language's "planars and diagnostics" sheet (e.g. "English [stan1293] planars and diagnostics"; in the code, the proposal sheet); you review it with `accept-proposal --lang {lang_id} --apply --by "Your Name"`, which writes the accepted parts to the file and each change not accepted, with its reason, to the language's decision log (see [Closing a decision issue](#closing-a-decision-issue)). See [the collaborator guide](collaborator-guide.md#suggesting-changes-to-the-planar-structure-or-the-diagnostics).
 
 When the planar's positions changed, `sync-planar` first renumbers any position numbers typed in the class sheets' answers, then updates the Sheet, and files a `planar-changed` issue naming the command that carries the change into the class sheets (`update-sheets` for added positions, `restructure-sheets` for moved, renamed or removed ones).
 

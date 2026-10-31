@@ -55,6 +55,9 @@ NOT_THROUGH_THE_DOOR: Dict[Site, str] = {
     ("sync_span_rule_hashes.py", "_apply_hashes", "write_text"):
         "not in planars-data: schemas/diagnostic_classes_status.yaml",
     ("issues.py", "_run", "unlink"): "not in planars-data: a temporary issue-body file",
+    ("decisions.py", "record", "open"):
+        "not in planars-data: schemas/decisions.tsv, the framework's decision log (git keeps "
+        "its history; record-decision commits and pushes it)",
     ("issues.py", "main", "write_text"): "not in planars-data: CLAUDE.md's Labels table",
     ("sync_overleaf.py", "_push", "unlink"):
         "not in planars-data: sync-overleaf's temporary clone of the Overleaf project",

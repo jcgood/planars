@@ -77,6 +77,16 @@ class FakeGitHub:
         self.calls.append(("close", number))
         self.issue(number).update(state="CLOSED", closedAt="2026-10-13T00:00:00Z")
 
+    def reopen_issue(self, number: int) -> None:
+        self.calls.append(("reopen", number))
+        self.issue(number).update(state="OPEN", closedAt=None)
+
+    def edit_labels(self, number: int, add: List[str], remove: List[str]) -> None:
+        self.calls.append(("edit_labels", number, tuple(add), tuple(remove)))
+        issue = self.issue(number)
+        issue["labels"] = [l for l in issue["labels"] if l not in remove] + \
+            [l for l in add if l not in issue["labels"]]
+
     def list_labels(self) -> List[Dict]:
         return [dict(l) for l in self.labels]
 

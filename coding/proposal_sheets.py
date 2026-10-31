@@ -342,8 +342,10 @@ def _issue_body(lang_id: str, url: str, found: Dict[str, Dict[str, List[str]]]) 
                           "since the sheet was filled):"]
             lines += [f"- {c}" for c in found[title]["conflicts"]]
         lines.append("")
-    lines += [f"**To decide:** `python -m coding accept-proposal --lang {lang_id} --apply`. "
-              "The outcome goes on the sheet's Last review tab, and this issue closes."]
+    lines += [f"**To decide:** `python -m coding accept-proposal --lang {lang_id} --apply "
+              f"--by \"NAME\"`, with your name as in people.yaml. The outcome goes on the "
+              "sheet's Last review tab, a change not accepted goes into the language's "
+              "decision log, and this issue closes."]
     return "\n".join(lines)
 
 

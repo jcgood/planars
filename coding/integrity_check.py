@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Project-wide integrity check for the planars annotation pipeline.
 
-Runs ten sections of checks and prints a structured report:
+Runs eleven sections of checks and prints a structured report:
 
   PLANAR STRUCTURE               — validates planar_*.tsv for each language
   DIAGNOSTICS                    — validates diagnostics_*.yaml for each language
@@ -25,12 +25,16 @@ Runs ten sections of checks and prints a structured report:
   SHARING                        — every labelled Drive file's own grants against its sharing
                                     rule (sheet_spec.sharing_spec): catches access changed by hand
                                     in the Drive window, which the Drive door never sees.
+  DECISIONS                      — closed diagnostics/linguistics issues with no line in a
+                                    decision log (coding/decisions.py; warnings: the daily
+                                    refresh reopens each one). Read from GitHub.
   NEEDS REVIEW / PLACEHOLDERS    — surfaces [NEEDS REVIEW] / [PLACEHOLDER] / [NEEDS COORDINATOR
                                     INPUT] markers (check_codebook.needs_review_entries)
 
 Exit code 0 if no errors; 1 if any errors (warnings do not fail).
 
-Writes nothing. Drive is reached through the doorway, by two independent
+Writes nothing. GitHub is read (DECISIONS) through coding/issues.py. Drive is
+reached through the doorway, by two independent
 read-only entry points: --sheets (open each spreadsheet, list its tabs, read
 its header, comparing the tabs and criteria columns with the diagnostics YAML)
 and --check-stale-sheets (the ID file and the YAML, no Drive calls; called
@@ -829,6 +833,31 @@ def _section_sharing() -> Tuple[int, int]:
     return errors, 0
 
 
+def _section_decisions() -> Tuple[int, int]:
+    """Closed issues under a needs_decision label with no line in either
+    decision log (coding/decisions.py). Warnings, not errors: the daily
+    refresh's decisions step reopens each one, so the issue itself is the
+    reminder and integrity-error need not repeat it."""
+    print(_section("DECISIONS"))
+    from . import decisions, issues
+    if not issues.available():
+        print("  (GitHub not reachable — skipping)")
+        return 0, 0
+    missing = decisions.unrecorded()
+    if missing:
+        print(_warn(f"{len(missing)} issue(s) closed without a recorded decision "
+                    f"(closed on or after {decisions.CHECK_FROM}):"))
+        for issue in missing:
+            print(_sub(f"#{issue['number']} {issue['title']}"))
+        print(_sub("→ python -m coding record-decision --issue N --by NAME --decision TEXT "
+                   "[--lang LANG_ID] --apply"))
+        print(_sub("  The daily refresh reopens each one with that command."))
+    else:
+        print(_ok(f"Every {' / '.join(issues.decision_labels())} issue closed since "
+                  f"{decisions.CHECK_FROM} has its decision in a log"))
+    return 0, len(missing)
+
+
 def _section_needs_review(codebook: dict, diag_classes: dict) -> None:
     print(_section("NEEDS REVIEW / PLACEHOLDERS"))
 
@@ -949,6 +978,9 @@ def main(args: argparse.Namespace | None = None) -> None:
     total_e += e; total_w += w
 
     e, w = _section_sharing()
+    total_e += e; total_w += w
+
+    e, w = _section_decisions()
     total_e += e; total_w += w
 
     if args.sheets:

@@ -19,6 +19,10 @@
 #   meaning      the fuller explanation shown in CLAUDE.md's table (Markdown)
 #   filed_by     who puts the label on an issue: "by hand", or the command or
 #                workflow that files it automatically
+#   needs_decision (optional, true/false) an issue under this label ends in a
+#                decision recorded in a decision log: `record-decision` closes
+#                it, and the daily refresh reopens one closed without its line
+#                (coding/decisions.py; docs/plain-record-design.md § 4)
 #   retired      (optional) when and why it stopped being used. The label stays
 #                on GitHub for the closed issues that carry it, but nothing can
 #                be filed under it, and CLAUDE.md's table leaves it out.
@@ -33,14 +37,21 @@ labels:
     meaning: >-
       Requires linguistic validation from Adam before implementation. Also
       filed by `generate-sheets` when an element's prescreening value differs
-      by position. Filter: `gh issue list --label diagnostics`
+      by position. Filter: `gh issue list --label diagnostics`. Closed only by
+      recording its decision (`record-decision`); the daily refresh reopens
+      one closed without it.
     filed_by: "by hand; generate-sheets"
+    needs_decision: true
 
   - name: linguistics
     color: "5319e7"
     description: "Linguistically-driven, requires domain expertise"
-    meaning: Linguistically driven; needs domain expertise to settle.
+    meaning: >-
+      Linguistically driven; needs domain expertise to settle. Closed only by
+      recording its decision (`record-decision`); the daily refresh reopens
+      one closed without it.
     filed_by: by hand
+    needs_decision: true
 
   - name: needs-input
     color: "e4e669"
@@ -396,7 +407,8 @@ labels:
       sheet differs from what it was filled with, and the issue lists each
       change in plain words, and any row both they and the coordinator
       changed (a conflict). Kept current by `proposal-sheets --apply` in the
-      daily refresh. Resolve: `accept-proposal --lang LANG_ID --apply`, which
-      closes it with the decisions; it also closes by itself when the sheet
+      daily refresh. Resolve: `accept-proposal --lang LANG_ID --apply --by
+      NAME`, which closes it with the decisions (those not accepted go into the
+      language's decision log); it also closes by itself when the sheet
       holds no suggested change. (Called `proposal` until 2026-10-24.)
     filed_by: proposal-sheets --apply (data-refresh.yml)

@@ -27,9 +27,13 @@ With ``--apply`` it asks about each one:
 4. refills the proposal sheet from the new sources (rejected rows go back
    to the source's value; the Drive door saves each tab first) and saves
    the new base;
-5. writes Last review on the sheet: the date, what was accepted, what was
+5. writes each change not accepted, with its reason, as a line of the
+   language's decision log (``coding/decisions.py``; unit 16e), under the
+   name given with ``--by`` (required with ``--apply``): an accepted change
+   is on record in the change log, a rejected one changes no file;
+6. writes Last review on the sheet: the date, what was accepted, what was
    not and why — where the annotator sees the outcome;
-6. comments the same, with the next steps, on the issue and closes it.
+7. comments the same, with the next steps, on the issue and closes it.
 
 Nothing is written until every change has been decided.
 """
@@ -250,6 +254,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--lang", metavar="LANG_ID", required=True)
     p.add_argument("--apply", action="store_true",
                    help="Ask about each change, then write (default: list them).")
+    p.add_argument("--by", metavar="NAME",
+                   help="With --apply (required): who is deciding, as named in people.yaml; "
+                        "each change not accepted goes into the language's decision log "
+                        "under this name.")
     return p
 
 
@@ -257,7 +265,17 @@ def main(args: argparse.Namespace | None = None) -> None:
     if args is None:
         args = build_parser().parse_args()
     lang_id = args.lang
-    from . import issues
+    from . import decisions as decision_log, issues
+
+    by = None
+    if args.apply:
+        if not args.by:
+            sys.exit("ERROR: --apply needs --by NAME (who is deciding, as named in "
+                     "people.yaml): changes not accepted go into the decision log.")
+        try:
+            by = decision_log.checked_names(args.by)
+        except ValueError as exc:
+            sys.exit(f"ERROR: {exc}")
 
     sheet_id = _load_drive_config().get(lang_id, {}).get(ID_KEY)
     base = _read_base(lang_id)
@@ -283,7 +301,8 @@ def main(args: argparse.Namespace | None = None) -> None:
             for line in d.words:
                 print(f"  {line}")
         print(f"\nRun with --apply to decide each one: "
-              f"`python -m coding accept-proposal --lang {lang_id} --apply`")
+              f"`python -m coding accept-proposal --lang {lang_id} --apply --by \"NAME\"` "
+              f"(NAME: yours, as in people.yaml)")
         return
     for d in decisions:
         _ask(d)
@@ -322,6 +341,13 @@ def main(args: argparse.Namespace | None = None) -> None:
         file_door.write(file_door.diagnostics_yaml(lang_id), _dump_diagnostics_yaml(new_yaml),
                         why=why)
         print(f"  diagnostics_{lang_id}.yaml updated")
+    # A change not accepted changes no file, so its reason would otherwise
+    # live only on the sheet and the issue (plain-record-design § 3.5).
+    for d in decisions:
+        if not d.accepted:
+            decision_log.record(decision_log.Decision(
+                issue, by, f"Not accepted from the proposal sheet ({d.tab}): {d.summary()} "
+                           f"Reason: {d.reason}", scope=d.tab), lang_id)
 
     # Refill the sheet from the new sources and record the review on it.
     spec = proposal_sheet_spec(lang_id, CODED_DATA)

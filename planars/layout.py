@@ -9,8 +9,8 @@ annotation TSVs) and these folders, which are not classes:
 - ``records/``: copies of what people write in Google that no other file
   holds (Phase 10 unit 16, docs/plain-record-design.md).
 
-Files at the language's top level (the change log, ``changes.tsv``) are
-never in a class.
+Files at the language's top level (the change log, ``changes.tsv``, and
+the decision log, ``decisions.tsv``) are never in a class.
 
 The local-file door (``coding/file_door.py``) writes to these folders by
 these names, and everything that walks a language's folder for its classes

@@ -67,6 +67,13 @@ threads on the language's files (``drive_comments``, by check-comments).
 Archived and logged like the data files. Only the command that writes a
 record reads it (check-notes and check-comments, to tell what is new).
 
+**Decisions** (unit 16e; plain-record-design § 4): the language's decision
+log, ``{lang}/decisions.tsv`` (``decisions``), beside its change log; its
+lines are written by ``coding/decisions.py`` (record-decision,
+accept-proposal) and read by the rule that a closed ``diagnostics`` or
+``linguistics`` issue has one. The framework's log is in the planars
+repository, not here.
+
 **The tooling's own files** (unit 6b; ``STATE_KINDS``): the state files in
 ``.state/`` (the provenance log, regen snapshots, the restructure journal,
 check-notes' and check-comments' state, sync-planar's renumbering record,
@@ -153,6 +160,7 @@ TAB_STATUS = "tab_status"
 PROPOSAL_SHEET_COPY = "proposal_sheet_copy"
 NOTES_TEXT = "notes_text"
 DRIVE_COMMENTS = "drive_comments"
+DECISIONS = "decisions"
 
 # A language folder's layout is planars.layout's (SETUP_FOLDER,
 # ARCHIVE_FOLDER, RECORDS_FOLDER): the records folder holds copies of what
@@ -199,6 +207,11 @@ KINDS: Dict[str, Dict[str, object]] = {
     DRIVE_COMMENTS:   {"parts": (), "name": lambda f: "drive_comments.tsv",
                        "folder": RECORDS_FOLDER,
                        "what": "the comment threads on the language's Drive files"},
+    # The language's decision log (unit 16e, plain-record-design § 4): at
+    # the language's top level, beside its change log (folder ""), written
+    # by record-decision and accept-proposal (coding/decisions.py).
+    DECISIONS:        {"parts": (), "name": lambda f: "decisions.tsv", "folder": "",
+                       "what": "the language's decision log"},
 }
 # The files a person edits; every other kind is built from something else.
 SOURCES: FrozenSet[str] = frozenset({PLANAR, DIAGNOSTICS_YAML})
@@ -246,8 +259,9 @@ class LocalFile:
 
     @property
     def relpath(self) -> str:
-        """Within the language's folder: ``metrical/stress_domain.tsv``."""
-        return f"{self.folder}/{self.name}"
+        """Within the language's folder: ``metrical/stress_domain.tsv``
+        (``decisions.tsv`` for a file at its top level)."""
+        return f"{self.folder}/{self.name}" if self.folder else self.name
 
     @property
     def path(self) -> Path:
@@ -284,6 +298,19 @@ def notes_text(lang_id: str) -> LocalFile:
 
 def drive_comments(lang_id: str) -> LocalFile:
     return LocalFile(DRIVE_COMMENTS, lang_id)
+
+
+def decisions(lang_id: str) -> LocalFile:
+    return LocalFile(DECISIONS, lang_id)
+
+
+def language_ids() -> List[str]:
+    """Every language folder in planars-data, in name order (hidden ones,
+    such as .state and .papers, left out)."""
+    if not CODED_DATA.is_dir():
+        return []
+    return sorted(d.name for d in CODED_DATA.iterdir()
+                  if d.is_dir() and not d.name.startswith("."))
 
 
 def class_folder(lang_id: str, class_name: str) -> Path:

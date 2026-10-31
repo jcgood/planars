@@ -64,6 +64,7 @@ tab is each language's status sheet.
 | Coordinator UX checklist | `docs/tooling-design.md` |
 | Data layer redesign (#271): rationale, plan, **current state** | `docs/data-layer-design.md`, `docs/data-layer-implementation-plan.md`, `docs/data-layer-progress.md` |
 | Tests and saved outputs | `docs/testing.md`; span snapshots in `tests/snapshots/` |
+| Decisions (what a `diagnostics`/`linguistics` issue settled) | `schemas/decisions.tsv` (framework) and `coded_data/{lang_id}/decisions.tsv` (one language), written by `record-decision`; coordinator guide § "Closing a decision issue" |
 | One-time migrations | `migrations/` — convention in `migrations/README.md` |
 | Laminar-family analysis and charts | `laminar/` (run `python -m laminar charts <dataset>`) and `planarsviz/` (R chart package); plan `docs/laminar-analysis-plan.md`, state `docs/laminar-analysis-progress.md` |
 | Chapters written from the annotation (values, fragments, outline, prose slots) | `chapters/` (`python -m chapters values`; built with `python -m coding build-chapters` into `coded_data/.papers/`); plan and state `docs/chapter-generation-plan.md` |
@@ -335,8 +336,8 @@ least one label from the table below (`gh issue create --label …`).
 <!-- label-table:start — generated from schemas/issue_labels.yaml by `python -m coding issue --write-label-table`; edit that file, not this table -->
 | Label | Filed by | Meaning |
 |-------|----------|---------|
-| `diagnostics` | by hand; generate-sheets | Requires linguistic validation from Adam before implementation. Also filed by `generate-sheets` when an element's prescreening value differs by position. Filter: `gh issue list --label diagnostics` |
-| `linguistics` | by hand | Linguistically driven; needs domain expertise to settle. |
+| `diagnostics` | by hand; generate-sheets | Requires linguistic validation from Adam before implementation. Also filed by `generate-sheets` when an element's prescreening value differs by position. Filter: `gh issue list --label diagnostics`. Closed only by recording its decision (`record-decision`); the daily refresh reopens one closed without it. |
+| `linguistics` | by hand | Linguistically driven; needs domain expertise to settle. Closed only by recording its decision (`record-decision`); the daily refresh reopens one closed without it. |
 | `needs-input` | by hand | Waiting on input from Adam or another domain expert. |
 | `Jeff` | by hand | Waiting on a decision from Jeff. |
 | `design` | by hand | Architectural or forward-looking design decisions. |
@@ -369,5 +370,5 @@ least one label from the table below (`gh issue create --label …`).
 | `audit` | daily-refresh --apply (data-refresh.yml) | Filed when no audit issue has been closed for 30 days. The issue is the instruction: Claude runs the steps in `docs/coordinator-guide.md` § "Audit procedure", comments the findings and what was done about each, and closes it; the closing date is the date of the last audit. |
 | `door-violation` | the Drive door, at the end of any watched command | While the Drive door (`coding/drive_door.py`) is in watch mode for a kind of file, a write that breaks one of its rules still goes ahead, and the command files or updates this issue listing what broke. Each line is a bug in the command or a gap in the door's rules or spec. Resolve: fix whichever it is, then close. (The local-file door filed here too until it began refusing such writes, 2026-10-22.) |
 | `sheet-updates` | restructure-sheets --apply | One long-lived issue per language ("Sheet updates — {lang_id}"); `restructure-sheets --apply` comments on it whenever that language's sheets get new URLs. Annotators subscribe to it. Never closed. |
-| `planars-and-diagnostics` | proposal-sheets --apply (data-refresh.yml) | One issue per language ("Changes suggested — {Name [glottocode]} planars and diagnostics"): the annotator's planars and diagnostics sheet differs from what it was filled with, and the issue lists each change in plain words, and any row both they and the coordinator changed (a conflict). Kept current by `proposal-sheets --apply` in the daily refresh. Resolve: `accept-proposal --lang LANG_ID --apply`, which closes it with the decisions; it also closes by itself when the sheet holds no suggested change. (Called `proposal` until 2026-10-24.) |
+| `planars-and-diagnostics` | proposal-sheets --apply (data-refresh.yml) | One issue per language ("Changes suggested — {Name [glottocode]} planars and diagnostics"): the annotator's planars and diagnostics sheet differs from what it was filled with, and the issue lists each change in plain words, and any row both they and the coordinator changed (a conflict). Kept current by `proposal-sheets --apply` in the daily refresh. Resolve: `accept-proposal --lang LANG_ID --apply --by NAME`, which closes it with the decisions (those not accepted go into the language's decision log); it also closes by itself when the sheet holds no suggested change. (Called `proposal` until 2026-10-24.) |
 <!-- label-table:end -->
