@@ -117,8 +117,10 @@ SpreadsheetNotFound = gspread.exceptions.SpreadsheetNotFound
 NoAccess = PermissionError
 
 # What list_comments asks Drive for: each thread with its author, time,
-# whether it is resolved, and its replies.
-_AUTHOR = "author(displayName,emailAddress,me)"
+# whether it is resolved, and its replies. Drive never fills in a comment
+# author's address (its documentation says so), so it isn't asked for;
+# people.commenter names the author from the file's sharing list instead.
+_AUTHOR = "author(displayName,me)"
 _COMMENT_FIELDS = (f"nextPageToken,comments(id,content,createdTime,resolved,{_AUTHOR},"
                    f"replies(id,content,createdTime,{_AUTHOR}))")
 
@@ -395,10 +397,11 @@ class DriveDoorway(Protocol):
     def list_comments(self, file_id: str) -> List[Dict]:
         """The file's comment threads, oldest first: each ``{"id", "content",
         "createdTime", "resolved", "author", "replies"}``, an author being
-        ``{"displayName", "emailAddress", "me"}`` and each reply ``{"id",
-        "content", "createdTime", "author"}`` (``_COMMENT_FIELDS``). The
-        authors and replies are for Phase 10 unit 16d: an annotator's reply
-        to the tooling's comment is read, not lost."""
+        ``{"displayName", "me"}`` (no address: Drive gives none for comment
+        authors) and each reply ``{"id", "content", "createdTime",
+        "author"}`` (``_COMMENT_FIELDS``). check-comments reads them, so an
+        annotator's comment, or reply to the tooling's, is not lost (Phase 10
+        unit 16d)."""
 
     def create_comment(self, file_id: str, content: str) -> str:
         """Add a comment to the file (not anchored to a cell); returns its id.

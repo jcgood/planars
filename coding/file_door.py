@@ -61,9 +61,11 @@ test's own temporary folder.
 **Records** (unit 16; docs/plain-record-design.md): copies, in
 ``{lang}/records/``, of what people write in Google that no other file
 holds: each tab's status (``tab_status``, by import-sheets), an
-unreviewed proposal sheet (``proposal_sheet_copy``, by proposal-sheets) and
-the notes Doc's text (``notes_text``, by check-notes).
-Archived and logged like the data files; nothing reads them back.
+unreviewed proposal sheet (``proposal_sheet_copy``, by proposal-sheets),
+the notes Doc's text (``notes_text``, by check-notes) and the Drive comment
+threads on the language's files (``drive_comments``, by check-comments).
+Archived and logged like the data files. Only the command that writes a
+record reads it (check-notes and check-comments, to tell what is new).
 
 **The tooling's own files** (unit 6b; ``STATE_KINDS``): the state files in
 ``.state/`` (the provenance log, regen snapshots, the restructure journal,
@@ -150,12 +152,14 @@ PROPOSAL_BASE = "proposal_base"
 TAB_STATUS = "tab_status"
 PROPOSAL_SHEET_COPY = "proposal_sheet_copy"
 NOTES_TEXT = "notes_text"
+DRIVE_COMMENTS = "drive_comments"
 
 # A language folder's layout is planars.layout's (SETUP_FOLDER,
 # ARCHIVE_FOLDER, RECORDS_FOLDER): the records folder holds copies of what
 # people write in Google that the record needs and no other file holds
 # (Phase 10 unit 16, docs/plain-record-design.md § 3). Google stays where
-# they are typed; these are never edited or read back by a command.
+# they are typed; these are never edited, and read back only by the command
+# that writes each, to tell what is new.
 
 # Every kind a command can write, the parts that name one, its file name
 # within its folder, and the folder (the class for an annotation TSV;
@@ -190,6 +194,11 @@ KINDS: Dict[str, Dict[str, object]] = {
     NOTES_TEXT:       {"parts": (), "name": lambda f: "notes.txt",
                        "folder": RECORDS_FOLDER,
                        "what": "the annotator's notes Doc, as text"},
+    # Every comment and reply on the language's class sheets, proposal sheet
+    # and notes Doc (check-comments).
+    DRIVE_COMMENTS:   {"parts": (), "name": lambda f: "drive_comments.tsv",
+                       "folder": RECORDS_FOLDER,
+                       "what": "the comment threads on the language's Drive files"},
 }
 # The files a person edits; every other kind is built from something else.
 SOURCES: FrozenSet[str] = frozenset({PLANAR, DIAGNOSTICS_YAML})
@@ -271,6 +280,10 @@ def proposal_sheet_copy(lang_id: str) -> LocalFile:
 
 def notes_text(lang_id: str) -> LocalFile:
     return LocalFile(NOTES_TEXT, lang_id)
+
+
+def drive_comments(lang_id: str) -> LocalFile:
+    return LocalFile(DRIVE_COMMENTS, lang_id)
 
 
 def class_folder(lang_id: str, class_name: str) -> Path:
@@ -1007,12 +1020,16 @@ def _describe_statuses(old_rows: List[List[str]], new_rows: List[List[str]]) -> 
 
 def _row_key_columns(target: LocalFile, *headers: Sequence[str]) -> List[str]:
     """The columns rows are matched by, when every header has them: the
-    schema's row key for an annotation TSV, Position for the planar."""
+    schema's row key for an annotation TSV, Position for the planar, file
+    and comment for the Drive comments record."""
     if target.kind == ANNOTATION:
         from planars.schema_values import row_key
         keys = row_key(target.class_name, target.construction)
     elif target.kind == PLANAR:
         keys = ["Position"]
+    elif target.kind == DRIVE_COMMENTS:
+        from .check_comments import DRIVE_KEY
+        keys = list(DRIVE_KEY)
     else:
         return []
     return keys if all(all(k in h for k in keys) for h in headers) else []

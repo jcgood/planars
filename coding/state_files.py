@@ -22,7 +22,8 @@ both went when those Sheets became read-only copies, unit 11b, 2026-10-24.)
   the language's record, ``records/notes.txt`` (``file_door.notes_text``),
   since 2026-10-30; until then a hash here.
 - ``COMMENTS_STATE_PATH``: what check-comments last saw in each Comments
-  cell, and each language's open comments issue.
+  cell (its issue is found by title; what it saw in Drive comment threads
+  is the language's record, ``records/drive_comments.tsv``).
 - ``RENUMBERING_PATH``: sync-planar's record, while a new planar's
   numbers are being carried into the class sheets, of the numbering each
   sheet's position cells already use, so a run that stops partway never

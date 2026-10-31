@@ -62,6 +62,7 @@ def test_facts_have_expected_ids():
         "biuniqueness_keyed_chain",
         "tab_status_record",
         "proposal_sheet_record",
+        "drive_comment_record",
     }
 
 

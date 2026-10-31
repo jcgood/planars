@@ -991,6 +991,17 @@ class FakeDriveDoorway:
                                     identity=drive_door.folder("language", lang_id))
         return doorway
 
+    def seed_notes_docs(self) -> None:
+        """An empty notes Doc at each ID the saved ID file names. Not part
+        of ``from_fixtures``: the capture doesn't record the Docs, and the
+        brand-new-language tests need a Drive without them."""
+        from coding import drive_door
+        for lang_id, entry in _saved_ids(FIXTURE_DIR).items():
+            if entry.get("notes_doc_id") and entry["notes_doc_id"] not in self._files:
+                self.seed_doc(f"{lang_id} notes", "", parent_id=entry.get("folder_id"),
+                              file_id=entry["notes_doc_id"],
+                              identity=drive_door.lang_file(drive_door.NOTES_DOC, lang_id))
+
     @staticmethod
     def drive_config() -> Dict[str, Any]:
         """The ID file (drive_config.json) as commands read it: the root
@@ -1335,10 +1346,16 @@ class FakeDriveDoorway:
                      email: Optional[str] = None, when: str = _FAKE_TIME,
                      reply_to: Optional[str] = None) -> str:
         """Someone else's comment on a file, or their reply to comment
-        ``reply_to`` (Drive keeps replies inside their thread)."""
+        ``reply_to`` (Drive keeps replies inside their thread). As in Drive,
+        the comment's author carries no address; given ``email``, the file
+        is shared with them under the name they show (unless it already
+        is), which is where an address is found."""
         author = {"displayName": name, "me": False}
-        if email:
-            author["emailAddress"] = email
+        if email and not any(p.get("emailAddress") == email
+                             for p in self._permissions.get(file_id, [])):
+            self._permissions.setdefault(file_id, []).append(
+                {"id": self._new_id("perm"), "type": "user", "role": "commenter",
+                 "emailAddress": email, "displayName": name})
         new_id = self._new_id("comment")
         item = {"id": new_id, "content": content, "createdTime": when, "author": author}
         threads = self._comments.setdefault(file_id, [])

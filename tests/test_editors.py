@@ -44,3 +44,22 @@ def test_no_address_and_no_outsiders_name_is_returned():
 def test_a_drive_name_copying_a_listed_persons_is_not_taken_for_them():
     revisions = _revisions(("2026-10-31T08:00:00Z", "Adam Tallman", "impostor@example.org"))
     assert people.editors(revisions, since="2026-10-31T00:00:00Z") == [UNLISTED]
+
+
+# Comment authors (unit 16d): Drive gives no address, so the file's sharing
+# list says who shows that name.
+
+def _shared(*people_):
+    return [{"type": "user", "displayName": n, "emailAddress": e} for n, e in people_]
+
+
+def test_a_commenter_is_named_through_the_sharing_list():
+    shared = _shared(("Adam Tallman", "annotator@example.org"))
+    assert people.commenter({"displayName": "Adam Tallman"}, shared) == "Adam Tallman"
+    assert people.commenter({"displayName": "Jeff", "me": True}, shared) == people.TOOLING_ACCOUNT
+
+
+def test_two_people_showing_the_same_name_name_neither():
+    shared = _shared(("Adam Tallman", "annotator@example.org"),
+                     ("Adam Tallman", "impostor@example.org"))
+    assert people.commenter({"displayName": "Adam Tallman"}, shared) == UNLISTED

@@ -256,13 +256,15 @@ python -m coding check-notes          # dry run: show what would be filed
 python -m coding check-notes --apply  # file/update issues, acknowledge in doc, save state
 ```
 
-#### 2c. Comments cells
+#### 2c. Comments cells and Drive comments
 
-A sheet's **Comments** column is the annotator's other channel to you: questions, doubts about a value, a test that doesn't fit. (Examples go in **Example**, page references in **Source**; the tooling never writes in Comments.) The daily refresh runs `check-comments --apply` after the import: every new or changed comment goes into one `collaborator-comments` issue per language, with its tab, row, answers and a ready-to-paste Claude prompt. Paste the prompt into a Claude Code session; it sorts the comments and drafts replies and issues for you to approve. Then close the issue. No API key is involved: the refresh only collects, and the session you start does the reading.
+A sheet's **Comments** column is the annotator's other channel to you: questions, doubts about a value, a test that doesn't fit. (Examples go in **Example**, page references in **Source**; the tooling never writes in Comments.) People also leave ordinary Google comments on the files themselves (class sheets, the proposal sheet, the notes Doc), and an annotator without a GitHub username answers the `needs-fixing` email by replying to the comment that sent it. The daily refresh runs `check-comments --apply` after the import: every new or changed Comments cell, and every new Drive comment or reply, goes into one `collaborator-comments` issue per language, with its tab and row (or file and the comment it answers) and a ready-to-paste Claude prompt. Paste the prompt into a Claude Code session; it sorts the comments and drafts replies and issues for you to approve. Answer a Drive comment in its thread on the file. Then close the issue. No API key is involved: the refresh only collects, and the session you start does the reading.
+
+Every Drive comment and reply is also kept in the language's `records/drive_comments.tsv` in planars-data, with its author named from `people.yaml` (someone not listed there shows as "someone not in people.yaml": check that file's sharing). The tooling's own comments are recorded but not reported.
 
 ```bash
 python -m coding check-comments          # dry run: what would be filed
-python -m coding check-comments --apply  # file/update the issues, save what was seen
+python -m coding check-comments --apply  # file/update the issues, save what was seen, write the record
 ```
 
 #### 3. Import filled sheets

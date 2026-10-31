@@ -370,7 +370,11 @@ def test_the_whole_refresh_runs_against_the_offline_drive(monkeypatch, tmp_path,
     monkeypatch.setattr("coding.drive_door.time.sleep", lambda *a, **kw: None)
     monkeypatch.delenv("GITHUB_STEP_SUMMARY", raising=False)
 
-    drive_doorway.set_doorway(FakeDriveDoorway.from_fixtures())
+    fake = FakeDriveDoorway.from_fixtures()
+    # Live, every language's notes Doc exists; check-comments fails on one
+    # it can't read.
+    fake.seed_notes_docs()
+    drive_doorway.set_doorway(fake)
     try:
         r = dr.refresh()
     finally:

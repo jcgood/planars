@@ -304,7 +304,7 @@ def ensure_label(label: str) -> None:
     gh.create_label(label, str(entry["color"]), entry["description"])
 
 
-_ADDRESS = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}")
+ADDRESS = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}")
 ADDRESS_REMOVED = "[address removed]"
 
 
@@ -317,7 +317,7 @@ def public(text: Optional[str]) -> Optional[str]:
     title, body and comment is filtered here, on its way out, rather than
     trusting each caller to remember. An @-mention of a GitHub username has
     nothing before the @ and is left alone."""
-    return _ADDRESS.sub(ADDRESS_REMOVED, text) if text else text
+    return ADDRESS.sub(ADDRESS_REMOVED, text) if text else text
 
 
 def create(label: str, title: str, body: str) -> int:

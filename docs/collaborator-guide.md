@@ -106,4 +106,6 @@ The chapters written from the annotation print these as glossed examples. A cell
 
 Each day, new and changed comments are collected into one GitHub issue for the coordinator, who replies there. Put examples in Example rather than here, so your questions stand out.
 
+Ordinary Google comments on a sheet or your notes Doc (Insert → Comment), and replies to a comment the tooling left you, are collected the same way. The coordinator answers those in the comment itself.
+
 A small triangle in a cell's corner is a note from the tooling (for instance, the earlier answer of an element that was split in two). Hover over it to read it.

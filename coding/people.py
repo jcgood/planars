@@ -130,6 +130,37 @@ def editors(revisions: List[dict], since: Optional[str] = None) -> List[str]:
     return names
 
 
+# How a Drive comment by the account the tooling runs as is named. Its
+# comments are the tooling's notices, or the owner's own from the same
+# account; the two can't be told apart (as for revisions, § 3.3).
+TOOLING_ACCOUNT = "the tooling's account"
+# What list_permissions must ask for, for ``commenter``.
+SHARED_WITH_FIELDS = "permissions(id,type,displayName,emailAddress)"
+
+
+def commenter(author: dict, shared_with: List[dict]) -> str:
+    """Who wrote a Drive comment or reply, by name (docs/plain-record-design.md
+    § 3.4). ``author`` is the comment's, from the doorway's ``list_comments``;
+    ``shared_with`` is the file's ``list_permissions`` with
+    ``SHARED_WITH_FIELDS``.
+
+    Drive gives a comment's author no address, only the name they show. Only
+    someone the file is shared with can comment, and the file's sharing
+    list does carry addresses, so the author is the one person on that list
+    showing that name, then named from people.yaml by address. No match, or
+    two people on the list showing the same name, is UNLISTED_EDITOR: never
+    the name Drive shows, and never an address."""
+    if author.get("me"):
+        return TOOLING_ACCOUNT
+    shown = (author.get("displayName") or "").strip()
+    addresses = {p["emailAddress"].strip().lower() for p in shared_with
+                 if shown and (p.get("displayName") or "").strip() == shown
+                 and p.get("emailAddress")}
+    if len(addresses) != 1:
+        return UNLISTED_EDITOR
+    return name_for_email(addresses.pop()) or UNLISTED_EDITOR
+
+
 def github_for(name: str) -> Optional[str]:
     """The GitHub username of the person called `name`, or None if they have
     none on file (`github:` in people.yaml). Not everyone has one: an

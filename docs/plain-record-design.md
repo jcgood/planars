@@ -3,7 +3,7 @@
 **Status: drafted 2026-10-30; Jeff answered § 7's Q1–Q4 the same day (each
 the recommended option), and Q5 took its recommendation unless he says
 otherwise. Building follows § 6; 16a and 16b are built (2026-10-30), 16c
-(2026-10-31). Where it
+and 16d (2026-10-31). Where it
 stands is the progress doc's Phase 10 row.** What is done and next is the Phase 10 row of
 `docs/data-layer-progress.md`. The unit comes from the
 [implementation plan](data-layer-implementation-plan.md), Phase 10 table:
@@ -139,6 +139,18 @@ to `records/drive_comments.tsv` (file, thread, author, time, text,
 resolved). The author is named as in § 3.3, never by address or Drive name. The doorway's `list_comments` asks for authors, times and replies,
 not only `id` and `content`. This fixes the unread-reply gap in § 1 whatever
 § 7 decides.
+
+**As built (16d, 2026-10-31):** Drive gives a comment's author no address,
+only the name they show, so `people.commenter` finds that name on the
+file's sharing list (which has addresses; only people the file is shared
+with can comment) and names them from `people.yaml`; no match, or two
+people showing the same name, is "someone not in people.yaml". The
+tooling's own comments are recorded as "the tooling's account" and not
+reported. The record is what the next run compares with, so no state
+holds the threads, and it gets no *edited by*: each row names its author.
+A +mention's address becomes the person's name. On 2026-10-31 no
+language's files had any comment threads, so the first run reports
+nothing.
 
 ### 3.5 Proposal sheets
 

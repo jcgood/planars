@@ -557,3 +557,33 @@
       Same one-day lag as the issue; nothing reads the copy back.
     caught_by: >-
       nothing needs to: the next proposal-sheets run rewrites it.
+
+- id: drive_comment_record
+  description: >-
+    the comments people leave on a language's Drive files (class sheets,
+    proposal sheet, notes Doc) and the replies in each thread, including an
+    annotator's reply to the comment needs-fixing leaves to email them
+  locations:
+    - {entity: drive_comment, detail: "the comment threads on each file the ID file lists for the language"}
+    - {entity: record_file, detail: "coded_data/{lang}/records/drive_comments.tsv (file_door.drive_comments), one row per comment or reply, authors named from people.yaml (people.commenter)"}
+    - {entity: github_issue, detail: "the language's collaborator-comments issue, listing the new ones"}
+  authoritative: drive_comment
+  cascade:
+    direction: automatic
+    mechanism: >-
+      check-comments --apply (daily) reads every thread
+      (check_comments.read_drive_comments), reports those not in the record
+      or whose text changed, then rewrites the record through the local-file
+      door. A language with a file it could not read keeps its previous
+      record, and the run fails.
+  drift_risk:
+    possible: true
+    note: >-
+      The record lags Drive by up to a day, and a comment deleted on Drive
+      leaves the record at the next run (its last version stays in the
+      archive). The record is also what the next run compares with, so a
+      hand edit to it would make a comment be reported again or missed.
+    caught_by: >-
+      nothing needs to for the lag: the next run rewrites the record. The
+      record is never edited by hand (records are copies, plain-record-design
+      § 2).

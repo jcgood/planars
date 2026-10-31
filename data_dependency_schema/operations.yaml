@@ -848,19 +848,24 @@
   writes_locally: true
   description: >-
     Files each language's new or changed Comments cells (read from the
-    imported TSVs) as one collaborator-comments issue, with a Claude prompt.
+    imported TSVs) and new comments and replies on its Drive files (class
+    sheets, proposal sheet, notes Doc; read only) as one
+    collaborator-comments issue, with a Claude prompt, and keeps every Drive
+    comment in the language's records/drive_comments.tsv.
   side_effects:
     - "creates or comments on one collaborator-comments issue per language with new or changed comments"
-    - "writes coded_data/.state/comments_state.json, through the local-file door (the comments it last saw)"
+    - "writes coded_data/.state/comments_state.json, through the local-file door (the Comments cells it last saw)"
+    - "writes coded_data/{lang}/records/drive_comments.tsv, through the local-file door (archived and logged)"
   idempotent: true
   idempotency_note: >-
-    The state is saved per language right after its issue is filed, and
-    records every comment then present, so a second run with nothing
-    changed files nothing; a run that stops partway reports only the
-    languages it had not reached.
+    The state and the Drive comments record are saved per language right
+    after its issue is filed, and hold every comment then present, so a
+    second run with nothing changed files nothing; a run that stops partway
+    reports only the languages it had not reached.
   apply_gate: "--apply"
   preconditions: [coded_data_git_identity_configured]
-  facts_touched: []
+  facts_touched:
+    - {fact: drive_comment_record, role: writes}
   cascades_triggered: []
   modes: []
 
