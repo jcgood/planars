@@ -1,8 +1,8 @@
 issue	lang	date	decided by	decision	scope
-2	stan1293	2026-08-01	Jeff Good	English adverbs need no separate treatment by adverb class for nonpermutability: sentence, VP and verb adverbs already sit in different positions. Whether a class needs its own qualification rule was left to a new issue if a case arises.	nonpermutability
+2	stan1293	2026-08-01	Jeff Good	English adverbs need no separate treatment by adverb class for nonpermutability: sentence, VP and verb adverbs already sit in different positions. Whether an adverb class needs its own span rule was left to a new issue if a case arises.	nonpermutability
 4	stan1293	2026-08-01	Jeff Good	No new double-object position for English: v:obj-R and v:rec already cover the double-object and dative alternation.	v:obj-R; v:rec
 21		2026-03-23	Jeff Good	Diagnostic classes are defined in their own schema file (diagnostic_classes.yaml), separate from the codebook of criteria; each language lists the classes and constructions it uses in its own diagnostics file.	diagnostic classes
-39	arao1248	2026-03-24	Jeff Good	Araona's ciscategorial diagnostics add a PRED-combines criterion for predicative elements (English needs only V-combines); a position qualifies only if every *-combines criterion is n.	ciscategorial; PRED-combines
+39	arao1248	2026-03-24	Jeff Good	Araona's ciscategorial diagnostics add a PRED-combines criterion for predicative elements (English needs only V-combines); a position counts toward the span only if every *-combines criterion is n.	ciscategorial; PRED-combines
 47		2026-03-20	Jeff Good	The Elements column of a planar structure follows written conventions (listed elements; open and closed position types; open classes as ALL-CAPS labels, optionally with braces), checked with warnings rather than refusals.	planar structure
 60		2026-03-29	Jeff Good	The separate aspiration class is retired and folded into the segmental class as two constructions: aspiration (prominence), prosodically conditioned, and aspiration (fusion), the Yukuna-type segmental pattern.	segmental; aspiration
 66		2026-08-01	Jeff Good	No decision here: the question moved to #265, where it is to be decided.	
