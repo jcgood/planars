@@ -94,8 +94,10 @@ carries them over, or the issue telling the annotator which cells to redo.
 
 ### 4.1 Hand edits: `log-change`
 
+Planned (not built yet):
+
 ```
-python -m coding log-change [--lang LANG_ID] --change CLASS --layer LAYER --why "#N: …" [--answers TEXT] [--apply]
+log-change [--lang LANG_ID] --change CLASS --layer LAYER --why "#N: …" [--answers TEXT] [--apply]
 ```
 
 It finds each logged file whose fingerprint differs from its last line, works
