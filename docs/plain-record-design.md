@@ -1,7 +1,8 @@
 # Nothing only in Google or GitHub: design (Phase 10 unit 16)
 
-**Status: drafted 2026-10-30, waiting on Jeff's answers to § 7. Nothing is
-built yet.** What is done and next is the Phase 10 row of
+**Status: drafted 2026-10-30; Jeff answered § 7's Q1–Q4 the same day (each
+the recommended option), and Q5 took its recommendation unless he says
+otherwise. Building follows § 6.** What is done and next is the Phase 10 row of
 `docs/data-layer-progress.md`. The unit comes from the
 [implementation plan](data-layer-implementation-plan.md), Phase 10 table:
 "Status values, notes Doc text and last-edited-by imported into plain files;
@@ -207,6 +208,11 @@ Docs in the same commits: the module docstrings,
 and the collaborator guide (Drive comments are now read).
 
 ## 7. Questions for Jeff
+
+**Answered 2026-10-30 (don't re-ask):** Q1 two logs; Q2 `diagnostics` and
+`linguistics`; Q3 the refresh reopens the issue; Q4 backfill once, one
+approved batch. Q5 was not put to Jeff: it takes its recommendation (everyone
+with a revision since the last import) unless he says otherwise.
 
 **Q1. Where decisions go.** Recommended: two TSV logs, framework decisions in
 `schemas/decisions.tsv` (public) and a language's in its planars-data folder
