@@ -215,7 +215,9 @@ refresh was green, its `notebooks` step clean, no `door-violation`; its
 the next refresh. The "manifest" names are renamed (2026-10-30;
 progress doc, Phase 10 row). **Next:** check the 2026-10-31 refresh
 (its `labels` step creates `stale-class-sheets`; its `stale sheets` step
-clean; no `label-drift`), then 16–18. The live tests' share to Jeff's
+clean; no `label-drift`). **Unit 16 is designed** (2026-10-30,
+`docs/plain-record-design.md`): get Jeff's answers to its § 7, record
+them there, then build 16a–16e in its § 6 order. Then 17–18. The live tests' share to Jeff's
 second account came off the synth0001 folder and synth0001 was recaptured
 (2026-10-30, `migrations/remove_synth0001_test_share.py`). Q4 (notebooks shared
 by name only) is still open: test 1 ran with the link share on. Adam's
