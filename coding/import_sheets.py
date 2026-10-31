@@ -19,6 +19,13 @@ committed and pushed in planars-data when the command ends. Refuses to run
 with --apply while coded_data/ has uncommitted changes (precondition
 coded_data_clean_tree, checked by the dispatcher).
 
+It also keeps each language's tab-status record,
+coded_data/{lang_id}/records/tab_status.tsv (file_door.tab_status; Phase 10
+unit 16): every class sheet's Status tab as read (each tab's status and its
+Marked by cell), so the record holds them as well as Google. A sheet that
+could not be read keeps its previous rows. Nothing reads the record back;
+the Status tab stays the source.
+
 Exits non-zero only when the import itself broke: a class's spreadsheet
 could not be opened, or a tab is missing from it. Invalid values are not an
 import failure (issue #309): they are printed here, graded by
@@ -53,6 +60,8 @@ Authentication: same OAuth2 setup as generate_sheets.py (see drive.py).
 from __future__ import annotations
 
 import argparse
+import csv
+import io
 import sys
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -64,7 +73,9 @@ import pandas as pd
 from . import drive_ids
 from .drive import _load_drive_config
 from .drive_doorway import get_doorway, WorksheetNotFound
-from planars.schema_values import STATUS_IN_PROGRESS, STATUS_READY, is_keystone
+from planars.schema_values import (STATUS_CONSTRUCTION_COLUMN, STATUS_IN_PROGRESS,
+                                   STATUS_MARKED_BY_COLUMN, STATUS_READY,
+                                   STATUS_STATUS_COLUMN, is_keystone)
 from .restructure_sheets import _get_keyed_row_constructions, _get_pair_row_constructions
 from . import file_door, issues
 from . import validate_coding as _val
@@ -95,6 +106,49 @@ _TRAILING_COLS        = _val._TRAILING_COLS
 def _get_output_path(lang_id: str, class_name: str, construction: str) -> Path:
     """The construction's annotation TSV under coded_data/ (the local-file door's path)."""
     return file_door.annotation(lang_id, class_name, construction).path
+
+
+# ---------------------------------------------------------------------------
+# The tab-status record (Phase 10 unit 16; docs/plain-record-design.md § 3.1)
+# ---------------------------------------------------------------------------
+
+# The Status tab's columns the record keeps: what only the Status tab holds.
+# Needs fixing is left out: validate-coding rebuilds it from the TSVs.
+_RECORD_STATUS_COLUMNS = (STATUS_CONSTRUCTION_COLUMN, STATUS_STATUS_COLUMN,
+                          STATUS_MARKED_BY_COLUMN)
+_RECORD_HEADER = ("Class",) + _RECORD_STATUS_COLUMNS
+
+
+def _status_cells(rows: List[List[str]]) -> List[List[str]]:
+    """A Status tab's rows as [construction, status, marked by], in tab order,
+    found by header name; a column the tab lacks reads as blank."""
+    if not rows:
+        return []
+    header = [h.strip() for h in rows[0]]
+    at = [header.index(c) if c in header else None for c in _RECORD_STATUS_COLUMNS]
+    out = []
+    for r in rows[1:]:
+        cells = [r[i].strip() if i is not None and i < len(r) else "" for i in at]
+        if cells[0]:
+            out.append(cells)
+    return out
+
+
+def _status_record_text(lang_id: str, classes, read: Dict[str, List[List[str]]]) -> str:
+    """The language's tab-status record: a row per class and tab, for every
+    class sheet the language has (``classes``, in their order). A class whose
+    sheet could not be read this run keeps its rows from the previous record,
+    so a failed read never looks like the tabs' statuses being cleared."""
+    previous: Dict[str, List[List[str]]] = {}
+    for row in list(csv.reader(io.StringIO(file_door.read(file_door.tab_status(lang_id)) or ""),
+                               delimiter="\t"))[1:]:
+        if row:
+            previous.setdefault(row[0], []).append(row[1:])
+    records = []
+    for class_name in classes:
+        for cells in read.get(class_name, previous.get(class_name, [])):
+            records.append(dict(zip(_RECORD_HEADER, [class_name, *cells])))
+    return file_door.tsv_text(_RECORD_HEADER, records)
 
 
 # ---------------------------------------------------------------------------
@@ -453,8 +507,11 @@ def main(args: argparse.Namespace | None = None) -> None:
         print(f"\nLanguage: {lang_id}")
         lang_warning_lines: List[str] = []
         lang_param_map = _val._load_param_map(lang_id)
+        # {class: its Status tab's rows}, for the language's tab-status record.
+        lang_statuses: Dict[str, List[List[str]]] = {}
+        lang_classes = drive_ids.class_sheets(config, lang_id)
 
-        for class_name, spreadsheet_id in drive_ids.class_sheets(config, lang_id).items():
+        for class_name, spreadsheet_id in lang_classes.items():
             print(f"\n  {class_name}")
             try:
                 ss = doorway.open_spreadsheet(spreadsheet_id)
@@ -466,6 +523,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                 continue
 
             status_rows = _val.read_status_tab(ss)[1]
+            lang_statuses[class_name] = _status_cells(status_rows)
             status_map = _val.status_map(status_rows)
             marked_by = _val.marked_by_map(status_rows)
             if not status_map and not ignore_status:
@@ -634,6 +692,14 @@ def main(args: argparse.Namespace | None = None) -> None:
                     in_progress_files += 1
                 else:
                     total_files += 1
+
+        record = _status_record_text(lang_id, lang_classes, lang_statuses)
+        if apply:
+            file_door.write(file_door.tab_status(lang_id), record,
+                            why="read from the class sheets' Status tabs")
+        elif record != file_door.read(file_door.tab_status(lang_id)):
+            print(f"\n  Would update {lang_id}'s tab-status record "
+                  f"({file_door.tab_status(lang_id).relpath})")
 
         if lang_warning_lines:
             report_path = _write_error_report(lang_id, lang_warning_lines, timestamp)

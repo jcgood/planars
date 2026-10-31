@@ -257,6 +257,27 @@ def test_a_change_the_coordinator_also_makes_in_the_source_closes_the_issue(env,
     assert grid[1][grid[0].index(WHAT_CHANGED_COLUMN)] == "so is a conjunct too"
 
 
+def test_an_unreviewed_proposal_is_kept_in_the_record_until_none_is_left(env, github):
+    """Phase 10 unit 16 (plain-record-design § 3.5): while the sheet holds a
+    proposal, planars-data has a copy of it as the annotator left it; once
+    it holds none, the copy goes (its last version stays in the archive)."""
+    doorway, run, coded = env
+    copy = file_door.proposal_sheet_copy(LANG).path
+    run("--apply")
+    assert not copy.exists()
+    annotate(doorway, 2, "Elements", "and, also, then, so, CONJUNCT")
+    annotate(doorway, 2, WHAT_CHANGED_COLUMN, "so is a conjunct too")
+    run("--apply")
+    kept = json.loads(copy.read_text(encoding="utf-8"))
+    row = kept[PROPOSAL_PLANAR_TAB][1]
+    assert "and, also, then, so, CONJUNCT" in row and "so is a conjunct too" in row
+    assert kept[PROPOSAL_PLANAR_TAB] == trimmed(kept[PROPOSAL_PLANAR_TAB])
+    edit_planar_file(coded, "and, also, then, CONJUNCT", "and, also, then, so, CONJUNCT")
+    run("--apply")
+    assert not copy.exists()
+    assert list((coded / LANG / "archive" / "records").glob("proposal_sheet_*.json"))
+
+
 def test_a_row_both_changed_differently_is_a_conflict_kept_as_the_annotator_left_it(env, github):
     doorway, run, coded = env
     run("--apply")

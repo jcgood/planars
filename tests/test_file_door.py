@@ -77,6 +77,19 @@ def test_each_kind_builds_its_own_path(coded):
     assert file_door.planar(LANG).path == coded / LANG / "lang_setup" / f"planar_{LANG}.tsv"
     assert file_door.diagnostics_yaml(LANG).relpath == f"lang_setup/diagnostics_{LANG}.yaml"
     assert file_door.proposal_base(LANG).name == f"proposal_base_{LANG}.json"
+    assert file_door.tab_status(LANG).relpath == "records/tab_status.tsv"
+    assert file_door.proposal_sheet_copy(LANG).relpath == "records/proposal_sheet.json"
+
+
+def test_a_status_change_is_described_tab_by_tab():
+    header = ["Class", "Construction", "Status", "Marked by"]
+    old = [header, ["metrical", "stress_domain", "in-progress", ""],
+           ["metrical", "old_tab", "in-progress", ""]]
+    new = [header, ["metrical", "stress_domain", "ready-for-review", "annotator, 2026-10-29"],
+           ["metrical", "new_tab", "in-progress", ""]]
+    assert file_door._describe_statuses(old, new) == (
+        "metrical/stress_domain: in-progress → ready-for-review (annotator, 2026-10-29); "
+        "metrical/new_tab: in-progress; metrical/old_tab: no longer listed")
 
 
 def test_an_unknown_kind_or_missing_part_cannot_be_named():

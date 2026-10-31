@@ -797,28 +797,28 @@
 - id: check_notes
   cli_command: check-notes
   writes_to_drive: true
-  writes_locally: false
+  writes_locally: true
   description: >-
     Checks collaborator notes Google Docs for new content since the last
     check and files/updates GitHub issues from it.
   side_effects:
-    - "creates or comments on GitHub issues summarizing new notes content"
+    - "creates or comments on GitHub issues quoting the notes new since the last report"
     - "appends an acknowledgment to the collaborator's notes doc"
-    - "writes coded_data/.state/notes_state.json, through the local-file door (content-hash change-detection state, and, since 2026-08-16, per-annotator issue-ID tracking)"
+    - "writes coded_data/{lang}/records/notes.txt, the Doc's text, through the local-file door (archived and logged; Phase 10 unit 16)"
+    - "writes coded_data/.state/notes_state.json, through the local-file door (per-annotator issue-ID tracking)"
   idempotent: true
   idempotency_note: >-
-    Fixed 2026-08-11 (issue #280): _save_notes_state(state) now runs
-    immediately after each language's acknowledgment is appended to its
-    notes doc, not once at the very end of main() after every language has
-    been processed. The hash driving change detection is computed on the
-    doc's content with acknowledgment lines stripped out
-    (_strip_acknowledgment_lines), so appending the acknowledgment does not
-    itself change it -- previously, a crash after an acknowledgment was
-    appended but before the final _save_notes_state call left
-    notes_state.json holding the OLD hash, so a retry re-detected the same
-    content as new and re-filed/re-acknowledged it. Now each language's hash
-    is durable the moment its acknowledgment is written, and the same
-    incremental save covers the issue-ID write below.
+    Fixed 2026-08-11 (issue #280): what marks a Doc's content as reported is
+    written immediately after each language's acknowledgment is appended to
+    its notes doc, not once at the very end of main(). Since 2026-10-30
+    (unit 16) that mark is the Doc's recorded text (records/notes.txt), not a
+    hash in notes_state.json. It is the content with acknowledgment lines
+    stripped out (_strip_acknowledgment_lines), so appending the
+    acknowledgment does not itself change it -- previously, a crash after an
+    acknowledgment was appended but before the final save left the OLD mark
+    on disk, so a retry re-detected the same content as new and
+    re-filed/re-acknowledged it. Each issue's number is saved right after
+    the issue in the same way.
 
     A second, independent risk (unaffected by the #280 fix, since it wasn't
     about crash timing) is now also fixed: _get_open_notes_issue used to
@@ -836,7 +836,7 @@
     tests/test_check_notes_snapshot.py's Finding-27-adjacent tests for the
     behavior pinned.
   apply_gate: "--apply"
-  preconditions: [check_notes_documents_scope_authorized]
+  preconditions: [check_notes_documents_scope_authorized, coded_data_git_identity_configured]
   facts_touched:
     - {fact: collaborator_notes_surfaced_state, role: writes}
   cascades_triggered: []

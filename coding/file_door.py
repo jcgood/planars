@@ -54,6 +54,13 @@ test's own temporary folder.
    the caller says why with ``drops=`` (the Drive door's ``replacing``).
    ``remove`` drops a whole file on purpose: it needs only its reason.
 
+**Records** (unit 16; docs/plain-record-design.md): copies, in
+``{lang}/records/``, of what people write in Google that no other file
+holds: each tab's status (``tab_status``, by import-sheets), an
+unreviewed proposal sheet (``proposal_sheet_copy``, by proposal-sheets) and
+the notes Doc's text (``notes_text``, by check-notes).
+Archived and logged like the data files; nothing reads them back.
+
 **The tooling's own files** (unit 6b; ``STATE_KINDS``): the state files in
 ``.state/`` (the provenance log, regen snapshots, the restructure journal,
 check-notes' and check-comments' state, sync-planar's renumbering record,
@@ -110,6 +117,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, FrozenSet, Iterator, List, Optional, Sequence, Tuple, Union
 
+from planars.layout import ARCHIVE_FOLDER, RECORDS_FOLDER, SETUP_FOLDER
+
 from . import state_files
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -132,11 +141,20 @@ ANNOTATION = "annotation"
 PLANAR = "planar"
 DIAGNOSTICS_YAML = "diagnostics_yaml"
 PROPOSAL_BASE = "proposal_base"
+TAB_STATUS = "tab_status"
+PROPOSAL_SHEET_COPY = "proposal_sheet_copy"
+NOTES_TEXT = "notes_text"
 
-# Every kind a command can write, the parts that name one, and its file name
-# within its folder. The folder is the class for an annotation TSV and
-# ``lang_setup`` for the rest. Archive copies and the change log are written
-# by the door itself and are not kinds a command names.
+# A language folder's layout is planars.layout's (SETUP_FOLDER,
+# ARCHIVE_FOLDER, RECORDS_FOLDER): the records folder holds copies of what
+# people write in Google that the record needs and no other file holds
+# (Phase 10 unit 16, docs/plain-record-design.md § 3). Google stays where
+# they are typed; these are never edited or read back by a command.
+
+# Every kind a command can write, the parts that name one, its file name
+# within its folder, and the folder (the class for an annotation TSV;
+# otherwise ``folder``, by default ``lang_setup``). Archive copies and the
+# change log are written by the door itself and are not kinds a command names.
 KINDS: Dict[str, Dict[str, object]] = {
     ANNOTATION:       {"parts": ("class_name", "construction"),
                        "name": lambda f: f"{f.construction}.tsv",
@@ -151,14 +169,27 @@ KINDS: Dict[str, Dict[str, object]] = {
     # § 3.4): an annotator's proposal is the sheet's difference from it.
     PROPOSAL_BASE:    {"parts": (), "name": lambda f: f"proposal_base_{f.lang_id}.json",
                        "what": "what the proposal sheet was last filled with"},
+    # Each class sheet's Status tab, as the annotator and tooling left it:
+    # every tab's status and who marked it ready (import-sheets).
+    TAB_STATUS:       {"parts": (), "name": lambda f: "tab_status.tsv",
+                       "folder": RECORDS_FOLDER,
+                       "what": "each tab's status, from the class sheets' Status tabs"},
+    # The proposal sheet as the annotator left it, while it holds a
+    # proposal nobody has reviewed yet (proposal-sheets).
+    PROPOSAL_SHEET_COPY: {"parts": (), "name": lambda f: "proposal_sheet.json",
+                          "folder": RECORDS_FOLDER,
+                          "what": "the proposal sheet while it holds an unreviewed proposal"},
+    # The annotator's words in the language's notes Doc, acknowledgment
+    # lines left out (check-notes).
+    NOTES_TEXT:       {"parts": (), "name": lambda f: "notes.txt",
+                       "folder": RECORDS_FOLDER,
+                       "what": "the annotator's notes Doc, as text"},
 }
 # The files a person edits; every other kind is built from something else.
 SOURCES: FrozenSet[str] = frozenset({PLANAR, DIAGNOSTICS_YAML})
 # Built from another file in planars-data, so rebuilding one loses nothing:
 # not an overwrite (``overwrites``).
 BUILT: FrozenSet[str] = frozenset({PROPOSAL_BASE})
-SETUP_FOLDER = "lang_setup"
-ARCHIVE_FOLDER = "archive"
 CHANGE_LOG_NAME = "changes.tsv"
 CHANGE_LOG_COLUMNS = ("when (UTC)", "file", "what changed", "by", "why", "previous version")
 # Sorts as text in time order, which overwrites() relies on.
@@ -186,7 +217,9 @@ class LocalFile:
 
     @property
     def folder(self) -> str:
-        return self.class_name if self.kind == ANNOTATION else SETUP_FOLDER
+        if self.kind == ANNOTATION:
+            return self.class_name
+        return KINDS[self.kind].get("folder", SETUP_FOLDER)
 
     @property
     def name(self) -> str:
@@ -216,6 +249,18 @@ def diagnostics_yaml(lang_id: str) -> LocalFile:
 
 def proposal_base(lang_id: str) -> LocalFile:
     return LocalFile(PROPOSAL_BASE, lang_id)
+
+
+def tab_status(lang_id: str) -> LocalFile:
+    return LocalFile(TAB_STATUS, lang_id)
+
+
+def proposal_sheet_copy(lang_id: str) -> LocalFile:
+    return LocalFile(PROPOSAL_SHEET_COPY, lang_id)
+
+
+def notes_text(lang_id: str) -> LocalFile:
+    return LocalFile(NOTES_TEXT, lang_id)
 
 
 def class_folder(lang_id: str, class_name: str) -> Path:
@@ -854,12 +899,14 @@ def _loss_problems(target: LocalFile, old: Optional[str], new: str) -> List[str]
 
 def _describe(target: LocalFile, old: Optional[str], new: str) -> str:
     """The change in a few words, for the change log."""
-    if target.kind in (DIAGNOSTICS_YAML, PROPOSAL_BASE):
+    if target.kind in (DIAGNOSTICS_YAML, PROPOSAL_BASE, PROPOSAL_SHEET_COPY, NOTES_TEXT):
         if old is None:
             return "created"
         diff = [l for l in difflib.ndiff(old.splitlines(), new.splitlines())
                 if l.startswith(("+ ", "- "))]
         return f"{len(diff)} line(s) changed"
+    if target.kind == TAB_STATUS and old is not None:
+        return _describe_statuses(_rows(old), _rows(new))
     new_rows = _rows(new)
     if old is None:
         n = max(len(new_rows) - 1, 0)
@@ -895,6 +942,32 @@ def _describe(target: LocalFile, old: Optional[str], new: str) -> str:
         parts.append(f"{rows_added} row(s) added")
     if rows_gone:
         parts.append(f"{rows_gone} row(s) removed")
+    return "; ".join(parts) or "rewritten, same cells"
+
+
+def _describe_statuses(old_rows: List[List[str]], new_rows: List[List[str]]) -> str:
+    """A tab-status record's change, tab by tab: "metrical/stress_domain:
+    in-progress → ready-for-review (check: …, 2026-10-29)". Rows are keyed by
+    their first two columns (class, construction); the rest are the tab's
+    own Status-tab cells."""
+    def keyed(rows):
+        header = rows[0] if rows else []
+        return header, {tuple(r[:2]): r[2:] for r in rows[1:] if len(r) >= 2}
+    _, olds = keyed(old_rows)
+    header, news = keyed(new_rows)
+
+    def shown(cells):
+        status = cells[0] if cells else ""
+        rest = ", ".join(c for c in cells[1:] if c)
+        return f"{status or '(blank)'}" + (f" ({rest})" if rest else "")
+
+    parts = []
+    for key, cells in news.items():
+        if key not in olds:
+            parts.append(f"{'/'.join(key)}: {shown(cells)}")
+        elif olds[key] != cells:
+            parts.append(f"{'/'.join(key)}: {shown(olds[key])} → {shown(cells)}")
+    parts += [f"{'/'.join(key)}: no longer listed" for key in olds if key not in news]
     return "; ".join(parts) or "rewritten, same cells"
 
 

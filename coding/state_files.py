@@ -17,9 +17,10 @@ both went when those Sheets became read-only copies, unit 11b, 2026-10-24.)
   let its answers be replaced (one file per tab, the latest only).
 - ``JOURNAL_PATH``: restructure-sheets' record of a run interrupted
   mid-class (``restructure_journal``).
-- ``NOTES_STATE_PATH``: what check-notes last saw in each notes Doc, and
-  each annotator's open notes issue (at planars-data's top level until unit
-  6b).
+- ``NOTES_STATE_PATH``: each annotator's open notes issue (at planars-data's
+  top level until unit 6b). What check-notes last saw in each notes Doc is
+  the language's record, ``records/notes.txt`` (``file_door.notes_text``),
+  since 2026-10-30; until then a hash here.
 - ``COMMENTS_STATE_PATH``: what check-comments last saw in each Comments
   cell, and each language's open comments issue.
 - ``RENUMBERING_PATH``: sync-planar's record, while a new planar's

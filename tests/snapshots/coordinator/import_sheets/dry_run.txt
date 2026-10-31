@@ -26,6 +26,8 @@ Language: arao1248
     [general] status: 'in-progress' — importing for backup
     [general] [backup] No changes → coded_data/arao1248/free_occurrence/general.tsv
 
+  Would update arao1248's tab-status record (records/tab_status.tsv)
+
 Language: stan1293
 
   ciscategorial
@@ -77,6 +79,8 @@ Language: stan1293
     [morphemes] No changes → coded_data/stan1293/biuniqueness_deviations/morphemes.tsv
     [morphs] status: 'in-progress' — importing for backup
     [morphs] [backup] No changes → coded_data/stan1293/biuniqueness_deviations/morphs.tsv
+
+  Would update stan1293's tab-status record (records/tab_status.tsv)
 
   Error report: import_errors/stan1293_20260804_120000.txt
 
@@ -141,6 +145,8 @@ Language: synth0001
     [prescreening] [backup] No changes → coded_data/synth0001/phrasal_accent/prescreening.tsv
     [general] status: 'in-progress' — importing for backup
     [general] [backup] No changes → coded_data/synth0001/phrasal_accent/general.tsv
+
+  Would update synth0001's tab-status record (records/tab_status.tsv)
 
 Done. 0 file(s) written, 1 warning(s).
 Drive door (enforce): checked 32 write(s) to 32 tab(s) or file(s); 0 broke a rule.

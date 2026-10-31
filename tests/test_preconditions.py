@@ -136,8 +136,10 @@ def test_check_notes_scope_precondition_is_reported_but_not_enforced_here(monkey
     calls = []
     monkeypatch.setattr(preconditions, "_check_coded_data_clean", lambda **kw: calls.append(kw))
     args = _ns(apply=True)
+    # The git identity is there because check-notes writes the notes Doc's
+    # text into planars-data (Phase 10 unit 16).
     assert preconditions.active_preconditions("check_notes", args) == [
-        "check_notes_documents_scope_authorized"
+        "check_notes_documents_scope_authorized", "coded_data_git_identity_configured"
     ]
     preconditions.enforce("check_notes", args)  # must not raise
     assert calls == []

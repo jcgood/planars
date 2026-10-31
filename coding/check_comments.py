@@ -42,14 +42,13 @@ from typing import Dict, List, Optional, Tuple
 import pandas as pd
 
 from . import file_door, issues, state_files
+from planars.layout import class_folders
 from planars.schema_values import TRAILING_COLUMNS, row_columns, row_key
 
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 LABEL = "collaborator-comments"
 COMMENTS = "Comments"
-# Folders in a language's directory that hold no class TSVs.
-_NOT_CLASSES = frozenset({"lang_setup", "archive"})
 
 
 def _load_state() -> Dict:
@@ -107,10 +106,8 @@ def read_comments(lang_id: str) -> Tuple[Dict[str, Dict], List[str]]:
     found: Dict[str, Dict] = {}
     errors: List[str] = []
     lang_dir = CODED_DATA / lang_id
-    for tsv in sorted(lang_dir.glob("*/*.tsv")):
+    for tsv in [t for d in class_folders(lang_dir) for t in sorted(d.glob("*.tsv"))]:
         class_name, construction = tsv.parent.name, tsv.stem
-        if class_name in _NOT_CLASSES:
-            continue
         try:
             key_cols = row_key(class_name, construction)
             id_cols = row_columns(class_name, construction)

@@ -49,6 +49,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, List, Optional, Sequence
 
+from planars.layout import class_folders
+
 from . import file_door, issues
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -650,9 +652,9 @@ def audit_due(r: Refresh) -> None:
 def scope_summary(r: Refresh) -> None:
     langs = [p for p in CODED_DATA.iterdir() if p.is_dir() and not p.name.startswith(".")]
     yamls = list(CODED_DATA.glob("*/lang_setup/diagnostics_*.yaml"))
-    tsvs = [p for p in CODED_DATA.rglob("*.tsv")
-            if "archive" not in p.parts and "lang_setup" not in p.parts
-            and not any(part.startswith(".") for part in p.relative_to(CODED_DATA).parts)]
+    # Construction TSVs only: not the change logs at each language's top
+    # level, nor anything in the set-up, archive or records folders.
+    tsvs = [t for lang in langs for d in class_folders(lang) for t in d.glob("*.tsv")]
     line = (f"{len(langs)} language(s) · {len(yamls)} with diagnostics YAML · "
             f"{len(tsvs)} filled construction TSV(s)")
     print(line)

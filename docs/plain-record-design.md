@@ -2,7 +2,8 @@
 
 **Status: drafted 2026-10-30; Jeff answered § 7's Q1–Q4 the same day (each
 the recommended option), and Q5 took its recommendation unless he says
-otherwise. Building follows § 6.** What is done and next is the Phase 10 row of
+otherwise. Building follows § 6; 16a and 16b are built (2026-10-30). Where it
+stands is the progress doc's Phase 10 row.** What is done and next is the Phase 10 row of
 `docs/data-layer-progress.md`. The unit comes from the
 [implementation plan](data-layer-implementation-plan.md), Phase 10 table:
 "Status values, notes Doc text and last-edited-by imported into plain files;
@@ -51,22 +52,32 @@ becomes a file, and the GitHub issue holds only the discussion leading to it.
 
 ## 3. The copies
 
+The copies go in one folder per language, `coded_data/{lang}/records/`, apart
+from the set-up files and the class folders. A language folder's layout is
+stated once, in `planars/layout.py` (16a): before then, three places
+(`check-comments`, `planars/reports.py`, the daily refresh's summary) each
+listed the folders that are not classes, so a new folder would have been
+read as a class. The refresh's count of construction TSVs also counted each
+language's change log.
+
 ### 3.1 Tab status
 
-`coded_data/{lang}/status.tsv`: one row per class and construction, with
-columns `class`, `construction`, `status`, `marked_by`. It is the Status tab's
+`records/tab_status.tsv`: one row per class and construction, with columns
+`Class`, `Construction`, `Status`, `Marked by`. It is the Status tab's
 own cells as the annotator or tooling left them. `import-sheets` already reads
 every Status tab on each run (`validate_coding.read_status_tab`), so it writes
 this file once per language at the end, through a new file-door kind
 `tab_status`. The change log then reads, for example, "`metrical/stress_domain`:
-in-progress → ready-for-review (marked by Adam Tallman, 2026-10-29)".
+in-progress → ready-for-review (annotator, 2026-10-29)". (Marked by says
+annotator, coordinator or the check, not a name; who edited the sheet is
+§ 3.3.)
 
-Nothing reads `status.tsv` back. Status keeps coming from the Status tab
+Nothing reads `tab_status.tsv` back. Status keeps coming from the Status tab
 (the source), so no command can act on a stale copy.
 
 ### 3.2 Notes Docs
 
-`coded_data/{lang}/notes.txt`: the notes Doc's text, written by `check-notes`
+`records/notes.txt`: the notes Doc's text, written by `check-notes`
 through a new file-door kind `notes_text` whenever the text changes.
 
 With the text saved, the hash isn't needed: **what is new is the difference
@@ -95,6 +106,17 @@ Drive's revisions are whole-file, not per tab or cell. That is enough to say
 who touched a sheet since the last import. Which rows are whose stays where
 it already is: the Source column.
 
+**Found 2026-10-30 (a read-only check on English's sheets):** revisions can
+be listed on class sheets and notes Docs with the tooling's access. Every
+write the tooling makes (highlights, Status cells, dropdowns) is a revision
+by the account it runs as, Jeff's, so a sheet's recent revisions are almost
+all "Jeff Good". Drive marks them `me`. The column therefore names everyone
+**except that account**. Jeff's own hand edits, made from the same account,
+can't be told apart from the tooling's and aren't named. Annotators and
+coordinators with their own accounts are named. A sheet can have more than
+200 revisions, so the call reads page by page and keeps only those after the
+previous import.
+
 ### 3.4 Drive comment threads
 
 `check-comments` already reads every class sheet's Comments cells daily and
@@ -102,7 +124,7 @@ files one `collaborator-comments` issue per language. It will also read each
 language's Drive comment threads (class sheets, the proposal sheet, the notes
 Doc): the annotators' own comments and their replies to the tooling's. New
 ones go into the same issue under their own heading, and all of them are saved
-to `coded_data/{lang}/drive_comments.tsv` (file, thread, author, time, text,
+to `records/drive_comments.tsv` (file, thread, author, time, text,
 resolved). The doorway's `list_comments` asks for authors, times and replies,
 not only `id` and `content`. This fixes the unread-reply gap in § 1 whatever
 § 7 decides.
@@ -111,8 +133,8 @@ not only `id` and `content`. This fixes the unread-reply gap in § 1 whatever
 
 `proposal-sheets` already reads each proposal sheet daily and compares it
 with its base. When the sheet differs from the base, it also writes the sheet
-as the annotator left it to `coded_data/{lang}/lang_setup/proposal_{lang}.json`
-(new kind `proposal_sheet_copy`). When the sheet matches the base, it removes
+as the annotator left it to `records/proposal_sheet.json` (new kind
+`proposal_sheet_copy`). When the sheet matches the base, it removes
 that file. `accept-proposal` writes each rejected change and its reason to the
 language's decisions log (§ 4), so a rejection is on record like an
 acceptance.
@@ -185,8 +207,8 @@ Each step is one commit (or two) that leaves a working system and removes
 what it replaces. Every new file kind goes into the file door's table, and
 `tests/test_file_door_coverage.py` holds every writer to it.
 
-1. **16a: tab status and proposal copies.** `status.tsv` (§ 3.1) and
-   `proposal_{lang}.json` (§ 3.5). Built against the fake. Its first real
+1. **16a: tab status and proposal copies.** `tab_status.tsv` (§ 3.1) and
+   `proposal_sheet.json` (§ 3.5). Built against the fake. Its first real
    write is the next refresh.
 2. **16b: notes text.** `notes.txt`, the hash deleted, the issue quoting only
    the new lines (§ 3.2). The first run saves each Doc as it stands and files

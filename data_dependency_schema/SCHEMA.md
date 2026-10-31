@@ -72,7 +72,7 @@ inventing new terminology:
 | `diagnostics_sheet` | The Drive spreadsheet mirroring `diagnostics_{lang_id}.yaml`: a read-only copy. Always derived — never itself authoritative. |
 | `annotation_sheet` | A live Drive spreadsheet for one analysis class (one tab per construction), where annotators enter judgments. The primary source for annotation data. |
 | `status_sheet` | Locked, read-only per-language completion-status spreadsheet. Always derived — never authoritative for anything. |
-| `collaborator_doc` | The per-language Google Doc for free-text collaborator notes; change-tracked via `notes_state.json` content hashes. |
+| `collaborator_doc` | The per-language Google Doc for free-text collaborator notes; its text is kept in `records/notes.txt` (a `record_file`), and what is new is the Doc's difference from it (until 2026-10-30, a content hash in `notes_state.json`). |
 | `planar_tsv` | `coded_data/{lang}/lang_setup/planar_{lang_id}.tsv` — the source for a language's planar structure, edited by the coordinator (by hand or through `accept-proposal`). Until unit 11b it was also downloaded from `planar_sheet`, the one entity whose cascade direction was ambiguous. |
 | `diagnostics_yaml` | `coded_data/{lang}/lang_setup/diagnostics_{lang_id}.yaml` — the coordinator-facing source of truth for a language's diagnostics scope. |
 | `construction_tsv` | `coded_data/{lang}/{class}/{construction}.tsv` — the local mirror of one construction's annotation data, imported from `annotation_sheet`. |
@@ -82,6 +82,7 @@ inventing new terminology:
 | `code_comment` | A fact encoded as a docstring or inline comment in a `planars/*.py` or `coding/*.py` module — e.g. a span rule's prose description, whose sync with the schema is checked via a hash sentinel. |
 | `github_issue` | A GitHub issue used as a durable coordination/state channel — per-language notification issues, proposal issues, drift issues. The fact's truth value literally lives in the issue's open/closed state or comment history. |
 | `filename_convention` | A fact encoded implicitly in a naming pattern — e.g. a language ID inferred from `planar_{lang_id}.tsv`; an archive file's datestamp suffix encoding when it was superseded. |
+| `record_file` | A file in `coded_data/{lang}/records/` (Phase 10 unit 16, `docs/plain-record-design.md`): a copy of what people write in Google that no other file holds (each tab's status, an unreviewed proposal sheet), made daily through the local-file door with archive and change log. Never authoritative and never read back: Google stays where it is typed; the file is the record that outlives Google. |
 | `test_fixture` | A recorded copy of live state committed under `coded_data/.test_fixtures/` (in planars-data, private) for offline testing — e.g. `coded_data/.test_fixtures/drive_state/`, the raw capture of every annotation spreadsheet and the ID file's entries for them. Never authoritative: it is a snapshot, and its whole job is to be a faithful *stale* copy. Listed as an entity because a test asserting against a fixture that no longer resembles production is a silent failure of exactly the kind this registry exists to name. |
 
 ### Why some of these are split rather than consolidated

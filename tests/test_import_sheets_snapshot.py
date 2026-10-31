@@ -465,6 +465,54 @@ def test_mixed_status_only_treats_the_flipped_construction_as_ready(env):
 
 
 # ---------------------------------------------------------------------------
+# The tab-status record (Phase 10 unit 16; plain-record-design § 3.1)
+# ---------------------------------------------------------------------------
+
+def _status_record(env, lang: str) -> List[List[str]]:
+    path = env.coded / lang / "records" / "tab_status.tsv"
+    return [line.split("\t") for line in path.read_text(encoding="utf-8").splitlines()]
+
+
+def test_apply_records_every_tab_status_of_every_class_sheet(env):
+    out, exit_code = env.run(["import-sheets", "--lang", "arao1248", "--apply"])
+    assert_finished(out, exit_code)
+    rows = _status_record(env, "arao1248")
+    assert rows[0] == ["Class", "Construction", "Status", "Marked by"]
+    classes = drive_ids.class_sheets(env.config, "arao1248")
+    assert [r[0] for r in rows[1:]] == sorted([r[0] for r in rows[1:]],
+                                              key=list(classes).index)
+    for cls in classes:
+        status_tab = env.doorway.spreadsheet(env.sheet_id("arao1248", cls)).worksheet("Status")
+        listed = [r[0] for r in status_tab.get_all_values()[1:] if r and r[0].strip()]
+        assert [r[1] for r in rows[1:] if r[0] == cls] == listed
+
+
+def test_a_status_change_is_logged_tab_by_tab(env):
+    env.run(["import-sheets", "--lang", "arao1248", "--apply"])
+    env.set_status("arao1248", "ciscategorial", "general", "ready-for-review")
+    out, exit_code = env.run(["import-sheets", "--lang", "arao1248", "--apply"])
+    assert_finished(out, exit_code)
+    log = (env.coded / "arao1248" / "changes.tsv").read_text(encoding="utf-8")
+    line = [l for l in log.splitlines() if l.split("\t")[1] == "records/tab_status.tsv"][-1]
+    assert "ciscategorial/general: in-progress → ready-for-review" in line, line
+    assert list((env.coded / "arao1248" / "archive" / "records").glob("tab_status_*.tsv"))
+
+
+def test_a_dry_run_writes_no_status_record(env):
+    out, exit_code = env.run(["import-sheets", "--lang", "arao1248"])
+    assert_finished(out, exit_code)
+    assert not (env.coded / "arao1248" / "records" / "tab_status.tsv").exists()
+
+
+def test_a_sheet_that_could_not_be_read_keeps_its_previous_status_rows(env):
+    env.run(["import-sheets", "--lang", "arao1248", "--apply"])
+    before = _status_record(env, "arao1248")
+    record = is_._status_record_text(
+        "arao1248", drive_ids.class_sheets(env.config, "arao1248"), {})
+    assert [line.split("\t") for line in record.splitlines()] == before
+
+
+# ---------------------------------------------------------------------------
 # Invalid cells get pink-highlighted
 # ---------------------------------------------------------------------------
 

@@ -10,7 +10,8 @@ the Doc so he knows they arrived. The tests below are mostly about that round
 trip not losing or duplicating anything.
 
 The acknowledgment line is the subtle part. It is written into the same Doc
-being watched for changes, so it has to be stripped before hashing — otherwise
+being watched for changes, so it has to be stripped before the Doc is compared
+with its recorded text (``records/notes.txt``, Phase 10 unit 16) — otherwise
 every run would see its own last acknowledgment as new collaborator content and
 file an issue about it, forever.
 
@@ -33,7 +34,7 @@ from typing import Dict, List
 
 import pytest
 
-from coding import check_notes, drive_doorway, state_files
+from coding import check_notes, drive_doorway, file_door, state_files
 from coding import drive as drive_module
 from coding.drive import _ACK_PREFIX, _strip_acknowledgment_lines
 from command_runner import run_command
@@ -200,14 +201,34 @@ def test_the_acknowledgment_does_not_look_like_new_notes_next_time(env):
     assert env.doorway.mutations_of("append_doc_text") == []
 
 
+def recorded() -> str:
+    """The language's record of its notes Doc (Phase 10 unit 16)."""
+    path = file_door.notes_text(LANG).path
+    return path.read_text(encoding="utf-8") if path.exists() else None
+
+
+def words(text: str) -> str:
+    """The annotator's words in a Doc, as the record keeps them."""
+    return _strip_acknowledgment_lines(text)
+
+
+def test_the_docs_text_is_recorded_without_its_acknowledgments(env):
+    env.seed_doc()
+    env.run(["check-notes", "--lang", LANG, "--apply"])
+    assert recorded() == words(NOTES)
+    assert _ACK_PREFIX in env.doorway.get_doc_text(DOC_ID)
+    assert _ACK_PREFIX not in recorded()
+
+
 def test_unchanged_notes_file_nothing(env):
     env.seed_doc()
     env.run(["check-notes", "--lang", LANG, "--apply"])
-    first = env.state()[LANG]["notes_hash"]
     env.github.calls.clear()
+    env.doorway.clear_mutations()
     env.run(["check-notes", "--lang", LANG, "--apply"])
-    assert env.state()[LANG]["notes_hash"] == first
-    assert env.github.calls_of("create") == []
+    assert recorded() == words(NOTES)
+    assert env.github.calls == []
+    assert env.doorway.mutations_of("append_doc_text") == []
 
 
 def test_notes_added_later_are_picked_up(env):
@@ -225,15 +246,61 @@ def test_notes_added_later_are_picked_up(env):
     assert env.github.calls_of("comment")
 
 
-def test_an_empty_doc_files_nothing_but_is_remembered(env):
+def test_only_the_new_lines_are_quoted(env):
+    """Adam reads only what he added, not the whole Doc again."""
+    env.seed_doc()
+    env.run(["check-notes", "--lang", LANG, "--apply"])
+    env.github.calls.clear()
+    env.doorway.append_doc_text(DOC_ID, "One more thing: v:obj-R feels doubtful.")
+    env.run(["check-notes", "--lang", LANG, "--apply"])
+    body = env.github.calls_of("comment")[0][-1]
+    assert "One more thing: v:obj-R feels doubtful." in body
+    assert "Position 14 looks wrong" not in body
+    assert f"https://docs.google.com/document/d/{DOC_ID}" in body
+
+
+def test_a_deletion_is_recorded_without_an_issue(env):
+    env.seed_doc()
+    env.run(["check-notes", "--lang", LANG, "--apply"])
+    env.github.calls.clear()
+    first_line = NOTES.splitlines()[0] + "\n"
+    env.seed_doc(text=NOTES.replace(first_line, ""))
+    out = env.run(["check-notes", "--lang", LANG, "--apply"])
+    assert "nothing added" in out
+    assert env.github.calls == []
+    assert recorded() == words(NOTES.replace(first_line, ""))
+
+
+def test_an_empty_doc_files_nothing(env):
     env.seed_doc(text="\n   \n")
     out = env.run(["check-notes", "--lang", LANG, "--apply"])
-    assert "Notes doc is empty" in out
+    assert "nothing added" in out
     assert env.github.calls == []
-    assert env.state()[LANG]["notes_hash"]
 
 
-def test_only_the_collaborators_own_words_are_hashed(env):
+def test_a_doc_already_reported_under_the_old_hash_is_not_reported_again(env):
+    """The first run after 2026-10-30 reads the old hash once."""
+    env.seed_doc()
+    env.set_state({LANG: {"notes_hash": check_notes._old_hash(words(NOTES)),
+                          "last_checked": "x"},
+                   "_annotator_issues": {"Adam Tallman": 7}})
+    out = env.run(["check-notes", "--lang", LANG, "--apply"])
+    assert "No new notes." in out
+    assert env.github.calls == []
+    assert recorded() == words(NOTES)
+    assert env.state() == {"_annotator_issues": {"Adam Tallman": 7}}
+
+
+def test_a_doc_changed_since_the_old_hash_is_reported_in_full(env):
+    env.seed_doc()
+    env.set_state({LANG: {"notes_hash": "something else"}})
+    out = env.run(["check-notes", "--lang", LANG, "--apply"])
+    assert "New notes detected" in out
+    assert recorded() == words(NOTES)
+    assert LANG not in env.state()
+
+
+def test_only_the_collaborators_own_words_are_compared(env):
     """Pure check on the rule the round trip depends on."""
     with_ack = NOTES + f"[2026-08-02] {_ACK_PREFIX}. Please consult with them."
     assert _strip_acknowledgment_lines(with_ack).strip() == NOTES.strip()

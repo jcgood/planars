@@ -181,20 +181,20 @@
     whether a language's collaborator notes doc content has already been
     surfaced (filed or commented on an open GitHub issue) for its annotator
   locations:
-    - {entity: filename_convention, detail: "coded_data/.state/notes_state.json's per-language notes_hash/last_changed/last_checked fields -- tracks what content has already been seen, per language; also a top-level _annotator_issues[annotator] -> issue_number map, added 2026-08-16"}
+    - {entity: record_file, detail: "coded_data/{lang}/records/notes.txt -- the Doc's text as last reported (acknowledgment lines stripped); what is new is the Doc's difference from it (since 2026-10-30, unit 16; until then a per-language notes_hash in notes_state.json)"}
+    - {entity: filename_convention, detail: "coded_data/.state/notes_state.json's _annotator_issues[annotator] -> issue_number map, added 2026-08-16"}
     - {entity: github_issue, detail: "the open 'Collaborator notes -- {annotator} ({date})' issue, labeled collaborator-notes -- looked up by the stored _annotator_issues ID first (added 2026-08-16), falling back to a title substring match on the annotator's name (_get_open_notes_issue) only when no ID is stored yet"}
   authoritative: github_issue
   cascade:
     direction: automatic
     mechanism: >-
-      check-notes --apply hashes each language's notes doc content
-      (acknowledgment lines stripped) and compares against notes_state.json's
-      stored hash; on a change, it finds-or-creates an open collaborator-notes
-      issue for that language's annotator -- preferring the stored
+      check-notes --apply compares each language's notes doc content
+      (acknowledgment lines stripped) with its recorded text; when lines were
+      added or changed, it finds-or-creates an open collaborator-notes issue
+      for that language's annotator -- preferring the stored
       _annotator_issues ID, title search only as a one-time fallback that
-      backfills the ID -- and comments or creates accordingly, appends an
-      acknowledgment to the doc, then updates notes_state.json's hash for
-      that language.
+      backfills the ID -- and comments or creates with those lines, appends
+      an acknowledgment to the doc, then records the doc's text.
   drift_risk:
     possible: true
     note: >-
@@ -202,7 +202,7 @@
       the Phase 4 (#271) operation registry, both fixed. First, issue #280's
       shape: notes_state.json was written once at the end of the whole run,
       not per language -- fixed 2026-08-11, now saved right after each
-      language's acknowledgment. Second, independent of #280: the issue
+      language's acknowledgment (the recorded text, since 2026-10-30). Second, independent of #280: the issue
       lookup used to match by substring on the annotator's name in the issue
       title only, not a stored ID -- a manually-renamed issue silently
       stopped being found even while still open, and the next run opened a
@@ -509,3 +509,51 @@
       from its imported source and compares keys, ignoring hand-added rows),
       run daily by data-refresh and filed as dependent-stale with the exact
       --regen-construction command.
+
+- id: tab_status_record
+  description: >-
+    each construction tab's Status (in-progress or ready-for-review) and who
+    marked it ready and when (Marked by)
+  locations:
+    - {entity: annotation_sheet, detail: "the class sheet's Status tab: Status (the annotator's, or the daily check's and set-tab-status's), Marked by (the tooling's)"}
+    - {entity: record_file, detail: "coded_data/{lang}/records/tab_status.tsv (file_door.tab_status), one row per class and tab (Phase 10 unit 16)"}
+  authoritative: annotation_sheet
+  cascade:
+    direction: automatic
+    mechanism: >-
+      import-sheets --apply (daily) writes the record from every class sheet's
+      Status tab it reads (import_sheets._status_record_text), through the
+      local-file door, which archives the previous version and logs each
+      tab's change. A sheet that could not be read keeps its previous rows.
+  drift_risk:
+    possible: true
+    note: >-
+      The record lags the Status tab by up to a day: a tab the daily check
+      (sheet-validation.yml) or set-tab-status marks after the import is
+      recorded by the next one. Nothing reads the record back, so the lag
+      cannot mislead a command.
+    caught_by: >-
+      nothing needs to: the next import rewrites the record from the tab.
+
+- id: proposal_sheet_record
+  description: >-
+    an annotator's suggested changes to the planar and diagnostics that no
+    one has reviewed yet
+  locations:
+    - {entity: annotation_sheet, detail: "the language's proposal sheet (planars and diagnostics), its Planar and Diagnostics tabs"}
+    - {entity: record_file, detail: "coded_data/{lang}/records/proposal_sheet.json (file_door.proposal_sheet_copy), present only while the sheet holds a proposal"}
+    - {entity: github_issue, detail: "the language's planars-and-diagnostics issue, listing each change in plain words"}
+  authoritative: annotation_sheet
+  cascade:
+    direction: automatic
+    mechanism: >-
+      proposal-sheets --apply (daily) writes the copy while the sheet differs
+      from its base and removes it once it doesn't (proposal_sheets._keep_copy);
+      accept-proposal carries accepted changes into the sources (change log)
+      and rejected ones into the decisions log.
+  drift_risk:
+    possible: true
+    note: >-
+      Same one-day lag as the issue; nothing reads the copy back.
+    caught_by: >-
+      nothing needs to: the next proposal-sheets run rewrites it.

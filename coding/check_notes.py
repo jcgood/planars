@@ -8,18 +8,26 @@ annotator containing the new notes plus a ready-to-paste Claude triage prompt.
 After filing/updating an issue, an acknowledgment line is appended to the doc
 so the collaborator knows their notes were received.
 
-New content is detected by a hash of the Doc's text with the acknowledgment
-lines stripped, kept per language in ``notes_state.json``
-(``state_files.NOTES_STATE_PATH``, written through the local-file door). A
-language with no notes Doc yet gets one made on ``--apply``; its ID goes in
-the ID file (drive_config.json), which also lists the languages checked. One issue per
-annotator covers every language that annotator has: the issue number is
-stored in the state (``_annotator_issues``) and preferred over a title
-search, so renaming the issue doesn't start a second thread. A closed issue
-is never reused (closing is how the coordinator marks a batch triaged), so
-new notes after that start a fresh issue. The state is saved right after
-each issue and each acknowledgment, so a crash cannot make a retry treat
-already-reported content as new (#280).
+Each Doc's text, acknowledgment lines left out, is kept in planars-data as
+the language's record, ``records/notes.txt`` (``file_door.notes_text``;
+Phase 10 unit 16, docs/plain-record-design.md § 3.2), archived and logged at
+every change. What is new is the difference between the Doc and that record,
+and the issue quotes only the lines added or changed since. A change that
+adds nothing (a note deleted) is recorded without an issue. The record is
+written right after the language's acknowledgment, so a crash cannot make a
+retry treat already-reported content as new (#280). (Until 2026-10-30 a hash
+in the state file stood in for the text; a language's first run since then
+reads that hash once, to tell whether the Doc still holds only what was
+reported, and the hash is then dropped.)
+
+A language with no notes Doc yet gets one made on ``--apply``; its ID goes in
+the ID file (drive_config.json), which also lists the languages checked. One
+issue per annotator covers every language that annotator has: the issue
+number is kept in ``notes_state.json`` (``state_files.NOTES_STATE_PATH``,
+``_annotator_issues``), saved right after each issue, and preferred over a
+title search, so renaming the issue doesn't start a second thread. A closed
+issue is never reused (closing is how the coordinator marks a batch
+triaged), so new notes after that start a fresh issue.
 
 Usage:
     python -m coding check-notes          # dry run (no writes)
@@ -29,6 +37,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import difflib
 import hashlib
 import json
 from datetime import date
@@ -45,11 +54,26 @@ def _load_notes_state() -> Dict:
 
 
 def _save_notes_state(state: Dict) -> None:
+    """Only the issue numbers are state now; a language's own entry (the old
+    hash and dates) is dropped once its text is recorded."""
     file_door.write_state(file_door.notes_state(), json.dumps(state, indent=2))
 
 
-def _hash_text(text: str) -> str:
+def _old_hash(text: str) -> str:
+    """The hash the state file kept until 2026-10-30, read once per language
+    to tell whether its Doc still holds only what was last reported."""
     return hashlib.sha256(text.encode()).hexdigest()[:12]
+
+
+def _new_lines(recorded: str, now: str) -> List[str]:
+    """The Doc's lines added or changed since the record, in Doc order;
+    blank lines and deletions left out."""
+    return [line[2:] for line in difflib.ndiff(recorded.splitlines(), now.splitlines())
+            if line.startswith("+ ") and line[2:].strip()]
+
+
+def doc_url(doc_id: str) -> str:
+    return f"https://docs.google.com/document/d/{doc_id}"
 
 
 def _get_open_notes_issue(annotator: str, state: Dict) -> Optional[int]:
@@ -102,16 +126,20 @@ def _file_or_update_issue(annotator: str, body: str, state: Dict) -> None:
 
 def _build_issue_body(
     annotator: str,
-    lang_notes: List[Tuple[str, str]],  # [(display_name, notes_text), ...]
+    lang_notes: List[Tuple[str, str, str]],  # [(display_name, new lines, Doc URL), ...]
 ) -> str:
+    """The issue (or comment) for one annotator: per language, the lines new
+    or changed since the last report, and a link to the whole Doc."""
     today = date.today().isoformat()
     lines = [
         f"## Collaborator notes — {annotator} — {today}",
         "",
     ]
-    for display_name, notes_text in lang_notes:
+    for display_name, notes_text, url in lang_notes:
         lines += [
             f"### {display_name}",
+            "",
+            f"New or changed since the last report ([the whole notes Doc]({url})):",
             "",
             notes_text.strip(),
             "",
@@ -132,10 +160,10 @@ def _build_issue_body(
         "",
         "---",
         "",
-        "**Notes (raw):**",
+        "**Notes new since the last report (raw; earlier ones are in the Doc):**",
         "",
     ]
-    for display_name, notes_text in lang_notes:
+    for display_name, notes_text, _ in lang_notes:
         lines += [
             f"**{display_name}:**",
             "",
@@ -189,13 +217,21 @@ def main(args: argparse.Namespace | None = None) -> None:
     today = date.today().isoformat()
 
     # Collect new-content languages grouped by annotator.
-    # annotator_notes: annotator -> [(display_name, raw_text)]
-    annotator_notes: Dict[str, List[Tuple[str, str]]] = {}
-    # Track (lang_id, doc_id, new_hash) for write-back after issue filing.
+    # annotator_notes: annotator -> [(display_name, new lines, Doc URL)]
+    annotator_notes: Dict[str, List[Tuple[str, str, str]]] = {}
+    # (lang_id, doc_id, the Doc's text) to acknowledge and record after the
+    # issue is filed.
     to_acknowledge: List[Tuple[str, str, str]] = []
-    # Languages successfully checked (for last_checked state update on --apply).
-    checked_lang_ids: List[str] = []
     config_dirty = False
+
+    def record(lang_id: str, text: str, why: str) -> None:
+        """Keep the Doc's text as the language's record, and drop the
+        language's old state entry (its hash), which the record replaces."""
+        if not apply:
+            return
+        file_door.write(file_door.notes_text(lang_id), text, why=why)
+        if state.pop(lang_id, None) is not None:
+            _save_notes_state(state)
 
     for lang_id in drive_ids.languages(config):
         if lang_filter and lang_id != lang_filter:
@@ -233,28 +269,35 @@ def main(args: argparse.Namespace | None = None) -> None:
             continue
 
         collaborator_text = _strip_acknowledgment_lines(raw_text)
-        new_hash = _hash_text(collaborator_text)
+        recorded = file_door.read(file_door.notes_text(lang_id))
+        if recorded is None:
+            # This language's first run since the text began to be kept: its
+            # old hash says whether the Doc holds only what was reported.
+            old = state.get(lang_id, {}).get("notes_hash")
+            if old is not None and old == _old_hash(collaborator_text):
+                record(lang_id, collaborator_text,
+                       "the notes Doc as it stood when its text began to be kept "
+                       "(all of it reported before)")
+                print(f"[{lang_id}] No new notes.")
+                continue
+            recorded = ""
 
-        lang_state = state.get(lang_id, {})
-        stored_hash = lang_state.get("notes_hash", "")
-
-        checked_lang_ids.append(lang_id)
-
-        if new_hash == stored_hash:
+        if collaborator_text == recorded:
             print(f"[{lang_id}] No new notes.")
             continue
 
-        # Content has changed.
-        stripped = collaborator_text.strip()
-        if not stripped:
-            # Doc is empty (only whitespace/ack lines) — update hash but don't file.
-            state.setdefault(lang_id, {})["notes_hash"] = new_hash
-            print(f"[{lang_id}] Notes doc is empty — hash updated.")
+        new = _new_lines(recorded, collaborator_text)
+        if not new:
+            # Emptied, or notes deleted: nothing for anyone to read, but the
+            # record keeps the change (and the archive what was there).
+            record(lang_id, collaborator_text, "read from the notes Doc (nothing added)")
+            print(f"[{lang_id}] Notes doc changed with nothing added — recorded, no issue.")
             continue
 
         print(f"[{lang_id}] New notes detected ({annotator}).")
-        annotator_notes.setdefault(annotator, []).append((display_name, collaborator_text))
-        to_acknowledge.append((lang_id, doc_id, new_hash))
+        annotator_notes.setdefault(annotator, []).append(
+            (display_name, "\n".join(new), doc_url(doc_id)))
+        to_acknowledge.append((lang_id, doc_id, collaborator_text))
 
     # File or update one issue per annotator.
     for annotator, lang_notes_list in annotator_notes.items():
@@ -271,32 +314,24 @@ def main(args: argparse.Namespace | None = None) -> None:
             print("  [dry run] Would file/update issue with body:")
             print("  " + "\n  ".join(body.splitlines()[:10]) + "\n  ...")
 
-    # Write-back acknowledgments and update state.
+    # Acknowledge in each Doc, then record its text. Recorded right away,
+    # language by language, not once at the end: a crash after an
+    # acknowledgment must not leave the old record, or a retry re-reports
+    # this Doc's content and acknowledges it again (issue #280).
     if to_acknowledge:
         ack_text = acknowledgment_line(today)
-        for lang_id, doc_id, new_hash in to_acknowledge:
+        for lang_id, doc_id, text in to_acknowledge:
             if apply:
                 try:
                     doorway.append_doc_text(doc_id, ack_text)
                     print(f"[{lang_id}] Acknowledgment appended to notes doc.")
                 except Exception as e:
                     print(f"[{lang_id}] Could not append acknowledgment: {e}")
-            state.setdefault(lang_id, {})["notes_hash"] = new_hash
-            state[lang_id]["last_changed"] = today
-            if apply:
-                # Persist immediately, not once at the end of main() -- a
-                # crash between appending this acknowledgment and the final
-                # save must not leave the old hash on disk, or a retry
-                # re-detects this doc's content as new and re-files/
-                # re-acknowledges it (issue #280).
-                _save_notes_state(state)
+            record(lang_id, text, "read from the notes Doc; the new lines reported on "
+                                  "the annotator's collaborator-notes issue")
 
-    # Persist state, and the ID file if a notes Doc was made.
+    # The ID file, if a notes Doc was made.
     if apply:
-        for lang_id in checked_lang_ids:
-            state.setdefault(lang_id, {})["last_checked"] = today
-        _save_notes_state(state)
-        print("\nnotes_state.json updated.")
         if config_dirty:
             _save_drive_config(config)
             print("ID file updated with new notes_doc_id(s).")

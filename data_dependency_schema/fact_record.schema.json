@@ -23,6 +23,7 @@
         "code_comment",
         "github_issue",
         "filename_convention",
+        "record_file",
         "test_fixture"
       ]
     },

@@ -70,6 +70,7 @@ from planars import proform as _proform
 from planars import play_language as _play
 from planars import idiom as _idiom
 from planars.languages import get_display_name
+from planars.layout import class_folders
 from planars.spans import gained_position_counts
 from planars.schema_values import (
     ELEMENT_ROWS, TRAILING_COLUMNS, is_keystone, row_columns, row_type,
@@ -534,10 +535,7 @@ def language_completeness(lang_id: str, repo_root) -> Dict[str, Dict[str, dict]]
     expected = _read_expected_constructions(lang_dir)
 
     # Collect all class names: declared in diagnostics + present in coded_data.
-    present_dirs = {
-        d.name for d in lang_dir.iterdir()
-        if d.is_dir() and d.name not in {"lang_setup", "archive"}
-    } if lang_dir.exists() else set()
+    present_dirs = {d.name for d in class_folders(lang_dir)}
     all_class_names = sorted(set(expected.keys()) | present_dirs)
 
     result: Dict[str, Dict[str, dict]] = {}

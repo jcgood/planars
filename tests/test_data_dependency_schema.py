@@ -60,6 +60,8 @@ def test_facts_have_expected_ids():
         "drive_state_test_fixtures",
         "pair_row_construction_set",
         "biuniqueness_keyed_chain",
+        "tab_status_record",
+        "proposal_sheet_record",
     }
 
 

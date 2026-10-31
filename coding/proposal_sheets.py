@@ -49,6 +49,11 @@ content can't be trusted; a person deletes it on Drive first). A new sheet's
 ID is saved at once, so a crash on a later language never leads to a second
 sheet.
 
+While a sheet holds a proposal, ``--apply`` also keeps a copy of it as
+the annotator left it in planars-data (``file_door.proposal_sheet_copy``,
+``records/proposal_sheet.json``; Phase 10 unit 16), removed once the sheet
+holds none, so an unreviewed proposal is not only in Google.
+
 The review itself is ``accept-proposal`` (``coding/accept_proposal.py``),
 which the issue names.
 """
@@ -246,9 +251,11 @@ def _one_language(doorway, lang_id: str, config: Dict, apply: bool,
         print(f"  [{lang_id}] {'' if apply else 'would '}{line}")
     new_base = dict(base)
     found: Dict[str, Dict[str, List[str]]] = {}
+    as_left: Dict[str, List[List[str]]] = {}
     for title, _ in PROPOSAL_TABS:
-        merge = compare(base.get(title, []), ss.worksheet(title).get_all_values(),
-                        fills[title], WHAT_CHANGED_COLUMN)
+        grid = ss.worksheet(title).get_all_values()
+        as_left[title] = _trimmed(grid)
+        merge = compare(base.get(title, []), grid, fills[title], WHAT_CHANGED_COLUMN)
         found[title] = _what_it_proposes(merge)
         if found[title]["changes"] or found[title]["conflicts"]:
             print(f"  [{lang_id}] {title}: holds a proposal "
@@ -262,11 +269,41 @@ def _one_language(doorway, lang_id: str, config: Dict, apply: bool,
             print(f"  [{lang_id}] {title}: would take in the source's changes")
             continue
         _refill(ss, title, [list(r) for r in merge.sheet], lang_id)
+        as_left[title] = _trimmed([list(r) for r in merge.sheet])
         new_base[title] = [list(r) for r in merge.base]
         print(f"  [{lang_id}] {title}: took in the source's changes")
     if apply and new_base != base:
         _write_base(lang_id, new_base, "the sources' changes taken into the proposal sheet")
+    if apply:
+        _keep_copy(lang_id, as_left, found)
     _report(lang_id, ss.url, found, apply)
+
+
+def _trimmed(grid: List[List[str]]) -> List[List[str]]:
+    """A tab's cells without trailing blank rows and trailing blank cells."""
+    rows = [list(r) for r in grid]
+    while rows and not any(c.strip() for c in rows[-1]):
+        rows.pop()
+    for r in rows:
+        while r and not r[-1].strip():
+            r.pop()
+    return rows
+
+
+def _keep_copy(lang_id: str, as_left: Dict[str, List[List[str]]],
+               found: Dict[str, Dict[str, List[str]]]) -> None:
+    """The proposal sheet's record (Phase 10 unit 16; plain-record-design
+    § 3.5): while the sheet holds a proposal, a copy of it as the annotator
+    left it; once it holds none (reviewed, or withdrawn), the copy goes, its
+    last version kept in the archive. accept-proposal's accepted changes are
+    in the sources' change log; its rejected ones are on the sheet's Last
+    review tab (and, from unit 16e, in the decisions log)."""
+    target = file_door.proposal_sheet_copy(lang_id)
+    if any(f["changes"] or f["conflicts"] for f in found.values()):
+        file_door.write(target, json.dumps(as_left, indent=2, ensure_ascii=False) + "\n",
+                        why="the proposal sheet as the annotator left it")
+    else:
+        file_door.remove(target, why="the proposal sheet holds no proposal")
 
 
 def _what_it_proposes(merge) -> Dict[str, List[str]]:

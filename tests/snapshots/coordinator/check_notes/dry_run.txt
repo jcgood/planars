@@ -9,10 +9,10 @@ Filing/updating issue for: Adam Tallman
   
   ### Araona [arao1248]
   
+  New or changed since the last report ([the whole notes Doc](https://docs.google.com/document/d/notes_doc_arao)):
+  
   Position 14 looks wrong to me — the stem boundary sits left of where
   the tone rule wants it. Also: is 'both' allowed for accented?
   
   ---
-  
-  ## Ready-to-paste Claude prompt
   ...
