@@ -931,7 +931,7 @@ class _DriveFile:
     # RFC 3339, as Drive returns it. Not captured by capture-drive-state, so
     # it is None unless a test sets it — and then get_file omits the field
     # entirely, which is what a real response does for a field never asked for.
-    # prune_manifest reads it to warn before archiving a recently-edited sheet;
+    # retire_classes reads it to warn before archiving a recently-edited sheet;
     # without it here that warning could not be exercised at all.
     modified_time: Optional[str] = None
     # Drive properties: the Drive door's identity labels.

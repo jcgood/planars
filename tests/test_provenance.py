@@ -74,11 +74,11 @@ def test_append_writes_adds_one_line_per_entry_across_calls():
     with drive_door.running("update-sheets", may_write=True):
         provenance.append_writes([{"command": "update-sheets", "tab": "general"},
                                   {"command": "update-sheets", "tab": "Status"}])
-        provenance.append_writes([{"command": "prune-manifest", "tab": None}])
+        provenance.append_writes([{"command": "retire-classes", "tab": None}])
     lines = [json.loads(l) for l in
              state_files.PROVENANCE_LOG.read_text(encoding="utf-8").splitlines()]
     assert [(l["command"], l["tab"]) for l in lines] == [
-        ("update-sheets", "general"), ("update-sheets", "Status"), ("prune-manifest", None)]
+        ("update-sheets", "general"), ("update-sheets", "Status"), ("retire-classes", None)]
 
 
 def test_append_writes_with_nothing_writes_nothing():

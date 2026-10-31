@@ -48,7 +48,7 @@ test's own temporary folder.
    columns allowed). Only mismatches the previous version did not already
    have are reported: older drift has its own issues (the Drive door's
    rule 6 works the same way). A class or construction the diagnostics file
-   doesn't list is not checked here (that is the ``stale-manifest`` issue);
+   doesn't list is not checked here (that is the ``stale-class-sheets`` issue);
 4. an annotation TSV loses no answered row (a row with any criterion,
    Source or Comments cell filled, matched by the schema's row key) unless
    the caller says why with ``drops=`` (the Drive door's ``replacing``).

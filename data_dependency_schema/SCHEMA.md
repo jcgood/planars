@@ -4,7 +4,7 @@ A small, machine-validatable pair of schemas for documenting planars' data-
 dependency graph: the same fact — a language's positional structure, which
 elements are in diagnostic scope, a span rule's semantics — often
 ends up recorded in more than one place: a live Google Sheet, a local TSV, a
-YAML schema file, a code comment, a Drive-ID manifest, even a GitHub issue's
+YAML schema file, a code comment, the file of Drive IDs, even a GitHub issue's
 comment history. Nothing in the codebase writes down, in one place, which
 copy is authoritative and how a change to one should (or shouldn't) reach the
 others.
@@ -78,7 +78,7 @@ inventing new terminology:
 | `construction_tsv` | `coded_data/{lang}/{class}/{construction}.tsv` — the local mirror of one construction's annotation data, imported from `annotation_sheet`. |
 | `schema_yaml` | One of the five project-wide `schemas/*.yaml` files (`diagnostic_classes`, `diagnostic_criteria`, `planar`, `terms`, `languages`) — hand-edited, normative, rarely regenerated. |
 | `derived_artifact` | Any regenerated, don't-hand-edit output: notebooks, PDF reports, rendered codebook markdown, `tests/snapshots/` baselines. |
-| `manifest` | `drive_config.json` (the ID file, read through `coding/drive_ids.py`) — the Drive-ID registry mapping languages/classes to spreadsheet/folder/doc IDs, the one home of those IDs. (The entity keeps its old name: until unit 11c-5, 2026-10-29, a copy of these IDs, `manifest.json`, also sat on Drive for the Colab notebooks, which now find their sheets by label.) |
+| `id_file` | `drive_config.json` (the ID file, read through `coding/drive_ids.py`) — the Drive-ID registry mapping languages/classes to spreadsheet/folder/doc IDs, the one home of those IDs. (Called `manifest` until 2026-10-30: until unit 11c-5, 2026-10-29, a copy of these IDs, `manifest.json`, also sat on Drive for the Colab notebooks, which now find their sheets by label.) |
 | `code_comment` | A fact encoded as a docstring or inline comment in a `planars/*.py` or `coding/*.py` module — e.g. a span rule's prose description, whose sync with the schema is checked via a hash sentinel. |
 | `github_issue` | A GitHub issue used as a durable coordination/state channel — per-language notification issues, proposal issues, drift issues. The fact's truth value literally lives in the issue's open/closed state or comment history. |
 | `filename_convention` | A fact encoded implicitly in a naming pattern — e.g. a language ID inferred from `planar_{lang_id}.tsv`; an archive file's datestamp suffix encoding when it was superseded. |
@@ -100,7 +100,7 @@ distinction that mattered on 2026-07-29, when it was also a download. (A
 third, `diagnostics_tsv`, a copy regenerated from `diagnostics_yaml`, was
 removed with the file on 2026-10-27.)
 
-`manifest`, `code_comment`, and `github_issue` each get their own entity
+`id_file`, `code_comment`, and `github_issue` each get their own entity
 rather than folding into `derived_artifact`, because none of them are
 actually "rebuild-from-source" outputs the way a notebook or snapshot is. The
 ID file is a standalone pointer table nothing else can regenerate from
@@ -271,7 +271,7 @@ original `fact_record.schema.json`, only the entity enum is planars-specific:
   nothing kept it true, and most entries had become history notes. A
   sequencing rule now lives where it is enforced: `--regen-construction`
   refuses to drop annotated rows (run `--split-element` first, or pass
-  `--confirm-drop`); `prune-manifest` warns that a rename needs
+  `--confirm-drop`); `retire-classes` warns that a rename needs
   `restructure-sheets --rename-class`.)*
 - **`modes`** — some commands genuinely behave differently by flag:
   `generate-sheets`' `--regen-construction` has no `--apply` gate at all and

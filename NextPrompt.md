@@ -212,9 +212,10 @@ TSV again (the 2026-10-28 refresh was green and no TSV came back).
 notebooks find their sheets by label, the manifest is gone. The 2026-10-30
 refresh was green, its `notebooks` step clean, no `door-violation`; its
 #331 (the test share on synth0001) was fixed after it ran and closes at
-the next refresh. **Next:** rename what still says "manifest" (the plan's
-"Left" bullet there: `prune-manifest`, `--check-manifest`, the
-`stale-manifest` label), then 16–18. The live tests' share to Jeff's
+the next refresh. The "manifest" names are renamed (2026-10-30;
+progress doc, Phase 10 row). **Next:** check the 2026-10-31 refresh
+(its `labels` step creates `stale-class-sheets`; its `stale sheets` step
+clean; no `label-drift`), then 16–18. The live tests' share to Jeff's
 second account came off the synth0001 folder and synth0001 was recaptured
 (2026-10-30, `migrations/remove_synth0001_test_share.py`). Q4 (notebooks shared
 by name only) is still open: test 1 ran with the link share on. Adam's
@@ -234,7 +235,7 @@ the `overwrite` step now says how many changes it checked) and enforce
 each kind in watch once it has had a clean real write (below). The
 2026-10-23 refresh was the first with the proposal step and the local-file
 door enforcing: both clean. Unit 9 is done (2026-10-23). 11c is done
-(2026-10-29); next the "manifest" renames, then 16–18.
+(2026-10-29), the "manifest" renames (2026-10-30); next 16–18.
 
 **Waits on watching:** enforce for each kind still in watch (planar
 Sheet, notes Docs, notebooks, reports, folders: its own first

@@ -313,10 +313,10 @@ class DriveDoorway(Protocol):
         """File metadata. ``fields`` is the raw Drive field mask.
 
         ``supports_all_drives`` reaches files on a shared drive rather than in
-        My Drive. Exactly one caller sets it (``prune_manifest``, reading a
+        My Drive. Exactly one caller sets it (``retire_classes``, reading a
         sheet's name and modified time), and it is carried through rather than
         dropped — even though nothing else in the codebase sends it, including
-        ``move_file``, which ``prune_manifest`` calls on the same file moments
+        ``move_file``, which ``retire_classes`` calls on the same file moments
         later. So a sheet on a shared drive can be read but not moved. That
         inconsistency is recorded, not resolved, here.
         """

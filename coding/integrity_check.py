@@ -33,9 +33,8 @@ Exit code 0 if no errors; 1 if any errors (warnings do not fail).
 Writes nothing. Drive is reached through the doorway, by two independent
 read-only entry points: --sheets (open each spreadsheet, list its tabs, read
 its header, comparing the tabs and criteria columns with the diagnostics YAML)
-and --check-manifest (the ID file and the YAML, no Drive calls; the name is
-older than the ID file, and the manifest it once read was deleted in unit
-11c-5).
+and --check-stale-sheets (the ID file and the YAML, no Drive calls; called
+--check-manifest until 2026-10-30).
 
 Usage:
     python -m coding integrity-check
@@ -43,7 +42,7 @@ Usage:
     python -m coding integrity-check --sheets
 
 Two fast standalone modes run one check only (used by the daily refresh):
-    python -m coding integrity-check --check-manifest    # class sheets whose class left diagnostics
+    python -m coding integrity-check --check-stale-sheets  # class sheets whose class left diagnostics
     python -m coding integrity-check --check-dependents  # stale dependent constructions
 """
 from __future__ import annotations
@@ -286,7 +285,7 @@ def _section_analysis(codebook: dict) -> Tuple[int, int]:
     return len(errs_req) + len(errs_keys), 0
 
 
-def _stale_manifest_classes(config: dict, lang_ids: List[str]) -> List[Tuple[str, str]]:
+def _stale_class_sheets(config: dict, lang_ids: List[str]) -> List[Tuple[str, str]]:
     """Return (lang_id, class_name) pairs recorded with a class sheet in the ID
     file (drive_config.json) but absent from the language's diagnostics YAML.
 
@@ -379,9 +378,9 @@ def _section_sheets(lang_ids: List[str]) -> Tuple[int, int]:
             continue
 
         # Check for retired classes still recorded (no Sheet API calls).
-        for _, stale_cls in _stale_manifest_classes(config, [lang_id]):
+        for _, stale_cls in _stale_class_sheets(config, [lang_id]):
             print(_warn(f"{lang} · {stale_cls}  —  in the ID file but not in diagnostics"))
-            print(_sub(f"→ run: python -m coding prune-manifest --apply"))
+            print(_sub(f"→ run: python -m coding retire-classes --apply"))
             total_w += 1
 
         # What each tab should hold comes from the diagnostics YAML.
@@ -866,11 +865,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Also check live Google Sheets structure (requires OAuth credentials)",
     )
     parser.add_argument(
-        "--check-manifest",
+        "--check-stale-sheets",
         action="store_true",
         help="Fast standalone check: flag classes recorded with a sheet in the ID file "
              "(drive_config.json) but absent from the diagnostics YAML. Reads only local "
-             "files; no Drive calls. Used by data-refresh (stale-manifest issue).",
+             "files; no Drive calls. Used by data-refresh (stale-class-sheets issue).",
     )
     parser.add_argument(
         "--check-dependents",
@@ -895,16 +894,16 @@ def main(args: argparse.Namespace | None = None) -> None:
             if d.is_dir() and not d.name.startswith(".")
         )
 
-    # --check-manifest: lightweight standalone mode, no Sheet API calls.
-    if args.check_manifest:
+    # --check-stale-sheets: lightweight standalone mode, no Sheet API calls.
+    if args.check_stale_sheets:
         from . import drive
         # A local file: one that can't be read is a real error, so it fails
         # the step (and its issue shows why) rather than being skipped.
         config = drive._load_drive_config()
-        stale = _stale_manifest_classes(config, lang_ids)
+        stale = _stale_class_sheets(config, lang_ids)
         if stale:
             print(f"CLASS SHEETS NOT IN DIAGNOSTICS ({len(stale)}) — "
-                  f"run python -m coding prune-manifest --apply to retire them:")
+                  f"run python -m coding retire-classes --apply to retire them:")
             for lang_id, cls in stale:
                 print(f"  {_lang_label(lang_id)} · {cls}")
             sys.exit(1)

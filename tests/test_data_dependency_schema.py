@@ -53,7 +53,7 @@ def test_facts_have_expected_ids():
         "collaborator_notes_surfaced_state",
         "status_sheet_completeness",
         "status_tab_problems",
-        "manifest_class_registration",
+        "class_sheet_registration",
         "sheet_dropdown_values",
         "construction_criterion_columns",
         "pair_row_position_numbers",

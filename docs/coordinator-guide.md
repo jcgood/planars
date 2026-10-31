@@ -622,7 +622,7 @@ python -m coding restructure-sheets --rename-class old1:new1 --rename-class old2
 
 For each renamed class, `--apply` archives the old spreadsheet, creates a new one under the new name with all annotations carried over, renames `coded_data/{lang}/{old}/` to `coded_data/{lang}/{new}/` in-place (preserving git history), and records the new sheet in the ID file.
 
-**Do NOT use `prune-manifest` for a rename** — it would discard annotation data. `prune-manifest` is for retiring a class entirely.
+**Do NOT use `retire-classes` for a rename** — it would discard annotation data. `retire-classes` is for retiring a class entirely.
 
 #### Renaming a construction
 
@@ -637,12 +637,12 @@ In every language that has it, `--apply` renames it in `diagnostics_{lang_id}.ya
 
 #### Retiring an analysis class
 
-Remove the class from `diagnostics_{lang_id}.yaml`, then run `prune-manifest` to clean up:
+Remove the class from `diagnostics_{lang_id}.yaml`, then run `retire-classes` to clean up (the daily refresh files a `stale-class-sheets` issue until you do):
 
 ```bash
-python -m coding prune-manifest                  # dry run — show what would be archived and removed
-python -m coding prune-manifest --apply          # archive TSVs and remove the sheets from the ID file
-python -m coding prune-manifest --apply --all    # same, skipping per-class confirmation prompts
+python -m coding retire-classes                  # dry run — show what would be archived and removed
+python -m coding retire-classes --apply          # archive TSVs and remove the sheets from the ID file
+python -m coding retire-classes --apply --all    # same, skipping per-class confirmation prompts
 ```
 
 For each retired class, `--apply`:
@@ -652,7 +652,7 @@ For each retired class, `--apply`:
 
 The Drive sheet is moved, not deleted — annotation data is irreplaceable. A warning is shown if the sheet was edited within the last 14 days (possible unapplied annotation work). If the move fails for any reason, a warning is printed and the sheet can be moved manually from Drive; the sheet is still removed from the ID file.
 
-If `prune-manifest` warns "this class contains annotation data — consider `--rename-class` instead", check whether the class was renamed rather than retired before proceeding.
+If `retire-classes` warns "this class contains annotation data — consider `--rename-class` instead", check whether the class was renamed rather than retired before proceeding.
 
 ### Sheet maintenance
 

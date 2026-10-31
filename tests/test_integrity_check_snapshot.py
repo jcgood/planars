@@ -5,7 +5,7 @@ File 14 of 18 migrated to the Drive doorway (#271). Its Drive footprint is
 confined to two independent, read-only entry points: `_section_sheets` (the
 `--sheets` flag, opening each language's class spreadsheets and comparing live
 tab titles/headers against the diagnostics YAML) and `main()`'s
-`--check-manifest` fast path (reads the ID file and the YAML only, no Drive
+`--check-stale-sheets` fast path (reads the ID file and the YAML only, no Drive
 calls at all -- used by the daily `data-refresh` workflow). Neither ever writes: this file only opens
 spreadsheets, lists worksheet titles, and reads header rows, reporting
 mismatches as printed warnings/errors. Every scenario below asserts
@@ -27,7 +27,7 @@ does not exist in the fake (exercising the `except Exception` around
 header has drifted from the manifest's `construction_params` (the
 `sync-params --apply` warning path), a stale `_split_` column (the specific
 remediation-text path), the plain run with no `--sheets` at all, and
-`--check-manifest` with a stale entry, with none, and with Drive unreachable.
+`--check-stale-sheets` with a stale entry, with none, and with Drive unreachable.
 stdout, exit codes, and the mutation logs (empty throughout) came back
 byte-identical in all ten -- except one deliberate, documented case: line
 ~439's `ss = _with_retry(lambda: gc.open_by_key(...))` becomes
@@ -157,10 +157,10 @@ def test_sheets_arao1248_transcript(env):
     check_snapshot("sheets_arao1248.txt", out)
 
 
-def test_check_manifest_clean_transcript(env):
+def test_check_stale_sheets_clean_transcript(env):
     _, run_main = env
-    out, _ = run_main(["integrity-check", "--check-manifest"])
-    check_snapshot("check_manifest_clean.txt", out)
+    out, _ = run_main(["integrity-check", "--check-stale-sheets"])
+    check_snapshot("check_stale_sheets_clean.txt", out)
 
 
 # ---------------------------------------------------------------------------
@@ -278,30 +278,30 @@ def test_no_sheets_flag_skips_the_section_and_touches_no_drive_calls(env):
 
 
 # ---------------------------------------------------------------------------
-# --check-manifest: stale entries, a clean manifest, and Drive unavailable
+# --check-stale-sheets: stale entries, none, and an unreadable ID file
 # ---------------------------------------------------------------------------
 
-def test_check_manifest_reports_stale_entries_and_exits_1(env):
+def test_check_stale_sheets_reports_stale_entries_and_exits_1(env):
     doorway, run_main = env
     run_main.config["arao1248"]["class_sheets"]["ghost_class"] = {
         "id": "does_not_matter", "version": 1}
 
-    out, exit_code = run_main(["integrity-check", "--check-manifest"])
+    out, exit_code = run_main(["integrity-check", "--check-stale-sheets"])
     assert "CLASS SHEETS NOT IN DIAGNOSTICS (1)" in out
     assert "ghost_class" in out
-    assert "python -m coding prune-manifest --apply" in out
+    assert "python -m coding retire-classes --apply" in out
     assert exit_code == 1
     assert doorway.mutations == []
 
 
-def test_check_manifest_clean_does_not_exit_nonzero(env):
+def test_check_stale_sheets_clean_does_not_exit_nonzero(env):
     _, run_main = env
-    out, exit_code = run_main(["integrity-check", "--check-manifest"])
+    out, exit_code = run_main(["integrity-check", "--check-stale-sheets"])
     assert "No class sheets recorded for classes absent from diagnostics." in out
     assert exit_code is None
 
 
-def test_check_manifest_fails_when_the_id_file_is_unreadable(env, monkeypatch):
+def test_check_stale_sheets_fails_when_the_id_file_is_unreadable(env, monkeypatch):
     """The ID file is a local file (unit 11c), so one that can't be read is a
     real error: the check fails, and the refresh's issue shows why, rather
     than skipping as it did when it read the manifest from Drive."""
@@ -312,7 +312,7 @@ def test_check_manifest_fails_when_the_id_file_is_unreadable(env, monkeypatch):
 
     monkeypatch.setattr(drive_module, "_load_drive_config", _boom)
     with pytest.raises(ValueError, match="drive_config.json"):
-        run_main(["integrity-check", "--check-manifest"])
+        run_main(["integrity-check", "--check-stale-sheets"])
     assert doorway.mutations == []
 
 

@@ -211,13 +211,23 @@ labels:
       planar changes.
     filed_by: sync-planar (data-refresh.yml)
 
-  - name: stale-manifest
+  - name: stale-class-sheets
     color: "E4E669"
-    description: "Filed when the ID file has class sheets absent from diagnostics YAML; run prune-manifest."
+    description: "Filed when the ID file has class sheets absent from diagnostics YAML; run retire-classes."
     meaning: >-
       Class sheets in the ID file have no matching class in `diagnostics_{lang}.yaml`.
-      Resolve: `prune-manifest --apply`. Auto-closed when clean.
+      Resolve: `retire-classes --apply`. Auto-closed when clean.
     filed_by: data-refresh.yml
+
+  - name: stale-manifest
+    color: "E4E669"
+    description: "Filed when the ID file has class sheets absent from diagnostics YAML; run retire-classes."
+    meaning: >-
+      What `stale-class-sheets` is now (#305 carries it).
+    filed_by: data-refresh.yml
+    retired: >-
+      2026-10-30: renamed stale-class-sheets, with prune-manifest (now
+      retire-classes), since the manifest was deleted in unit 11c-5
 
   - name: integrity-error
     color: "D93F0B"

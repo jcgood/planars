@@ -99,7 +99,7 @@ archived): public properties, which any coordinator's client can read. The
 kinds are ``KINDS``, and an ``Identity`` that doesn't fit one can't be made.
 Every create on the door takes ``identity=`` and writes the label;
 ``mark_archived`` is called where a class sheet is archived
-(``restructure_sheets._lock_archived_sheet``, ``prune_manifest._archive_drive_sheet``)
+(``restructure_sheets._lock_archived_sheet``, ``retire_classes._archive_drive_sheet``)
 and undone on rollback (``restructure_sheets._rollback_unit``). The door places a file from what this command made, else its
 label (read once per command); the files made before labels existed were
 labelled by ``migrations/label_drive_files.py``. Every kind has a spec

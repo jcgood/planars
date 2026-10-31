@@ -226,7 +226,7 @@ should make sense to someone who has never written a test.
   coordinator guide § "Updating a span rule". A snapshot diff in a
   commit is the expected record of how a change altered spans; a snapshot
   failure on a PR means output changed without going through the hook.
-- **Retiring a class is `prune-manifest`; renaming is
+- **Retiring a class is `retire-classes`; renaming is
   `restructure-sheets --rename-class`,** which carries annotations over.
 - **Releases** are archived on Zenodo, with the DOI in `CITATION.cff`.
 
@@ -354,7 +354,7 @@ least one label from the table below (`gh issue create --label …`).
 | `codebook-error` | data-refresh.yml | `check-codebook` found schema inconsistencies in the daily refresh (CI also runs the check on every push, but files nothing). Auto-closed when the check passes. |
 | `data-overwrite` | daily-refresh --apply (data-refresh.yml) | Today's refresh replaced a file whose last change, in the language's change log (`changes.tsv`), was made by a different command someone ran (a migration, restructure-sheets). The issue names each file and the archive copy holding the replaced version; compare it with the current file. Auto-closed when clean. |
 | `planar-changed` | sync-planar (data-refresh.yml) | A language's planar file changed since its planar Sheet was last updated (`sync-planar`, which also renumbers position numbers typed in answers). Resolve: run the command in the issue body (`update-sheets --apply` for additions, `restructure-sheets ... --apply` for moved, renamed or removed positions). Auto-closed when a later run finds no planar changes. |
-| `stale-manifest` | data-refresh.yml | Class sheets in the ID file have no matching class in `diagnostics_{lang}.yaml`. Resolve: `prune-manifest --apply`. Auto-closed when clean. |
+| `stale-class-sheets` | data-refresh.yml | Class sheets in the ID file have no matching class in `diagnostics_{lang}.yaml`. Resolve: `retire-classes --apply`. Auto-closed when clean. |
 | `integrity-error` | data-refresh.yml | `integrity-check` detected errors. Run `integrity-check` locally for details. Auto-closed when clean. |
 | `dependent-stale` | data-refresh.yml | A dependent construction (e.g. nonpermutability `general`) is out of sync with its source (e.g. `element_prescreening`). Resolve: `generate-sheets --lang LANG --regen-construction CLASS:CONSTRUCTION`. Auto-closed when in sync. |
 | `regen-dependents-error` | data-refresh.yml | `generate-sheets --regen-dependents` failed to regenerate a dependent tab (a real error, not `dependent-stale`, which needs a coordinator decision because annotation data already exists). Resolve: investigate the error, then re-run `generate-sheets --lang LANG_ID --regen-construction CLASS:CONSTRUCTION`. Auto-closed when clean. |

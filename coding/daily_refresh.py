@@ -529,10 +529,11 @@ def codebook(r: Refresh) -> None:
              lambda: codebook_error_body(result.output, prompts), "Codebook check passed")
 
 
-def stale_manifest(r: Refresh) -> None:
-    result = run("integrity-check", "--check-manifest")
-    r.report("stale-manifest", not result.ok, "Stale manifest entries detected",
-             lambda: result.output, "Stale manifest entries resolved")
+def stale_class_sheets(r: Refresh) -> None:
+    result = run("integrity-check", "--check-stale-sheets")
+    r.report("stale-class-sheets", not result.ok,
+             "Class sheets whose class left the diagnostics file",
+             lambda: result.output, "No class sheets left over from retired classes")
 
 
 def integrity(r: Refresh) -> None:
@@ -684,7 +685,7 @@ STEPS: List[Step] = [
          regen_dependents),
     Step("dependents", "integrity-check --check-dependents → dependent-stale", check_dependents),
     Step("codebook", "check-codebook (+ generate-rule-update-prompt) → codebook-error", codebook),
-    Step("manifest", "integrity-check --check-manifest → stale-manifest", stale_manifest),
+    Step("stale sheets", "integrity-check --check-stale-sheets → stale-class-sheets", stale_class_sheets),
     Step("integrity", "integrity-check → integrity-error", integrity),
     Step("chapters", "build-chapters --check --apply (files its own chapter-behind issues)",
          chapters),

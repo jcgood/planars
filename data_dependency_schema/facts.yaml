@@ -259,17 +259,17 @@
       its last lines; the run says which tabs it skipped.
     caught_by: "validate-coding prints a line for each sheet with no Status tab or no problems column."
 
-- id: manifest_class_registration
+- id: class_sheet_registration
   description: which analysis classes have a registered annotation spreadsheet for a language
   locations:
     - {entity: diagnostics_yaml, detail: "which classes are declared for the language"}
-    - {entity: manifest, detail: "drive_config.json (the ID file; read through coding/drive_ids.py) -- one class_sheets entry per class with a live spreadsheet"}
+    - {entity: id_file, detail: "drive_config.json (the ID file; read through coding/drive_ids.py) -- one class_sheets entry per class with a live spreadsheet"}
   authoritative: diagnostics_yaml
   cascade:
     direction: manual
     mechanism: >-
       A class removed from diagnostics_yaml leaves a stale class_sheets entry
-      in the ID file until a coordinator runs prune-manifest --apply
+      in the ID file until a coordinator runs retire-classes --apply
       (archives the TSVs, moves the Drive spreadsheet to _archived/, removes
       the sheet from the ID file). A class added to diagnostics_yaml needs
       generate-sheets to create the corresponding spreadsheet and ID-file
@@ -278,13 +278,13 @@
   drift_risk:
     possible: true
     note: >-
-      Retiring a class in diagnostics_yaml without running prune-manifest
+      Retiring a class in diagnostics_yaml without running retire-classes
       leaves data-refresh.yml re-importing (and re-checking) a Sheet nobody
       intends to keep using, indefinitely.
     caught_by: >-
-      integrity-check's stale class-sheet check (_stale_manifest_classes),
+      integrity-check's stale class-sheet check (_stale_class_sheets),
       run in the default per-language section and daily via data-refresh.yml,
-      filed as stale-manifest.
+      filed as stale-class-sheets.
 
 - id: sheet_dropdown_values
   description: >-
@@ -389,7 +389,7 @@
     replayed by the fake Drive backend in tests
   locations:
     - {entity: annotation_sheet, detail: "the live spreadsheets themselves -- the only real state"}
-    - {entity: manifest, detail: "drive_config.json (the ID file: Drive-ID bookkeeping for every language/class)"}
+    - {entity: id_file, detail: "drive_config.json (the ID file: Drive-ID bookkeeping for every language/class)"}
     - {entity: test_fixture, detail: "coded_data/.test_fixtures/drive_state/{lang}/*.json and id_file.json, written by capture-drive-state --apply, together with the frozen local folders in coded_data/.test_fixtures/coded_data/{lang}/. In planars-data (private), since it is real annotation content"}
   authoritative: annotation_sheet
   cascade:

@@ -108,7 +108,7 @@ After `--apply`, for each language whose sheets actually changed:
 
 Archived sheets: `_lock_archived_sheet` sets the annotator's grant to reader
 (`drive.set_user_role`) and removes any link share; `_rollback_unit` undoes only
-that one grant. To retire a class rather than rename it, use `prune-manifest`
+that one grant. To retire a class rather than rename it, use `retire-classes`
 (which removes the class from the ID file).
 The Drive door retries every call and checks the writes.
 

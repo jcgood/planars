@@ -14,7 +14,7 @@
     - "sync_params.py (sync-params --apply)"
     - "generate_sheets.py (--regen-dependents)"
     - "restructure_sheets.py (restructure-sheets --apply)"
-    - "prune_manifest.py (prune-manifest --apply)"
+    - "retire_classes.py (retire-classes --apply)"
     - "sync_diagnostics_yaml.py (sync-diagnostics-yaml --apply)"
     - "daily_refresh.py (daily-refresh --apply, before its first step)"
   enforced_by: >-
@@ -32,7 +32,8 @@
   established: >-
     2026-07-29, after the #248 stray-row incident. Previously only
     import_sheets.py had this guard; centralized into drive.py and wired
-    into the other three commands the same day. prune_manifest.py and
+    into the other three commands the same day. prune_manifest.py (now
+    retire_classes.py) and
     sync_diagnostics_yaml.py both added 2026-08-11 -- both found missing
     (the former archives local TSVs out of coded_data/, the latter reads
     the YAML as ground truth for all three of its directions and writes

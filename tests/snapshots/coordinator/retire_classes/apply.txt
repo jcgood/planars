@@ -7,12 +7,12 @@ Stale class sheets found in the ID file:
     WARNING: stress/ contains annotation data.
     If this class was renamed rather than retired, use:
       python -m coding restructure-sheets --rename-class stress:NEW_NAME --apply
-    instead of pruning it (--rename-class preserves annotations under the new name).
+    instead of retiring it (--rename-class preserves annotations under the new name).
     would move Drive sheet → _archived/  (https://docs.google.com/spreadsheets/d/retired_sheet_id)
     would remove from the ID file: stan1293/stress
 
   stan1293:
-    Prune 'stress' from stan1293? [y/N] y
+    Retire 'stress' from stan1293? [y/N] y
     archived: general.tsv → archive/stress/
     archived: stress_domain.tsv → archive/stress/
     archived Drive sheet: 'stress_stan1293' → _archived/

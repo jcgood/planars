@@ -1,4 +1,4 @@
-"""Snapshot tests for `python -m coding prune-manifest`, run against the fake.
+"""Snapshot tests for `python -m coding retire-classes`, run against the fake.
 
 File 5 of 17 migrated to the Drive doorway, and the first that moves anything
 in Drive — though only sheets for classes already retired, and it moves them
@@ -18,7 +18,7 @@ recorded Drive changes came back byte-identical afterwards.
 `CODED_DATA` is redirected into a temp tree in every test. This command
 deletes local TSVs, and must never run against the real `coded_data/`.
 
-Regenerate: `PLANARS_UPDATE_SNAPSHOTS=1 pytest tests/test_prune_manifest_snapshot.py`
+Regenerate: `PLANARS_UPDATE_SNAPSHOTS=1 pytest tests/test_retire_classes_snapshot.py`
 """
 from __future__ import annotations
 
@@ -37,13 +37,13 @@ from typing import Dict, List
 import pytest
 
 from coding import drive as drive_module
-from coding import drive_door, drive_doorway, drive_ids, prune_manifest
+from coding import drive_door, drive_doorway, drive_ids, retire_classes
 from command_runner import run_command
 from fake_drive import (FROZEN_CODED_DATA, ROOT_FOLDER_ID, point_coded_data_at,
                         FakeDriveDoorway, api_error)
 
 ROOT = Path(__file__).resolve().parent.parent
-SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "prune_manifest"
+SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "retire_classes"
 UPDATING = os.environ.get("PLANARS_UPDATE_SNAPSHOTS") == "1"
 
 LANG = "stan1293"
@@ -94,7 +94,7 @@ def env(monkeypatch, tmp_path):
             setup / f"diagnostics_{lang}.yaml")
 
     point_coded_data_at(monkeypatch, coded)
-    monkeypatch.setattr(prune_manifest, "ROOT", tmp_path)
+    monkeypatch.setattr(retire_classes, "ROOT", tmp_path)
     # The real drive_config.json holds live IDs; a test must never write it.
     # `id_file` stands in for it: the command loads a copy and saves it back.
     def load_id_file() -> dict:
@@ -104,8 +104,8 @@ def env(monkeypatch, tmp_path):
         id_file.saves += 1
         id_file.clear()
         id_file.update(copy.deepcopy(config))
-    monkeypatch.setattr(prune_manifest, "_load_drive_config", load_id_file)
-    monkeypatch.setattr(prune_manifest, "_save_drive_config", save_id_file)
+    monkeypatch.setattr(retire_classes, "_load_drive_config", load_id_file)
+    monkeypatch.setattr(retire_classes, "_save_drive_config", save_id_file)
     monkeypatch.setattr(drive_module, "_load_drive_config", load_id_file)
     drive_doorway.set_doorway(doorway)
 
@@ -124,7 +124,7 @@ def env(monkeypatch, tmp_path):
         monkeypatch.setattr(sys, "argv", argv)
         buf = io.StringIO()
         with redirect_stdout(buf):
-            run_command(prune_manifest, "prune-manifest")
+            run_command(retire_classes, "retire-classes")
         # Archive filenames carry a wall-clock stamp.
         return re.sub(r"\d{8}_\d{6}", "TIMESTAMP", buf.getvalue())
 
@@ -174,17 +174,17 @@ def archived_tsvs(coded: Path) -> List[str]:
 
 def test_dry_run_transcript(env):
     _, run, _, _ = env
-    check_snapshot("dry_run.txt", run(["prune-manifest"]))
+    check_snapshot("dry_run.txt", run(["retire-classes"]))
 
 
 def test_apply_transcript(env):
     _, run, _, _ = env
-    check_snapshot("apply.txt", run(["prune-manifest", "--apply"], ["y"]))
+    check_snapshot("apply.txt", run(["retire-classes", "--apply"], ["y"]))
 
 
 # coded_data_clean_tree (coded_data/ must be clean before --apply archives
 # anything out of it) is enforced centrally at the python -m coding
-# dispatch chokepoint now, not inside prune_manifest.main() itself -- see
+# dispatch chokepoint now, not inside retire_classes.main() itself -- see
 # coding/preconditions.py and tests/test_preconditions.py, which cover this
 # command's gating directly against the real operations.yaml record.
 
@@ -195,7 +195,7 @@ def test_apply_transcript(env):
 
 def test_dry_run_changes_nothing_anywhere(env):
     doorway, run, coded, id_file = env
-    run(["prune-manifest"])
+    run(["retire-classes"])
     assert doorway.mutations == []
     assert active_tsvs(coded) == ["general.tsv", "stress_domain.tsv"]
     assert archived_tsvs(coded) == []
@@ -206,7 +206,7 @@ def test_dry_run_changes_nothing_anywhere(env):
 def test_dry_run_says_the_sheet_would_move_without_reading_it(env):
     """It quotes the sheet's URL (built from the ID file) rather than asking Drive for the name."""
     doorway, run, _, _ = env
-    out = run(["prune-manifest"])
+    out = run(["retire-classes"])
     assert f"would move Drive sheet → _archived/  (https://docs.google.com/spreadsheets/d/{SHEET_ID})" in out
 
 
@@ -216,7 +216,7 @@ def test_dry_run_says_the_sheet_would_move_without_reading_it(env):
 
 def test_local_tsvs_are_archived_not_deleted(env):
     doorway, run, coded, _ = env
-    run(["prune-manifest", "--apply"], ["y"])
+    run(["retire-classes", "--apply"], ["y"])
     assert active_tsvs(coded) == []
     assert not (coded / LANG / RETIRED).exists()      # empty directory tidied away
     assert len(archived_tsvs(coded)) == 2
@@ -225,7 +225,7 @@ def test_local_tsvs_are_archived_not_deleted(env):
 
 def test_the_drive_sheet_is_moved_into_archived_not_removed(env):
     doorway, run, _, _ = env
-    run(["prune-manifest", "--apply"], ["y"])
+    run(["retire-classes", "--apply"], ["y"])
     created = doorway.mutations_of("create_file")
     assert [c["name"] for c in created] == ["_archived"]
     moved = doorway.mutations_of("move_file")
@@ -241,7 +241,7 @@ def test_the_retired_class_leaves_the_id_file_and_is_labelled_archived(env):
     it out by its archived label (planars.from_sheets)."""
     doorway, run, _, id_file = env
     before = set(sheets_of(id_file))
-    run(["prune-manifest", "--apply"], ["y"])
+    run(["retire-classes", "--apply"], ["y"])
     after = set(sheets_of(id_file))
     assert RETIRED in before and RETIRED not in after
     # And nothing else was dropped along the way.
@@ -257,7 +257,7 @@ def test_the_retired_class_leaves_the_id_file_and_is_labelled_archived(env):
 
 def test_declining_leaves_everything_as_it_was(env):
     doorway, run, coded, id_file = env
-    out = run(["prune-manifest", "--apply"], ["n"])
+    out = run(["retire-classes", "--apply"], ["n"])
     assert "Skipped stress." in out
     assert "No changes made (all classes skipped)." in out
     assert doorway.mutations == []
@@ -268,7 +268,7 @@ def test_declining_leaves_everything_as_it_was(env):
 
 def test_all_skips_the_prompt(env):
     doorway, run, coded, id_file = env
-    run(["prune-manifest", "--apply", "--all"], answers=[])   # a prompt would raise
+    run(["retire-classes", "--apply", "--all"], answers=[])   # a prompt would raise
     assert active_tsvs(coded) == []
     assert RETIRED not in sheets_of(id_file)
 
@@ -280,14 +280,14 @@ def test_all_skips_the_prompt(env):
 def test_a_recently_edited_sheet_is_flagged_before_it_is_archived(env):
     doorway, run, _, _ = env
     doorway.file(SHEET_ID).modified_time = _recently(2)
-    out = run(["prune-manifest", "--apply"], ["y"])
+    out = run(["retire-classes", "--apply"], ["y"])
     assert "was edited 2 day(s) ago" in out
     assert "check for unapplied annotation work" in out
 
 
 def test_a_long_untouched_sheet_is_not_flagged(env):
     doorway, run, _, _ = env
-    out = run(["prune-manifest", "--apply"], ["y"])
+    out = run(["retire-classes", "--apply"], ["y"])
     assert "day(s) ago" not in out
 
 
@@ -295,7 +295,7 @@ def test_the_dry_run_flags_it_too(env):
     """The dry run is where the decision gets made, so it has to say this."""
     doorway, run, _, _ = env
     doorway.file(SHEET_ID).modified_time = _recently(3)
-    out = run(["prune-manifest"], answers=[])
+    out = run(["retire-classes"], answers=[])
     assert "was edited 3 day(s) ago" in out
 
 
@@ -308,10 +308,10 @@ def test_the_warning_comes_before_the_prompt_it_should_inform(env):
     """
     doorway, run, coded, id_file = env
     doorway.file(SHEET_ID).modified_time = _recently(1)
-    out = run(["prune-manifest", "--apply"], ["y"])
+    out = run(["retire-classes", "--apply"], ["y"])
 
     warning = out.index("was edited 1 day(s) ago")
-    prompt = out.index(f"Prune '{RETIRED}' from")
+    prompt = out.index(f"Retire '{RETIRED}' from")
     assert warning < prompt, "the warning has to come first to be worth printing"
     assert active_tsvs(coded) == []
     assert RETIRED not in sheets_of(id_file)
@@ -330,7 +330,7 @@ def test_an_unreadable_sheet_is_reported_and_the_move_is_skipped(env, monkeypatc
         raise api_error(403, "no", "PERMISSION_DENIED")
 
     monkeypatch.setattr(doorway, "get_file", refuse)
-    out = run(["prune-manifest", "--apply"], ["y"])
+    out = run(["retire-classes", "--apply"], ["y"])
     assert "could not read sheet metadata" in out
     assert doorway.mutations_of("move_file") == []
     # The ID file entry goes anyway, which is worth knowing: the sheet stays
@@ -342,8 +342,8 @@ def test_nothing_stale_does_nothing(env, monkeypatch):
     doorway, run, coded, id_file = env
     drive_ids.remove_class_sheet(id_file, LANG, RETIRED)
     shutil.rmtree(coded / LANG / RETIRED)
-    out = run(["prune-manifest", "--apply", "--all"])
-    assert "nothing to prune" in out
+    out = run(["retire-classes", "--apply", "--all"])
+    assert "nothing to retire" in out
     assert doorway.mutations == []
 
 
@@ -374,7 +374,7 @@ def test_a_transient_429_during_archiving_is_retried_not_a_crash(env, monkeypatc
     doorway, run, coded, id_file = env
     monkeypatch.setattr("coding.drive_door.time.sleep", lambda *a, **kw: None)
     doorway.fail_after("move_file", 1, exc=api_error(429, "rate limited"))
-    out = run(["prune-manifest", "--apply"], ["y"])
+    out = run(["retire-classes", "--apply"], ["y"])
     assert "[SystemExit:" not in out
     assert "archived Drive sheet" in out
     assert RETIRED not in sheets_of(id_file)
@@ -382,12 +382,12 @@ def test_a_transient_429_during_archiving_is_retried_not_a_crash(env, monkeypatc
 
 def test_a_second_apply_after_a_real_prune_reprocesses_nothing(env):
     doorway, run, coded, _ = env
-    run(["prune-manifest", "--apply"], ["y"])  # the real prune
+    run(["retire-classes", "--apply"], ["y"])  # the real prune
 
     doorway.clear_mutations()
-    out = run(["prune-manifest", "--apply", "--all"])
+    out = run(["retire-classes", "--apply", "--all"])
 
-    assert "nothing to prune" in out
+    assert "nothing to retire" in out
     assert doorway.mutations == []
     # Still archived from the first run, not re-touched by the second --
     # archived filenames carry a wall-clock stamp, so compare stems only.

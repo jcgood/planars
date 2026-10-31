@@ -7,7 +7,7 @@
 # There is no ordering_constraints field any more (removed 2026-10-12, Phase
 # 10 unit 7): it only described the code, so nothing kept it true. The rules
 # that matter are enforced where they apply (--regen-construction's drop
-# guard, prune-manifest's rename warning, generate-sheets' lookup-lang
+# guard, retire-classes' rename warning, generate-sheets' lookup-lang
 # warning) or made moot by the daily refresh.
 #
 # Drafted 2026-08-10; every record traced against actual coding/*.py source
@@ -86,7 +86,7 @@
   facts_touched:
     - {fact: planar_sheet_structure, role: reads}
     - {fact: diagnostics_scope, role: reads}
-    - {fact: manifest_class_registration, role: writes}
+    - {fact: class_sheet_registration, role: writes}
     - {fact: pair_row_construction_set, role: writes}
     - {fact: languages_metadata, role: writes}
   cascades_triggered:
@@ -670,7 +670,7 @@
   apply_gate: null
   preconditions: []
   facts_touched:
-    - {fact: manifest_class_registration, role: reads}
+    - {fact: class_sheet_registration, role: reads}
     - {fact: construction_criterion_columns, role: reads}
     - {fact: pair_row_position_numbers, role: reads}
     - {fact: dependent_construction_element_scope, role: reads}
@@ -722,13 +722,13 @@
   cascades_triggered: []
   modes: []
 
-- id: prune_manifest
-  cli_command: prune-manifest
+- id: retire_classes
+  cli_command: retire-classes
   writes_to_drive: true
   writes_locally: true
   description: >-
-    Removes a retired class's sheet from the ID file (the command keeps its
-    old name), archives its local TSVs, and moves its Drive spreadsheet to
+    Removes a retired class's sheet from the ID file (called prune-manifest
+    until 2026-10-30), archives its local TSVs, and moves its Drive spreadsheet to
     _archived/, labelled archived (so the Colab notebooks leave it out);
     warns if the sheet was edited within 14 days.
   side_effects:
@@ -758,7 +758,7 @@
   apply_gate: "--apply"
   preconditions: [coded_data_clean_tree, coded_data_git_identity_configured]
   facts_touched:
-    - {fact: manifest_class_registration, role: writes}
+    - {fact: class_sheet_registration, role: writes}
   cascades_triggered: []
   modes: []
 
@@ -790,7 +790,7 @@
   preconditions: [coded_data_clean_tree, coded_data_git_identity_configured, coded_data_up_to_date]
   facts_touched:
     - {fact: diagnostics_scope, role: writes}
-    - {fact: manifest_class_registration, role: writes}
+    - {fact: class_sheet_registration, role: writes}
   cascades_triggered: []
   modes: []
 
@@ -1092,7 +1092,7 @@
     checked by the Drive door under its own record.
   side_effects:
     - "runs sync-planar, import-sheets, check-notes, check-comments, sync-diagnostics-yaml, proposal-sheets, sync-params, generate-sheets --regen-dependents, update-sheets and generate-status-sheet with --apply, each with its own side effects (proposal-sheets files and closes the proposal issues itself)"
-    - "files, updates or closes the daily issues (planar-changed, import-error, diagnostics-yaml-error, regen-dependents-error, dependent-stale, codebook-error, stale-manifest, integrity-error, data-overwrite, sheet-drift, status-sheet-error)"
+    - "files, updates or closes the daily issues (planar-changed, import-error, diagnostics-yaml-error, regen-dependents-error, dependent-stale, codebook-error, stale-class-sheets, integrity-error, data-overwrite, sheet-drift, status-sheet-error)"
     - "files an audit issue when none is open and none has closed in 30 days"
     - "each command it runs commits and pushes what it wrote in coded_data/ (planars-data) when it ends, through the local-file door"
     - "regenerates tests/snapshots/ and commits and pushes it to planars"

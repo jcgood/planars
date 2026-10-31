@@ -56,7 +56,7 @@ _COMMANDS = {
     "integrity-check":             "coding.integrity_check",
     "setup-root-folder":           "coding.setup_root_folder",
     "lookup-lang":                 "coding.glottolog",
-    "prune-manifest":              "coding.prune_manifest",
+    "retire-classes":              "coding.retire_classes",
     "rename-construction":         "coding.rename_construction",
     "check-notes":                 "coding.check_notes",
     "check-comments":              "coding.check_comments",

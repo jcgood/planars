@@ -87,7 +87,7 @@ def test_sync_diagnostics_yaml_dry_run_has_no_precondition():
 
 
 # ---------------------------------------------------------------------------
-# import-sheets / prune-manifest / update-sheets: a plain --apply gate, no
+# import-sheets / retire-classes / update-sheets: a plain --apply gate, no
 # modes. update-sheets writes no local file, so coded_data_clean_tree is its
 # only declared precondition; the two that write also declare
 # coded_data_git_identity_configured, as restructure-sheets does (no central
@@ -95,14 +95,14 @@ def test_sync_diagnostics_yaml_dry_run_has_no_precondition():
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("op_id, expected", [
-    ("import_sheets", _WRITES), ("prune_manifest", _WRITES),
+    ("import_sheets", _WRITES), ("retire_classes", _WRITES),
     ("update_sheets", ["coded_data_clean_tree"]),
 ])
 def test_apply_only_commands_require_clean_tree_on_apply(op_id, expected):
     assert preconditions.active_preconditions(op_id, _ns(apply=True)) == expected
 
 
-@pytest.mark.parametrize("op_id", ["import_sheets", "prune_manifest", "update_sheets"])
+@pytest.mark.parametrize("op_id", ["import_sheets", "retire_classes", "update_sheets"])
 def test_apply_only_commands_have_no_precondition_on_dry_run(op_id):
     assert preconditions.active_preconditions(op_id, _ns(apply=False)) == []
 

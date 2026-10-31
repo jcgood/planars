@@ -17,7 +17,7 @@ Sharing: project data is shared with named people only. Helpers (all take the
 doorway): ``ensure_user_permission`` (at least ``role``), ``set_user_role``
 (exactly ``role``, up or down), ``remove_anyone_permission`` (a link share),
 ``make_read_only`` (link share removed, every named editor lowered to reader;
-prune-manifest's). Generated notebooks and PDF reports are the one exception
+retire-classes's). Generated notebooks and PDF reports are the one exception
 and keep "anyone with the link": ``ensure_anyone_permission`` and
 ``create_or_update_shared_file`` (used by generate_notebooks.py and
 generate_reports.py). Other shared helpers: ``get_or_create_spreadsheet``
@@ -252,7 +252,7 @@ def set_user_role(doorway, file_id: str, email: str, role: str) -> bool:
 def make_read_only(doorway, file_id: str) -> List[str]:
     """Leave file_id readable but editable by nobody except its owner: remove
     any link share, and lower every named person's own grant to reader.
-    Returns the addresses lowered. For a retired sheet (prune-manifest),
+    Returns the addresses lowered. For a retired sheet (retire-classes),
     which no one should keep answering in by habit."""
     remove_anyone_permission(doorway, file_id)
     perms = doorway.list_permissions(

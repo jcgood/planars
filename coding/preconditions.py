@@ -6,7 +6,7 @@ by hand at the top of its --apply path — a separate, hand-written call per
 file, easy to add for one mode and forget for the next. That exact gap
 happened twice (Findings 23/24 in docs/data-layer-progress.md): a command's
 operations.yaml record already declared coded_data_clean_tree as a
-precondition while the code never actually checked it, for prune-manifest
+precondition while the code never actually checked it, for retire-classes (then prune-manifest)
 and sync-diagnostics-yaml respectively — caught only because Phase 4's
 review traced every claim against the code by hand.
 

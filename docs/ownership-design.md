@@ -501,6 +501,11 @@ the same commit.
      and the `manifest` entity in `data_dependency_schema`. Renaming a
      command and a live label is its own unit (docs, workflow, the label on
      GitHub through the registry); planned next, before 16–18.
+     *Done 2026-10-30:* `retire-classes`, `--check-stale-sheets`, the
+     `stale-class-sheets` label (the old one stays registered as retired,
+     since #305 carries it; a rename would leave it unregistered on that
+     issue and file `label-drift`), and the `id_file` entity (fact
+     `class_sheet_registration`). The refresh step is `stale sheets`.
 8. **11d — the Instructions sentences into the schema.** *Built
    2026-10-28:* planar.yaml's `sheet_text`, read through
    `coding.schemas.sheet_text`. As built: progress doc, Phase 10 row.

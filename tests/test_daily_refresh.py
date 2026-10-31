@@ -96,7 +96,7 @@ def test_a_clean_run_runs_every_command_in_order_and_closes_every_issue(refresh_
         "generate-sheets --regen-dependents",
         "integrity-check --check-dependents",
         "check-codebook",
-        "integrity-check --check-manifest",
+        "integrity-check --check-stale-sheets",
         "integrity-check",
         "build-chapters --check --apply",
         "sync-overleaf --apply",

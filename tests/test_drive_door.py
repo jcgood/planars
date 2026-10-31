@@ -911,7 +911,7 @@ def test_an_unlabelled_sheet_cannot_be_marked_archived(env):
     file was labelled): a sheet with no label is one the door can't name."""
     fake, door, sheet_id, _ = env
     fake.file(sheet_id).properties.clear()
-    with drive_door.running("prune-manifest", APPLY), \
+    with drive_door.running("retire-classes", APPLY), \
             pytest.raises(DoorViolation, match="has no label"):
         door.mark_archived(sheet_id)
     assert fake.file(sheet_id).properties == {}

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Retire analysis classes: remove them from the ID file and archive their TSVs and sheets.
 
-(The command keeps its old name, prune-manifest; what it prunes is the ID file's
-list of class sheets. The manifest it once pruned was deleted in unit 11c-5.)
+(Called prune-manifest until 2026-10-30, after the manifest it once pruned,
+deleted in unit 11c-5.)
 
 When an analysis class is removed from diagnostics_{lang_id}.yaml (and the TSV regenerated
 via `sync-diagnostics-yaml --apply`), the ID file (drive_config.json) retains the stale
@@ -10,9 +10,9 @@ class sheet indefinitely. This causes import-sheets to keep downloading the old 
 writing TSVs to the retired class directory.
 
 Run from the repo root:
-    python -m coding prune-manifest           # dry run — show what would change
-    python -m coding prune-manifest --apply   # archive TSVs, move Drive sheet, remove it from the ID file
-    python -m coding prune-manifest --apply --all  # skip per-class confirmation prompts
+    python -m coding retire-classes           # dry run — show what would change
+    python -m coding retire-classes --apply   # archive TSVs, move Drive sheet, remove it from the ID file
+    python -m coding retire-classes --apply --all  # skip per-class confirmation prompts
 
 For each stale class (a class sheet in the ID file but not in diagnostics_{lang_id}.yaml),
 --apply will:
@@ -83,7 +83,7 @@ def _sheet_metadata(doorway, spreadsheet_id: str, class_name: str) -> Optional[D
     "edited N days ago" warning below is the only thing standing between a
     coordinator and archiving a sheet somebody is still annotating, and until
     2026-08-02 it was read in apply mode only — which meant it printed after
-    the "Prune 'X'? [y/N]" it should have informed. See issue #277.
+    the "Retire 'X'? [y/N]" it should have informed. See issue #277.
     """
     if spreadsheet_id in _SHEET_META:
         return _SHEET_META[spreadsheet_id]
@@ -183,7 +183,7 @@ def _active_classes(lang_id: str) -> set[str]:
     if not yaml_path.exists():
         raise SystemExit(
             f"ERROR: {lang_id} has sheets in the ID file but no {yaml_path.name} in "
-            f"coded_data/{lang_id}/lang_setup/, so prune-manifest can't tell which "
+            f"coded_data/{lang_id}/lang_setup/, so retire-classes can't tell which "
             f"classes are active. Pull planars-data (git -C coded_data pull) or restore "
             f"the file from its history, then re-run.")
     with open(yaml_path, encoding="utf-8") as f:
@@ -211,7 +211,7 @@ def _find_stale(config: dict) -> Dict[str, List[str]]:
 # ---------------------------------------------------------------------------
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the argument parser for `python -m coding prune-manifest`."""
+    """Build the argument parser for `python -m coding retire-classes`."""
     ap = argparse.ArgumentParser(
         description="Archive retired class TSVs and sheets and remove them from the ID file."
     )
@@ -227,7 +227,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(args: argparse.Namespace | None = None) -> None:
-    """Entry point for `python -m coding prune-manifest`."""
+    """Entry point for `python -m coding retire-classes`."""
     if args is None:
         args = build_parser().parse_args()
     apply = args.apply
@@ -245,7 +245,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     stale_map = _find_stale(config)
 
     if not stale_map:
-        print("Every class sheet in the ID file matches active diagnostics — nothing to prune.")
+        print("Every class sheet in the ID file matches active diagnostics — nothing to retire.")
         return
 
     # Always show dry-run summary; warn if annotation data exists (possible rename)
@@ -262,7 +262,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                     f"    WARNING: {class_name}/ contains annotation data.\n"
                     f"    If this class was renamed rather than retired, use:\n"
                     f"      python -m coding restructure-sheets --rename-class {class_name}:NEW_NAME --apply\n"
-                    f"    instead of pruning it (--rename-class preserves annotations under the new name)."
+                    f"    instead of retiring it (--rename-class preserves annotations under the new name)."
                 )
             else:
                 print(f"    no local TSVs for {class_name}/")
@@ -281,7 +281,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         for class_name in stale_classes:
             # Per-class confirmation unless --all
             if not skip_prompts:
-                resp = input(f"    Prune '{class_name}' from {lang_id}? [y/N] ").strip().lower()
+                resp = input(f"    Retire '{class_name}' from {lang_id}? [y/N] ").strip().lower()
                 if resp != "y":
                     print(f"    Skipped {class_name}.")
                     continue
@@ -291,7 +291,7 @@ def main(args: argparse.Namespace | None = None) -> None:
             # emptied class folder, and commits when the command ends.
             tsvs = file_door.annotation_files(lang_id, class_name)
             for tsv in tsvs:
-                file_door.remove(tsv, why=f"class {class_name} retired (prune-manifest)")
+                file_door.remove(tsv, why=f"class {class_name} retired (retire-classes)")
                 print(f"    archived: {tsv.name} → archive/{class_name}/")
 
             if not tsvs:

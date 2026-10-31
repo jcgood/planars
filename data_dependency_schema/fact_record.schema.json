@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.org/planars/data_dependency_schema/fact_record.schema.json",
   "title": "planars data dependency fact record list",
-  "description": "A list of fact records documenting planars' data-dependency graph -- every case where the same fact is recorded in more than one place (a Drive Sheet, a local TSV, a schema YAML, a manifest, a GitHub issue, ...) and needs an explicit authority/cascade relationship written down. See SCHEMA.md for the full field-by-field specification and rationale.",
+  "description": "A list of fact records documenting planars' data-dependency graph -- every case where the same fact is recorded in more than one place (a Drive Sheet, a local TSV, a schema YAML, the Drive ID file, a GitHub issue, ...) and needs an explicit authority/cascade relationship written down. See SCHEMA.md for the full field-by-field specification and rationale.",
   "type": "array",
   "items": { "$ref": "#/$defs/factRecord" },
   "$defs": {
@@ -19,7 +19,7 @@
         "construction_tsv",
         "schema_yaml",
         "derived_artifact",
-        "manifest",
+        "id_file",
         "code_comment",
         "github_issue",
         "filename_convention",

@@ -38,7 +38,7 @@ Run: 2026-10-13, in this order:
     python -m coding generate-sheets --lang stan1293 --apply
     python migrations/move_biuniqueness_to_stan1293.py copy --apply
     (remove the class from diagnostics_synth0001.yaml, sync it the same way)
-    python -m coding prune-manifest --apply
+    python -m coding retire-classes --apply   (called prune-manifest then)
     python migrations/move_biuniqueness_to_stan1293.py lock --apply
 
 Usage (each step dry-runs without --apply):
