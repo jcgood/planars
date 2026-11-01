@@ -85,7 +85,8 @@ class (what it tests, its criteria, its span rule).
 in ``.papers/``. For each language chapter in volume.yaml that has been
 built, it builds the chapter again at its pin and compares that with what
 is written (the code's changes: values and fragments), and today's data
-with the pin (the annotation's), and finds the ``\\claim``s that fail now
+with the pin (the annotation's: values and fragments, since a fragment's
+text can change with no value changing), and finds the ``\\claim``s that fail now
 or would fail after a move. When any of that touches the chapter (see
 ``VALUE_GROUPS``: how complete the annotation is, on its own, does not),
 ``--apply`` files or rewrites that chapter's ``chapter-behind`` issue,
@@ -682,6 +683,11 @@ def check_chapter(lang: str, parts: list) -> dict | None:
     files = sorted(name for name in set(fragments) | written
                    if file_door.read_paper(file_door.paper_built(f"{lang}/fragments/{name}"))
                    != fragments.get(name))
+    # The annotation can change a fragment's text without changing any
+    # value (a table's wording, an example), so fragments are compared too.
+    current_fragments = language_fragments(current)
+    data_files = sorted(name for name in set(fragments) | set(current_fragments)
+                        if fragments.get(name) != current_fragments.get(name))
     entries = _class_entries()
     items = outline_items("language", [(c, entries[c]["display_name"], entries[c]["domain_type"])
                                        for c in dict.fromkeys(current.tables["diagnostics"]["Class"])])
@@ -689,11 +695,11 @@ def check_chapter(lang: str, parts: list) -> dict | None:
     claims_moved = [c for c in broken_claims(current.values, [lang], parts)[1:] if c not in claims_now]
     # The file (and line) only: the rest of the line names the value.
     reread = list(dict.fromkeys(re.match(r"\s*(\S+?)(?::? |$)", line).group(1) for line in
-                                near_changes(lang, code | data, language_fragments(current), items, parts)[1:]))
+                                near_changes(lang, code | data, current_fragments, items, parts)[1:]))
     return {"lock": lock, "current": current.version, "code": _counts(code),
-            "data": _counts(data), "files": files, "claims_now": len(claims_now),
-            "claims_moved": len(claims_moved), "reread": reread,
-            "behind": bool(files or claims_now or claims_moved
+            "data": _counts(data), "files": files, "data_files": data_files,
+            "claims_now": len(claims_now), "claims_moved": len(claims_moved), "reread": reread,
+            "behind": bool(files or data_files or claims_now or claims_moved
                            or any(VALUE_GROUPS[_group(n)] for n in code | data))}
 
 
@@ -715,7 +721,9 @@ def check_body(lang: str, found: dict, today: str) -> str:
              f"{_pin(lock)}. Today's daily refresh built it again without moving that "
              f"version and found:", "",
              f"- **Changed in the annotation** since then (to {_pin(current)}): "
-             f"{_said(found['data'])}.",
+             f"{_said(found['data'])}"
+             + (f"; {len(found['data_files'])} generated file(s) would be rewritten"
+                if found["data_files"] else "") + ".",
              f"- **Changed by the code** (schemas, span rules, wording) at the same version: "
              + (_said(found["code"]) if any(found["code"].values()) or not found["files"]
                 else "no values")
@@ -757,7 +765,8 @@ def check(langs: list | None, apply: bool, today: str) -> None:
         if found is None:
             print(f"{get_display_name(lang)}: not built yet.")
             continue
-        print(f"{get_display_name(lang)}: annotation {_said(found['data'])}; code {_said(found['code'])}, "
+        print(f"{get_display_name(lang)}: annotation {_said(found['data'])}, "
+              f"{len(found['data_files'])} file(s); code {_said(found['code'])}, "
               f"{len(found['files'])} file(s); claims failing {found['claims_now']}, "
               f"failing after a move {found['claims_moved']}.")
         if not found["behind"]:

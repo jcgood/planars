@@ -328,6 +328,30 @@ def test_the_check_files_a_chapter_behind_and_closes_it_when_caught_up(capsys, g
     assert github.issue(issue["number"])["state"] == "CLOSED"
 
 
+@needs_english
+def test_an_annotation_change_to_a_fragments_text_alone_puts_the_chapter_behind(own_english):
+    """An example's wording changes no value, but changes what the chapter prints."""
+    import csv
+    import io
+    _run("--lang", "stan1293", "--apply")
+    (state_files.PAPERS_DIR / "volume.yaml").write_text(VOLUME, encoding="utf-8")
+    assert not build.check_chapter("stan1293", ["intro", "stan1293"])["behind"]
+    for path in sorted((own_english / "stan1293").glob("*/*.tsv")):
+        rows = list(csv.reader(io.StringIO(path.read_text(encoding="utf-8"), newline=""), delimiter="\t"))
+        if "Example" in rows[0] and any(r[rows[0].index("Example")] for r in rows[1:]):
+            break
+    i = rows[0].index("Example")
+    row = next(r for r in rows[1:] if r[i])
+    row[i] += " (reworded)"
+    buf = io.StringIO()
+    csv.writer(buf, delimiter="\t", lineterminator="\n").writerows(rows)
+    target = file_door.annotation("stan1293", path.parent.name, path.stem)
+    with drive_door.running("t", may_write=True):
+        file_door.write(target, buf.getvalue(), why="t")
+    found = build.check_chapter("stan1293", ["intro", "stan1293"])
+    assert found["behind"] and found["data_files"] == [f"examples_{path.parent.name}.tex"]
+
+
 def _compile(folder, file="main.tex"):
     stem = file.removesuffix(".tex")
     run = subprocess.run(["pdflatex", "-interaction=nonstopmode", "-halt-on-error", file],

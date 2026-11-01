@@ -12,10 +12,16 @@ A commit before the change logs' baselines (2026-11-01) has no position
 that can be rebuilt, so each chapter is pinned to its language's position
 now. That moves the data under the chapter, so it is done only for a
 chapter the daily check finds not behind its data (no open
-``chapter-behind`` issue): then nothing the chapter shows differs between
-its old pin and today. A chapter that is behind is left for the coordinator,
-who moves it with ``build-chapters --lang L --update`` once the lock is
-deleted by hand. Run 2026-11-01.
+``chapter-behind`` issue). A chapter that is behind is left for the
+coordinator, who moves it with ``build-chapters --lang L --update`` once
+the lock is deleted by hand. Run 2026-11-01 for English.
+
+Found when it ran: "not behind" did not mean nothing differed. The check
+compared only values for annotation changes, so English's diagnostics
+table and phrasal-accent examples (annotation since 2026-10-25) came in
+with the move. No prose was written yet (0 of 15 slots), so nothing relied
+on the old text. The check now compares fragments too (chapters/build.py
+``check_chapter``, ``data_files``).
 
 Usage:
     python migrations/pin_chapters_to_positions.py           # dry run

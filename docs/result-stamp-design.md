@@ -187,7 +187,11 @@ why:
   `data.version`, `data.code`, `data.schemas`, `data.schemas_position`.
   `migrations/pin_chapters_to_positions.py` moved English's pin from its
   commit to the position now, allowed because no `chapter-behind` issue
-  had ever been filed (nothing the chapter shows differed).
+  was open. That turned out not to mean nothing differed: the daily check
+  compared only values for annotation changes, so the move brought in a
+  newer diagnostics table and phrasal-accent examples (no prose was
+  written yet). The check now compares fragments as well
+  (`check_chapter`'s `data_files`).
 - **Tests** read a private copy of English's folder (`english_files`,
   `reads_english` in `tests/conftest.py`), never the real clone, where the
   door would commit. The schemas' archive is its own setting
