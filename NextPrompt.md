@@ -244,8 +244,10 @@ inside `coded_data/`; Jeff's is installed). **Unit 18 is built**
 (2026-11-01; `docs/result-stamp-design.md` § 9; Jeff's § 7 answers, don't
 re-ask): every result carries `versions.stamp`, chapters pin a change-log
 position. **Next:** check the 2026-11-02 refresh is green, files no
-`chapter-behind`, and the contributor charts it draws show the stamp; then
-unit 19. The live tests' share to Jeff's
+`chapter-behind`, and the contributor charts it draws show the stamp.
+**Unit 19 was already done (2026-10-17) and was re-swept 2026-11-01**
+(progress doc, Phase 10 row): every Phase 10 unit is now built; what is
+left is the waits below and the backfill on #332. The live tests' share to Jeff's
 second account came off the synth0001 folder and synth0001 was recaptured
 (2026-10-30, `migrations/remove_synth0001_test_share.py`). Q4 (notebooks shared
 by name only) is still open: test 1 ran with the link share on. Adam's
@@ -265,8 +267,8 @@ the `overwrite` step now says how many changes it checked) and enforce
 each kind in watch once it has had a clean real write (below). The
 2026-10-23 refresh was the first with the proposal step and the local-file
 door enforcing: both clean. Unit 9 is done (2026-10-23). 11c is done
-(2026-10-29), the "manifest" renames (2026-10-30), 16–18 (by 2026-11-01);
-next 19.
+(2026-10-29), the "manifest" renames (2026-10-30), 16–18 (by 2026-11-01),
+19's re-sweep (2026-11-01). No unit is left; only the waits.
 
 **Waits on watching:** enforce for each kind still in watch (planar
 Sheet, notes Docs, notebooks, reports, folders: its own first

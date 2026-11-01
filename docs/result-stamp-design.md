@@ -153,7 +153,9 @@ All four steps of § 8 in one pass. Where the build differs from §§ 3–6, and
 why:
 
 - **Modules.** `coding/versions.py` builds the stamp (`stamp`,
-  `stamp_problems`, `stamp_text`, `same_data`, `rebuild`, `RESULT_CODE`);
+  `stamp_problems`, `stamp_text`, `rebuild`, `RESULT_CODE`; a `same_data`
+  for comparing stamps went with unit 19's sweep, since the bundles kept
+  their hash check, below);
   `coding/source_log.py` holds the position, `files_at`, `drifted` and
   `archive_schema`. `data_dependency_schema/facts.yaml` `result_stamp`.
 - **Every change-log line now records a fingerprint** (§ 4 named only the

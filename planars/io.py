@@ -1,9 +1,10 @@
 """Loading a filled element-row annotation tab for the analysis modules.
 
-``load_filled_tsv(path, required_criteria)`` reads a local TSV;
-``load_filled_sheet(ws, required_criteria)`` reads the same shape from a
-gspread worksheet (Colab). Both go through ``_parse_filled_df`` and return
+``load_filled_tsv(path, required_criteria)`` reads a local TSV through
+``_parse_filled_df`` and returns
 ``(data_df, keystone_pos, pos_to_name, criterion_cols, keystone_df)``.
+(Colab reads the Sheets through ``planars/from_sheets.py``, which hands the
+analyses the same TSVs.)
 
 The keystone row is never in ``data_df``: it comes back separately as
 ``keystone_df``, so an analysis that checks a blocking condition against the
@@ -42,7 +43,7 @@ def _parse_filled_df(
     required_criteria: Set[str],
     strict: bool,
 ) -> Tuple[pd.DataFrame, int, Dict[int, str], List[str]]:
-    """Core parsing logic shared by load_filled_tsv and load_filled_sheet.
+    """Core parsing logic of load_filled_tsv.
 
     Normalizes column types, validates structural integrity, locates the keystone
     row (Position_Name == 'v:verbstem'), and splits keystone rows from the rest.
@@ -150,26 +151,4 @@ def load_filled_tsv(
         keystone_df:  DataFrame of keystone rows (for blocking checks)
     """
     df = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)
-    return _parse_filled_df(df, required_criteria, strict)
-
-
-def load_filled_sheet(
-    ws,
-    required_criteria: Set[str],
-    strict: bool = True,
-) -> Tuple[pd.DataFrame, int, Dict[int, str], List[str], pd.DataFrame]:
-    """Load and validate a filled annotation from a gspread Worksheet.
-
-    Reads all values from the worksheet and applies the same normalization
-    and validation as load_filled_tsv. Intended for Colab workflows where
-    data is read directly from Google Sheets without a local TSV intermediary.
-
-    Returns the same 5-tuple as load_filled_tsv:
-    (data_df, keystone_pos, pos_to_name, criterion_cols, keystone_df).
-    """
-    rows = ws.get_all_values()
-    if not rows:
-        raise ValueError(f"Sheet '{ws.title}' is empty.")
-    header, data_rows = rows[0], rows[1:]
-    df = pd.DataFrame(data_rows, columns=header)
     return _parse_filled_df(df, required_criteria, strict)

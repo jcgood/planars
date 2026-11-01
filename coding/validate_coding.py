@@ -393,7 +393,7 @@ _WHITE = {"red": 1.0, "green": 1.0, "blue": 1.0}
 from planars.schema_values import KEYSTONE_NAME as _KEYSTONE_NAME  # noqa: E402
 from planars.schema_values import (  # noqa: E402
     MARKED_BY_ANNOTATOR, MARKED_BY_CHECK, STATUS_CONSTRUCTION_COLUMN, STATUS_IN_PROGRESS,
-    STATUS_MARKED_BY_COLUMN, STATUS_PROBLEMS_COLUMN, STATUS_READY,
+    STATUS_MARKED_BY_COLUMN, STATUS_PROBLEMS_COLUMN,
     STATUS_STATUS_COLUMN, STATUS_TAB, status_map,
 )
 
@@ -746,7 +746,7 @@ def local_tab_issues(lang_id: str, class_name: str, construction: str,
                      info: Dict, pair_rows: Dict[str, set], keyed_rows: Dict[str, Dict],
                      rows: Optional[List[List[str]]] = None) -> List[ValidationIssue]:
     """Validate one tab's local TSV (or ``rows``) by its row shape: the
-    checks the revalidate_* functions run before they paint the Sheet.
+    checks ``revalidate_sheets`` runs before it paints the Sheet.
     ``info`` is the tab's entry in ``_load_param_map``; ``pair_rows`` and
     ``keyed_rows`` are ``_get_pair_row_constructions()`` and
     ``_get_keyed_row_constructions()``. Also used by change_effects."""
@@ -776,32 +776,6 @@ def _paint(ws, issues: List[ValidationIssue]) -> List[ValidationIssue]:
     clear_highlights(ws)
     highlight_cells(ws, [issue.cell for issue in issues if issue.cell is not None])
     return issues
-
-
-def revalidate_sheet(
-    ws,
-    lang_id: str,
-    class_name: str,
-    construction: str,
-    expected_params: List[str],
-    param_values: Dict[str, List[str]] = None,
-    keystone_active: bool = False,
-    keystone_na_criteria: List[str] = None,
-) -> List[ValidationIssue]:
-    """Read an element-row tab's local TSV, validate it, update cell
-    highlighting in the Sheet, return issues. (``revalidate_sheets`` goes
-    through ``local_tab_issues``, which handles every row shape.)
-
-    Raises FileNotFoundError if the local TSV does not exist.
-    """
-    rows = _read_tsv_rows(lang_id, class_name, construction)
-    _, issues = validate_annotation_rows(
-        rows, expected_params, construction, param_values,
-        keystone_active=keystone_active,
-        keystone_na_criteria=keystone_na_criteria,
-        class_name=class_name, lang_id=lang_id,
-    )
-    return _paint(ws, issues)
 
 
 # ---------------------------------------------------------------------------

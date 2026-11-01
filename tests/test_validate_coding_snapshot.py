@@ -546,8 +546,9 @@ def test_apply_mutation_digest(env):
     ws = tab(doorway, "stan1293", "ciscategorial", "general")
     param_map = vc._load_param_map("stan1293")
     info = param_map["ciscategorial"]["general"]
-    vc.revalidate_sheet(ws, "stan1293", "ciscategorial", "general",
-                        info["params"], info["values"])
+    vc._paint(ws, vc.local_tab_issues(
+        "stan1293", "ciscategorial", "general", info,
+        vc._get_pair_row_constructions(), vc._get_keyed_row_constructions()))
 
     check_snapshot("invalid_cell_digest.txt", render(doorway.mutations))
 

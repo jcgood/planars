@@ -38,7 +38,7 @@ from coding import check_notes, drive_doorway, file_door, state_files
 from coding import drive as drive_module
 from coding.drive import _ACK_PREFIX, _strip_acknowledgment_lines
 from command_runner import run_command
-from fake_drive import ROOT_FOLDER_ID, FakeDriveDoorway
+from fake_drive import FakeDriveDoorway
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "check_notes"

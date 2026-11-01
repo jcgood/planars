@@ -31,7 +31,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from coding.generate_sheets import _TRAILING_COLS
+from planars.schema_values import TRAILING_COLUMNS as _TRAILING_COLS
 
 
 def _columns_written(payload: Dict[str, Any], header_width: int) -> range:

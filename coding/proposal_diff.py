@@ -35,7 +35,6 @@ from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from typing import List, Optional, Sequence, Tuple
 
-Grid = List[List[str]]
 Row = Tuple[str, ...]
 
 
@@ -76,7 +75,6 @@ class Conflict:
 class Merge:
     sheet: List[Row]                 # the sheet, with the source's own changes taken in
     base: List[Row]                  # the base, with the same changes taken in
-    proposal: List[Hunk] = field(default_factory=list)   # against the new base
     conflicts: List[Conflict] = field(default_factory=list)
     source_changes: int = 0          # stretches taken in from the source
 
@@ -145,7 +143,6 @@ def three_way(base: Sequence[Row], sheet: Sequence[Row], source: Sequence[Row]) 
     new_sheet.extend(base[at:])
     new_base.extend(base[at:])
     merge.sheet, merge.base = new_sheet, new_base
-    merge.proposal = hunks(new_base, new_sheet)
     return merge
 
 

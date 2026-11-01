@@ -103,22 +103,6 @@ def _load_planar(planar_path: Path, lang_id: str, keystone_active: bool = False)
     return keystone_pos, pos_to_name, pos_type, pos_to_elements, elem_to_positions
 
 
-def structurally_expected_pair_elements(
-    planar_path: Path, lang_id: str, keystone_active: bool = False
-) -> Set[str]:
-    """Return elements that can appear in at least one nonpermutability pair.
-
-    An element is expected if is_pair_candidate puts it in at least one pair
-    (the rule generate-sheets' _build_nonperm_pairs uses too). Uses
-    bracket-wrapped names to match imported TSV format.
-
-    When keystone_active is True, keystone elements are included in the
-    candidate set (same behaviour as _build_nonperm_pairs with keystone_active=True).
-    """
-    _, _, pos_type, _, elem_to_positions = _load_planar(planar_path, lang_id, keystone_active)
-    return pair_candidate_elements(elem_to_positions, pos_type)
-
-
 # ---------------------------------------------------------------------------
 # Maximal flexible span computation
 # ---------------------------------------------------------------------------

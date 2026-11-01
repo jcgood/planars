@@ -153,11 +153,6 @@ def data_at(lang_id: str, position: Optional[int]) -> Iterator[Path]:
         yield root
 
 
-def position_now(lang_id: str) -> int:
-    """The language's log position now: the data version of its files as they are."""
-    return source_log.position(lang_id)
-
-
 def _version_record(lang_id: str, position: Optional[int]) -> dict:
     lines = source_log.read_lines(lang_id)
     at = len(lines) if position is None else position

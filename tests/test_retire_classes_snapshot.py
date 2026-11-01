@@ -24,7 +24,6 @@ from __future__ import annotations
 
 import copy
 import io
-import json
 import os
 import re
 import shutil
@@ -39,7 +38,7 @@ import pytest
 from coding import drive as drive_module
 from coding import drive_door, drive_doorway, drive_ids, retire_classes
 from command_runner import run_command
-from fake_drive import (FROZEN_CODED_DATA, ROOT_FOLDER_ID, point_coded_data_at,
+from fake_drive import (FROZEN_CODED_DATA, point_coded_data_at,
                         FakeDriveDoorway, api_error)
 
 ROOT = Path(__file__).resolve().parent.parent

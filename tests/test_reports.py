@@ -32,7 +32,6 @@ from planars.reports import (
     language_completeness,
     language_report_data,
     language_spans,
-    project_completeness,
     project_spans,
 )
 
@@ -321,26 +320,6 @@ class TestLayer1Completeness:
         ])
         result = language_completeness("test1234", tmp_path)
         assert result["ciscategorial"]["general"]["missing"] is True
-
-
-# ---------------------------------------------------------------------------
-# project_completeness
-# ---------------------------------------------------------------------------
-
-class TestProjectCompleteness:
-    def test_returns_all_lang_dirs(self):
-        result = project_completeness(ROOT)
-        lang_dirs = {
-            d.name for d in CODED_DATA.iterdir()
-            if d.is_dir() and not d.name.startswith(".")
-        }
-        assert set(result.keys()) == lang_dirs
-
-    def test_each_entry_matches_language_completeness(self):
-        result = project_completeness(ROOT)
-        for lang_id, entry in result.items():
-            expected = language_completeness(lang_id, ROOT)
-            assert entry == expected
 
 
 # ---------------------------------------------------------------------------

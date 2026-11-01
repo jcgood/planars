@@ -21,7 +21,7 @@ from coding import drive_door, drive_doorway, file_door, state_files
 from coding import proposal_sheets as cmd
 from coding.sheet_spec import (PROPOSAL_DIAGNOSTICS_TAB, PROPOSAL_INSTRUCTIONS_TAB,
                                PROPOSAL_PLANAR_TAB, REVIEW_TAB_TITLE, WHAT_CHANGED_COLUMN)
-from coding.proposal_diff import compare, describe, normal, three_way
+from coding.proposal_diff import compare, describe, hunks, normal, three_way
 from command_runner import run_command
 from fake_drive import FakeDriveDoorway, use_frozen_coded_data
 
@@ -343,7 +343,7 @@ def test_separate_changes_by_each_side_are_both_kept():
     m = three_way(normal(base), normal(sheet), normal(source))
     assert m.sheet[1][2] == "x2" and m.sheet[4][2] == "w2"
     assert m.base[1][2] == "x" and m.base[4][2] == "w2"
-    assert not m.conflicts and len(m.proposal) == 1
+    assert not m.conflicts and len(hunks(m.base, m.sheet)) == 1
 
 
 def test_a_sheet_with_no_base_is_reported_and_left_alone(env):

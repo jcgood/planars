@@ -86,7 +86,6 @@ Authentication (OAuth2 — recommended for personal Google accounts):
 from __future__ import annotations
 
 import argparse
-import json
 import re
 import sys
 from pathlib import Path
@@ -116,7 +115,7 @@ from planars.schema_values import (
     STATUS_CONSTRUCTION_COLUMN, STATUS_PROBLEMS_COLUMN, STATUS_STATUS_COLUMN,
     STATUS_IN_PROGRESS, STATUS_READY, STATUS_TAB, STATUS_VALUES, ZONE, status_map,
     ELEMENT_ROWS, PAIR_ROWS,
-    TRAILING_COLUMNS as _TRAILING_COLS, trailing_columns_for,
+    trailing_columns_for,
     header_shape, is_keystone as _is_keystone, prefill_by_label,
     row_columns, row_key, row_type, source_construction,
 )
@@ -154,9 +153,8 @@ from .make_forms import (
 
 CODED_DATA = ROOT / "coded_data"
 
-# Columns appended after param columns; no dropdown validation: planar.yaml's
-# trailing_columns. A tab gets its language's (trailing_columns_for); every
-# one that any language may have is _TRAILING_COLS.
+# Columns appended after param columns get no dropdown validation: planar.yaml's
+# trailing_columns. A tab gets its language's (trailing_columns_for).
 _STATUS_TAB = STATUS_TAB
 _STATUS_VALUES = STATUS_VALUES
 

@@ -200,7 +200,6 @@ def test_the_daily_import_brings_the_keyed_tabs_down_intact(created, monkeypatch
 
     from coding import drive as drive_module
     from coding import import_sheets as is_
-    from fake_drive import FakeDriveDoorway
 
     env, _ = created
     _through_morphs(env)
@@ -248,7 +247,6 @@ def test_update_sheets_adds_only_in_scope_elements_and_leaves_keyed_tabs_alone(
     from contextlib import redirect_stdout
 
     from coding import update_sheets as us
-    from fake_drive import FakeDriveDoorway
 
     env, _ = created
     # A new element enters the planar at v:modal1 in scope, and another out of scope.
@@ -286,7 +284,6 @@ def test_restructure_carries_keyed_answers_across_an_element_rename(created, mon
     from coding import restructure_sheets as rs
     from coding import sync_planar as sp
     from coding import validate_coding as vc
-    from fake_drive import FakeDriveDoorway
 
     env, _ = created
     _through_morphs(env)
@@ -302,7 +299,6 @@ def test_restructure_carries_keyed_answers_across_an_element_rename(created, mon
     planar.loc[i, "Elements"] = planar.loc[i, "Elements"].replace("do,", "doo,")
     planar.to_csv(planar_path, sep="\t", index=False)
 
-    tmp = env.tmp_root
     monkeypatch.setattr(rs, "_load_drive_config", lambda: env.config)
     monkeypatch.setattr(drive_module, "_load_drive_config", lambda: env.config)
     monkeypatch.setattr(rs, "_save_drive_config", lambda cfg: None)

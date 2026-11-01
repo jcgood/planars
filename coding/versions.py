@@ -215,15 +215,6 @@ def stamp_text(s: dict) -> str:
     return text + (f" — not reproducible: {'; '.join(problems)}" if problems else "")
 
 
-def same_data(a: dict, b: dict) -> bool:
-    """Whether two stamps name the same schemas and languages at the same
-    positions (the code aside)."""
-    def key(s):
-        return (s["schemas"]["position"],
-                tuple(sorted((l, st["position"]) for l, st in s["languages"].items())))
-    return key(a) == key(b)
-
-
 def rebuild(s: dict, dest: Path) -> None:
     """Write the schemas and languages a stamp names, as they stood, into
     ``dest/schemas/`` and ``dest/coded_data/{lang}/``. The code is the

@@ -4,7 +4,6 @@ volume, rebuilds that change nothing, and the volume compiling under plain
 LaTeX. Builds go into the temporary .papers/ that tests/conftest.py points
 the door at."""
 
-import argparse
 import re
 import shutil
 import subprocess

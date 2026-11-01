@@ -1,76 +1,16 @@
-"""Tests for planars/io.py.
-
-Part 1 — Happy-path parity: load_filled_sheet produces identical results to
-load_filled_tsv using a mock gspread Worksheet backed by a local TSV.
-
-Part 2 — Error paths: _parse_filled_df (via load_filled_tsv with a temp file)
-raises ValueError for every documented error condition.
+"""Tests for planars/io.py: _parse_filled_df (via load_filled_tsv with a
+temp file) raises ValueError for every documented error condition, and
+loads a valid file correctly.
 """
 from __future__ import annotations
 
-import csv
 from pathlib import Path
 
 import pandas as pd
 import pytest
 
-from planars.io import load_filled_tsv, load_filled_sheet
+from planars.io import load_filled_tsv
 
-ROOT = Path(__file__).resolve().parent.parent
-
-
-class _MockWorksheet:
-    """Minimal gspread.Worksheet mock backed by a local TSV file.
-
-    Returns the exact string values from the file, matching what gspread's
-    get_all_values() returns (all cells as strings, empty cells as "").
-    """
-
-    def __init__(self, path: Path):
-        with open(path, encoding="utf-8", newline="") as f:
-            self._rows = list(csv.reader(f, delimiter="\t"))
-
-    def get_all_values(self):
-        return [list(row) for row in self._rows]
-
-
-CASES = [
-    (
-        "stan1293", "ciscategorial", "general",
-        {"V-combines", "N-combines", "A-combines"},
-    ),
-    (
-        "stan1293", "metrical", "stress_domain",
-        {"accented", "obligatory", "independence", "left-interaction", "right-interaction"},
-    ),
-]
-
-
-@pytest.mark.parametrize("lang_id,class_name,construction,params", CASES,
-                         ids=[f"{c[0]}/{c[1]}/{c[2]}" for c in CASES])
-def test_tsv_and_sheet_agree(lang_id, class_name, construction, params):
-    tsv_path = ROOT / "coded_data" / lang_id / class_name / f"{construction}.tsv"
-    if not tsv_path.exists():
-        pytest.skip(f"file not found: {tsv_path.relative_to(ROOT)}")
-
-    tsv_out   = load_filled_tsv(tsv_path, params, strict=False)
-    sheet_out = load_filled_sheet(_MockWorksheet(tsv_path), params, strict=False)
-
-    data_df_t, ks_pos_t, p2n_t, pcols_t, ks_df_t = tsv_out
-    data_df_s, ks_pos_s, p2n_s, pcols_s, ks_df_s = sheet_out
-
-    assert ks_pos_s  == ks_pos_t,  "keystone_pos mismatch"
-    assert p2n_s     == p2n_t,     "pos_to_name mismatch"
-    assert pcols_s   == pcols_t,   "criterion_cols mismatch"
-    assert data_df_s.reset_index(drop=True).equals(data_df_t.reset_index(drop=True)), \
-        "data_df mismatch"
-    assert ks_df_s.reset_index(drop=True).equals(ks_df_t.reset_index(drop=True)), \
-        "keystone_df mismatch"
-
-
-# ---------------------------------------------------------------------------
-# Part 2 — Error paths
-# ---------------------------------------------------------------------------
 
 def _write_tsv(df: pd.DataFrame, tmp_path: Path, name: str = "t.tsv") -> Path:
     """Write a DataFrame as a TSV to tmp_path and return the path."""
@@ -112,6 +52,12 @@ class TestLoadFilledTsvErrorPaths:
         df = _valid_df()
         df["Position_Name"] = df["Position_Name"].replace("v:verbstem", "v:notakey")
         p = _write_tsv(df, tmp_path)
+        with pytest.raises(ValueError, match="No keystone row"):
+            load_filled_tsv(p, required_criteria=set(), strict=False)
+
+    def test_header_only_has_no_keystone_row(self, tmp_path):
+        p = tmp_path / "t.tsv"
+        p.write_text("Element\tPosition_Name\tPosition_Number\tcrit\n", encoding="utf-8")
         with pytest.raises(ValueError, match="No keystone row"):
             load_filled_tsv(p, required_criteria=set(), strict=False)
 
@@ -175,23 +121,3 @@ class TestLoadFilledTsvErrorPaths:
         assert len(data_df) == 2  # non-keystone rows
         assert len(ks_df) == 1
         assert "crit" in crit_cols
-
-
-class TestLoadFilledSheetErrorPaths:
-    def test_empty_sheet_raises(self):
-        class _EmptyWS:
-            title = "empty"
-            def get_all_values(self): return []
-
-        with pytest.raises(ValueError, match="empty"):
-            load_filled_sheet(_EmptyWS(), required_criteria=set(), strict=False)
-
-    def test_sheet_with_header_only(self):
-        class _HeaderOnlyWS:
-            title = "headeronly"
-            def get_all_values(self):
-                return [["Element", "Position_Name", "Position_Number", "crit"]]
-
-        # Header-only: no keystone row → should raise
-        with pytest.raises(ValueError, match="No keystone row"):
-            load_filled_sheet(_HeaderOnlyWS(), required_criteria=set(), strict=False)

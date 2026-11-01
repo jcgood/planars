@@ -44,7 +44,6 @@ from ruamel.yaml.comments import CommentedSeq
 
 from .contracts import VALID_CLASS_TYPES, class_type_schema, position_integer_schema, position_is_integer
 from .schemas import load_planar_schema
-from planars.schema_values import is_keystone
 
 _BRACE_SUFFIX_RE = re.compile(r'\{[^}]*\}$')
 
@@ -301,38 +300,6 @@ def build_element_index(planar_filename: str, data_dir: Path | str) -> ElementIn
             add_element(element_plain, int(row["Position"]), row["Position_Name"])
 
     return element_to_info
-
-
-def planar_to_manifest_dict(planar_path: Path, lang_id: str) -> dict:
-    """Read a planar TSV and return a compact JSON-serializable structure.
-
-    Stored in the Drive manifest so Colab notebooks can derive nonpermutability
-    spans without needing local TSV access. Mirrors the data structures built by
-    planars.nonpermutability._load_planar, using bracket-wrapping for hyphenated
-    element names.
-
-    Returns:
-        {
-          "keystone_pos": int,
-          "positions": [{"pos": int, "name": str, "type": str, "elements": [str]}, ...]
-        }
-    The keystone position itself is not included in "positions" (it is excluded
-    from pair generation), matching _load_planar(keystone_active=False) behaviour.
-    """
-    df = pd.read_csv(planar_path, sep="\t", dtype=str, keep_default_na=False)
-    df = df[df["Language_ID"] == lang_id]
-    keystone_pos: int | None = None
-    positions = []
-    for _, row in df.iterrows():
-        pos = int(row["Position"])
-        pname = row["Position_Name"].strip()
-        ptype = row["Position_Type"].strip()
-        elements = [wrap_element(e) for e in _split_elements(row.get("Elements", "") or "")]
-        if is_keystone(pname):
-            keystone_pos = pos
-            continue
-        positions.append({"pos": pos, "name": pname, "type": ptype, "elements": elements})
-    return {"keystone_pos": keystone_pos, "positions": positions}
 
 
 def _resolve_diagnostics_yaml_path(lang_id: str, data_dir: Path | str) -> Path:

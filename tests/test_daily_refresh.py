@@ -333,7 +333,7 @@ def test_the_whole_refresh_runs_against_the_offline_drive(monkeypatch, tmp_path,
     import coding
     import importlib
     import pkgutil
-    from coding import drive as drive_module, drive_doorway
+    from coding import drive_doorway
     from fake_drive import FROZEN_CODED_DATA, FakeDriveDoorway, point_coded_data_at
 
     repo_before = _status(ROOT)

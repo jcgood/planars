@@ -601,16 +601,6 @@ def completeness_summary(completeness: Dict[str, Dict[str, dict]]) -> dict:
     return {"filled": filled, "total": total, "by_construction": by_construction}
 
 
-def project_completeness(repo_root) -> Dict[str, Dict[str, Dict[str, dict]]]:
-    """Per-language, per-construction completeness for the whole project.
-
-    Returns:
-        {lang_id: {class_name: {construction: {"total": int, "filled": int, "blank": int}}}}
-    """
-    return {lang_dir.name: language_completeness(lang_dir.name, repo_root)
-            for lang_dir in _lang_dirs(repo_root)}
-
-
 def print_completeness(completeness: Dict[str, Dict[str, dict]],
                        status: Optional[Dict[str, Dict[str, str]]] = None) -> bool:
     """Print one language's ``language_completeness`` a line per construction,

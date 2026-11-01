@@ -32,7 +32,7 @@ itself, ahead of these two schemas — both preconditions the normalization
 step needs to hold before it can run at all, so validating them via a
 schema built from columns that might not exist yet would be circular.
 Every analysis module that reads its tab through `planars.io`'s
-`load_filled_tsv`/`load_filled_sheet` (all but the pair-row and two-tab
+`load_filled_tsv` (all but the pair-row and two-tab
 ones: `nonpermutability`, `coreference`, `biuniqueness_deviations`), plus
 `reports`, `integrity-check` and `check-codebook`, depend on
 `_parse_filled_df` transitively.

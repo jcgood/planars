@@ -37,7 +37,7 @@ from coding import drive as drive_module
 from coding import drive_doorway
 from coding import generate_status_sheet as gen
 from command_runner import run_command
-from fake_drive import ROOT_FOLDER_ID, FakeDriveDoorway, api_error, use_frozen_coded_data
+from fake_drive import FakeDriveDoorway, api_error, use_frozen_coded_data
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "coordinator" / "generate_status_sheet"

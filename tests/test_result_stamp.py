@@ -128,15 +128,6 @@ def test_a_stamp_says_why_it_cannot_be_rebuilt(coded, monkeypatch):
     assert any(target.relpath in p for p in problems)
 
 
-def test_same_data_compares_positions_not_the_code(coded, monkeypatch):
-    monkeypatch.setattr(versions, "code_changed", lambda: False)
-    a = versions.stamp([LANG])
-    b = dict(a, code={"version": "other", "uncommitted_changes": False})
-    assert versions.same_data(a, b)
-    list(_writes(coded))
-    assert not versions.same_data(a, versions.stamp([LANG]))
-
-
 def test_rebuild_writes_the_schemas_and_each_language(coded, monkeypatch, tmp_path):
     monkeypatch.setattr(versions, "code_changed", lambda: False)
     monkeypatch.setattr(source_log, "position", lambda stream: 0 if stream == source_log.SCHEMAS
