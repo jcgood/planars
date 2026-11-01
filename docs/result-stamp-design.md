@@ -1,6 +1,7 @@
 # Unit 18: every result says what it was drawn from
 
-**Status: drafted 2026-10-31, waiting on Jeff's answers to § 7.** Phase 10
+**Status: drafted 2026-10-31; Jeff answered § 7 on 2026-11-01 (each took
+its recommendation; don't re-ask).** Phase 10
 unit 18 (issue #271; implementation plan, Phase 10 table: "Every exported
 result carries the package version and each language's change-log position";
 done when "results reproducible from their record"). Where it stands:
@@ -103,6 +104,10 @@ two results stamped `0.1.0a60` can come from different code. § 7 Q3.
   what a chart records).
 
 ## 7. Questions for Jeff
+
+**Answered 2026-11-01 (don't re-ask):** Q1 the line number; Q2 archive the
+schemas' previous versions; Q3 the version goes up for any code that
+produces results; Q4 chapters move off git in this unit.
 
 **Q1. The log position: a line number or a time?** Recommended: the line
 number. It is exact and short. A time reads better ("as of 2026-11-02

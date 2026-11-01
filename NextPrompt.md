@@ -240,9 +240,9 @@ is logged with `log-change`; the hooks, CI and the refresh's `changes`
 step check it. **Next:** check the 2026-11-01 refresh is green and its
 `changes` step clean (no `source-unlogged`); install the planars-data
 hook in Adam's clone with his next pull (`../.venv/bin/pre-commit install`
-inside `coded_data/`; Jeff's is installed). **Unit 18 is designed, not
-answered** (2026-10-31, `docs/result-stamp-design.md`): waiting on Jeff's
-answers to its § 7, then build in its § 8 order. The live tests' share to Jeff's
+inside `coded_data/`; Jeff's is installed). **Unit 18 is designed and
+answered** (`docs/result-stamp-design.md`; Jeff took every § 7
+recommendation, 2026-11-01, don't re-ask): build in its § 8 order. The live tests' share to Jeff's
 second account came off the synth0001 folder and synth0001 was recaptured
 (2026-10-30, `migrations/remove_synth0001_test_share.py`). Q4 (notebooks shared
 by name only) is still open: test 1 ran with the link share on. Adam's
