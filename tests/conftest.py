@@ -70,6 +70,37 @@ def _file_door_in_tmp(monkeypatch, tmp_path):
 
 
 @pytest.fixture(autouse=True)
+def _source_logs_in_tmp(monkeypatch, tmp_path):
+    """The schemas' change log (coding/source_log.py) is a copy in tmp_path, and
+    measuring a source change's effects (coding/change_effects.py: two copies
+    of the project, about ten seconds) reports none. A test of the
+    measurement itself takes the ``real_measure`` fixture."""
+    import shutil
+    from coding import change_effects, source_log
+    log = tmp_path / "schemas_changes.tsv"
+    if source_log.PROJECT_LOG.exists():   # start from the real log, so the real schemas match
+        shutil.copy2(source_log.PROJECT_LOG, log)
+    monkeypatch.setattr(source_log, "PROJECT_LOG", log)
+    monkeypatch.setattr(change_effects, "measure",
+                        lambda before, coded_data=None, code_from=None: change_effects.Effects())
+
+
+@pytest.fixture
+def real_measure(monkeypatch):
+    """Undo the fake measurement above, for tests of change_effects."""
+    from coding import change_effects
+    monkeypatch.setattr(change_effects, "measure", _REAL_MEASURE)
+
+
+def _real_measure():
+    from coding import change_effects
+    return change_effects.measure
+
+
+_REAL_MEASURE = _real_measure()
+
+
+@pytest.fixture(autouse=True)
 def github():
     from coding import issues
     fake = FakeGitHub()

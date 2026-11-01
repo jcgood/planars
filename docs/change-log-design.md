@@ -1,8 +1,8 @@
 # Unit 17: logging hand edits to the sources, and versions read from the log
 
-**Status: drafted 2026-10-31; Jeff answered § 8 the same day (each took
-its recommendation; don't re-ask). Next: build in § 9's order.** Phase 10
-unit 17 (issue #271; implementation plan, Phase 10 table). Where it stands:
+**Status: built 2026-10-31 (§ 10, as built); Jeff answered § 8 the same
+day (each took its recommendation; don't re-ask).** Phase 10 unit 17
+(issue #271; implementation plan, Phase 10 table). Where it stands:
 `docs/data-layer-progress.md`, Phase 10 row.
 
 ## 1. The problem
@@ -95,8 +95,6 @@ carries them over, or the issue telling the annotator which cells to redo.
 
 ### 4.1 Hand edits: `log-change`
 
-Planned (not built yet):
-
 ```
 log-change [--lang LANG_ID] --change CLASS --layer LAYER --why "#N: …" [--answers TEXT] [--apply]
 ```
@@ -185,9 +183,9 @@ effects), so every stream starts at 0.0.0 on the day the unit goes live
 
 A release (archived on Zenodo; `CITATION.cff`) is refused while a breaking
 line still has annotation waiting on it: its `why` issue is open and labelled
-for an annotator. The check is `integrity-check --section release`, run as
-the first step of the release procedure, which the coordinator guide does
-not have yet and gains with this unit.
+for an annotator. The check is `integrity-check --check-release`, run as
+the first step of the release procedure (coordinator guide § "Making a
+release", added with this unit).
 
 ## 8. Questions for Jeff
 
@@ -221,10 +219,70 @@ stop the daily import of everyone's annotation over one missing line.
    sources, and the effects (§ 4.3).
 3. The check: pre-commit hooks, CI, the refresh step and `source-unlogged`
    label.
-4. `versions.py`; `integrity-check --section release`; the release procedure
+4. `versions.py`; `integrity-check --check-release`; the release procedure
    in the coordinator guide.
 
 Docs in the same commits: `file_door.py`'s and the new modules' docstrings,
 `schemas/__init__.py`, the coordinator guide (editing a source by hand: edit,
 `log-change`, commit), `data_dependency_schema/` (`change_record`), and
 CLAUDE.md's "Edit sources" convention.
+
+## 10. As built (2026-10-31)
+
+All four steps of § 9 in one pass. Where the build differs from §§ 2-7, and
+why:
+
+- **Modules.** `coding/source_log.py` owns the file list (`SCHEMA_SOURCES`,
+  `NOT_LOGGED`, each with its reason; a language's are `file_door.SOURCES`),
+  the logs, the rule (`unlogged`) and `previous_text`.
+  `coding/change_effects.py` measures; `coding/log_change.py` is the
+  command; `coding/versions.py` counts versions and checks a release. The
+  log's columns, change classes and layers are `file_door`'s
+  (`SOURCE_COLUMNS`, `CHANGE_CLASSES`, `LAYERS`), since the door writes them.
+- **Effects are measured between two copies of the project, not against
+  the committed snapshots** (§ 4.3). The committed snapshots also differ
+  whenever annotation was imported since they were made, so comparing with
+  them would charge the edit with everyone's new answers. Each copy holds
+  the code, `schemas/` and every language's folder; *before* has the edited
+  files put back as they were. *Answers broken* counts, per language, the
+  valid answered cells lost per class and column, so a construction renamed
+  with its answers breaks nothing, and a diagnostics file that no longer
+  reads leaves no answer valid. *Spans moved* compares hashes of each
+  class's span output with the titles left out (a renamed construction with
+  the same spans has not moved). About ten seconds per measurement.
+- **A command's source change is measured when the command ends**
+  (`file_door.finish`), comparing every language file as the command found
+  it with how it left it, so rename-construction's YAML edit and the TSV it
+  moves are judged together. The lines are written at once with the effects
+  empty and filled in then; a measurement that fails is written `unknown`,
+  which counts as breaking.
+- **A span rule is a schema edit plus a module change.** For a schema edit,
+  `log-change` gives the *before* copy the analysis code as last committed
+  (`git archive HEAD planars`), so logging the rule with its module change,
+  before committing, records the spans they move together. Without this a
+  span rule would never count as breaking, against Jeff's decision in § 6.1.
+  On an expert's span-rule pull request the expert's side does not log; the
+  other coordinator logs at the review's step 7 (CI fails the branch until
+  then, like the hash).
+- **The level is counted per edit, not per line** (§ 6.1 says "read from the
+  line"): an edit is a stream's lines with the same time and command. One
+  edit described as a rename and an added value moves the version once.
+- **The checks are standalone modes of integrity-check, as its others are**:
+  `--check-changes` (the refresh), `--check-changes --staged` (the
+  pre-commit hooks: only staged sources, read with their logs as staged),
+  `--check-changes --schemas` (CI), and `--check-release` (§ 7's `--section
+  release`). The full run's CHANGES section reports warnings only: the
+  refresh's own `changes` step files `source-unlogged`, as DECISIONS does.
+- **For a schema edit, `log-change --apply` stages rather than commits**:
+  the edit usually goes with code (a span rule's module), and the person
+  commits them together; the hook then checks the staged log. A language's
+  is committed and pushed by the local-file door, with the previous version
+  archived (`file_door.log_hand_edit`). lookup-lang logs and stages its
+  `languages.yaml` change the same way (`source_log.log_tool_edit`).
+- **A new language's sources** are logged as an `add` with no previous
+  version (no baseline line): its version counts from its first edit.
+- **"Labelled for an annotator"** (§ 7) is `for_annotator: true` in
+  `schemas/issue_labels.yaml`: `needs-fixing` and `needs-input`.
+- **planars-data's hook** is its own `.pre-commit-config.yaml`, running the
+  planars tooling from `../.venv`; each clone installs it once (coordinator
+  guide, setup). A source is never removed by a command (the door refuses).

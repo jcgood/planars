@@ -67,6 +67,7 @@ _COMMANDS = {
     "proposal-sheets":             "coding.proposal_sheets",
     "accept-proposal":             "coding.accept_proposal",
     "record-decision":             "coding.decisions",
+    "log-change":                  "coding.log_change",
     "registry":                    "coding.registry",
     "issue":                       "coding.issues",
     "daily-refresh":               "coding.daily_refresh",

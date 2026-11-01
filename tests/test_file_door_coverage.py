@@ -49,9 +49,20 @@ NOT_THROUGH_THE_DOOR: Dict[Site, str] = {
     ("glottolog.py", "_save_cache", "open"): "not in planars-data: glottolog_cache.json",
     ("glottolog.py", "_save_cache", "json.dump"): "not in planars-data: glottolog_cache.json",
     ("glottolog.py", "_update_languages_yaml", "open"):
-        "not in planars-data: schemas/languages.yaml (schema hand edits: unit 17)",
-    ("glottolog.py", "_update_languages_yaml", "yaml.dump"):
-        "not in planars-data: schemas/languages.yaml (schema hand edits: unit 17)",
+        "not in planars-data: schemas/languages.yaml (logged in schemas/changes.tsv by "
+        "source_log.log_tool_edit)",
+    ("source_log.py", "append_project_lines", "open"):
+        "not in planars-data: schemas/changes.tsv, the schemas' change log (git keeps its "
+        "history; staged with the edit it logs)",
+    ("change_effects.py", "_copy", "open"): "not in planars-data: a temporary copy of the project",
+    ("change_effects.py", "_copy", "shutil.copy2"):
+        "not in planars-data: a temporary copy of the project",
+    ("change_effects.py", "_copy", "shutil.copytree"):
+        "not in planars-data: a temporary copy of the project",
+    ("change_effects.py", "_copy", "unlink"):
+        "not in planars-data: a temporary copy of the project",
+    ("change_effects.py", "_code_at", "shutil.rmtree"):
+        "not in planars-data: a temporary copy of the project",
     ("sync_span_rule_hashes.py", "_apply_hashes", "write_text"):
         "not in planars-data: schemas/diagnostic_classes_status.yaml",
     ("issues.py", "_run", "unlink"): "not in planars-data: a temporary issue-body file",

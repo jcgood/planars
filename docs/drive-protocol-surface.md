@@ -297,8 +297,9 @@ purposes.
 | `ss.worksheets()` | `:561` (`_with_retry(lambda: ss.worksheets())`) | Iterates **every tab** in the spreadsheet (not just tabs listed in the manifest's `constructions`), explicitly to catch tabs the manifest doesn't know about; skips `_STATUS_TAB`/`_INSTRUCTIONS_TAB`/`_PLANAR_REF_TAB` by title. Order returned is whatever `worksheets()` returns — not otherwise relied on here. | Wrapped | Read |
 | `_read_tsv_rows(...)` (local file, not Drive) | `:285-298` | Not a Drive call — included to make explicit that the *validated data* never comes from a live API call in this file, only from `coded_data/` TSVs already on disk | — | Local file read |
 
-**Live-object-held-across-many-ops:** `ws` is passed into `revalidate_sheet`/
-`revalidate_pair_sheet`, which each do a local-TSV read, a pure-Python
+**Live-object-held-across-many-ops:** `ws` is passed into `_paint` after
+`local_tab_issues` (renamed 2026-10-31; it was `revalidate_sheet`/
+`revalidate_pair_sheet`), a local-TSV read and a pure-Python
 validation pass, then two Sheets writes on the same handle (`clear_highlights`
 then `highlight_cells`) — always in that order, always both, never just one.
 A fake needs "last write wins" semantics for overlapping format ranges applied

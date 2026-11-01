@@ -588,6 +588,37 @@
       record is never edited by hand (records are copies, plain-record-design
       § 2).
 
+- id: change_record
+  description: >-
+    what changed in a source (a schema file, a language's planar or
+    diagnostics file), what kind of change it was (change class and layer),
+    how many answers it broke and whose spans it moved, and the file's
+    fingerprint after it; the versions are counted from these lines
+  locations:
+    - {entity: change_log, detail: "schemas/changes.tsv (source_log.PROJECT_LOG) for the schemas, coded_data/{lang}/changes.tsv for a language's sources (file_door.CHANGE_LOG_COLUMNS)"}
+    - {entity: schema_yaml, detail: "the schema file itself, whose fingerprint the last line must match"}
+    - {entity: planar_tsv, detail: "a language's planar file, likewise"}
+    - {entity: diagnostics_yaml, detail: "a language's diagnostics file, likewise"}
+  authoritative: change_log
+  cascade:
+    direction: automatic
+    mechanism: >-
+      A command that edits a source (accept-proposal, rename-construction,
+      sync-params) writes its lines through the local-file door, which
+      measures the effects when the command ends (change_effects.measure).
+      A hand edit is logged with log-change --apply. The check
+      (source_log.unlogged, integrity-check --check-changes) runs before a
+      commit, in CI (the schemas) and in the daily refresh's changes step.
+  drift_risk:
+    possible: true
+    note: >-
+      A source edited by hand and not yet logged; a commit made with
+      --no-verify; a planars-data clone with no pre-commit hook installed.
+    caught_by: >-
+      the pre-commit hook (planars and planars-data), CI's "Check every
+      schema change is logged" step, and the daily refresh's changes step,
+      which files a source-unlogged issue naming each file and the command.
+
 - id: decision_record
   description: >-
     what was decided on a diagnostics or linguistics issue (or a proposal

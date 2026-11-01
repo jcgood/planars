@@ -13,6 +13,7 @@ Once set up, the following run without coordinator action:
 | Trigger | What runs | What it does |
 |---------|-----------|--------------|
 | Every commit to `planars/*.py` | pre-commit hook | Regenerates affected snapshots and stages them |
+| Every commit of a source (a schema file; a language's planar or diagnostics file) | pre-commit hook, in planars and planars-data | Refuses it if the edit has no change-log line, naming the `log-change` command |
 | Every push | pre-push hook | Verifies all snapshots are current; blocks push if stale |
 | Daily, scheduled 06:00 UTC (GitHub often starts it hours later) | `data-refresh.yml` → `python -m coding daily-refresh --apply` | Imports the latest sheets, syncs, checks, rebuilds status sheets and snapshots, commits; files or closes one issue per kind of problem (see [What each workflow does](#what-each-workflow-does)) |
 | Daily, scheduled 09:00 UTC | `sheet-validation.yml` | Runs `validate-coding`; opens a `sheet-validation` issue if problems found; closes it when clean |
@@ -57,6 +58,17 @@ Activate the environment at the start of each session:
 
 ```bash
 source .venv/bin/activate
+```
+
+Then turn on the commit checks in both repositories, once per clone
+([Regression testing and hooks](#regression-testing-and-hooks)). Among other
+things they refuse a commit that holds an edited source with no change-log
+line ([Editing a source by hand](#editing-a-source-by-hand)):
+
+```bash
+.venv/bin/pre-commit install --hook-type pre-commit --hook-type pre-push
+cd coded_data
+../.venv/bin/pre-commit install
 ```
 
 ### Google OAuth credentials
@@ -116,8 +128,9 @@ language's `changes.tsv` (when, which file, what changed, which command,
 why, where the previous version went, and, for a file read from a sheet or
 Doc, who edited it there since the file last changed), and commits and pushes the files
 when the command ends. `changes.tsv` opens in a spreadsheet: it is the
-place to look for what changed in a file and why, without git. Only your
-own hand edits (to the YAML or the planar) still need committing by hand.
+place to look for what changed in a file and why, without git. A hand edit
+to the YAML or the planar is logged with `log-change`, which commits and
+pushes it ([Editing a source by hand](#editing-a-source-by-hand)).
 
 ---
 
@@ -150,9 +163,9 @@ own hand edits (to the YAML or the planar) still need committing by hand.
    ```
    With a GitHub username, they hear about values to fix, and about finished tabs marked ready-for-review for them, by an @-mention on a `needs-fixing` issue. Without one, they hear by a comment on their spreadsheet that names their address, which makes Google email them (`coding/annotator_notices.py`, issue #309). **That second route has not yet been tried live**: for the first annotator without GitHub, check with them that the email arrives the first time they have something to fix.
 
-   Commit `schemas/languages.yaml` to the `planars` repo before running `generate-sheets` — this ensures display names appear correctly in notebooks and charts:
+   `lookup-lang` logs its own change to `schemas/languages.yaml` in `schemas/changes.tsv` and stages both. Filling in `meta` is an edit by hand, so log it too ([Editing a source by hand](#editing-a-source-by-hand)), then commit both files to the `planars` repo before running `generate-sheets` — this ensures display names appear correctly in notebooks and charts:
    ```bash
-   git add schemas/languages.yaml
+   python -m coding log-change --change change --layer shape --why "metadata for {lang_id}" --apply
    git commit -m "Register {lang_id} in languages.yaml"
    ```
 
@@ -172,6 +185,11 @@ own hand edits (to the YAML or the planar) still need committing by hand.
    ```
 
    See [Data management](data-management.md) for the required format of both files. `check-codebook` section 9 prints a ready-to-paste YAML snippet for each class not yet covered by any language.
+
+   Then log both files as new, which commits and pushes them in planars-data (drop `--apply` first to see the lines):
+   ```bash
+   python -m coding log-change --lang {lang_id} --change add --layer taxonomy --why "onboarding {lang_id}" --apply
+   ```
 
 3. Generate annotation sheets and notebooks:
    ```bash
@@ -436,9 +454,10 @@ The `codebook-error` GitHub issue body will contain a line like:
 3. Copy the Claude prompt from the issue and paste it into a Claude Code session.
 4. Claude reads the new rule, updates `planars/{name}.py` (logic + docstring), runs tests.
 5. Review the diff.
-6. Stamp the new hash:
+6. Stamp the new hash, then log the rule and module change together, before committing ([Editing a source by hand](#editing-a-source-by-hand); if spans moved it is breaking, so add `--answers`), and commit:
    ```bash
    python -m coding sync-span-rule-hashes --apply --class {name}
+   python -m coding log-change --change change --layer taxonomy --why "#N: why" --apply
    ```
 7. `check-codebook` passes → `codebook-error` issue auto-closes.
 
@@ -487,15 +506,15 @@ The expert works through the classes with their own Claude, using a language who
    - **The data was wrong.** The expert fixes the sheet. After the next daily import, regenerate the snapshots and look again.
 5. **Write it on a branch**, `span-rule/{class}`.
    - Edit `span_rule` in `diagnostic_classes.yaml`. If a criterion's meaning turned out to be unclear, also edit its description in `diagnostic_criteria.yaml`.
-   - Change nothing else: not the module, not the hash, not `status`.
+   - Change nothing else: not the module, not the hash, not `status`. Don't run `log-change` either: the other coordinator logs the rule with its module change (CI's "Check every schema change is logged" step fails the branch until then).
    - Run `python -m coding check-codebook`. The only error should be that class's hash mismatch, which is the sign that the code hasn't caught up yet.
 6. **Open a pull request** titled `Span rule: {class}`, and comment the link on the tracking issue. Its body gives:
    - the agreed rule in plain words;
    - each decision and its reason;
    - the spans the new rule should give for the language.
 
-   The test suite will fail on the hash until the code is updated. That is expected.
-7. **The other coordinator** reviews the pull request. They then follow the 7-step workflow above (module, docstring, tests, snapshots) on the same branch. They check that the spans match what the pull request said, stamp the hash and merge. The expert ticks the box and promotes the class.
+   The test suite will fail on the hash, and CI on the change log, until the code is updated. That is expected.
+7. **The other coordinator** reviews the pull request. They then follow the 7-step workflow above (module, docstring, tests, snapshots) on the same branch. They check that the spans match what the pull request said, stamp the hash, log the change and merge. The expert ticks the box and promotes the class.
 
 Answers on one class often settle a question several classes share, such as what `na` means to a span (#133). Record those on the shared issue as well, so later classes start from them.
 
@@ -524,6 +543,42 @@ python -m coding record-decision --issue N --by "Adam Tallman" --decision "…" 
 python -m coding issue --relabel N --remove diagnostics --add bug
 ```
 
+### Editing a source by hand
+
+A *source* is a file that defines the framework or a language: the five schema files (`diagnostic_classes.yaml`, `diagnostic_criteria.yaml`, `planar.yaml`, `terms.yaml`, `languages.yaml`) and each language's `planar_{lang_id}.tsv` and `diagnostics_{lang_id}.yaml` (the list, and why the other schema files are left out, is `coding/source_log.py`). Every change to one gets a line in its change log: `schemas/changes.tsv` for the schemas, the language's `changes.tsv` for its sources (Phase 10 unit 17; `docs/change-log-design.md`). The line says what kind of change it was, how many answered cells it broke and whose spans it moved (both measured, never typed), and the file's fingerprint. The versions are counted from these lines.
+
+Commands that edit a source (`accept-proposal`, `rename-construction`, `sync-params`, `lookup-lang`) write their own lines. After an edit by hand, ask Claude to log it. It drafts the kind of change from the diff and shows you the lines before writing them:
+
+```bash
+python -m coding log-change --change rename --layer taxonomy --why "#N: why"                   # the schemas: dry run
+python -m coding log-change --lang stan1293 --change add --layer taxonomy --why "#N: why"      # a language: dry run
+```
+
+- **`--change`** is one of `add`, `remove`, `rename`, `split`, `merge`, `change` (a value or rule altered), `reword` (text only). A rename and a remove-plus-add look alike in a diff, so a person names it.
+- **`--layer`** is `shape` (which columns and values exist), `taxonomy` (the theory's categories: classes, criteria, positions, span rules) or `convention` (how coders write things).
+- Several changes in one edit: repeat `--change` and `--layer` in pairs.
+- **A breaking change** (it broke answers or moved spans) must name its issue in `--why` (`#N`) and say in `--answers` what happens to the existing answers: the command that carries them over, or the issue telling the annotator which cells to redo.
+
+Add `--apply` to write. For a language, the edit, its line and the previous version (kept in `archive/`) are committed and pushed in planars-data. For the schemas, the line is added to `schemas/changes.tsv` and staged with the edited files: commit them together (with the module change, for a span rule). Measuring takes about ten seconds: two temporary copies of the project, before and after.
+
+**A span rule** is logged together with its module change, after both are written and before they are committed: for a schema edit the *before* copy runs the code as last committed, so the line records the spans the rule and its code move together. On a span-rule pull request, the expert's side leaves the log to the other coordinator, who runs `log-change` at step 7 of [Reviewing a span rule](#reviewing-a-span-rule-with-the-domain-expert); CI fails the branch until then, like the hash.
+
+**An unlogged edit** is caught three times: the pre-commit hook in each repository refuses the commit ([Regression testing and hooks](#regression-testing-and-hooks)), CI refuses a pushed schema edit, and the daily refresh files a `source-unlogged` issue for a language's (it carries on importing meanwhile). The check on its own:
+
+```bash
+python -m coding integrity-check --check-changes
+```
+
+### Making a release
+
+Releases are archived on Zenodo, with the DOI in `CITATION.cff`. The first step is the release check, which prints every version (`schemas 0.2.5`, `stan1293 1.0.3`: breaking.addition.revision, counted from the change logs) and refuses while a breaking change still has annotation waiting on it, i.e. its issue is open under a label marked `for_annotator` in `schemas/issue_labels.yaml` (`needs-fixing`, `needs-input`):
+
+```bash
+python -m coding integrity-check --check-release
+```
+
+When it passes, run `pytest`, record the versions it printed in the release notes, tag the release on GitHub, and update `CITATION.cff` with the DOI Zenodo gives it.
+
 ---
 
 ### Schema changes
@@ -538,11 +593,12 @@ When the diagnostic model changes — a new analysis class, a class renamed or r
    ```
    Section 9 prints the entry to paste into each applicable language's `diagnostics_{lang_id}.yaml`. Section 10 shows the current language × class coverage matrix.
 4. Edit `diagnostics_{lang_id}.yaml` for each applicable language (see [Editing the diagnostics YAML](#editing-the-diagnostics-yaml)).
-5. Run the appropriate command below.
+5. Log each edit: the schema files, then each language's ([Editing a source by hand](#editing-a-source-by-hand)).
+6. Run the appropriate command below.
 
 #### Editing the diagnostics YAML
 
-`diagnostics_{lang_id}.yaml` in `coded_data/{lang_id}/lang_setup/` is the one file saying which analyses run for a language; every command reads it directly. (A `diagnostics_{lang_id}.tsv` copy beside it was deleted 2026-10-27; `check-codebook` reports one that comes back.) After editing it, commit and push it in planars-data. The daily refresh copies it to the diagnostics Google Sheet within a day; to do that sooner:
+`diagnostics_{lang_id}.yaml` in `coded_data/{lang_id}/lang_setup/` is the one file saying which analyses run for a language; every command reads it directly. (A `diagnostics_{lang_id}.tsv` copy beside it was deleted 2026-10-27; `check-codebook` reports one that comes back.) After editing it, log it with `log-change --lang {lang_id}`, which commits and pushes it in planars-data ([Editing a source by hand](#editing-a-source-by-hand)). The daily refresh copies it to the diagnostics Google Sheet within a day; to do that sooner:
 
 ```bash
 python -m coding sync-diagnostics-yaml --lang {lang_id}                  # dry run: show what would change
@@ -814,7 +870,7 @@ python -m coding integrity-check --lang arao1248      # one language only
 python -m coding integrity-check --sheets             # also validate live Google Sheets structure
 ```
 
-`integrity-check` runs six sections: PLANAR STRUCTURE, DIAGNOSTICS, CODEBOOK CONSISTENCY, ANALYSIS CONSISTENCY, ANNOTATION SHEETS (with `--sheets`), and NEEDS REVIEW. The daily refresh runs it and files `integrity-error` on an error; its warnings file nothing and are read during an audit (see Audit procedure above).
+`integrity-check`'s sections are listed in `coding/integrity_check.py`'s docstring (among them CHANGES: sources edited with no change-log line), with its standalone `--check-…` modes. The daily refresh runs it and files `integrity-error` on an error; its warnings file nothing and are read during an audit (see Audit procedure above).
 
 ```bash
 python -m coding check-codebook
@@ -916,6 +972,8 @@ Two local hooks keep snapshots in sync automatically. Install both at once after
 ```
 
 **Pre-commit hook (`regenerate-snapshots`):** Triggers whenever any `planars/*.py` file is staged. Regenerates all snapshots and stages the updated files automatically, so snapshot updates are always included in the same commit as the analysis change.
+
+**Pre-commit hook (`sources-logged`), in both repositories:** refuses a commit holding a schema file (planars) or a language's planar or diagnostics file (planars-data) whose content has no line in its change log, and names the `log-change` command to run ([Editing a source by hand](#editing-a-source-by-hand)). planars-data's copy is its own `.pre-commit-config.yaml`; install it from inside `coded_data/` with `../.venv/bin/pre-commit install`. CI runs the same check on the schema files, and the daily refresh on every language's sources.
 
 **Pre-push hook (`check-snapshots`):** Runs `check_snapshots.py` against the full local state before every push. Blocks the push if any snapshots are stale — a safety net for cases the pre-commit hook didn't catch.
 

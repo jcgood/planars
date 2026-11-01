@@ -17,6 +17,18 @@ repos:
         files: ^schemas/issue_labels\.yaml$
         stages: [pre-commit]
 
+      # Every staged schema file has a change-log line in schemas/changes.tsv
+      # whose fingerprint matches it (Phase 10 unit 17). If not, the message
+      # names the log-change command. planars-data has the same hook for a
+      # language's sources (its own .pre-commit-config.yaml).
+      - id: sources-logged
+        name: Check every schema change is logged
+        entry: .venv/bin/python -m coding integrity-check --check-changes --staged --schemas
+        language: system
+        pass_filenames: false
+        files: ^schemas/
+        stages: [pre-commit]
+
       - id: check-snapshots
         name: Check snapshots are up to date
         entry: .venv/bin/python check_snapshots.py

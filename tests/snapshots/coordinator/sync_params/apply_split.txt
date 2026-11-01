@@ -102,4 +102,5 @@ Splits:   ['free:free_left:free_right']
   [phrasal_accent/general] Split: free not found — skipping
 
 Drive door (enforce): checked 42 write(s) to 6 tab(s) or file(s); 0 broke a rule.
+Effects of the source change: answers broken 0; spans moved none.
 Local-file door: changed 3 file(s), previous versions archived and logged.

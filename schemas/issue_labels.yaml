@@ -23,6 +23,10 @@
 #                decision recorded in a decision log: `record-decision` closes
 #                it, and the daily refresh reopens one closed without its line
 #                (coding/decisions.py; docs/plain-record-design.md § 4)
+#   for_annotator (optional, true/false) an open issue under this label waits
+#                on an annotator; while a breaking change's issue (its change-log
+#                line's `why`) is open under one, no release is made
+#                (coding/versions.py; docs/change-log-design.md § 7)
 #   retired      (optional) when and why it stopped being used. The label stays
 #                on GitHub for the closed issues that carry it, but nothing can
 #                be filed under it, and CLAUDE.md's table leaves it out.
@@ -58,6 +62,7 @@ labels:
     description: "Requires input from Adam or other domain expert"
     meaning: Waiting on input from Adam or another domain expert.
     filed_by: by hand
+    for_annotator: true
 
   - name: Jeff
     color: "fbca04"
@@ -137,6 +142,7 @@ labels:
       notice is posted only when the list changes, not daily. Auto-closed
       when nothing is left.
     filed_by: validate-coding --notify (sheet-validation.yml)
+    for_annotator: true
 
   - name: sheet-drift
     color: "e4e669"
@@ -198,6 +204,18 @@ labels:
       also runs the check on every push, but files nothing). Auto-closed when
       the check passes.
     filed_by: data-refresh.yml
+
+  - name: source-unlogged
+    color: "D93F0B"
+    description: "A source (planar or diagnostics file) was edited by hand with no change-log line."
+    meaning: >-
+      The daily refresh found a language's planar or diagnostics file whose
+      content differs from the fingerprint on its last change-log line: an
+      edit made by hand and not logged (Phase 10 unit 17). The issue names
+      each file and the command that logs it (`log-change --lang LANG_ID`).
+      The refresh carries on importing. Auto-closed when every source is
+      logged.
+    filed_by: daily-refresh --apply (data-refresh.yml)
 
   - name: data-overwrite
     color: "B60205"

@@ -26,6 +26,7 @@
         "record_file",
         "drive_comment",
         "decision_log",
+        "change_log",
         "test_fixture"
       ]
     },

@@ -72,6 +72,16 @@ class Decision:
     def summary(self) -> str:
         return "; ".join(self.words)
 
+    @property
+    def change_class(self) -> str:
+        """For the change log (file_door.CHANGE_CLASSES): rows only added,
+        only removed, or replaced. A proposal sheet's rows are positions and
+        elements, or classes and criteria: the taxonomy layer."""
+        lo, hi, rows = self.accept_edit
+        if lo == hi:
+            return "add"
+        return "remove" if not rows else "change"
+
 
 def _decisions(comparisons: Dict[str, object]) -> List[Decision]:
     out = []
@@ -332,14 +342,22 @@ def main(args: argparse.Namespace | None = None) -> None:
     why = f"accepted from {ref}: " + "; ".join(
         d.summary() for d in accepted) if accepted else ""
     from .make_forms import _dump_diagnostics_yaml
+
+    def kinds(tab: str) -> List[Tuple[str, str]]:
+        # A file that changed with no accepted change on its tab is the
+        # source's own version restored by a declined conflict: a change.
+        return ([(d.change_class, "taxonomy") for d in accepted if d.tab == tab]
+                or [("change", "taxonomy")])
+
     if accepted and new_planar is not None and not new_planar.equals(old_planar):
-        file_door.write(file_door.planar(lang_id), file_door.frame_text(new_planar), why=why)
+        file_door.write(file_door.planar(lang_id), file_door.frame_text(new_planar), why=why,
+                        changes=kinds(PROPOSAL_PLANAR_TAB))
         print(f"  planar_{lang_id}.tsv updated")
     else:
         new_planar = None
     if accepted and new_yaml is not None:
         file_door.write(file_door.diagnostics_yaml(lang_id), _dump_diagnostics_yaml(new_yaml),
-                        why=why)
+                        why=why, changes=kinds(PROPOSAL_DIAGNOSTICS_TAB))
         print(f"  diagnostics_{lang_id}.yaml updated")
     # A change not accepted changes no file, so its reason would otherwise
     # live only on the sheet and the issue (plain-record-design § 3.5).

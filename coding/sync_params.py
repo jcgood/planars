@@ -308,8 +308,11 @@ def _edit_diagnostics_yaml(lang_id: str, renames, splits, merges, apply: bool) -
         raise SystemExit(
             f"ERROR: the edited diagnostics_{lang_id}.yaml would not pass "
             f"validation (above); nothing was written.")
+    kinds = ([("rename", "taxonomy")] * len(renames) + [("split", "taxonomy")] * len(splits)
+             + [("merge", "taxonomy")] * len(merges))
     file_door.write(file_door.diagnostics_yaml(lang_id), _dump_diagnostics_yaml(data),
-                    why="sync-params: " + "; ".join(c.strip() for c in changes))
+                    why="sync-params: " + "; ".join(c.strip() for c in changes),
+                    changes=kinds)
     print(f"  [{lang_id}] YAML updated → {yaml_path.name}")
     # A new criterion the schema doesn't define yet is a warning, not a
     # refusal; say so here (until 2026-10-27 the TSV rebuild printed it).

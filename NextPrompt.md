@@ -234,11 +234,13 @@ approved it (2026-10-31):** `migrations/backfill_decisions.py` (38 lines
 in `migrations/decision_backfill.tsv`, 8 relabels). **Waiting on Adam
 (#332)** for the lines naming him or about English; then correct the TSV,
 run it with `--apply`, move `CHECK_FROM` back. Where it stands is the
-progress doc's Phase 10 row. **Unit 17 is designed** (2026-10-31,
-`docs/change-log-design.md`; results-only changes count as breaking,
-Jeff; § 8 answered the same day, don't re-ask): **next, build it in
-§ 9's order** (approved to run unattended).
-Then 18. The live tests' share to Jeff's
+progress doc's Phase 10 row. **Unit 17 is built** (2026-10-31;
+`docs/change-log-design.md` § 10 "As built"): every hand edit to a source
+is logged with `log-change`; the hooks, CI and the refresh's `changes`
+step check it. **Next:** check the 2026-11-01 refresh is green and its
+`changes` step clean (no `source-unlogged`); install the planars-data
+hook in each clone (`../.venv/bin/pre-commit install` inside
+`coded_data/`; Adam's too, with his next pull). Then unit 18. The live tests' share to Jeff's
 second account came off the synth0001 folder and synth0001 was recaptured
 (2026-10-30, `migrations/remove_synth0001_test_share.py`). Q4 (notebooks shared
 by name only) is still open: test 1 ran with the link share on. Adam's

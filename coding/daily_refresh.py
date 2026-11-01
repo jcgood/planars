@@ -37,7 +37,9 @@ log (``file_door.overwrites``), not planars-data's git history. Since unit
 replaced file, and lists files read from a sheet or Doc that someone not in
 people.yaml edited (``file_door.unlisted_edits``). Since unit 16e the
 ``decisions`` step reopens any diagnostics or linguistics issue closed
-without its decision in a log (``coding/decisions.py``).
+without its decision in a log (``coding/decisions.py``). Since unit 17 the
+``changes`` step files ``source-unlogged`` when a source was edited with no
+change-log line (``coding/source_log.py``).
 """
 from __future__ import annotations
 
@@ -567,6 +569,29 @@ def integrity(r: Refresh) -> None:
              lambda: integrity_error_body(result.output), "Integrity check passed")
 
 
+def source_unlogged_body(output: str) -> str:
+    return (
+        f"## A source was edited with no change-log line — {today()}\n\n"
+        "Every change to a schema file or to a language's planar or diagnostics file gets a "
+        "line in its change log, saying what kind of change it was and what it did to "
+        "answers and spans (unit 17). These files changed with no line:\n\n"
+        + "\n".join(f"- {l.strip()}" for l in output.splitlines() if l.startswith("  "))
+        + "\n\n## What to do\n\n"
+        "Open Claude Code in the planars repository and say: **\"Log the source changes in "
+        "this issue.\"** It drafts the change class and layer from the diff, shows the "
+        "lines (`log-change` without `--apply`), and writes them once you agree. The daily "
+        "import carried on meanwhile. The issue closes when every source is logged.\n")
+
+
+def sources_logged(r: Refresh) -> None:
+    """Every source matches its last change-log line (unit 17; design § 5):
+    planars-data has no CI, so a hand edit pushed there is caught here. It
+    files an issue and does not stop the import (§ 8 Q3)."""
+    result = run("integrity-check", "--check-changes")
+    r.report("source-unlogged", not result.ok, "Source edited with no change-log line",
+             lambda: source_unlogged_body(result.output), "Every source is logged")
+
+
 def decisions_recorded(r: Refresh) -> None:
     """Reopen each diagnostics/linguistics issue closed without its decision
     in a log (unit 16e; plain-record-design § 4.3), with the command that
@@ -728,6 +753,7 @@ STEPS: List[Step] = [
     Step("codebook", "check-codebook (+ generate-rule-update-prompt) → codebook-error", codebook),
     Step("stale sheets", "integrity-check --check-stale-sheets → stale-class-sheets", stale_class_sheets),
     Step("integrity", "integrity-check → integrity-error", integrity),
+    Step("changes", "integrity-check --check-changes → source-unlogged", sources_logged),
     Step("decisions", "reopen diagnostics/linguistics issues closed with no recorded decision",
          decisions_recorded),
     Step("chapters", "build-chapters --check --apply (files its own chapter-behind issues)",

@@ -85,4 +85,5 @@ Merges:   ['widescope_right:widescope_left:widescope_either']
   [phrasal_accent/general] Merge: neither widescope_right nor widescope_left found — skipping
 
 Drive door (enforce): checked 50 write(s) to 10 tab(s) or file(s); 0 broke a rule.
+Effects of the source change: answers broken 0; spans moved none.
 Local-file door: changed 3 file(s), previous versions archived and logged.

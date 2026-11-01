@@ -64,6 +64,7 @@ tab is each language's status sheet.
 | Coordinator UX checklist | `docs/tooling-design.md` |
 | Data layer redesign (#271): rationale, plan, **current state** | `docs/data-layer-design.md`, `docs/data-layer-implementation-plan.md`, `docs/data-layer-progress.md` |
 | Tests and saved outputs | `docs/testing.md`; span snapshots in `tests/snapshots/` |
+| Changes to the sources, and the versions counted from them | `schemas/changes.tsv` and `coded_data/{lang_id}/changes.tsv` (`coding/source_log.py`, `coding/versions.py`); design `docs/change-log-design.md` |
 | Decisions (what a `diagnostics`/`linguistics` issue settled) | `schemas/decisions.tsv` (framework) and `coded_data/{lang_id}/decisions.tsv` (one language), written by `record-decision`; coordinator guide § "Closing a decision issue" |
 | One-time migrations | `migrations/` — convention in `migrations/README.md` |
 | Laminar-family analysis and charts | `laminar/` (run `python -m laminar charts <dataset>`) and `planarsviz/` (R chart package); plan `docs/laminar-analysis-plan.md`, state `docs/laminar-analysis-progress.md` |
@@ -242,6 +243,12 @@ should make sense to someone who has never written a test.
 - **Edit sources, never their copies:** `planar_{lang_id}.tsv` and
   `diagnostics_{lang_id}.yaml`, not the planar and diagnostics Sheets (the
   daily refresh copies them there). Rules for the YAML: `schemas/__init__.py`.
+- **Log every hand edit to a source** (the five schema files and each
+  language's planar and diagnostics file; `coding/source_log.py`) with
+  `log-change`: draft the change class and layer from the diff, show the
+  person the dry run, then `--apply` (coordinator guide § "Editing a source
+  by hand"). A commit holding an unlogged one is refused. A span rule is
+  logged with its module change, before committing.
 - **Imported TSVs** are `coded_data/{lang_id}/{class_name}/{construction}.tsv`;
   archives go under `coded_data/{lang_id}/archive/{class_name}/`.
 - **The keystone** is the row with `Position_Name == 'v:verbstem'`; it anchors
@@ -353,6 +360,7 @@ least one label from the table below (`gh issue create --label …`).
 | `diagnostics-yaml-error` | data-refresh.yml | `sync-diagnostics-yaml` found a blocking `diagnostics_{lang_id}.yaml` validation error — a malformed YAML, not schema inconsistency (`codebook-error`) — so the diagnostics Sheet was not updated. A non-blocking error (e.g. a required class not yet drafted) does not trigger this. Resolve: fix the YAML, run `sync-diagnostics-yaml --apply`. Auto-closed when clean. |
 | `import-error` | data-refresh.yml | `import-sheets --apply` exited non-zero. The issue body contains the failure output. Auto-closed when import succeeds. |
 | `codebook-error` | data-refresh.yml | `check-codebook` found schema inconsistencies in the daily refresh (CI also runs the check on every push, but files nothing). Auto-closed when the check passes. |
+| `source-unlogged` | daily-refresh --apply (data-refresh.yml) | The daily refresh found a language's planar or diagnostics file whose content differs from the fingerprint on its last change-log line: an edit made by hand and not logged (Phase 10 unit 17). The issue names each file and the command that logs it (`log-change --lang LANG_ID`). The refresh carries on importing. Auto-closed when every source is logged. |
 | `data-overwrite` | daily-refresh --apply (data-refresh.yml) | Today's refresh replaced a file whose last change, in the language's change log (`changes.tsv`), was made by a different command someone ran (a migration, restructure-sheets). The issue names each file and the archive copy holding the replaced version; compare it with the current file. Auto-closed when clean. |
 | `planar-changed` | sync-planar (data-refresh.yml) | A language's planar file changed since its planar Sheet was last updated (`sync-planar`, which also renumbers position numbers typed in answers). Resolve: run the command in the issue body (`update-sheets --apply` for additions, `restructure-sheets ... --apply` for moved, renamed or removed positions). Auto-closed when a later run finds no planar changes. |
 | `stale-class-sheets` | data-refresh.yml | Class sheets in the ID file have no matching class in `diagnostics_{lang}.yaml`. Resolve: `retire-classes --apply`. Auto-closed when clean. |

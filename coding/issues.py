@@ -96,9 +96,10 @@ def load_labels(path: Path = LABELS_PATH) -> List[Dict]:
         if len(entry["description"]) > 100:
             raise ValueError(f"{path.name}: {entry['name']!r} description is over "
                              "GitHub's 100-character limit")
-        if not isinstance(entry.get("needs_decision", False), bool):
-            raise ValueError(f"{path.name}: {entry['name']!r} needs_decision is "
-                             f"{entry['needs_decision']!r}; write true or false")
+        for flag in ("needs_decision", "for_annotator"):
+            if not isinstance(entry.get(flag, False), bool):
+                raise ValueError(f"{path.name}: {entry['name']!r} {flag} is "
+                                 f"{entry[flag]!r}; write true or false")
         seen.add(entry["name"])
     return labels
 
@@ -107,6 +108,13 @@ def decision_labels() -> List[str]:
     """The labels whose issues end in a recorded decision (`needs_decision:
     true`; docs/plain-record-design.md § 4.3), in registry order."""
     return [e["name"] for e in load_labels() if e.get("needs_decision")]
+
+
+def annotator_labels() -> List[str]:
+    """The labels whose open issues wait on an annotator (`for_annotator:
+    true`): a breaking change whose issue carries one still has annotation
+    waiting on it, and no release is made (coding/versions.py)."""
+    return [e["name"] for e in load_labels() if e.get("for_annotator")]
 
 
 def check_label(label: str) -> str:
@@ -208,10 +216,12 @@ class GhCli:
     def get_issue(self, number: int) -> Optional[Dict]:
         try:
             out = self._run(["issue", "view", str(number),
-                             "--json", "number,title,state,body"])
+                             "--json", "number,title,state,body,labels"])
         except RuntimeError:
             return None
-        return json.loads(out)
+        issue = json.loads(out)
+        issue["labels"] = [l["name"] for l in issue.get("labels") or []]
+        return issue
 
     def create_issue(self, title: str, label: str, body: str) -> int:
         out = self._run(["issue", "create", "--title", title, "--label", label], body=body)

@@ -158,16 +158,105 @@ def test_a_source_is_written_only_by_a_command_that_says_it_edits_it(coded):
     text = file_door.read(target) + "# a comment\n"
     with drive_door.running("restructure-sheets", argparse.Namespace(apply=True)):
         with pytest.raises(DoorViolation, match="edits_sources"):
-            file_door.write(target, text, why="test")
+            file_door.write(target, text, why="test", changes=[("reword", "convention")])
     with drive_door.running("sync-params", argparse.Namespace(apply=True)):
-        assert file_door.write(target, text, why="test")
+        assert file_door.write(target, text, why="test", changes=[("reword", "convention")])
 
 
 def test_a_migration_may_write_a_source(coded):
     """Code with no operations.yaml record says it may write (a migration)."""
     target = file_door.planar(LANG)
     with drive_door.running("migration", may_write=True):
-        assert file_door.write(target, file_door.read(target) + "\n", why="test")
+        assert file_door.write(target, file_door.read(target) + "\n", why="test",
+                               changes=[("change", "taxonomy")])
+
+
+# ---------------------------------------------------------------------------
+# Source lines (unit 17): change class, layer, effects, fingerprint
+# ---------------------------------------------------------------------------
+
+def test_a_source_needs_a_known_change_class_and_layer(coded):
+    target = file_door.planar(LANG)
+    text = file_door.read(target) + "\n"
+    with drive_door.running("migration", may_write=True):
+        with pytest.raises(DoorViolation, match="what kind of change"):
+            file_door.write(target, text, why="test")
+        with pytest.raises(DoorViolation, match="not one of"):
+            file_door.write(target, text, why="test", changes=[("renamed", "taxonomy")])
+        with pytest.raises(DoorViolation, match="layer 'theory'"):
+            file_door.write(target, text, why="test", changes=[("rename", "theory")])
+    assert file_door.read(target) == text[:-1]
+
+
+def test_a_change_class_on_a_file_that_is_not_a_source_is_refused(coded):
+    with drive_door.running("t", may_write=True):
+        with pytest.raises(DoorViolation, match="only for a source"):
+            file_door.write(_target(), file_door.read(_target()) + "\n", why="test",
+                            changes=[("change", "shape")])
+
+
+def test_a_source_line_per_change_with_effects_and_the_fingerprint_on_the_last(
+        coded, monkeypatch):
+    from coding import change_effects
+    seen = {}
+
+    def measure(before, coded_data=None, code_from=None):
+        seen.update(before)
+        return change_effects.Effects({"synth0001": 3}, {"synth0001": ["metrical"]})
+
+    monkeypatch.setattr(change_effects, "measure", measure)
+    target = file_door.planar(LANG)
+    old = file_door.read(target)
+    new = old + "\n"
+    with drive_door.running("migration", may_write=True):
+        file_door.write(target, new, why="#1: test",
+                        changes=[("rename", "taxonomy"), ("add", "taxonomy")])
+        # Not measured until the command ends.
+        assert _log(coded)[0]["answers broken"] == ""
+    first, second = _log(coded)
+    assert (first["change"], second["change"]) == ("rename", "add")
+    assert first["fingerprint"] == "" and second["fingerprint"] == file_door.fingerprint(new)
+    for line in (first, second):
+        assert line["answers broken"] == "3 (synth0001 3)"
+        assert line["spans moved"] == "synth0001: metrical"
+    # Measured against how the command found the file.
+    assert seen == {target.path: old}
+
+
+def test_a_failed_measurement_is_written_as_unknown(coded, monkeypatch):
+    from coding import change_effects
+
+    def measure(before, coded_data=None, code_from=None):
+        raise RuntimeError("no copy")
+
+    monkeypatch.setattr(change_effects, "measure", measure)
+    target = file_door.planar(LANG)
+    with drive_door.running("migration", may_write=True):
+        file_door.write(target, file_door.read(target) + "\n", why="t",
+                        changes=[("change", "taxonomy")])
+    [line] = _log(coded)
+    assert line["answers broken"] == "unknown (no copy)"
+
+
+def test_a_hand_edit_is_logged_with_its_previous_version_archived(coded):
+    from coding import change_effects
+    target = file_door.planar(LANG)
+    previous = file_door.read(target)
+    target.path.write_text(previous + "\n", encoding="utf-8")
+    with drive_door.running("migration", may_write=True):
+        file_door.log_hand_edit(target, previous, why="#2: by hand", what="1 row changed",
+                                changes=[("change", "taxonomy")],
+                                effects=change_effects.Effects())
+    [line] = _log(coded)
+    assert line["by"] == "migration" and line["answers broken"] == "0"
+    assert line["fingerprint"] == file_door.fingerprint(previous + "\n")
+    assert (coded / LANG / line["previous version"]).read_text(encoding="utf-8") == previous
+
+
+def test_a_source_is_never_removed_by_a_command(coded):
+    with drive_door.running("migration", may_write=True):
+        with pytest.raises(DoorViolation, match="never removed"):
+            file_door.remove(file_door.planar(LANG), why="test")
 
 
 # ---------------------------------------------------------------------------
@@ -395,7 +484,7 @@ def test_revisions_are_not_read_when_nothing_changes(coded):
 
 def test_a_log_with_another_header_is_refused(coded):
     (coded / LANG / "changes.tsv").write_text("when (UTC)\tfile\n", encoding="utf-8")
-    with pytest.raises(RuntimeError, match="add_edited_by_to_change_logs"):
+    with pytest.raises(RuntimeError, match="start_source_logs"):
         _change("y", "import-sheets")
 
 

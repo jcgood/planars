@@ -1,0 +1,6 @@
+when (UTC)	file	what changed	by	why	previous version	edited by	change	layer	answers broken	spans moved	fingerprint
+2026-11-01T00:32:26Z	diagnostic_classes.yaml	baseline	migration start_source_logs	the record of changes to this file starts here (unit 17)			baseline				62f3e8083b7f
+2026-11-01T00:32:26Z	diagnostic_criteria.yaml	baseline	migration start_source_logs	the record of changes to this file starts here (unit 17)			baseline				5b3ed1c3141a
+2026-11-01T00:32:26Z	planar.yaml	baseline	migration start_source_logs	the record of changes to this file starts here (unit 17)			baseline				123a34666815
+2026-11-01T00:32:26Z	terms.yaml	baseline	migration start_source_logs	the record of changes to this file starts here (unit 17)			baseline				27f3a396aa66
+2026-11-01T00:32:26Z	languages.yaml	baseline	migration start_source_logs	the record of changes to this file starts here (unit 17)			baseline				0c6522fe6da4

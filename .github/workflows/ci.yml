@@ -39,6 +39,12 @@ jobs:
       - name: Check codebook consistency
         run: python -m coding check-codebook
 
+      # Catches a commit made with --no-verify and a pull request (e.g. a
+      # span-rule change) whose schema edit has no change-log line: the
+      # message names the log-change command to run on the branch (unit 17).
+      - name: Check every schema change is logged
+        run: python -m coding integrity-check --check-changes --schemas
+
       - name: Check snapshots are up to date
         run: python check_snapshots.py
 

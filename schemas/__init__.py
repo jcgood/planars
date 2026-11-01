@@ -9,8 +9,23 @@ Each file's own header comments say what each of its keys means; this list
 says which file owns what. After editing any of them, run
 ``python -m coding integrity-check`` and ``python -m coding check-codebook``.
 
+Five of them are *sources* (``coding/source_log.py``, ``SCHEMA_SOURCES``:
+diagnostic_classes, diagnostic_criteria, planar, terms, languages): every
+change to one gets a line in ``changes.tsv``, written by
+``python -m coding log-change`` (coordinator guide, "Editing a source by
+hand"); a commit holding an unlogged one is refused. The others are
+listed in ``NOT_LOGGED`` there, with the reason.
+
 Files
 -----
+changes.tsv
+    The schemas' change log (Phase 10 unit 17): one line per change to a
+    source above, with its change class, layer, the answers it broke and
+    the spans it moved (measured), and the file's fingerprint. Written by
+    ``log-change`` and ``lookup-lang``, never by hand; the schemas' version
+    is counted from it (``coding/versions.py``). Each language's sources are
+    logged in its own ``coded_data/{lang_id}/changes.tsv``. Not used in Colab.
+
 diagnostic_classes.yaml
     Normative schema for the linguistic content of analysis classes: domain
     type (morphosyntactic / phonological / indeterminate), whether a class is
@@ -54,7 +69,8 @@ decisions.tsv
 
 issue_labels.yaml
     The one definition of the project's GitHub issue labels (name, colour,
-    short description, meaning, who files it, ``needs_decision``). Read by ``coding/issues.py``,
+    short description, meaning, who files it, ``needs_decision``,
+    ``for_annotator``). Read by ``coding/issues.py``,
     which refuses any label not listed; GitHub's labels and CLAUDE.md's
     Labels table are both rebuilt from it (see the file's header). Not used
     in Colab.
@@ -127,7 +143,9 @@ diagnostics_{lang_id}.yaml  (per-language, lives in coded_data/{lang_id}/lang_se
         language; present but blank on a sheet means not yet coded.
       - ``notes`` is an optional string (class-level).
     Workflow:
-      - Coordinators edit this YAML directly, then commit and push it in
+      - Coordinators edit this YAML directly, then log the edit with
+        ``log-change --lang LANG_ID`` (coordinator guide, "Editing a source
+        by hand"), which commits and pushes it with its change-log line in
         planars-data.
       - When the criterion columns change, ``sync-params --apply`` carries
         the change to existing sheets.

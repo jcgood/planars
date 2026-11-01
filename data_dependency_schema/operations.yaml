@@ -1020,6 +1020,32 @@
   cascades_triggered: []
   modes: []
 
+- id: log_change
+  cli_command: log-change
+  writes_to_drive: false
+  writes_locally: true
+  description: >-
+    Logs a source edited by hand (the schema files, or with --lang a
+    language's planar and diagnostics file): one change-log line per change
+    class and layer, with the answers it broke and the spans it moved
+    (measured in two temporary copies of the project) and the file's
+    fingerprint. A breaking change must name its issue and say what happens
+    to the existing answers. Without --apply it shows the lines.
+  side_effects:
+    - "with --lang: archives the version last logged and appends to coded_data/{lang}/changes.tsv through the local-file door (committed and pushed in planars-data with the edited source)"
+    - "without --lang: appends to schemas/changes.tsv and stages it with the edited schema files in planars (the person commits them together)"
+    - "when spans moved: regenerates tests/snapshots/ and stages it in planars"
+  idempotent: true
+  idempotency_note: >-
+    Once a file's last line has its fingerprint there is nothing left to
+    log, so a second run writes nothing.
+  apply_gate: "--apply"
+  preconditions: [coded_data_up_to_date, coded_data_git_identity_configured]
+  facts_touched:
+    - {fact: change_record, role: writes}
+  cascades_triggered: []
+  modes: []
+
 - id: accept_proposal
   cli_command: accept-proposal
   writes_to_drive: true

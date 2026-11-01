@@ -27,6 +27,9 @@
 ── DECISIONS ───────────────────────────────────────────────────────────
   ✓  Every diagnostics / linguistics issue closed since 2026-11-01 has its decision in a log
 
+── CHANGES ─────────────────────────────────────────────────────────────
+  ✓  Every source matches its last change-log line
+
 ── ANNOTATION SHEETS ───────────────────────────────────────────────────
   ✓  Araona [arao1248] · ciscategorial · general
   ✓  Araona [arao1248] · free_occurrence · general

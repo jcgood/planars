@@ -64,6 +64,7 @@ def test_facts_have_expected_ids():
         "proposal_sheet_record",
         "drive_comment_record",
         "decision_record",
+        "change_record",
     }
 
 

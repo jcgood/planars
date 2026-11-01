@@ -98,6 +98,7 @@ def test_a_clean_run_runs_every_command_in_order_and_closes_every_issue(refresh_
         "check-codebook",
         "integrity-check --check-stale-sheets",
         "integrity-check",
+        "integrity-check --check-changes",
         "build-chapters --check --apply",
         "sync-overleaf --apply",
         "update-sheets --apply",

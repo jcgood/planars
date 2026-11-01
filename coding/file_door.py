@@ -46,7 +46,9 @@ test's own temporary folder.
    nothing;
 2. a source (``SOURCES``: the planar, the diagnostics YAML) is written only
    by a command whose record lists it under ``edits_sources``, or by code
-   with no record (a migration, which passes ``may_write`` to ``running``);
+   with no record (a migration, which passes ``may_write`` to ``running``),
+   and only with what kind of change it is (``changes=``: each change class
+   and layer, ``CHANGE_CLASSES``, ``LAYERS``); a source is never removed;
 3. an annotation TSV has the columns its tab should have
    (``sheet_spec.construction_columns``; parked ``_split_``/``_merged_``
    columns allowed). Only mismatches the previous version did not already
@@ -57,6 +59,18 @@ test's own temporary folder.
    Source or Comments cell filled, matched by the schema's row key) unless
    the caller says why with ``drops=`` (the Drive door's ``replacing``).
    ``remove`` drops a whole file on purpose: it needs only its reason.
+
+**Source lines** (unit 17; docs/change-log-design.md): a write to a source
+logs one line per change class, with ``change``, ``layer`` and, on the
+last, the file's ``fingerprint`` (``SOURCE_COLUMNS``). When the command
+ends, ``finish`` measures what the run did to every language's answers and
+spans (``change_effects.measure``, comparing the files as the run found
+them with how it leaves them) and writes ``answers broken`` and ``spans
+moved`` on those lines; a measurement that fails is written ``unknown``. A
+source edited by hand is logged with ``log_hand_edit`` (``log-change``):
+the version it replaced is archived and its lines written with effects
+already measured. Which files are sources, and the rule that each matches
+its last line, are ``coding/source_log.py``'s.
 
 **Records** (unit 16; docs/plain-record-design.md): copies, in
 ``{lang}/records/``, of what people write in Google that no other file
@@ -113,17 +127,19 @@ replaced a file whose last change was made by someone running a different
 command (a migration, restructure-sheets): the daily refresh's
 ``data-overwrite`` issue, which also names who edited the sheet the refresh
 read. The same issue lists files ``unlisted_edits`` finds edited by
-someone not in people.yaml. A hand edit leaves no line, so it is not seen
-until unit 17 requires one.
+someone not in people.yaml. A hand edit to an annotation file leaves no
+line; a hand edit to a source is caught by the check that it is logged
+(``source_log.unlogged``).
 
 Not here: test data under ``.test_fixtures/`` (``capture-drive-state`` is
-its one writer) and hand edits (unit 17).
+its one writer).
 """
 from __future__ import annotations
 
 import argparse
 import csv
 import difflib
+import hashlib
 import io
 import shutil
 import subprocess
@@ -219,8 +235,21 @@ SOURCES: FrozenSet[str] = frozenset({PLANAR, DIAGNOSTICS_YAML})
 # not an overwrite (``overwrites``).
 BUILT: FrozenSet[str] = frozenset({PROPOSAL_BASE})
 CHANGE_LOG_NAME = "changes.tsv"
+# The last five (unit 17, docs/change-log-design.md § 3.2) are filled only on
+# lines about a source (``SOURCES``, and the schemas in the project's log,
+# ``coding/source_log.py``); lines about any other file leave them empty.
+SOURCE_COLUMNS = ("change", "layer", "answers broken", "spans moved", "fingerprint")
 CHANGE_LOG_COLUMNS = ("when (UTC)", "file", "what changed", "by", "why", "previous version",
-                      "edited by")
+                      "edited by") + SOURCE_COLUMNS
+# The kinds of change a source line names (the schema-evolution literature's
+# operators, plus ``change``: a value or rule altered; ``reword``: text only;
+# ``baseline``: where a file's record starts) and the layer it touches
+# (docs/data-layer-design.md's three). Nothing outside these is accepted.
+CHANGE_CLASSES = ("add", "remove", "rename", "split", "merge", "change", "reword", "baseline")
+BASELINE = "baseline"   # a stream's start: no layer, no effects (design § 6.2)
+LAYERS = ("shape", "taxonomy", "convention")
+# How many characters of a file's sha256 the fingerprint keeps.
+FINGERPRINT_LENGTH = 12
 # Who edited the Drive file a write was read from (unit 16c): the names in
 # the "edited by" cell are joined with this.
 EDITORS_SEPARATOR = "; "
@@ -504,6 +533,32 @@ def stamp() -> str:
     return datetime.now(timezone.utc).strftime(ARCHIVE_STAMP_FORMAT)
 
 
+def fingerprint(content: Union[str, bytes, None]) -> str:
+    """A short hash of a file's exact content (``""`` for no file): the
+    change log's *fingerprint*, which the check compares with the file."""
+    if content is None:
+        return ""
+    data = content.encode("utf-8") if isinstance(content, str) else content
+    return hashlib.sha256(data).hexdigest()[:FINGERPRINT_LENGTH]
+
+
+def check_changes(changes: Sequence[Tuple[str, str]]) -> List[str]:
+    """What is wrong with a source line's (change, layer) pairs; [] if nothing."""
+    if not changes:
+        return ["a source is written only with what kind of change it is (changes=[(CLASS, "
+                f"LAYER)]; classes {', '.join(CHANGE_CLASSES)}; layers {', '.join(LAYERS)})"]
+    out = []
+    for change, layer in changes:
+        if change not in CHANGE_CLASSES:
+            out.append(f"change class {change!r} is not one of {', '.join(CHANGE_CLASSES)}")
+        elif change == BASELINE:
+            if layer:
+                out.append("a baseline line names no layer")
+        elif layer not in LAYERS:
+            out.append(f"layer {layer!r} is not one of {', '.join(LAYERS)}")
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Text: the door writes exactly what it is given
 # ---------------------------------------------------------------------------
@@ -565,6 +620,11 @@ class _Run:
     lines: List[str] = field(default_factory=list)      # for the commit message
     state: Dict[str, str] = field(default_factory=dict)  # state file -> what was done
     specs: Dict[Tuple[str, str, str], object] = field(default_factory=dict)
+    # Each language file's content before the run first changed it (None:
+    # it did not exist), and the change-log rows about sources whose effects
+    # are measured when the run ends (log path, row number counting the header).
+    originals: Dict[Path, Optional[str]] = field(default_factory=dict)
+    source_rows: List[Tuple[Path, int]] = field(default_factory=list)
 
 
 # A stack: daily-refresh runs commands inside its own run.
@@ -615,6 +675,8 @@ def finish(succeeded: bool) -> None:
     command a commit failure is printed rather than raised, so it can't hide
     the command's own error."""
     run = _runs.pop()
+    if run.source_rows:
+        _fill_effects(run)
     if run.lines:
         print(f"Local-file door: changed {len(run.lines)} file(s), previous versions "
               f"archived and logged.")
@@ -633,10 +695,16 @@ def finish(succeeded: bool) -> None:
 
 def write(target: LocalFile, text: str, *, why: str, drops: Optional[str] = None,
           what: Optional[str] = None,
-          revisions: Optional[Callable[[], List[dict]]] = None) -> bool:
+          revisions: Optional[Callable[[], List[dict]]] = None,
+          changes: Sequence[Tuple[str, str]] = ()) -> bool:
     """Write ``text`` to ``target`` if it differs from what is there. True if
     written. ``why`` goes in the change log; ``what`` replaces the door's own
     description of the change.
+
+    ``changes``, required for a source (``SOURCES``) and refused otherwise:
+    each (change class, layer) the write makes (``CHANGE_CLASSES``,
+    ``LAYERS``), one change-log line each. Its effects on answers and spans
+    are measured when the command ends (``_fill_effects``).
 
     ``revisions``, for a file read from something a person types in on Drive
     (a class sheet, a notes Doc, a proposal sheet), returns that Drive file's
@@ -659,6 +727,11 @@ def write(target: LocalFile, text: str, *, why: str, drops: Optional[str] = None
         return False
     run = _runs[-1] if _runs else None
     problems = _permission_problems(run, target, "write")
+    if target.kind in SOURCES:
+        problems += check_changes(changes)
+    elif changes:
+        problems.append("a change class and layer are given only for a source "
+                        f"({', '.join(sorted(SOURCES))})")
     lost: List[str] = []
     if target.kind == ANNOTATION:
         problems += _column_problems(run, target, old, text)
@@ -666,6 +739,8 @@ def write(target: LocalFile, text: str, *, why: str, drops: Optional[str] = None
         if drops is None:
             problems += lost
     _act(run, target, problems)
+    if run is not None:
+        run.originals.setdefault(path, old)
     previous = _archive(path, target) if old is not None else None
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8", newline="") as f:
@@ -674,8 +749,39 @@ def write(target: LocalFile, text: str, *, why: str, drops: Optional[str] = None
     if lost and drops:
         description += f"; answered rows not matched in the new version ({drops})"
     edited_by = _editors(target, revisions) if revisions is not None else ""
-    _log(run, target, description, why, previous, path, edited_by)
+    _log(run, target, description, why, previous, path, edited_by,
+         changes=changes, new_text=text)
     return True
+
+
+def log_hand_edit(target: LocalFile, previous_text: Optional[str], *, why: str, what: str,
+                  changes: Sequence[Tuple[str, str]], effects) -> None:
+    """Log a source someone edited by hand (``log-change``): the version it
+    replaced (``previous_text``, the last one logged) goes into the archive,
+    and one change-log line per (change class, layer), with ``effects``
+    (``change_effects.Effects``, already measured) and the file's fingerprint.
+    The file itself is committed with the log; it is not written."""
+    run = _runs[-1] if _runs else None
+    # Rule 1 only: the command writes no source, so edits_sources is not asked.
+    problems = [p for p in _permission_problems(run, target, "log")
+                if "edits_sources" not in p]
+    if target.kind not in SOURCES:
+        problems.append(f"only a source is logged by hand ({', '.join(sorted(SOURCES))})")
+    problems += check_changes(changes)
+    _act(run, target, problems)
+    path = target.path
+    previous = None
+    if previous_text is not None:
+        folder = CODED_DATA / target.lang_id / ARCHIVE_FOLDER / target.folder
+        folder.mkdir(parents=True, exist_ok=True)
+        base = f"{path.stem}_{stamp()}"
+        previous, n = folder / f"{base}{path.suffix}", 2
+        while previous.exists():
+            previous, n = folder / f"{base}_{n}{path.suffix}", n + 1
+        with open(previous, "w", encoding="utf-8", newline="") as f:
+            f.write(previous_text)
+    _log(run, target, what, why, previous, path, changes=changes,
+         new_text=_read(path), effects=effects)
 
 
 def _editors(target: LocalFile, revisions: Callable[[], List[dict]]) -> str:
@@ -702,7 +808,12 @@ def remove(target: LocalFile, *, why: str) -> bool:
     if old is None:
         return False
     run = _runs[-1] if _runs else None
-    _act(run, target, _permission_problems(run, target, "remove"))
+    problems = _permission_problems(run, target, "remove")
+    if target.kind in SOURCES:
+        problems.append("a source is never removed by a command; remove it by hand and "
+                        "log it with log-change")
+    _act(run, target, problems)
+    run.originals.setdefault(path, old)
     previous = _archive(path, target)
     path.unlink()
     if path.parent.is_dir() and not any(path.parent.iterdir()):
@@ -1080,7 +1191,12 @@ def _archive(path: Path, target: LocalFile) -> Path:
 
 
 def _log(run: Optional[_Run], target: LocalFile, what: str, why: str,
-         previous: Optional[Path], path: Path, edited_by: str = "") -> None:
+         previous: Optional[Path], path: Path, edited_by: str = "", *,
+         changes: Sequence[Tuple[str, str]] = (), new_text: Optional[str] = None,
+         effects=None) -> None:
+    """Append the file's change-log line (a source: one per change class,
+    the fingerprint on the last). A source line written with no ``effects``
+    has them filled in when the command ends."""
     lang_dir = CODED_DATA / target.lang_id
     log = change_log(target.lang_id)
     by = run.command if run else "(no command)"
@@ -1097,17 +1213,61 @@ def _log(run: Optional[_Run], target: LocalFile, what: str, why: str,
                 f"{log.relative_to(CODED_DATA.parent)} has the columns {list(header)}, "
                 f"not {list(CHANGE_LOG_COLUMNS)}; nothing was logged. Pull coded_data/; "
                 f"if it is still so, bring the log's header up to date (the last change "
-                f"was migrations/add_edited_by_to_change_logs.py).")
+                f"was migrations/start_source_logs.py).")
     log.parent.mkdir(parents=True, exist_ok=True)
+    base = [when, target.relpath, what, by, why, prev, edited_by]
+    if target.kind in SOURCES:
+        answers, spans = (effects.answers_cell(), effects.spans_cell()) if effects else ("", "")
+        mark = fingerprint(new_text)
+        rows = [base + [change, layer, answers, spans, mark if i == len(changes) - 1 else ""]
+                for i, (change, layer) in enumerate(changes)]
+    else:
+        rows = [base + [""] * len(SOURCE_COLUMNS)]
+    first = 1 if new_log else _count_rows(log)
     with open(log, "a", encoding="utf-8", newline="") as f:
         writer = csv.writer(f, delimiter="\t", lineterminator="\n")
         if new_log:
             writer.writerow(CHANGE_LOG_COLUMNS)
-        writer.writerow([when, target.relpath, what, by, why, prev, edited_by])
+        writer.writerows(rows)
+    if run is not None and target.kind in SOURCES and effects is None:
+        run.source_rows += [(log, first + i) for i in range(len(rows))]
     if run is not None:
         run.written += [path, log] + ([previous] if previous else [])
         edits = f"; edited by {edited_by}" if edited_by else ""
         run.lines.append(f"{target.lang_id}/{target.relpath}: {what} ({why}{edits})")
+
+
+def _count_rows(log: Path) -> int:
+    """How many rows the log has, its header included."""
+    with open(log, encoding="utf-8", newline="") as f:
+        return sum(1 for _ in csv.reader(f, delimiter="\t"))
+
+
+def _fill_effects(run: _Run) -> None:
+    """Measure what the run's writes did to answers and spans (every file it
+    changed, compared with how it found them: ``change_effects.measure``) and
+    write that on its source lines. A measurement that fails is written as
+    unknown, which counts as breaking (``versions.level``), and printed."""
+    from .change_effects import Effects, measure
+    try:
+        effects = measure(run.originals)
+    except Exception as exc:  # the line must still say something
+        print(f"WARNING: could not measure the effects of {run.command}'s source change: {exc}")
+        effects = Effects.unknown(str(exc))
+    by_log: Dict[Path, List[int]] = {}
+    for log, row in run.source_rows:
+        by_log.setdefault(log, []).append(row)
+    columns = list(CHANGE_LOG_COLUMNS)
+    i_answers, i_spans = columns.index("answers broken"), columns.index("spans moved")
+    for log, numbers in by_log.items():
+        with open(log, encoding="utf-8", newline="") as f:
+            rows = list(csv.reader(f, delimiter="\t"))
+        for n in numbers:
+            rows[n][i_answers], rows[n][i_spans] = effects.answers_cell(), effects.spans_cell()
+        with open(log, "w", encoding="utf-8", newline="") as f:
+            csv.writer(f, delimiter="\t", lineterminator="\n").writerows(rows)
+    print(f"Effects of the source change: answers broken {effects.answers_cell()}; "
+          f"spans moved {effects.spans_cell() or 'none'}.")
 
 
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:

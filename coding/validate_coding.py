@@ -742,6 +742,42 @@ def _check_header_sync(
     return None
 
 
+def local_tab_issues(lang_id: str, class_name: str, construction: str,
+                     info: Dict, pair_rows: Dict[str, set], keyed_rows: Dict[str, Dict],
+                     rows: Optional[List[List[str]]] = None) -> List[ValidationIssue]:
+    """Validate one tab's local TSV (or ``rows``) by its row shape: the
+    checks the revalidate_* functions run before they paint the Sheet.
+    ``info`` is the tab's entry in ``_load_param_map``; ``pair_rows`` and
+    ``keyed_rows`` are ``_get_pair_row_constructions()`` and
+    ``_get_keyed_row_constructions()``. Also used by change_effects."""
+    if rows is None:
+        rows = _read_tsv_rows(lang_id, class_name, construction)
+    params, values = info.get("params", []), info.get("values", {})
+    keyed = keyed_rows.get(class_name, {}).get(construction)
+    if keyed:
+        return validate_keyed_rows(rows, keyed["columns"], params, construction, values,
+                                   keyed.get("blank_ok_when"),
+                                   class_name=class_name, lang_id=lang_id)[1]
+    if construction in pair_rows.get(class_name, set()):
+        return validate_pair_rows(rows, params, construction, values,
+                                  class_name=class_name, lang_id=lang_id)[1]
+    ka = resolve_keystone_active(lang_id, class_name, construction,
+                                 data_dir=CODED_DATA / lang_id / "lang_setup")
+    if ka is None:
+        print(f"  [{class_name}/{construction}] WARNING: keystone_active unresolved — treating as False")
+        ka = False
+    return validate_annotation_rows(rows, params, construction, values, keystone_active=ka,
+                                    keystone_na_criteria=resolve_keystone_na_criteria(class_name),
+                                    class_name=class_name, lang_id=lang_id)[1]
+
+
+def _paint(ws, issues: List[ValidationIssue]) -> List[ValidationIssue]:
+    """Repaint the Sheet's pink highlights from ``issues``; return them."""
+    clear_highlights(ws)
+    highlight_cells(ws, [issue.cell for issue in issues if issue.cell is not None])
+    return issues
+
+
 def revalidate_sheet(
     ws,
     lang_id: str,
@@ -752,11 +788,9 @@ def revalidate_sheet(
     keystone_active: bool = False,
     keystone_na_criteria: List[str] = None,
 ) -> List[ValidationIssue]:
-    """Read a local TSV, validate it, update cell highlighting in the Sheet, return issues.
-
-    Reads cell values from the local TSV produced by import-sheets rather than
-    fetching them from Google Sheets, then writes pink highlights back only
-    where invalid cells are found.
+    """Read an element-row tab's local TSV, validate it, update cell
+    highlighting in the Sheet, return issues. (``revalidate_sheets`` goes
+    through ``local_tab_issues``, which handles every row shape.)
 
     Raises FileNotFoundError if the local TSV does not exist.
     """
@@ -767,10 +801,7 @@ def revalidate_sheet(
         keystone_na_criteria=keystone_na_criteria,
         class_name=class_name, lang_id=lang_id,
     )
-    bad_cells = [issue.cell for issue in issues if issue.cell is not None]
-    clear_highlights(ws)
-    highlight_cells(ws, bad_cells)
-    return issues
+    return _paint(ws, issues)
 
 
 # ---------------------------------------------------------------------------
@@ -847,30 +878,6 @@ def validate_pair_rows(
         records.append(record)
 
     return records, issues
-
-
-def revalidate_pair_sheet(
-    ws,
-    lang_id: str,
-    class_name: str,
-    construction: str,
-    expected_params: List[str],
-    param_values: Dict[str, List[str]] = None,
-) -> List[ValidationIssue]:
-    """Read a local pair-row TSV, validate it, update cell highlighting, return issues.
-
-    Like revalidate_sheet() but for pair-row sheets (nonpermutability: Element_A/
-    Element_B; coreference: Element_A/Position_A/Position_B/Direction; no keystone).
-
-    Raises FileNotFoundError if the local TSV does not exist.
-    """
-    rows = _read_tsv_rows(lang_id, class_name, construction)
-    _, issues = validate_pair_rows(rows, expected_params, construction, param_values,
-                                   class_name=class_name, lang_id=lang_id)
-    bad_cells = [issue.cell for issue in issues if issue.cell is not None]
-    clear_highlights(ws)
-    highlight_cells(ws, bad_cells)
-    return issues
 
 
 # ---------------------------------------------------------------------------
@@ -983,22 +990,6 @@ def keyed_annotation_status(
         else:
             total += len(counted)
     return {"total": total, "filled": total - blank, "blank": blank, "invalid": invalid}
-
-
-def revalidate_keyed_sheet(
-    ws, lang_id: str, class_name: str, construction: str,
-    keyed: Dict, expected_params: List[str], param_values: Dict[str, List[str]] = None,
-) -> List[ValidationIssue]:
-    """Like revalidate_sheet() for a keyed-row tab: validate the local TSV,
-    repaint pink highlights, return issues."""
-    rows = _read_tsv_rows(lang_id, class_name, construction)
-    _, issues = validate_keyed_rows(rows, keyed["columns"], expected_params, construction,
-                                    param_values, keyed.get("blank_ok_when"),
-                                    class_name=class_name, lang_id=lang_id)
-    bad_cells = [issue.cell for issue in issues if issue.cell is not None]
-    clear_highlights(ws)
-    highlight_cells(ws, bad_cells)
-    return issues
 
 
 # ---------------------------------------------------------------------------
@@ -1116,39 +1107,9 @@ def revalidate_sheets(
                     continue
                 info = param_map.get(class_name, {}).get(construction, {})
                 try:
-                    is_pair_sheet = construction in pair_row_constructions.get(class_name, set())
-                    keyed = keyed_row_constructions.get(class_name, {}).get(construction)
-                    if keyed:
-                        issues = revalidate_keyed_sheet(
-                            ws, lang_id, class_name, construction, keyed,
-                            info.get("params", []), info.get("values", {}),
-                        )
-                    elif is_pair_sheet:
-                        issues = revalidate_pair_sheet(
-                            ws,
-                            lang_id,
-                            class_name,
-                            construction,
-                            info.get("params", []),
-                            info.get("values", {}),
-                        )
-                    else:
-                        ka = resolve_keystone_active(lang_id, class_name, construction,
-                                                    data_dir=CODED_DATA / lang_id / "lang_setup")
-                        if ka is None:
-                            print(f"  [{class_name}/{construction}] WARNING: keystone_active unresolved — treating as False")
-                            ka = False
-                        kna = resolve_keystone_na_criteria(class_name)
-                        issues = revalidate_sheet(
-                            ws,
-                            lang_id,
-                            class_name,
-                            construction,
-                            info.get("params", []),
-                            info.get("values", {}),
-                            keystone_active=ka,
-                            keystone_na_criteria=kna,
-                        )
+                    issues = _paint(ws, local_tab_issues(
+                        lang_id, class_name, construction, info,
+                        pair_row_constructions, keyed_row_constructions))
                     header_issue = _check_header_sync(ws, lang_id, class_name, construction)
                     if header_issue:
                         issues = [header_issue] + issues

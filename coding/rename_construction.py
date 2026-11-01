@@ -150,7 +150,8 @@ def _rename_yaml(lang_id: str, renames: List[Rename],
         raise SystemExit(f"rename-construction: the renamed diagnostics_{lang_id}.yaml would "
                          f"not pass validation (above); nothing was written for {lang_id}")
     file_door.write(file_door.diagnostics_yaml(lang_id), _dump_diagnostics_yaml(data),
-                    why="rename-construction: " + "; ".join(changes))
+                    why="rename-construction: " + "; ".join(changes),
+                    changes=[("rename", "taxonomy")])
     return mine, True
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Project-wide integrity check for the planars annotation pipeline.
 
-Runs eleven sections of checks and prints a structured report:
+Runs these sections of checks and prints a structured report:
 
   PLANAR STRUCTURE               — validates planar_*.tsv for each language
   DIAGNOSTICS                    — validates diagnostics_*.yaml for each language
@@ -28,6 +28,11 @@ Runs eleven sections of checks and prints a structured report:
   DECISIONS                      — closed diagnostics/linguistics issues with no line in a
                                     decision log (coding/decisions.py; warnings: the daily
                                     refresh reopens each one). Read from GitHub.
+  CHANGES                        — sources (schema files; each language's planar and
+                                    diagnostics file) whose content has no change-log line,
+                                    and schema files neither logged nor exempt
+                                    (coding/source_log.py; warnings: the refresh's changes
+                                    step files source-unlogged)
   NEEDS REVIEW / PLACEHOLDERS    — surfaces [NEEDS REVIEW] / [PLACEHOLDER] / [NEEDS COORDINATOR
                                     INPUT] markers (check_codebook.needs_review_entries)
 
@@ -45,13 +50,18 @@ Usage:
     python -m coding integrity-check --lang arao1248
     python -m coding integrity-check --sheets
 
-Two fast standalone modes run one check only (used by the daily refresh):
+Fast standalone modes run one check only and exit 1 when it fails:
     python -m coding integrity-check --check-stale-sheets  # class sheets whose class left diagnostics
     python -m coding integrity-check --check-dependents  # stale dependent constructions
+    python -m coding integrity-check --check-changes  # every source logged (refresh)
+    python -m coding integrity-check --check-changes --staged  # the next commit's (pre-commit hooks)
+    python -m coding integrity-check --check-changes --schemas  # the schema files (CI)
+    python -m coding integrity-check --check-release  # first step of a release (reads GitHub)
 """
 from __future__ import annotations
 
 import argparse
+import subprocess
 import sys
 from datetime import date
 from pathlib import Path
@@ -858,6 +868,40 @@ def _section_decisions() -> Tuple[int, int]:
     return 0, len(missing)
 
 
+def changes_problems(streams=None, staged_in=None) -> List[str]:
+    """Each source whose content has no change-log line, and each schema
+    file that is neither logged nor exempt, with what to run (unit 17;
+    coding/source_log.py). Empty when everything is logged."""
+    from . import source_log
+    out = []
+    if streams is None or source_log.SCHEMAS in streams:
+        for name in source_log.unplaced():
+            out.append(f"schemas/{name} is neither logged nor exempt: add it to SCHEMA_SOURCES "
+                       f"or NOT_LOGGED in coding/source_log.py, with its reason")
+    by_stream: dict = {}
+    for u in source_log.unlogged(streams, staged_in=staged_in):
+        by_stream.setdefault(u.source.stream, []).append(u)
+    for stream, found in by_stream.items():
+        names = ", ".join(u.source.shown for u in found)
+        out.append(f"{names}: edited with no change-log line. Log it (a dry run shows the "
+                   f"lines; add --apply): {source_log.command_for(stream)}")
+    return out
+
+
+def _section_changes(lang_ids: List[str]) -> Tuple[int, int]:
+    """Sources edited with no change-log line (warnings: the daily refresh's
+    changes step files source-unlogged, and the pre-commit hook and CI refuse
+    a commit that holds one)."""
+    from . import source_log
+    print(_section("CHANGES"))
+    problems = changes_problems([source_log.SCHEMAS, *lang_ids])
+    for p in problems:
+        print(_warn(p))
+    if not problems:
+        print(_ok("Every source matches its last change-log line"))
+    return 0, len(problems)
+
+
 def _section_needs_review(codebook: dict, diag_classes: dict) -> None:
     print(_section("NEEDS REVIEW / PLACEHOLDERS"))
 
@@ -907,7 +951,71 @@ def build_parser() -> argparse.ArgumentParser:
              "are out of sync with their source construction TSV. Used by data-refresh "
              "to file a dedicated dependent-stale issue.",
     )
+    parser.add_argument(
+        "--check-changes",
+        action="store_true",
+        help="Fast standalone check: every source (schema files; each language's planar and "
+             "diagnostics file) matches the fingerprint on its last change-log line. Exits 1 "
+             "if not, naming the log-change command. Used by the pre-commit hooks, CI and "
+             "data-refresh (source-unlogged issue).",
+    )
+    parser.add_argument(
+        "--staged",
+        action="store_true",
+        help="with --check-changes: only the sources staged for the next commit of the "
+             "repository in the current folder, read as staged (the pre-commit hooks)",
+    )
+    parser.add_argument(
+        "--schemas",
+        action="store_true",
+        help="with --check-changes: only the schema files (CI, which checks planars)",
+    )
+    parser.add_argument(
+        "--check-release",
+        action="store_true",
+        help="Standalone check, the first step of a release: refuses (exit 1) while a "
+             "breaking change's issue is open and waiting on an annotator; prints every "
+             "stream's version. Reads GitHub.",
+    )
     return parser
+
+
+def _check_changes(args: argparse.Namespace, lang_ids: List[str]) -> None:
+    from . import source_log
+    streams = [source_log.SCHEMAS] if args.schemas else (
+        [source_log.SCHEMAS, *lang_ids] if args.lang is None else [args.lang])
+    staged_in = None
+    if args.staged:
+        top = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True,
+                             text=True)
+        if top.returncode != 0:
+            sys.exit("--staged: the current folder is not in a git repository")
+        staged_in = Path(top.stdout.strip())
+    problems = changes_problems(streams, staged_in=staged_in)
+    if problems:
+        print(f"SOURCES EDITED WITH NO CHANGE-LOG LINE ({len(problems)}) — "
+              f"docs/coordinator-guide.md § 'Editing a source by hand':")
+        for p in problems:
+            print(f"  {p}")
+        sys.exit(1)
+    print("Every source matches its last change-log line.")
+
+
+def _check_release() -> None:
+    from . import versions
+    for stream, v in versions.versions().items():
+        print(f"  {stream} {v}")
+    try:
+        problems = versions.release_problems()
+    except RuntimeError as exc:
+        sys.exit(f"RELEASE NOT CHECKED: {exc}")
+    if problems:
+        print(f"NO RELEASE YET ({len(problems)}) — annotation still waits on these breaking "
+              f"changes:")
+        for p in problems:
+            print(f"  {p}")
+        sys.exit(1)
+    print("No breaking change has annotation waiting on it: a release may be made.")
 
 
 def main(args: argparse.Namespace | None = None) -> None:
@@ -938,6 +1046,15 @@ def main(args: argparse.Namespace | None = None) -> None:
             sys.exit(1)
         else:
             print("No class sheets recorded for classes absent from diagnostics.")
+        return
+
+    if args.check_changes:
+        _check_changes(args, lang_ids)
+        return
+    if args.staged or args.schemas:
+        sys.exit("--staged and --schemas go with --check-changes")
+    if args.check_release:
+        _check_release()
         return
 
     # --check-dependents: lightweight standalone mode for dependent construction staleness.
@@ -981,6 +1098,9 @@ def main(args: argparse.Namespace | None = None) -> None:
     total_e += e; total_w += w
 
     e, w = _section_decisions()
+    total_e += e; total_w += w
+
+    e, w = _section_changes(lang_ids)
     total_e += e; total_w += w
 
     if args.sheets:

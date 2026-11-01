@@ -79,12 +79,18 @@ def _update_languages_yaml(glottocode: str, meta: dict) -> None:
     Note: this function uses PyYAML to rewrite the file, which strips any YAML
     comments present in languages.yaml.  Essential documentation lives in
     schemas/__init__.py rather than in the file header for this reason.
+
+    languages.yaml is a source (coding/source_log.py), so a rewrite that
+    changes it is logged in schemas/changes.tsv (an ``add`` for a new
+    language, a ``change`` otherwise; layer ``shape``: the entry decides the
+    sheets' example columns) and staged with the log.
     """
+    old = None
     if _LANGUAGES_YAML.exists():
-        with open(_LANGUAGES_YAML, encoding="utf-8") as f:
-            data = yaml.safe_load(f) or {}
-    else:
-        data = {}
+        with open(_LANGUAGES_YAML, encoding="utf-8", newline="") as f:
+            old = f.read()
+    data = (yaml.safe_load(old) if old else None) or {}
+    new_language = glottocode not in data
 
     entry = data.setdefault(glottocode, {})
 
@@ -110,8 +116,16 @@ def _update_languages_yaml(glottocode: str, meta: dict) -> None:
             "notes":             "",
         }
 
-    with open(_LANGUAGES_YAML, "w", encoding="utf-8") as f:
-        yaml.dump(data, f, allow_unicode=True, sort_keys=True, default_flow_style=False)
+    text = yaml.dump(data, allow_unicode=True, sort_keys=True, default_flow_style=False)
+    if text == old:
+        return
+    with open(_LANGUAGES_YAML, "w", encoding="utf-8", newline="") as f:
+        f.write(text)
+    from . import source_log
+    source_log.log_tool_edit(
+        source_log.Source(source_log.SCHEMAS, _LANGUAGES_YAML.name, _LANGUAGES_YAML), old,
+        by="lookup-lang", why=f"Glottolog entry for {glottocode}",
+        changes=[("add" if new_language else "change", "shape")])
 
 
 # ---------------------------------------------------------------------------

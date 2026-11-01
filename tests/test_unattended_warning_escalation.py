@@ -160,6 +160,10 @@ _KNOWN_SITES: Dict[Site, str] = {
     ("generate_sheets.py", 'print(f"  [WARNING] Could not create notes doc for {lang_id}: {_notes_err}")', 1):
         "inside the interactive language-onboarding path (notes doc creation) "
         "-- not --regen-dependents",
+    ("file_door.py", 'print(f"WARNING: could not measure the effects of {run.command}\'s source change: {exc}")', 1):
+        "recorded where it matters: the source's change-log lines say "
+        "'unknown (why)', which coding/versions.py counts as breaking, so the "
+        "release check holds on it; the print is only the run's note",
     ("validate_coding.py", 'print(f"  [{class_name}/{construction}] WARNING: keystone_active unresolved — treating as False")', 1):
         "advisory warning under sheet-validation.yml, whose documented "
         "convention (CLAUDE.md's sheet-validation label entry) is that advisory "

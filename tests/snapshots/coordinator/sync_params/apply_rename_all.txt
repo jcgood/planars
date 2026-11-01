@@ -90,4 +90,5 @@ Renames:  ['free:free_form']
   [phrasal_accent/general] Rename: free not found — skipping
 
 Drive door (enforce): checked 6 write(s) to 6 tab(s) or file(s); 0 broke a rule.
+Effects of the source change: answers broken 0; spans moved none.
 Local-file door: changed 3 file(s), previous versions archived and logged.
