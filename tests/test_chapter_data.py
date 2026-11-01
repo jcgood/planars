@@ -1,12 +1,13 @@
 """The chapters' data layer (chapters/data.py): every value named under its
-language, the planars-data version read as asked, and an analysis bundle
-used only when it was drawn from the same spans."""
+language, the data version (a change-log position) read as asked, and an
+analysis bundle used only when it was drawn from the same spans."""
 
 import json
 
 import pytest
 
 from chapters import data as cd
+from coding import file_door, source_log
 from laminar import planars_language as pl
 from planars.reports import completeness_summary
 from planars.schema_values import class_domain_types
@@ -16,14 +17,10 @@ needs_english = pytest.mark.skipif(not pl.planar_file("stan1293").exists(),
 
 
 @pytest.fixture(scope="module")
-def english():
-    return cd.chapter_data("stan1293")
-
-
-def test_a_coded_data_that_is_not_a_clone_is_refused(monkeypatch, tmp_path):
-    monkeypatch.setattr(cd, "CODED_DATA", tmp_path)
-    with pytest.raises(cd.ChapterDataError, match="not a clone of planars-data"):
-        cd._version_record("stan1293", None)
+def english(english_files):
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(file_door, "CODED_DATA", english_files)
+        return cd.chapter_data("stan1293")
 
 
 def test_completeness_summary():
@@ -42,7 +39,8 @@ def test_values_are_named_under_the_language(english):
     assert english.values and all(k.startswith("stan1293.") for k in english.values)
     v = english.values
     assert v["stan1293.language.glottocode"] == "stan1293"
-    assert v["stan1293.data.commit"] == english.version["planars_data_commit"]
+    assert v["stan1293.data.position"] == english.version["position"] > 0
+    assert v["stan1293.data.version"] == english.version["stamp"]["languages"]["stan1293"]["version"]
     planar = english.tables["planar"]
     assert v["stan1293.planar.positions"] == len(planar)
     assert v["stan1293.planar.zones"] + v["stan1293.planar.slots"] == len(planar)
@@ -71,25 +69,38 @@ def test_diagnostics_follow_the_schemas_class_order(english):
 
 
 @needs_english
-def test_a_pinned_version_reads_that_commit(english):
-    if english.version["uncommitted_changes"]:
-        pytest.skip("coded_data/stan1293 has uncommitted changes")
-    pinned = cd.chapter_data("stan1293", version=english.version["planars_data_commit"])
+def test_a_pinned_position_reads_the_files_as_they_stood(english, reads_english):
+    """Rebuilt from the files and their archive (unit 18), not from git."""
+    pinned = cd.chapter_data("stan1293", position=english.version["position"])
     assert pinned.values == english.values
     assert pinned.missing == english.missing
 
 
-def test_an_unknown_version_says_so():
-    with pytest.raises(cd.ChapterDataError, match="no version"):
-        with cd.data_at("no-such-commit-xyz"):
-            pass
+@needs_english
+def test_a_file_changed_outside_the_tooling_is_refused(reads_english, tmp_path):
+    lines = [l for l in source_log.read_lines("stan1293") if l.get("fingerprint")]
+    if not lines:
+        pytest.skip("no line of English's log records a fingerprint yet")
+    path = reads_english / "stan1293" / lines[-1]["file"]
+    path.write_bytes(path.read_bytes() + b"\n")
+    try:
+        with pytest.raises(cd.ChapterDataError, match="outside the tooling"):
+            cd.chapter_data("stan1293")
+    finally:
+        path.write_bytes(path.read_bytes()[:-1])
+
+
+@needs_english
+def test_an_unknown_position_says_so(reads_english):
+    with pytest.raises(cd.ChapterDataError, match="no position"):
+        cd.chapter_data("stan1293", position=10 ** 6)
 
 
 def _bundle(tmp_path, dataset, domain_sha, planar_sha, tests=()):
     folder = tmp_path / dataset / "data"
     folder.mkdir(parents=True)
     metadata = {"source_domain_sha256": domain_sha, "source_planar_sha256": planar_sha,
-                "planars_source": {"planars_data_commit": "abcdef1234567890"}}
+                "planars_source": {"stamp": {"languages": {"stan1293": {"position": 41}}}}}
     metadata.update({field: 1 for field in cd.BUNDLE_COUNTS})
     (folder / "metadata.json").write_text(json.dumps(metadata), encoding="utf-8")
     for stem in tests:
@@ -108,7 +119,7 @@ def test_a_bundle_is_used_only_when_drawn_from_these_spans(tmp_path, monkeypatch
     _bundle(tmp_path, "stan1293_classes_all", "0" * 64, planar_sha)
 
     chapter = cd.ChapterData(lang_id="stan1293", version={})
-    cd._analysis("stan1293", cd.REPO, chapter)
+    cd._analysis("stan1293", pl.REPO, chapter)
 
     assert list(chapter.bundles) == ["stan1293_types_all"]
     assert chapter.values["stan1293.analysis.types.all.families"] == 1
@@ -116,6 +127,6 @@ def test_a_bundle_is_used_only_when_drawn_from_these_spans(tmp_path, monkeypatch
     assert not any(".classes.all." in k for k in chapter.values)
     missing = "\n".join(chapter.missing)
     assert "stan1293_classes_all was drawn from other spans" in missing
-    assert "planars-data abcdef123456" in missing
+    assert "the language's change log at line 41" in missing
     assert "stan1293_types_all analysis has no permutation tests (span_placement, arbitrary_layers)" in missing
     assert "No analysis drawn for stan1293_types_complete" in missing

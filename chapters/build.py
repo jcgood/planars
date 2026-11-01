@@ -1,8 +1,8 @@
 """``python -m coding build-chapters``: build the volume's chapters.
 
     python -m coding build-chapters [--apply]                  # every part in volume.yaml
-    python -m coding build-chapters --lang stan1293 [--version COMMIT] [--apply]
-    python -m coding build-chapters [--lang stan1293] --update [--version COMMIT] [--apply]
+    python -m coding build-chapters --lang stan1293 [--position N] [--apply]
+    python -m coding build-chapters [--lang stan1293] --update [--position N] [--apply]
     python -m coding build-chapters --intro [--apply]
     python -m coding build-chapters --check [--lang stan1293] [--apply]
 
@@ -43,13 +43,15 @@ listed, never deleted; a slot still holding its ``\\proseslot`` line is
 counted as not yet written.
 
 **A language chapter is pinned to a data version**, recorded in
-``<L>/data.lock`` (the planars-data commit and its date, and the planars
-commit the chapter was last built with). Its first build pins the version
-asked for (``--version``; default coded_data/ as it is, which must have no
-uncommitted changes for the language, so every chapter can be rebuilt
-exactly from the commit it names); every later build reads the data at the
-pin, so new annotation never reaches a chapter unannounced. ``--update``
-moves the pin (to ``--version``, or coded_data/ as it is).
+``<L>/data.lock``: the language's change-log position and that line's
+date, and the code version and schemas' log position the chapter was last
+built with (``LOCK_FIELDS``; Phase 10 unit 18: no git). Its first build
+pins the position asked for (``--position``; default the files as they
+are, which must all match their log, so every chapter can be rebuilt
+exactly from the position it names: chapters.data); every later build
+reads the data at the pin, so new annotation never reaches a chapter
+unannounced. ``--update`` moves the pin (to ``--position``, or the files as
+they are).
 
 **Every build reports what it changes** in a chapter's values (spans one
 line each, the analysis counted per dataset), by cause, one pin at a
@@ -106,8 +108,7 @@ from importlib.resources import files as _res_files
 import yaml
 
 from chapters import tex
-from chapters.data import (ChapterData, ChapterDataError, chapter_data, commit_of, is_glossed,
-                           split_examples)
+from chapters.data import ChapterData, ChapterDataError, chapter_data, is_glossed, split_examples
 from coding import file_door
 from laminar.planars_language import parse_dataset
 from planars.languages import get_display_name, get_entry
@@ -293,9 +294,12 @@ def outline_items(kind: str, classes: list) -> list:
 # ── The pin: the data version a chapter is built from ───────────────────────
 
 LOCK = "data.lock"
-LOCK_HEADER = ("# data.lock: the planars-data version this chapter is built from, and the\n"
-               "# planars code (schemas, span rules) it was last built with. Written by\n"
+LOCK_HEADER = ("# data.lock: the data version this chapter is built from (the language's\n"
+               "# change-log position, and that line's date), and the code version and\n"
+               "# schemas' change-log position it was last built with. Written by\n"
                "# `python -m coding build-chapters`; move it with --update, never by hand.\n")
+# What each field holds (Phase 10 unit 18; before it the pin was a git commit).
+LOCK_FIELDS = {"position": int, "date": str, "code": str, "schemas": int}
 
 
 def read_lock(lang: str) -> dict | None:
@@ -303,30 +307,42 @@ def read_lock(lang: str) -> dict | None:
     if text is None:
         return None
     lock = yaml.safe_load(text) or {}
-    if not all(isinstance(lock.get(k), str) for k in ("planars_data", "date", "planars")):
-        raise ChapterDataError(f".papers/{lang}/{LOCK} needs `planars_data`, `date` and `planars`. "
-                               f"It is written only by build-chapters: restore it from git.")
+    if "planars_data" in lock:
+        raise ChapterDataError(
+            f".papers/{lang}/{LOCK} pins a planars-data commit, as before unit 18. Run "
+            f"`python migrations/pin_chapters_to_positions.py --apply` once, which pins it to "
+            f"its language's change-log position.")
+    if not all(isinstance(lock.get(k), t) for k, t in LOCK_FIELDS.items()):
+        raise ChapterDataError(f".papers/{lang}/{LOCK} needs {', '.join(f'`{k}`' for k in LOCK_FIELDS)}. "
+                               f"It is written only by build-chapters: restore it from planars-data.")
     return lock
 
 
 def lock_text(chapter: ChapterData) -> str:
-    return LOCK_HEADER + yaml.safe_dump({"planars_data": chapter.version["planars_data_commit"],
+    stamp = chapter.version["stamp"]
+    return LOCK_HEADER + yaml.safe_dump({"position": chapter.version["position"],
                                          "date": chapter.version["date"],
-                                         "planars": chapter.version["planars_commit"]},
+                                         "code": stamp["code"]["version"],
+                                         "schemas": stamp["schemas"]["position"]},
                                         sort_keys=False)
 
 
-def pinned_version(lang: str, lock: dict | None, version: str | None, update: bool) -> str | None:
-    """The planars-data version to build `lang` from: its pin, unless there is
-    none yet or the pin is being moved (None: coded_data/ as it is)."""
+def pinned_position(lang: str, lock: dict | None, position: int | None, update: bool) -> int | None:
+    """The change-log position to build `lang` from: its pin, unless there is
+    none yet or the pin is being moved (None: the files as they are)."""
     if update or lock is None:
-        return version
-    if version and commit_of(version) != lock["planars_data"]:
+        return position
+    if position is not None and position != lock["position"]:
         raise ChapterDataError(
-            f"The {get_display_name(lang)} chapter is pinned to planars-data "
-            f"{lock['planars_data'][:12]} ({lock['date']}) by .papers/{lang}/{LOCK}. To move it, "
+            f"The {get_display_name(lang)} chapter is pinned to change-log line "
+            f"{lock['position']} ({lock['date']}) by .papers/{lang}/{LOCK}. To move it, "
             f"add --update: the dry run reports what the move changes.")
-    return lock["planars_data"]
+    return lock["position"]
+
+
+def _pin(version: dict) -> str:
+    """How a report names a data version."""
+    return f"change-log line {version['position']} ({version['date']})"
 
 
 # ── What changed, and the claims prose makes ────────────────────────────────
@@ -384,18 +400,20 @@ def value_changes(old: dict, new: dict, lang: str) -> tuple[list, set]:
 
 def change_report(lang: str, lock: dict | None, old: dict | None, middle: dict | None,
                   new: ChapterData) -> tuple[list, set]:
-    """What a build changes in `lang`'s chapter, by cause: the code (schemas,
-    span rules) and the annotation, one at a time. `old` is values.tex as it
-    is, `middle` the values at the old data version with today's code (only
-    when the data version moves). Returns lines and every changed name."""
+    """What a build changes in `lang`'s chapter, by cause: the code (the
+    code version and the schemas' log position) and the annotation, one at
+    a time. `old` is values.tex as it is, `middle` the values at the old data
+    version with today's code (only when the data version moves). Returns
+    lines and every changed name."""
     if old is None:
         return [], set()
     now = {k: tex.value_text(v) for k, v in new.values.items()}
-    was, now_commit = (lock or {}).get("planars", ""), new.version["planars_commit"]
-    code = ("since the last build" if not lock else f"planars {now_commit[:12]}" if was == now_commit
-            else f"planars {was[:12]} -> {now_commit[:12]}")
-    data = (f"planars-data {lock['planars_data'][:12]} ({lock['date']}) -> "
-            f"{new.version['planars_data_commit'][:12]} ({new.version['date']})" if lock else "")
+    stamp = new.version["stamp"]
+    now_code = f"code {stamp['code']['version']}, schemas line {stamp['schemas']['position']}"
+    was_code = (f"code {lock['code']}, schemas line {lock['schemas']}" if lock else "")
+    code = ("since the last build" if not lock else now_code if was_code == now_code
+            else f"{was_code} -> {now_code}")
+    data = f"{_pin(lock)} -> {_pin(new.version)}" if lock else ""
     steps = ([("the code", code, old, middle), ("the annotation", data, middle, now)]
              if middle is not None else [("the code" if lock else "the build", code, old, now)])
     lines, changed = [], set()
@@ -444,12 +462,12 @@ def broken_claims(values: dict, langs: list, parts: list) -> list:
 
 # ── A part: its built files and its stubs ───────────────────────────────────
 
-def part_files(part: str, version: str | None = None, update: bool = False,
+def part_files(part: str, position: int | None = None, update: bool = False,
                parts: list | None = None) -> tuple[dict, dict, list, dict]:
     """({path in .papers: text} built, {path: text} stubs, lines to print,
     {name: value} the part's values) for one part of the volume. A language
-    is built from its pin (``pinned_version``); `update` moves the pin to
-    `version`. `parts` are the parts whose prose the report looks through."""
+    is built from its pin (``pinned_position``); `update` moves the pin to
+    `position`. `parts` are the parts whose prose the report looks through."""
     entries = _class_entries()
     changed, report = set(), []
     if part == INTRO:
@@ -457,25 +475,20 @@ def part_files(part: str, version: str | None = None, update: bool = False,
         classes = [(name, e["display_name"], e["domain_type"]) for name, e in entries.items()]
     else:
         lock = read_lock(part)
-        chapter = chapter_data(part, version=pinned_version(part, lock, version, update))
-        if chapter.version["uncommitted_changes"]:
-            raise ChapterDataError(
-                f"coded_data/{part} has uncommitted changes, so the chapter could not be "
-                f"rebuilt from the commit it names. Commit them, or pass --version COMMIT.")
+        chapter = chapter_data(part, position=pinned_position(part, lock, position, update))
         fragments, L, values = language_fragments(chapter), part, chapter.values
         built = {f"{part}/values.tex": tex.values_tex(chapter.values, VALUES_HEADER),
                  f"{part}/{LOCK}": lock_text(chapter)}
         classes = [(c, entries[c]["display_name"], entries[c]["domain_type"])
                    for c in dict.fromkeys(chapter.tables["diagnostics"]["Class"])]
-        said = [f"{get_display_name(part)}, planars-data "
-                f"{chapter.version['planars_data_commit'][:12]} ({chapter.version['date']})"
+        said = [f"{get_display_name(part)}, {_pin(chapter.version)}"
                 + (" (its pin)" if lock and not update else "")]
         said += [f"  missing: {line}" for line in chapter.missing]
         old_text = file_door.read_paper(file_door.paper_built(f"{part}/values.tex"))
         middle = None
-        if lock and old_text is not None and lock["planars_data"] != chapter.version["planars_data_commit"]:
+        if lock and old_text is not None and lock["position"] != chapter.version["position"]:
             middle = {k: tex.value_text(v)
-                      for k, v in chapter_data(part, version=lock["planars_data"]).values.items()}
+                      for k, v in chapter_data(part, position=lock["position"]).values.items()}
         report, changed = change_report(part, lock, tex.read_values_tex(old_text) if old_text else None,
                                         middle, chapter)
     items = outline_items(INTRO if part == INTRO else "language", classes)
@@ -656,7 +669,7 @@ def check_chapter(lang: str, parts: list) -> dict | None:
     old_text = file_door.read_paper(file_door.paper_built(f"{lang}/values.tex"))
     if lock is None or old_text is None:
         return None
-    pinned = chapter_data(lang, version=lock["planars_data"])
+    pinned = chapter_data(lang, position=lock["position"])
     current = chapter_data(lang)
     text = lambda chapter: {k: tex.value_text(v) for k, v in chapter.values.items()}
     old = _comparable(tex.read_values_tex(old_text), lang, [pinned])
@@ -698,11 +711,11 @@ def check_body(lang: str, found: dict, today: str) -> str:
     annotation."""
     lock, current = found["lock"], found["current"]
     lines = [f"## The {get_display_name(lang)} chapter is behind — {today}", "",
-             f"The chapter in planars-data's `.papers/{lang}/` is built from planars-data "
-             f"`{lock['planars_data'][:12]}` ({lock['date']}). Today's daily refresh built it "
-             f"again without moving that version and found:", "",
-             f"- **Changed in the annotation** since then (to `{current['planars_data_commit'][:12]}`, "
-             f"{current['date']}): {_said(found['data'])}.",
+             f"The chapter in planars-data's `.papers/{lang}/` is built from the language's "
+             f"{_pin(lock)}. Today's daily refresh built it again without moving that "
+             f"version and found:", "",
+             f"- **Changed in the annotation** since then (to {_pin(current)}): "
+             f"{_said(found['data'])}.",
              f"- **Changed by the code** (schemas, span rules, wording) at the same version: "
              + (_said(found["code"]) if any(found["code"].values()) or not found["files"]
                 else "no values")
@@ -779,12 +792,13 @@ def build_parser() -> argparse.ArgumentParser:
     which = parser.add_mutually_exclusive_group()
     which.add_argument("--lang", help="Build only this language's chapter (Glottocode).")
     which.add_argument("--intro", action="store_true", help="Build only the introduction.")
-    parser.add_argument("--version", default=None,
-                        help="With --lang: the planars-data commit to build from: a chapter "
-                             "not built yet, or with --update (default: coded_data/ as it is).")
+    parser.add_argument("--position", type=int, default=None, metavar="N",
+                        help="With --lang: the language's change-log position (its log's line "
+                             "count) to build from: a chapter not built yet, or with --update "
+                             "(default: the files as they are).")
     parser.add_argument("--update", action="store_true",
-                        help="Move each language chapter's pin to --version (default: coded_data/ "
-                             "as it is) and report what that changes.")
+                        help="Move each language chapter's pin to --position (default: the files "
+                             "as they are) and report what that changes.")
     parser.add_argument("--check", action="store_true",
                         help="Write nothing in .papers/: compare each language chapter (or "
                              "--lang's) with today's data and code, and with --apply file, rewrite "
@@ -795,11 +809,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(args: argparse.Namespace | None = None) -> None:
     args = args if args is not None else build_parser().parse_args()
-    if args.version and not args.lang:
-        sys.exit("--version names the planars-data commit of one language's chapter; "
-                 "give --lang too.")
+    if args.position is not None and not args.lang:
+        sys.exit("--position names a line of one language's change log; give --lang too.")
     if args.check:
-        if args.intro or args.update or args.version:
+        if args.intro or args.update or args.position is not None:
             sys.exit("--check compares each chapter at its pin with today's data; it takes "
                      "only --lang and --apply.")
         try:
@@ -824,7 +837,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         prose_parts = list(dict.fromkeys(list(volume["parts"]) + parts))
         values = {}
         for part in parts:
-            part_built, part_stubs, said, part_values = part_files(part, args.version, args.update,
+            part_built, part_stubs, said, part_values = part_files(part, args.position, args.update,
                                                                    prose_parts)
             built.update(part_built)
             stubs.update(part_stubs)

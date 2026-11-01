@@ -65,6 +65,7 @@ def test_facts_have_expected_ids():
         "drive_comment_record",
         "decision_record",
         "change_record",
+        "result_stamp",
     }
 
 

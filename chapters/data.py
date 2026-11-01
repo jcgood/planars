@@ -1,19 +1,27 @@
 """Everything a language's chapter cites, gathered at one data version.
 
-``chapter_data(lang_id, version=None)`` is Phase 1 of
+``chapter_data(lang_id, position=None)`` is Phase 1 of
 docs/chapter-generation-plan.md: one function that reads a language's
 sources and returns them as named values and tables, so a fragment or a
 sentence cites a value by name and never types it. Nothing here writes
 anything or produces LaTeX; Phase 2's templates read what it returns.
 
-**Data version.** ``version=None`` reads the planars-data clone
-(``coded_data/``) as it is, recording its commit and whether it has
-uncommitted changes for the language. ``version="<commit>"`` reads that
-commit instead, from a copy git writes into a temporary folder
-(``git archive``), so the clone is never touched and a chapter can be
-rebuilt exactly from the commit its ``data.lock`` names. The schemas and
-the span rules are the code's (this checkout of planars), recorded as
-``planars_commit``.
+**Data version** (Phase 10 unit 18, docs/result-stamp-design.md). A
+language's data version is its change-log *position*: how many lines its
+log (``coded_data/<L>/changes.tsv``) had. ``position=None`` reads the
+language's files as they are, at the log's current position (in
+``coding.file_door.CODED_DATA``, the planars-data clone, where the door
+keeps them and their log).
+``position=N`` reads them as they stood then, rebuilt into a temporary
+folder from the files and their archive (``coding.source_log.files_at``),
+so the clone is never touched and a chapter can be rebuilt exactly from
+the position its ``data.lock`` names, without git. ``version`` records it
+(``position``, ``date``: the day of that line) and the whole stamp
+(``coding.versions.stamp``: the code version, the schemas' version and
+position, the language's version at that position). The schemas and the
+span rules are the code's (this checkout of planars), as the stamp
+records. A file changed outside the tooling (``drifted``) can't be
+rebuilt later, so reading the files as they are refuses it.
 
 **Values** are one flat dictionary, every key starting with the language's
 Glottocode (``stan1293.planar.positions``), so an introduction or results
@@ -22,8 +30,9 @@ chapter citing several languages has one namespace. The groups:
 - ``<L>.language.*``: name, glottocode, iso639_3, family, author,
   annotator, display_name, examples (its example style)
   (schemas/languages.yaml);
-- ``<L>.data.*``: commit, commit_short (its first 12 characters), date
-  (the planars-data commit's date), and ``planars_commit``;
+- ``<L>.data.*``: position, version (the language's version at that
+  position), date (of the log's line at that position), code (the code
+  version), schemas (the schemas' version) and schemas_position;
 - ``<L>.planar.*``: positions, zones, slots, keystone (its position
   number), type (the planar file);
 - ``<L>.diagnostics.*``: classes, constructions (diagnostics_<L>.yaml);
@@ -53,8 +62,10 @@ full analysis, laminar plan 4d, will keep them current). A bundle is used
 only when it was drawn from the same spans and planar file as the version
 being read: the domains file this version gives, rebuilt here, must have
 the hash the bundle records (``source_domain_sha256``), and likewise the
-planar file. Otherwise its values are left out and ``missing`` says why,
-so a chapter never mixes numbers from two versions of the data.
+planar file. Otherwise its values are left out and ``missing`` says why
+(with the position the bundle's stamp names), so a chapter never mixes
+numbers from two versions of the data. The hashes, not the stamps, decide:
+annotation that moves the log without changing a span leaves a bundle good.
 
 **missing** lists, in plain words, everything a chapter might expect that
 this version lacks: a bundle not drawn, drawn from other data, or without
@@ -65,10 +76,7 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
-import io
 import json
-import subprocess
-import tarfile
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -77,15 +85,14 @@ from typing import Iterator, Optional
 import pandas as pd
 import yaml
 
+from coding import file_door, source_log, versions
 from laminar import planars_language as _pl
-from laminar.datasets import REPO, bundle_root
+from laminar.datasets import bundle_root
 from planars.languages import get_display_name, get_entry
 from planars.reports import completeness_summary, language_completeness, language_spans
 from planars.schema_values import (EXAMPLE_SEPARATOR, SLOT, ZONE, class_domain_types,
                                    example_style, is_keystone, row_columns,
                                    trailing_columns_for)
-
-CODED_DATA = REPO / "coded_data"
 
 # The permutation tests whose per-group results become values: bundle file
 # stem -> the name used in value keys. The boundary-strength test is per
@@ -118,7 +125,7 @@ class ChapterDataError(Exception):
 @dataclass
 class ChapterData:
     lang_id: str
-    version: dict                      # planars_data_commit, uncommitted_changes, planars_commit, date
+    version: dict                      # position, date, stamp (module docstring)
     values: dict = field(default_factory=dict)
     tables: dict = field(default_factory=dict)
     bundles: dict = field(default_factory=dict)   # dataset -> bundle data folder, for figures
@@ -127,75 +134,49 @@ class ChapterData:
 
 # ── The data version ────────────────────────────────────────────────────────
 
-def _git(repo: Path, *args: str) -> str:
-    return subprocess.run(["git", "-C", str(repo), *args], capture_output=True,
-                          text=True, check=True).stdout.strip()
-
-
 @contextlib.contextmanager
-def data_at(version: Optional[str]) -> Iterator[Path]:
-    """A folder whose ``coded_data/`` holds planars-data at `version` (a
-    commit, tag or branch), or the repository itself for None (the clone
-    as it is). The copy is deleted on leaving."""
-    if version is None:
-        yield REPO
+def data_at(lang_id: str, position: Optional[int]) -> Iterator[Path]:
+    """A folder whose ``coded_data/<lang_id>/`` holds the language's files at
+    log `position`, or for None the folder holding planars-data itself (the
+    files as they are, where the local-file door keeps them and their log).
+    The copy is deleted on leaving."""
+    if position is None:
+        yield file_door.CODED_DATA.parent
         return
-    try:
-        archive = subprocess.run(["git", "-C", str(CODED_DATA), "archive", "--format=tar", version],
-                                 capture_output=True, check=True).stdout
-    except subprocess.CalledProcessError as e:
-        raise ChapterDataError(
-            f"planars-data has no version {version!r} (git said: "
-            f"{e.stderr.decode(errors='replace').strip()}). {_fetch_advice()}")
     with tempfile.TemporaryDirectory(prefix="chapter_data_") as tmp:
         root = Path(tmp)
-        with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
-            tar.extractall(root / "coded_data", filter="data")
+        try:
+            source_log.files_at(lang_id, position, root / "coded_data" / lang_id)
+        except source_log.RebuildError as e:
+            raise ChapterDataError(f"{get_display_name(lang_id)} can't be read at log line "
+                                   f"{position}: {e}")
         yield root
 
 
-def commit_of(version: Optional[str]) -> str:
-    """The planars-data commit `version` names (None: the clone's HEAD)."""
-    try:
-        return _git(CODED_DATA, "rev-parse", "--verify", f"{version or 'HEAD'}^{{commit}}")
-    except subprocess.CalledProcessError:
-        raise ChapterDataError(f"planars-data has no version {version!r}. {_fetch_advice()}")
+def position_now(lang_id: str) -> int:
+    """The language's log position now: the data version of its files as they are."""
+    return source_log.position(lang_id)
 
 
-def _fetch_advice() -> str:
-    """What to do about a missing version: a shallow copy (a GitHub
-    checkout without fetch-depth: 0) has no older versions at all."""
-    try:
-        shallow = _git(CODED_DATA, "rev-parse", "--is-shallow-repository") == "true"
-    except subprocess.CalledProcessError:
-        shallow = False
-    if shallow:
-        return ("coded_data/ is a shallow copy holding only recent versions: fetch its whole "
-                "history (git -C coded_data fetch --unshallow; on GitHub, check it out with "
-                "fetch-depth: 0).")
-    return "Pull coded_data/ first if it is new."
-
-
-def _version_record(lang_id: str, version: Optional[str]) -> dict:
-    # A coded_data/ that is a plain copy, not a clone, would make git answer
-    # for the planars repository around it, and the chapter would name a
-    # planars commit as its data version.
-    try:
-        top = Path(_git(CODED_DATA, "rev-parse", "--show-toplevel")).resolve()
-    except subprocess.CalledProcessError:
-        top = None
-    if top != CODED_DATA.resolve():
-        raise ChapterDataError(
-            "coded_data/ is not a clone of planars-data, so its data version can't be "
-            "named. Clone it there (docs/coordinator-guide.md, setup).")
-    commit = commit_of(version)
-    return {
-        "planars_data_commit": commit,
-        "date": _git(CODED_DATA, "log", "-1", "--format=%cs", commit),
-        "uncommitted_changes": (bool(_git(CODED_DATA, "status", "--porcelain", "--", lang_id))
-                                if version is None else False),
-        "planars_commit": _git(REPO, "rev-parse", "HEAD"),
-    }
+def _version_record(lang_id: str, position: Optional[int]) -> dict:
+    lines = source_log.read_lines(lang_id)
+    at = len(lines) if position is None else position
+    if not 0 <= at <= len(lines):
+        raise ChapterDataError(f"{get_display_name(lang_id)}'s change log has {len(lines)} lines; "
+                               f"there is no position {at}.")
+    stamp = versions.stamp([lang_id], drawn=False)
+    if position is None:
+        if stamp["languages"][lang_id]["drifted"]:
+            raise ChapterDataError(
+                f"coded_data/{lang_id}: {', '.join(stamp['languages'][lang_id]['drifted'])} "
+                f"changed outside the tooling (not in its change log), so a chapter built from "
+                f"these files could not be rebuilt later. Undo the edit, or make it through "
+                f"the tooling (a source: log it with log-change).")
+    else:
+        stamp["languages"][lang_id] = {"version": versions.version(lang_id, at=at),
+                                       "position": at, "drifted": []}
+    return {"position": at, "date": lines[at - 1]["when (UTC)"][:10] if at else "",
+            "stamp": stamp}
 
 
 # ── Reading each source ─────────────────────────────────────────────────────
@@ -366,8 +347,10 @@ def _analysis(lang_id: str, root: Path, chapter: ChapterData) -> None:
         domains_text = _pl.domains_frame(_pl.select(table, selection), grouping).to_csv(sep="\t", index=False)
         if (metadata.get("source_domain_sha256") != _sha256(domains_text)
                 or metadata.get("source_planar_sha256") != _sha256(planar_text)):
-            drawn_from = (metadata.get("planars_source") or {}).get("planars_data_commit", "unknown")
-            other_data.setdefault(drawn_from[:12], []).append(dataset)
+            stamp = (metadata.get("planars_source") or {}).get("stamp") or {}
+            drawn_at = (stamp.get("languages") or {}).get(lang_id, {}).get("position")
+            other_data.setdefault("unknown" if drawn_at is None else f"line {drawn_at}",
+                                  []).append(dataset)
             continue
         chapter.bundles[dataset] = folder
         base = f"analysis.{grouping}.{selection}"
@@ -390,11 +373,11 @@ def _analysis(lang_id: str, root: Path, chapter: ChapterData) -> None:
     if not_drawn:
         chapter.missing.append(f"No analysis drawn for {', '.join(not_drawn)} "
                                f"(python -m laminar charts --lang {lang_id} --apply draws them).")
-    for commit, datasets in other_data.items():
+    for drawn_at, datasets in other_data.items():
         chapter.missing.append(
             f"The analysis of {', '.join(datasets)} was drawn from other spans or another "
-            f"planar file (planars-data {commit}), so its numbers are left out: read the "
-            f"chapter at that version, or redraw the analysis from this one.")
+            f"planar file (the language's change log at {drawn_at}), so its numbers are left "
+            f"out: read the chapter at that version, or redraw the analysis from this one.")
     for dataset, absent in without_tests.items():
         chapter.missing.append(f"The {dataset} analysis has no permutation tests "
                                f"({', '.join(absent)}); the weekly full analysis adds them.")
@@ -402,16 +385,19 @@ def _analysis(lang_id: str, root: Path, chapter: ChapterData) -> None:
 
 # ── The one entry point ─────────────────────────────────────────────────────
 
-def chapter_data(lang_id: str, version: Optional[str] = None) -> ChapterData:
-    """Everything `lang_id`'s chapter cites, read at planars-data `version`
-    (None: the clone as it is). See the module docstring."""
-    chapter = ChapterData(lang_id=lang_id, version=_version_record(lang_id, version))
+def chapter_data(lang_id: str, position: Optional[int] = None) -> ChapterData:
+    """Everything `lang_id`'s chapter cites, read at its change-log
+    `position` (None: the files as they are). See the module docstring."""
+    chapter = ChapterData(lang_id=lang_id, version=_version_record(lang_id, position))
     values = {f"language.{k}": v for k, v in _language_values(lang_id).items()}
-    values.update({"data.commit": chapter.version["planars_data_commit"],
-                   "data.commit_short": chapter.version["planars_data_commit"][:12],
+    stamp = chapter.version["stamp"]
+    values.update({"data.position": chapter.version["position"],
+                   "data.version": stamp["languages"][lang_id]["version"],
                    "data.date": chapter.version["date"],
-                   "data.planars_commit": chapter.version["planars_commit"]})
-    with data_at(version) as root:
+                   "data.code": stamp["code"]["version"],
+                   "data.schemas": stamp["schemas"]["version"],
+                   "data.schemas_position": stamp["schemas"]["position"]})
+    with data_at(lang_id, position) as root:
         lang_dir = root / "coded_data" / lang_id
         planar, planar_values = _planar(lang_dir, lang_id)
         values.update({f"planar.{k}": v for k, v in planar_values.items()})

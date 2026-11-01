@@ -13,8 +13,8 @@ import unicodedata
 import pytest
 
 from chapters import build, tex
-from chapters.data import ChapterDataError, chapter_data, commit_of, split_examples
-from coding import drive_door, file_door, state_files
+from chapters.data import ChapterDataError, chapter_data, split_examples
+from coding import drive_door, file_door, source_log, state_files
 from laminar import planars_language as pl
 
 needs_english = pytest.mark.skipif(not pl.planar_file("stan1293").exists(),
@@ -26,8 +26,19 @@ VOLUME = "title: A test volume\nvenue: book\nparts: [intro, stan1293]\n"
 
 
 @pytest.fixture(scope="module")
-def english():
-    return chapter_data("stan1293")
+def english(english_files):
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(file_door, "CODED_DATA", english_files)
+        return chapter_data("stan1293")
+
+
+@pytest.fixture()
+def own_english(english_files, tmp_path, monkeypatch):
+    """English's files in a copy of this test's own, which it may add to."""
+    coded = tmp_path / "own" / "coded_data"
+    shutil.copytree(english_files, coded)
+    monkeypatch.setattr(file_door, "CODED_DATA", coded)
+    return coded
 
 
 def _run(*argv):
@@ -195,22 +206,30 @@ def test_a_dry_run_writes_nothing(capsys):
     assert "Dry run" in capsys.readouterr().out
 
 
-def test_version_needs_a_language():
+def test_position_needs_a_language():
     with pytest.raises(SystemExit, match="--lang"):
-        _run("--version", "HEAD")
+        _run("--position", "3")
 
 
 def test_value_changes_says_each_span_once_and_counts_the_analysis():
     base = "L.span.c.general.strict_complete_span"
     old = {f"{base}.left": "9", f"{base}.right": "20", f"{base}.range": "9--20",
-           "L.analysis.types.all.families": "4", "L.data.commit": "a", "L.planar.positions": "38"}
+           "L.analysis.types.all.families": "4", "L.data.position": "57", "L.planar.positions": "38"}
     new = {f"{base}.left": "9", f"{base}.right": "21", f"{base}.range": "9--21",
-           "L.analysis.types.all.families": "5", "L.data.commit": "b", "L.planar.positions": "39"}
+           "L.analysis.types.all.families": "5", "L.data.position": "58", "L.planar.positions": "39"}
     lines, changed = build.value_changes(old, new, "L")
     assert lines == ["  L.planar.positions: 38 -> 39",
                      "  c general, strict complete span: 9--20 -> 9--21",
                      "  L.analysis.types.all: 1 values changed"]
-    assert "L.data.commit" not in changed
+    assert "L.data.position" not in changed
+
+
+def test_a_lock_naming_a_commit_points_to_the_migration():
+    target = file_door.paper_built(f"L/{build.LOCK}")
+    target.path.parent.mkdir(parents=True)
+    target.path.write_text("planars_data: abc\ndate: '2026-10-25'\nplanars: def\n", encoding="utf-8")
+    with pytest.raises(ChapterDataError, match="pin_chapters_to_positions"):
+        build.read_lock("L")
 
 
 def _prose(part, name, text):
@@ -231,13 +250,17 @@ def test_claims_that_no_longer_hold_are_listed_with_file_and_line():
 
 
 @needs_english
-def test_a_chapter_is_pinned_and_moving_the_pin_reports_by_cause(capsys):
-    old = commit_of("HEAD~3")
-    _run("--lang", "stan1293", "--version", old, "--apply")
+def test_a_chapter_is_pinned_and_moving_the_pin_reports_by_cause(capsys, own_english):
+    old = source_log.position("stan1293")
+    _run("--lang", "stan1293", "--position", str(old), "--apply")
     lock = build.read_lock("stan1293")
-    assert lock["planars_data"] == old
+    assert lock["position"] == old and lock["code"] and isinstance(lock["schemas"], int)
+    # New annotation moves the log on; the chapter stays at its pin.
+    with drive_door.running("t", may_write=True):
+        file_door.write(file_door.notes_text("stan1293"), "a new note\n", why="t")
+    assert source_log.position("stan1293") == old + 1
     with pytest.raises(SystemExit, match="--update"):
-        _run("--lang", "stan1293", "--version", "HEAD")
+        _run("--lang", "stan1293", "--position", str(old + 1))
     capsys.readouterr()
     _run("--lang", "stan1293", "--apply")
     out = capsys.readouterr().out
@@ -245,7 +268,10 @@ def test_a_chapter_is_pinned_and_moving_the_pin_reports_by_cause(capsys):
     _run("--lang", "stan1293", "--update")
     out = capsys.readouterr().out
     assert "Changes from the code" in out and "Changes from the annotation" in out
-    assert build.read_lock("stan1293")["planars_data"] == old, "a dry run moved the pin"
+    assert f"change-log line {old} " in out and f"change-log line {old + 1} " in out
+    assert build.read_lock("stan1293")["position"] == old, "a dry run moved the pin"
+    _run("--lang", "stan1293", "--update", "--apply")
+    assert build.read_lock("stan1293")["position"] == old + 1
 
 
 def test_the_check_with_no_volume_says_so(capsys):
@@ -277,8 +303,8 @@ def test_the_check_leaves_out_an_analysis_not_drawn_on_both_sides():
 
 
 @needs_english
-def test_the_check_files_a_chapter_behind_and_closes_it_when_caught_up(capsys, github):
-    _run("--lang", "stan1293", "--version", "HEAD", "--apply")
+def test_the_check_files_a_chapter_behind_and_closes_it_when_caught_up(capsys, github, reads_english):
+    _run("--lang", "stan1293", "--apply")
     volume = state_files.PAPERS_DIR / "volume.yaml"
     volume.write_text(VOLUME, encoding="utf-8")
     values = state_files.PAPERS_DIR / "stan1293" / "values.tex"
@@ -316,7 +342,7 @@ def _compile(folder, file="main.tex"):
 
 @needs_latex
 @needs_english
-def test_the_volume_compiles(english):
+def test_the_volume_compiles(english, reads_english):
     _run("--intro", "--apply")
     volume = state_files.PAPERS_DIR / "volume.yaml"
     volume.write_text(VOLUME, encoding="utf-8")

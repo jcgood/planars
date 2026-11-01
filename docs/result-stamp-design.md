@@ -1,7 +1,7 @@
 # Unit 18: every result says what it was drawn from
 
-**Status: drafted 2026-10-31; Jeff answered § 7 on 2026-11-01 (each took
-its recommendation; don't re-ask).** Phase 10
+**Status: built 2026-11-01 (§ 9, as built); Jeff answered § 7 the same day
+(each took its recommendation; don't re-ask).** Phase 10
 unit 18 (issue #271; implementation plan, Phase 10 table: "Every exported
 result carries the package version and each language's change-log position";
 done when "results reproducible from their record"). Where it stands:
@@ -146,3 +146,51 @@ commits and move off git later; that leaves two pins that can disagree.
 Docs in the same commits: each module's docstring, `docs/chapter-generation-plan.md`
 (the data version), `docs/laminar-analysis-plan.md` (bundle metadata),
 `data_dependency_schema/` (the stamp as a record every result carries).
+
+## 9. As built (2026-11-01)
+
+All four steps of § 8 in one pass. Where the build differs from §§ 3–6, and
+why:
+
+- **Modules.** `coding/versions.py` builds the stamp (`stamp`,
+  `stamp_problems`, `stamp_text`, `same_data`, `rebuild`, `RESULT_CODE`);
+  `coding/source_log.py` holds the position, `files_at`, `drifted` and
+  `archive_schema`. `data_dependency_schema/facts.yaml` `result_stamp`.
+- **Every change-log line now records a fingerprint** (§ 4 named only the
+  archive). Without one, a file edited outside the tooling and later
+  overwritten by an import would rebuild as the hand-edited version,
+  silently. With it, `files_at` checks every file it rebuilds, and
+  `drifted` finds such a file at once. A file whose last line predates
+  2026-11-01 has no fingerprint and can't be checked until it is next
+  written.
+- **A position before a file's `baseline` line can't be rebuilt**
+  (`RebuildError`): hand edits before 2026-11-01 were not logged. No result
+  is stamped before then, so nothing needs one.
+- **The bundles keep their hash check** (§ 6 said compare stamps). Every
+  import moves the log, so comparing positions would throw a bundle away
+  whenever anyone annotated, even with no span changed. The hashes decide;
+  the stamp says where a bundle that doesn't match came from.
+- **`drawn=False`** leaves the time out of a bundle's source record, which
+  is rewritten only when it differs.
+- **The version bump is its own hook**, `bump_version_hook.py`, run on
+  every commit and reading `versions.RESULT_CODE`, so the list is in one
+  place (the snapshot hook still runs only for `planars/`).
+  `check_snapshots.py`'s pre-push warning reads the same list.
+- **Charts:** the full stamp is on the first page; each page's strip has
+  the code version and the language's position, which fit the narrowest
+  chart. **Reports:** one line under the date.
+- **Chapters** read the language's files where the local-file door keeps
+  them (`file_door.CODED_DATA`), so the files and the log they are checked
+  against always come from the same place. `--version COMMIT` is
+  `--position N` (build-chapters and `python -m chapters values`); values
+  `<L>.data.commit*` and `planars_commit` are replaced by `data.position`,
+  `data.version`, `data.code`, `data.schemas`, `data.schemas_position`.
+  `migrations/pin_chapters_to_positions.py` moved English's pin from its
+  commit to the position now, allowed because no `chapter-behind` issue
+  had ever been filed (nothing the chapter shows differed).
+- **Tests** read a private copy of English's folder (`english_files`,
+  `reads_english` in `tests/conftest.py`), never the real clone, where the
+  door would commit. The schemas' archive is its own setting
+  (`source_log.SCHEMA_ARCHIVE`), which every test points at its temporary
+  folder, as it does the log: the first build had a test archive into the
+  real `schemas/archive/` and stage the copy.

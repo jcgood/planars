@@ -34,6 +34,7 @@ def schemas(monkeypatch, tmp_path) -> Path:
                     ignore=shutil.ignore_patterns("__pycache__"))
     monkeypatch.setattr(source_log, "SCHEMAS_DIR", folder)
     monkeypatch.setattr(source_log, "PROJECT_LOG", folder / "changes.tsv")
+    monkeypatch.setattr(source_log, "SCHEMA_ARCHIVE", folder / "archive")
     (folder / "changes.tsv").unlink(missing_ok=True)
     source_log.append_project_lines([
         source_log.line(s, what="baseline", by="test", why="start", change="baseline", layer="",
@@ -154,7 +155,8 @@ def test_log_change_logs_a_hand_edit_to_a_language_source(coded, capsys):
 
 def test_log_change_logs_a_schema_edit_one_line_per_change(coded, schemas):
     terms = schemas / "terms.yaml"
-    terms.write_text(terms.read_text(encoding="utf-8") + "# note\n", encoding="utf-8")
+    old = terms.read_text(encoding="utf-8")
+    terms.write_text(old + "# note\n", encoding="utf-8")
     _log_change("--change", "rename", "--layer", "taxonomy", "--change", "add",
                 "--layer", "taxonomy", "--why", "t", "--apply")
     *_, first, second = source_log.read_lines(source_log.SCHEMAS)
@@ -162,6 +164,11 @@ def test_log_change_logs_a_schema_edit_one_line_per_change(coded, schemas):
     assert first["fingerprint"] == ""
     assert second["fingerprint"] == file_door.fingerprint(terms.read_bytes())
     assert source_log.unlogged([source_log.SCHEMAS]) == []
+    # The version it replaced is kept (unit 18), so the schemas rebuild at any position.
+    assert (schemas / second["previous version"]).read_text(encoding="utf-8") == old
+    rebuilt = schemas.parent / "rebuilt"
+    source_log.files_at(source_log.SCHEMAS, len(source_log.read_lines("schemas")) - 2, rebuilt)
+    assert (rebuilt / "terms.yaml").read_text(encoding="utf-8") == old
 
 
 def test_a_breaking_edit_needs_an_issue_and_what_happens_to_the_answers(

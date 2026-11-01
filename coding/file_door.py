@@ -21,7 +21,9 @@ table can't be named.
   version went, and, for a file read from a Drive file people type in, who
   edited that Drive file since the file's previous line (*edited by*, from
   the caller's ``revisions``; unit 16c, plain-record-design § 3.3; empty on
-  lines written before 2026-10-31). A log whose header is not
+  lines written before 2026-10-31), and the file's fingerprint as the line
+  leaves it (unit 18: ``source_log.files_at`` checks a rebuilt past state
+  against it; empty on lines written before 2026-11-01). A log whose header is not
   ``CHANGE_LOG_COLUMNS`` is refused rather than given lines of another shape;
 - when the command ends, however it ends, commits and pushes exactly the
   files it wrote (with their archive copies and change-log lines), with a
@@ -237,7 +239,9 @@ BUILT: FrozenSet[str] = frozenset({PROPOSAL_BASE})
 CHANGE_LOG_NAME = "changes.tsv"
 # The last five (unit 17, docs/change-log-design.md § 3.2) are filled only on
 # lines about a source (``SOURCES``, and the schemas in the project's log,
-# ``coding/source_log.py``); lines about any other file leave them empty.
+# ``coding/source_log.py``), except the fingerprint, which every line has
+# since unit 18 (empty on a removal, and on a source edit's lines but its
+# last); lines about any other file leave the other four empty.
 SOURCE_COLUMNS = ("change", "layer", "answers broken", "spans moved", "fingerprint")
 CHANGE_LOG_COLUMNS = ("when (UTC)", "file", "what changed", "by", "why", "previous version",
                       "edited by") + SOURCE_COLUMNS
@@ -1222,7 +1226,9 @@ def _log(run: Optional[_Run], target: LocalFile, what: str, why: str,
         rows = [base + [change, layer, answers, spans, mark if i == len(changes) - 1 else ""]
                 for i, (change, layer) in enumerate(changes)]
     else:
-        rows = [base + [""] * len(SOURCE_COLUMNS)]
+        # Every line records what it left (unit 18), so a rebuilt past
+        # state can be checked (source_log.files_at); "" for a removal.
+        rows = [base + [""] * (len(SOURCE_COLUMNS) - 1) + [fingerprint(new_text)]]
     first = 1 if new_log else _count_rows(log)
     with open(log, "a", encoding="utf-8", newline="") as f:
         writer = csv.writer(f, delimiter="\t", lineterminator="\n")

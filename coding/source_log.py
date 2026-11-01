@@ -25,6 +25,25 @@ hand edit) and by the local-file door (a command's edit).
 ``previous_text`` finds the version a source's last line was written for (in
 the language's archive, then in git history: a convenience for measuring a
 hand edit, not part of the rule).
+
+**Previous versions** (unit 18; docs/result-stamp-design.md § 4). Every
+line that replaces or removes a file names the copy of what it replaced in
+its *previous version* cell: a language's in ``{lang}/archive/`` (the
+local-file door), a schema file's in ``schemas/archive/`` (``archive_schema``,
+by log-change and ``log_tool_edit``). An empty cell means the file did not
+exist before the line, except on a ``baseline`` line, where the record
+starts: what stood before it was not kept.
+
+**A stream as it stood** (``files_at``): a log's *position* is how many
+lines it has; the logs are only appended to, so a position names one state
+of every file the stream covers. ``files_at(stream, position, dest)`` writes
+that state into ``dest`` from the files as they are now and the archive,
+walking the later lines back, and checks each rebuilt file against the
+fingerprint its last line records. A results stamp (``versions.stamp``)
+names positions, so a result can be rebuilt from it without git.
+``drifted`` lists files that already differ from their last line's
+fingerprint (an edit made outside the tooling): a state that includes them
+can't be rebuilt.
 """
 from __future__ import annotations
 
@@ -41,6 +60,9 @@ from . import file_door
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMAS_DIR = ROOT / "schemas"
 PROJECT_LOG = SCHEMAS_DIR / "changes.tsv"
+# The schema files' previous versions (archive_schema; unit 18). A line
+# names a copy as ``archive/<name>``, as a language's lines do.
+SCHEMA_ARCHIVE = SCHEMAS_DIR / file_door.ARCHIVE_FOLDER
 SCHEMAS = "schemas"   # the project's stream
 
 # The schema files that are sources, and why (docs/change-log-design.md § 3.1).
@@ -265,12 +287,39 @@ def log_tool_edit(source: Source, old: Optional[str], *, by: str, why: str,
         raise ValueError("; ".join(problems))
     new = read_text(source.path)
     effects = measure({source.path: old})
+    previous = archive_schema(source, old) if old is not None else ""
     rows = [line(source, what=describe(source, old, new), by=by, why=why, change=c, layer=l,
                  answers=effects.answers_cell(), spans=effects.spans_cell(),
-                 mark=file_door.fingerprint(new) if i == len(changes) - 1 else "")
+                 mark=file_door.fingerprint(new) if i == len(changes) - 1 else "",
+                 previous=previous)
             for i, (c, l) in enumerate(changes)]
     append_project_lines(rows)
-    stage([source.path, PROJECT_LOG])
+    stage([source.path, PROJECT_LOG] + ([previous_copy(SCHEMAS, previous)] if previous else []))
+
+
+def archive_schema(source: Source, text: str) -> str:
+    """Keep ``text``, the version of a schema file a line is about to
+    replace, in ``schemas/archive/`` (never over an earlier copy). Returns
+    its path within ``schemas/``, for the line's *previous version*."""
+    if source.stream != SCHEMAS:
+        raise ValueError(f"{source.shown} is a language's file: its door archives it")
+    SCHEMA_ARCHIVE.mkdir(parents=True, exist_ok=True)
+    name = Path(source.name)
+    base = f"{name.stem}_{file_door.stamp()}"
+    dest, n = SCHEMA_ARCHIVE / f"{base}{name.suffix}", 2
+    while dest.exists():
+        dest, n = SCHEMA_ARCHIVE / f"{base}_{n}{name.suffix}", n + 1
+    with open(dest, "w", encoding="utf-8", newline="") as f:
+        f.write(text)
+    return f"{file_door.ARCHIVE_FOLDER}/{dest.name}"
+
+
+def previous_copy(stream: str, previous: str) -> Path:
+    """Where a line's *previous version* cell points: in the language's
+    folder, or for the schemas in ``SCHEMA_ARCHIVE``."""
+    if stream == SCHEMAS:
+        return SCHEMA_ARCHIVE / Path(previous).relative_to(file_door.ARCHIVE_FOLDER)
+    return stream_root(stream) / previous
 
 
 def command_for(stream: str) -> str:
@@ -319,6 +368,113 @@ def previous_text(source: Source) -> Tuple[bool, Optional[str]]:
         if shown.returncode == 0 and file_door.fingerprint(shown.stdout) == mark:
             return True, shown.stdout.decode("utf-8")
     return False, None
+
+
+# ---------------------------------------------------------------------------
+# A stream as it stood at a log position (unit 18)
+# ---------------------------------------------------------------------------
+
+class RebuildError(Exception):
+    """A stream's files can't be rebuilt at a position; the message says why."""
+
+
+def stream_root(stream: str) -> Path:
+    """The folder a stream's log names its files from."""
+    return SCHEMAS_DIR if stream == SCHEMAS else file_door.CODED_DATA / stream
+
+
+def position(stream: str) -> int:
+    """How many lines the stream's log has: the position of its files now."""
+    return len(read_lines(stream))
+
+
+def _not_rebuilt(stream: str, rel: Path) -> bool:
+    """Files a rebuild leaves out: the archive, the log itself (written
+    separately, cut at the position) and hidden files."""
+    parts = rel.parts
+    return (parts[0] == file_door.ARCHIVE_FOLDER or rel == Path(log_path(stream).name)
+            or any(p.startswith(".") for p in parts) or "__pycache__" in parts)
+
+
+def _last_marks(lines: List[Dict[str, str]]) -> Dict[str, str]:
+    """Each file's fingerprint on its last line, "" when that line has none
+    (written before lines carried one, or mid-edit)."""
+    out: Dict[str, str] = {}
+    for l in lines:
+        out[l["file"]] = l.get("fingerprint") or ""
+    return out
+
+
+def drifted(stream: str) -> List[str]:
+    """Files whose content now differs from the fingerprint on their last
+    line: changed outside the tooling, so a state including them can't be
+    rebuilt. Files whose last line has no fingerprint can't be checked."""
+    root = stream_root(stream)
+    out = []
+    for name, mark in _last_marks(read_lines(stream)).items():
+        if mark and file_door.fingerprint((root / name).read_bytes()
+                                          if (root / name).exists() else None) != mark:
+            out.append(name)
+    return sorted(out)
+
+
+def files_at(stream: str, at: int, dest: Path) -> List[str]:
+    """Write into ``dest`` the stream's files as they stood when its log had
+    ``at`` lines (module docstring), its log cut there included. Returns the
+    files written (paths within ``dest``). Raises ``RebuildError`` when a
+    needed previous version was not kept, an archive copy is missing, or a
+    rebuilt file doesn't match the fingerprint its log records."""
+    lines = read_lines(stream)
+    if not 0 <= at <= len(lines):
+        raise RebuildError(f"{stream}'s log has {len(lines)} lines; there is no position {at}.")
+    root = stream_root(stream)
+    if not root.is_dir():
+        raise RebuildError(f"{stream} has no folder ({root}).")
+    state: Dict[str, Optional[bytes]] = {}
+    for path in sorted(root.rglob("*")):
+        rel = path.relative_to(root)
+        if path.is_file() and not _not_rebuilt(stream, rel):
+            state[str(rel)] = path.read_bytes()
+    # Walk the later lines back, newest first: before each, the file was
+    # its previous version (or absent).
+    for n in range(len(lines) - 1, at - 1, -1):
+        l = lines[n]
+        name, previous = l["file"], (l.get("previous version") or "").strip()
+        if previous:
+            copy = previous_copy(stream, previous)
+            if not copy.is_file():
+                raise RebuildError(f"{stream}: line {n + 1} ({name}) names the previous version "
+                                   f"{previous}, which is not in the archive.")
+            state[name] = copy.read_bytes()
+        elif l.get("change") == file_door.BASELINE:
+            raise RebuildError(f"{stream}: {name}'s record starts at line {n + 1} "
+                               f"({l['when (UTC)']}); the versions before it were not kept, so "
+                               f"position {at} can't be rebuilt.")
+        else:
+            state[name] = None   # the line created it
+    problems = []
+    for name, mark in _last_marks(lines[:at]).items():
+        if mark and file_door.fingerprint(state.get(name)) != mark:
+            problems.append(name)
+    if problems:
+        raise RebuildError(f"{stream} at position {at}: {', '.join(sorted(problems))} "
+                           f"rebuilt differently from what the log recorded (edited outside "
+                           f"the tooling, or an archive copy was changed).")
+    written = []
+    for name, data in sorted(state.items()):
+        if data is None:
+            continue
+        out = dest / name
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_bytes(data)
+        written.append(name)
+    dest.mkdir(parents=True, exist_ok=True)
+    with open(dest / log_path(stream).name, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=file_door.CHANGE_LOG_COLUMNS, delimiter="\t",
+                                lineterminator="\n", extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(lines[:at])
+    return written
 
 
 def describe(source: Source, old: Optional[str], new: Optional[str]) -> str:

@@ -71,7 +71,8 @@ is placed (the same rule as the label registry).
 
 The language logs keep their seven columns (`CHANGE_LOG_COLUMNS`) and gain
 five. `schemas/changes.tsv` has the same twelve, so one reader handles both.
-Lines about annotation files leave the new five empty.
+Lines about annotation files leave the new five empty (except, since unit
+18, the fingerprint: docs/result-stamp-design.md § 9).
 
 | Column | Who fills it | What it holds |
 |---|---|---|

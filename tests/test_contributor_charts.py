@@ -16,7 +16,10 @@ from pypdf import PdfReader, PdfWriter
 
 from laminar import contributor_charts as cc
 
-SOURCE = json.dumps({"annotation_cells_filled": 5, "annotation_cells_total": 10})
+STAMP = {"code": {"version": "0.1.0a61", "uncommitted_changes": False},
+         "schemas": {"version": "0.0.0", "position": 5, "drifted": []},
+         "languages": {"stan1293": {"version": "1.2.3", "position": 58, "drifted": []}}}
+SOURCE = json.dumps({"annotation_cells_filled": 5, "annotation_cells_total": 10, "stamp": STAMP})
 DATASET = "stan1293_types_all"
 
 
@@ -75,6 +78,9 @@ def test_chapters_dividers_titles_and_page_numbers(tmp_path):
     assert "3" in divider.split("Combined constituency forest")[1]
     assert "Combined constituency forest" in reader.pages[2].extract_text()
     assert "5 of 10 annotation cells filled" in reader.pages[3].extract_text()
+    # What it was drawn from (unit 18): short on each page, in full on the first.
+    assert "code 0.1.0a61, data line 58" in reader.pages[3].extract_text()
+    assert "English [stan1293] 1.2.3 (line 58)" in cover
 
 
 def test_a_long_chapter_is_listed_by_group(tmp_path):

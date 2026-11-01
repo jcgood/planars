@@ -9,6 +9,17 @@ repos:
         files: ^planars/.*\.py$
         stages: [pre-commit]
 
+      # Raises the code version when a commit changes code that produces
+      # results (coding/versions.py RESULT_CODE, which the script reads, so
+      # the list is in one place: no `files:` filter here). Phase 10 unit 18.
+      - id: bump-version
+        name: Raise the code version for a change to result code
+        entry: .venv/bin/python bump_version_hook.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
       - id: regenerate-label-table
         name: Regenerate CLAUDE.md's label table from schemas/issue_labels.yaml
         entry: .venv/bin/python regenerate_label_table_hook.py

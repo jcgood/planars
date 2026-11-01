@@ -47,8 +47,10 @@ beside the language's folders, not inside it, where the tooling would read
 a new folder as a class. They are working files: planars-data's
 .gitignore leaves ``.analysis/`` out, and nothing here commits them.
 Beside each domains file, ``source_<dataset>.json``
-records the planars-data commit (and whether the clone had uncommitted
-changes), how complete the annotation is (``language_completeness``), and
+records the stamp (``coding.versions.stamp``, without the time: the code
+version, and the schemas' and the language's versions and change-log
+positions, from which they can be rebuilt; Phase 10 unit 18), how complete
+the annotation is (``language_completeness``), and
 which annotated classes give no spans yet; the exporter puts it in the
 bundle's metadata, so a chart drawn mid-annotation says so. The planar
 table is the language's live planar file, read where it is.
@@ -58,12 +60,12 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 import sys
 from pathlib import Path
 
 import pandas as pd
 
+from coding import versions
 from laminar.datasets import REPO, repo_relative
 from laminar.planars_groupings import planars_domain_type
 from planars.languages import get_display_name
@@ -225,11 +227,6 @@ def domains_frame(table: pd.DataFrame, grouping: str) -> pd.DataFrame:
 
 # ── What the bundle records about its source ────────────────────────────────
 
-def _git(*args: str) -> str:
-    return subprocess.run(["git", "-C", str(CODED_DATA), *args], capture_output=True,
-                          text=True, check=True).stdout.strip()
-
-
 def source_record(lang_id: str, grouping: str, selection: str, table: pd.DataFrame) -> dict:
     completeness = language_completeness(lang_id, REPO)
     summary = completeness_summary(completeness)
@@ -239,8 +236,8 @@ def source_record(lang_id: str, grouping: str, selection: str, table: pd.DataFra
         "grouping": grouping,
         "groupings": GROUPINGS_BY[grouping],
         "selection": selection,
-        "planars_data_commit": _git("rev-parse", "HEAD"),
-        "planars_data_uncommitted_changes": bool(_git("status", "--porcelain", "--", lang_id)),
+        # What it was drawn from (Phase 10 unit 18; coding/versions.py).
+        "stamp": versions.stamp([lang_id], drawn=False),
         "planar_file": repo_relative(planar_file(lang_id)),
         "annotation_cells_filled": summary["filled"],
         "annotation_cells_total": summary["total"],

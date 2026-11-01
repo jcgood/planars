@@ -51,6 +51,12 @@ class TestRenderLanguageReport:
         assert "2026" in html
         assert "UTC" in html
 
+    def test_what_it_was_drawn_from_is_shown_when_given(self):
+        data = _minimal_bundle()
+        assert "Drawn from" not in render_language_report(data)
+        data["drawn_from"] = "code 0.1.0a61 · schemas 0.0.0 (line 5)"
+        assert "Drawn from: code 0.1.0a61" in render_language_report(data)
+
     def test_no_completeness_data_shows_placeholder(self):
         html = render_language_report(_minimal_bundle(completeness={}))
         assert "No annotation data found" in html

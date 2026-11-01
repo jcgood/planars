@@ -33,8 +33,10 @@ the annotator which cells to redo); it is refused without both.
 
 With ``--apply``: for a language, the previous version goes into its
 archive and the source, archive copy and log are committed and pushed in
-planars-data (the local-file door). For the schemas, the lines are added to
-``schemas/changes.tsv`` and the edited files and the log are staged, to be
+planars-data (the local-file door). For the schemas, the previous version
+goes into ``schemas/archive/`` (``source_log.archive_schema``, unit 18), the
+lines are added to ``schemas/changes.tsv`` and the edited files, their
+archive copies and the log are staged, to be
 committed together with whatever else goes with them (the pre-commit hook
 checks that they match). When spans moved, the snapshots are regenerated
 and staged in planars too (``tests/snapshots/``: the record of how).
@@ -148,16 +150,20 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
         return
 
     if stream == source_log.SCHEMAS:
-        rows = []
+        rows, archived = [], []
         for u, what in lines:
             mark = file_door.fingerprint(u.source.path.read_bytes())
+            old = before[u.source.path]
+            previous = source_log.archive_schema(u.source, old) if old is not None else ""
+            if previous:
+                archived.append(source_log.previous_copy(source_log.SCHEMAS, previous))
             for i, (change, layer) in enumerate(pairs):
                 rows.append(source_log.line(
                     u.source, what=what, by=BY, why=args.why.strip(), change=change, layer=layer,
                     answers=effects.answers_cell(), spans=effects.spans_cell(),
-                    mark=mark if i == len(pairs) - 1 else ""))
+                    mark=mark if i == len(pairs) - 1 else "", previous=previous))
         source_log.append_project_lines(rows)
-        source_log.stage([source_log.PROJECT_LOG] + [u.source.path for u, _ in lines])
+        source_log.stage([source_log.PROJECT_LOG] + [u.source.path for u, _ in lines] + archived)
         print(f"\nLogged {len(rows)} line(s) in schemas/changes.tsv and staged it with the "
               f"edited file(s). Commit them together and push.")
     else:

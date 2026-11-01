@@ -240,7 +240,10 @@ def _chart_html(data: dict, static: bool = False) -> str:
 def render_language_report(data: dict, static: bool = False) -> str:
     """Render a language_report_data bundle as a self-contained HTML string.
 
-    data:   the dict returned by planars.reports.language_report_data().
+    data:   the dict returned by planars.reports.language_report_data(),
+            optionally with ``drawn_from``: one line saying what the report
+            was drawn from, printed under the date (generate-reports adds
+            coding.versions.stamp_text; Phase 10 unit 18).
     static: if True, embed the chart as a static PNG (base64 data URI) instead
             of the interactive Plotly CDN chart. Used internally by
             render_language_report_pdf(); not normally needed for direct HTML use.
@@ -291,6 +294,8 @@ def render_language_report(data: dict, static: bool = False) -> str:
   <header>
     <h1>{display_name}</h1>
     <p class="timestamp">Generated {_html.escape(timestamp_str)}</p>
+    {f'<p class="timestamp">Drawn from: {_html.escape(data["drawn_from"])}</p>'
+     if data.get("drawn_from") else ""}
   </header>
   <main>
     {completeness_html}

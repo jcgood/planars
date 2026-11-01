@@ -26,6 +26,17 @@ count of edits at each level since the stream's last ``baseline`` line
 (``migrations/start_source_logs.py``, 2026-10-31). Unit 18 stamps both on
 every result.
 
+**The stamp** (``stamp``; unit 18, docs/result-stamp-design.md): what every
+result records about what it was drawn from, the one place one is built.
+The code's version (``code_version``: ``pyproject.toml``'s, raised by the
+pre-commit hook for any commit that changes ``RESULT_CODE``), and for the
+schemas and each language its version and its log *position*
+(``source_log.position``), from which ``rebuild`` writes those files as
+they stood (``source_log.files_at``), without git. ``stamp_problems`` says,
+in plain words, what would stop a stamped result being rebuilt (code
+changed since its version was set, a file edited outside the tooling);
+``stamp_text`` is the one line a page prints.
+
 **Releases** (``release_problems``, run by ``integrity-check
 --check-release``, the first step of the release procedure in the
 coordinator guide): a release is refused while a breaking edit still has
@@ -35,14 +46,23 @@ carries a label marked ``for_annotator`` in schemas/issue_labels.yaml.
 from __future__ import annotations
 
 import re
+import subprocess
 from dataclasses import dataclass
-from typing import Dict, Iterator, List, Optional, Tuple
+from pathlib import Path
+from typing import Dict, Iterable, Iterator, List, Optional, Tuple
 
 from . import file_door, source_log
 from .change_effects import UNKNOWN, answers_broken
 
 BREAKING, ADDITION, REVISION = "breaking", "addition", "revision"
 ISSUE = re.compile(r"#(\d+)")
+
+# The code that produces results: a commit changing any of it raises the
+# code version (bump_version_hook.py and check_snapshots.py read this;
+# design § 5, Q3).
+RESULT_CODE = ("planars", "laminar", "chapters", "planarsviz")
+PYPROJECT = source_log.ROOT / "pyproject.toml"
+_VERSION_LINE = re.compile(r'^version = "([^"]+)"$', re.MULTILINE)
 
 
 @dataclass(frozen=True)
@@ -86,10 +106,11 @@ def level(lines) -> str:
     return REVISION
 
 
-def edits(stream: str) -> Iterator[Edit]:
-    """The stream's edits since its last baseline, oldest first. Lines with
-    no change class (an annotation file's) are not edits to a source."""
-    lines = source_log.read_lines(stream)
+def edits(stream: str, at: Optional[int] = None) -> Iterator[Edit]:
+    """The stream's edits since its last baseline, oldest first; with
+    ``at``, as the log stood at that position. Lines with no change class
+    (an annotation file's) are not edits to a source."""
+    lines = source_log.read_lines(stream)[:at]
     start = max((i for i, l in enumerate(lines) if l.get("change") == file_door.BASELINE),
                 default=-1)
     group: List[Dict[str, str]] = []
@@ -104,22 +125,113 @@ def edits(stream: str) -> Iterator[Edit]:
         yield Edit(stream, tuple(group))
 
 
-def counts(stream: str) -> Tuple[int, int, int]:
-    """(breaking, addition, revision) edits since the baseline."""
+def counts(stream: str, at: Optional[int] = None) -> Tuple[int, int, int]:
+    """(breaking, addition, revision) edits since the baseline (at a position)."""
     found = {BREAKING: 0, ADDITION: 0, REVISION: 0}
-    for edit in edits(stream):
+    for edit in edits(stream, at):
         found[edit.level] += 1
     return found[BREAKING], found[ADDITION], found[REVISION]
 
 
-def version(stream: str) -> str:
-    """``3.12.40``: the stream's version (``schemas`` or a language ID)."""
-    return ".".join(str(n) for n in counts(stream))
+def version(stream: str, at: Optional[int] = None) -> str:
+    """``3.12.40``: the stream's version (``schemas`` or a language ID), now
+    or when its log had ``at`` lines."""
+    return ".".join(str(n) for n in counts(stream, at))
 
 
 def versions() -> Dict[str, str]:
     """Every stream's version: the schemas, then each language."""
     return {s: version(s) for s in [source_log.SCHEMAS, *file_door.language_ids()]}
+
+
+# ---------------------------------------------------------------------------
+# The stamp (unit 18)
+# ---------------------------------------------------------------------------
+
+def code_version() -> str:
+    """The code's version, as ``pyproject.toml`` has it now (not the
+    installed copy's metadata, which an editable install leaves stale)."""
+    m = _VERSION_LINE.search(PYPROJECT.read_text(encoding="utf-8"))
+    if m is None:
+        raise RuntimeError("pyproject.toml has no 'version = \"…\"' line.")
+    return m.group(1)
+
+
+def code_changed() -> Optional[bool]:
+    """Whether the result code has changes not yet committed (so its version
+    doesn't name it). None when there's no git checkout to ask (e.g. an
+    installed copy, which is its version)."""
+    if not (source_log.ROOT / ".git").exists():
+        return None
+    done = subprocess.run(["git", "-C", str(source_log.ROOT), "status", "--porcelain", "--",
+                           *RESULT_CODE], capture_output=True, text=True)
+    if done.returncode != 0:
+        return None
+    return any(l.strip() for l in done.stdout.splitlines())
+
+
+def _stream(stream: str) -> dict:
+    return {"version": version(stream), "position": source_log.position(stream),
+            "drifted": source_log.drifted(stream)}
+
+
+def stamp(lang_ids: Iterable[str], *, drawn: bool = True) -> dict:
+    """What a result drawn now from these languages records (module
+    docstring). Plain JSON, so any result can carry it as it is.
+    ``drawn=False`` leaves out the time, for a file rewritten only when what
+    it was drawn from changes (a bundle's source record)."""
+    out = {
+        "code": {"version": code_version(), "uncommitted_changes": code_changed()},
+        "schemas": _stream(source_log.SCHEMAS),
+        "languages": {lang: _stream(lang) for lang in lang_ids},
+    }
+    return {"drawn": source_log.now(), **out} if drawn else out
+
+
+def stamp_problems(s: dict) -> List[str]:
+    """Why a result with this stamp could not be rebuilt from it, in plain
+    words ([] if it can)."""
+    out = []
+    if s["code"]["uncommitted_changes"]:
+        out.append(f"drawn with code changed since version {s['code']['version']} "
+                   f"(uncommitted changes in {', '.join(RESULT_CODE)})")
+    for name, stream in [("schemas", s["schemas"]), *s["languages"].items()]:
+        if stream["drifted"]:
+            out.append(f"{name}: {', '.join(stream['drifted'])} changed outside the tooling "
+                       f"(not in its change log)")
+    return out
+
+
+def stamp_text(s: dict) -> str:
+    """The stamp in one line, for the foot of a page."""
+    from planars.languages import get_display_name
+    parts = [f"Drawn {s['drawn'][:10]}"] if "drawn" in s else []
+    parts += [f"code {s['code']['version']}",
+              f"schemas {s['schemas']['version']} (line {s['schemas']['position']})"]
+    parts += [f"{get_display_name(lang)} {st['version']} (line {st['position']})"
+              for lang, st in s["languages"].items()]
+    text = " · ".join(parts)
+    problems = stamp_problems(s)
+    return text + (f" — not reproducible: {'; '.join(problems)}" if problems else "")
+
+
+def same_data(a: dict, b: dict) -> bool:
+    """Whether two stamps name the same schemas and languages at the same
+    positions (the code aside)."""
+    def key(s):
+        return (s["schemas"]["position"],
+                tuple(sorted((l, st["position"]) for l, st in s["languages"].items())))
+    return key(a) == key(b)
+
+
+def rebuild(s: dict, dest: Path) -> None:
+    """Write the schemas and languages a stamp names, as they stood, into
+    ``dest/schemas/`` and ``dest/coded_data/{lang}/``. The code is the
+    stamp's version (from a release or the package index, not from here).
+    Raises ``source_log.RebuildError`` if they can't be rebuilt."""
+    source_log.files_at(source_log.SCHEMAS, s["schemas"]["position"], dest / "schemas")
+    for lang, st in s["languages"].items():
+        source_log.files_at(lang, st["position"], dest / "coded_data" / lang)
 
 
 def release_problems() -> List[str]:

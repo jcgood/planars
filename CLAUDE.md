@@ -279,8 +279,10 @@ python generate_snapshots.py            # regenerate span snapshots; review with
   and commit both (`--upgrade` to upgrade everything; `pip-tools` is installed
   separately).
 - Notebooks run in Colab, not locally; Colab installs the package from GitHub,
-  so a library change needs a version bump (the pre-commit hook does it for
-  `planars/` changes; bump by hand for a `schemas/` change Colab reads).
+  so a library change needs a version bump. The pre-commit hook does it for
+  any change to code that produces results (`versions.RESULT_CODE`: every
+  result records the version, unit 18); bump by hand for a `schemas/`
+  change Colab reads.
 - **Audits** happen in an `audit` issue: the daily refresh files one when
   none has closed in 30 days; open one by hand after a cross-cutting change.
   Steps: coordinator guide § "Audit procedure". The refresh already runs the

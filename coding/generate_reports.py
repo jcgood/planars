@@ -21,6 +21,10 @@ Requires weasyprint and kaleido (both in requirements.txt). WeasyPrint also
 needs system libraries: libpango-1.0-0, libpangocairo-1.0-0, libcairo2
 (installed automatically in CI; on macOS install via Homebrew: pango cairo).
 
+Under its date, each report says what it was drawn from
+(``versions.stamp_text``: the code version, and the schemas' and the
+language's versions and change-log positions; Phase 10 unit 18).
+
 Reads the imported coded_data/ TSVs, so it works in CI without live Google
 Sheets access during the data collection step. Drive access is still needed
 for the upload step.
@@ -37,6 +41,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 CODED_DATA = ROOT / "coded_data"
 
+from coding import versions
 from planars.reports import language_report_data
 from planars.html_report import render_language_report_pdf
 from .drive import _load_drive_config, _save_drive_config, create_or_update_shared_file
@@ -86,6 +91,8 @@ def _run(apply: bool) -> None:
         print(f"  [{lang_id}] Collecting data...", end=" ", flush=True)
         try:
             data = language_report_data(lang_id, ROOT)
+            # What it was drawn from, under the date (Phase 10 unit 18).
+            data["drawn_from"] = versions.stamp_text(versions.stamp([lang_id], drawn=False))
         except Exception as e:
             print(f"ERROR: {e}")
             continue

@@ -619,6 +619,35 @@
       schema change is logged" step, and the daily refresh's changes step,
       which files a source-unlogged issue naming each file and the command.
 
+- id: result_stamp
+  description: >-
+    what a result (a laminar bundle, a contributor chart, a language report,
+    a chapter) was drawn from: the code version, and the schemas' and each
+    language's version and change-log position, from which those files can
+    be rebuilt without git (Phase 10 unit 18; docs/result-stamp-design.md)
+  locations:
+    - {entity: change_log, detail: "the positions name lines of schemas/changes.tsv and coded_data/{lang}/changes.tsv; each line's previous version and fingerprint let source_log.files_at rebuild and check a past state"}
+    - {entity: derived_artifact, detail: "the result's copy: a bundle's source_<dataset>.json and metadata.json (planars_source.stamp), a chart's or report's page text, a chapter's data.lock and values"}
+    - {entity: code_comment, detail: "pyproject.toml's version, raised by bump_version_hook.py for any commit changing versions.RESULT_CODE"}
+  authoritative: change_log
+  cascade:
+    direction: automatic
+    mechanism: >-
+      versions.stamp builds every stamp, read from the logs and pyproject.toml
+      when the result is drawn; nothing stores a stamp except the result
+      that carries it. versions.rebuild (source_log.files_at) writes the
+      files a stamp names.
+  drift_risk:
+    possible: true
+    note: >-
+      A file changed outside the tooling no longer matches its log, so a
+      result drawn from it can't be rebuilt; result code changed and not
+      yet committed has no version of its own.
+    caught_by: >-
+      versions.stamp_problems, printed on every stamp (the chart, report
+      and chapter say "not reproducible" and why); build-chapters refuses
+      such files; files_at refuses a state whose fingerprints don't match.
+
 - id: decision_record
   description: >-
     what was decided on a diagnostics or linguistics issue (or a proposal

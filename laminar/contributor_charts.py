@@ -21,8 +21,10 @@ chart. Which chapter a chart is in and its title are the renderer's, set
 where it adds the chart (``render_planarsviz.R``'s chart_table(), the
 manifest's ``part`` and ``title`` columns); a part ``PARTS`` doesn't list
 fails. Each page gets a strip added above it with the chart's title, and
-the dataset, the date it was drawn and how complete the annotation was, so
-a page printed or shared alone still says what it is. The strip is added to
+the dataset, the date it was drawn, how complete the annotation was and
+what it was drawn from (the code version and the language's change-log
+position; the first page has the whole stamp, ``coding.versions.stamp_text``,
+Phase 10 unit 18), so a page printed or shared alone still says what it is. The strip is added to
 the page, not drawn into the chart, so the charts themselves are the same
 as everywhere else (Chichewa's and CCDB's reference images are unaffected).
 
@@ -173,6 +175,18 @@ def _completeness(source_json: str) -> str:
     return f"{filled} of {total} annotation cells filled{pct}"
 
 
+def _drawn_from(source_json: str, lang_id: str) -> tuple[str, str]:
+    """What the charts were drawn from (the source record's stamp, Phase 10
+    unit 18): in full for the first page, and short for each page's strip
+    (the code version and the language's change-log position), which must
+    fit on the narrowest chart."""
+    import json
+    from coding import versions
+    s = json.loads(source_json)["stamp"]
+    short = f"code {s['code']['version']}, data line {s['languages'][lang_id]['position']}"
+    return versions.stamp_text(s), short
+
+
 def _html_pdf(body: str, width: float, height: float | None, css: str = "") -> bytes:
     from weasyprint import HTML
     size = f"{width:.2f}pt {height:.2f}pt" if height else "A4"
@@ -267,7 +281,9 @@ def combine(chart_dir: Path, dataset: str, grouping: str, lang_id: str, date: st
     readers = {row["file"]: PdfReader(chart_dir / row["file"]) for row in rows}
 
     title = f"{get_display_name(lang_id)}: charts {GROUPING_WORDS[grouping]}"
-    stamp = f"Drawn {date}; {_completeness(source_json)}"
+    full, short = _drawn_from(source_json, lang_id)
+    stamp = f"Drawn {date}; {_completeness(source_json)}; {short}"
+    cover_stamp = f"Drawn {date}; {_completeness(source_json)}. Drawn from: {full}"
 
     # Page numbers depend on how long the first page and the dividers come
     # out, which depends on the numbers: lay out, measure, again until stable.
@@ -282,7 +298,7 @@ def combine(chart_dir: Path, dataset: str, grouping: str, lang_id: str, date: st
                 n = len(readers[row["file"]].pages)
                 ranges[row["file"]] = (page, page + n - 1)
                 page += n
-        cover = _cover(title, stamp, [(PARTS[p][0], len(by_part[p]), part_start[p]) for p in parts])
+        cover = _cover(title, cover_stamp, [(PARTS[p][0], len(by_part[p]), part_start[p]) for p in parts])
         dividers = {p: _divider(i, p, [(r["title"], *ranges[r["file"]]) for r in by_part[p]])
                     for i, p in enumerate(parts, start=1)}
         measured = {"cover": len(PdfReader(io.BytesIO(cover)).pages),

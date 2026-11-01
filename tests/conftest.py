@@ -57,6 +57,32 @@ def _state_paths() -> dict:
 _STATE_PATHS = _state_paths()
 
 
+@pytest.fixture(scope="session")
+def english_files(tmp_path_factory):
+    """A private copy of English's real folder (its files, change log and
+    archive) in a ``coded_data/`` of its own, for tests that read a
+    chapter's data (chapters/data.py reads the files where the local-file
+    door keeps them, ``file_door.CODED_DATA``). Never the real clone: the
+    door commits there. Empty when planars-data isn't cloned."""
+    import shutil
+    from pathlib import Path
+    real = Path(__file__).resolve().parent.parent / "coded_data" / "stan1293"
+    coded = tmp_path_factory.mktemp("english") / "coded_data"
+    if real.is_dir():
+        shutil.copytree(real, coded / "stan1293")
+    else:
+        coded.mkdir()
+    return coded
+
+
+@pytest.fixture()
+def reads_english(english_files, monkeypatch):
+    """The local-file door's planars-data is the copy of English (read only)."""
+    from coding import file_door
+    monkeypatch.setattr(file_door, "CODED_DATA", english_files)
+    return english_files
+
+
 @pytest.fixture(autouse=True)
 def _file_door_in_tmp(monkeypatch, tmp_path):
     """The local-file door (coding/file_door.py) writes under an empty folder
@@ -71,7 +97,8 @@ def _file_door_in_tmp(monkeypatch, tmp_path):
 
 @pytest.fixture(autouse=True)
 def _source_logs_in_tmp(monkeypatch, tmp_path):
-    """The schemas' change log (coding/source_log.py) is a copy in tmp_path, and
+    """The schemas' change log (coding/source_log.py) is a copy in tmp_path,
+    their archive of previous versions an empty folder there, and
     measuring a source change's effects (coding/change_effects.py: two copies
     of the project, about ten seconds) reports none. A test of the
     measurement itself takes the ``real_measure`` fixture."""
@@ -81,6 +108,7 @@ def _source_logs_in_tmp(monkeypatch, tmp_path):
     if source_log.PROJECT_LOG.exists():   # start from the real log, so the real schemas match
         shutil.copy2(source_log.PROJECT_LOG, log)
     monkeypatch.setattr(source_log, "PROJECT_LOG", log)
+    monkeypatch.setattr(source_log, "SCHEMA_ARCHIVE", tmp_path / "schemas_archive")
     monkeypatch.setattr(change_effects, "measure",
                         lambda before, coded_data=None, code_from=None: change_effects.Effects())
 

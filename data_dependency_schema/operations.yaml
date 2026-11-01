@@ -275,8 +275,9 @@
       makes each missing prose stub and volume.yaml once; the door refuses
       to write over or remove an existing one
     - >-
-      pins each language chapter to a planars-data version (data.lock) on
-      its first build; --update moves the pin and reports what changes
+      pins each language chapter to a data version, its language's
+      change-log position (data.lock), on its first build; --update moves
+      the pin and reports what changes
     - "commits and pushes what it wrote in planars-data (the door, when it ends)"
   idempotent: true
   idempotency_note: >-

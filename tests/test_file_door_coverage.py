@@ -54,6 +54,13 @@ NOT_THROUGH_THE_DOOR: Dict[Site, str] = {
     ("source_log.py", "append_project_lines", "open"):
         "not in planars-data: schemas/changes.tsv, the schemas' change log (git keeps its "
         "history; staged with the edit it logs)",
+    ("source_log.py", "archive_schema", "open"):
+        "not in planars-data: schemas/archive/, the schema files' previous versions (staged "
+        "with the line that names them)",
+    ("source_log.py", "files_at", "open"):
+        "not in planars-data: a rebuilt past state, written where the caller asks",
+    ("source_log.py", "files_at", "write_bytes"):
+        "not in planars-data: a rebuilt past state, written where the caller asks",
     ("change_effects.py", "_copy", "open"): "not in planars-data: a temporary copy of the project",
     ("change_effects.py", "_copy", "shutil.copy2"):
         "not in planars-data: a temporary copy of the project",

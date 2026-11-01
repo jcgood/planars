@@ -59,21 +59,25 @@ def main() -> None:
     else:
         print(f"\nAll {len(TASKS)} snapshots match.")
 
-    # Warn if planars/ library files changed but pyproject.toml version did not.
-    # Colab installs planars from GitHub; without a version bump pip won't reinstall.
-    planars_changed = subprocess.run(
-        ["git", "diff", "origin/main..HEAD", "--name-only", "--", "planars/"],
+    # Warn if code that produces results changed but the version did not
+    # (bump_version_hook.py raises it; this catches a commit made without
+    # the hook). Every result records the version (unit 18), and Colab
+    # installs planars from GitHub; without a bump pip won't reinstall.
+    from coding.versions import RESULT_CODE
+    code_changed = subprocess.run(
+        ["git", "diff", "origin/main..HEAD", "--name-only", "--", *RESULT_CODE],
         capture_output=True, text=True,
     ).stdout.strip()
     version_changed = subprocess.run(
         ["git", "diff", "origin/main..HEAD", "--name-only", "--", "pyproject.toml"],
         capture_output=True, text=True,
     ).stdout.strip()
-    if planars_changed and not version_changed:
-        print("\nWARNING: planars/ changed but pyproject.toml version was not bumped.")
-        print("  Colab notebooks install planars from GitHub; without a version bump")
-        print("  pip will serve the cached old version to notebook users.")
-        print("  Bump the version in pyproject.toml before pushing.")
+    if code_changed and not version_changed:
+        print(f"\nWARNING: {', '.join(RESULT_CODE)} changed but pyproject.toml's version "
+              f"was not raised.")
+        print("  Results record the version, so two would name the same version for")
+        print("  different code; and Colab would keep the cached old package.")
+        print("  Run `pre-commit install` so the hook raises it, then raise it by hand.")
 
     # Check that coded_data/ (planars-data) is clean and pushed.
     # Snapshots are generated from local TSVs; if planars-data is ahead of

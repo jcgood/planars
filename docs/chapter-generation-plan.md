@@ -213,15 +213,19 @@ states them.
 
 ## Phase 1 as built (2026-10-25)
 
-- **`chapters/data.py`, `chapter_data(lang_id, version=None)`**: a
-  language's named values and tables at one planars-data version. What
+- **`chapters/data.py`, `chapter_data(lang_id, position=None)`**: a
+  language's named values and tables at one data version. What
   each value is called and where it comes from is the module docstring;
-  `python -m chapters values --lang stan1293 [--version COMMIT]` prints
+  `python -m chapters values --lang stan1293 [--position N]` prints
   them (English today: ~1,500 values, nearly all of them span edges and
   per-group analysis results).
-- **A past version is read from a copy git writes into a temporary
-  folder** (`git archive`), so the clone is never touched. The schemas and
-  span rules are this checkout's, recorded as `planars_commit`.
+- **A past version is read from a copy written into a temporary
+  folder**, so the clone is never touched. Built with `git archive` and a
+  planars-data commit; since 2026-11-01 (Phase 10 unit 18,
+  docs/result-stamp-design.md) the version is the language's change-log
+  position and the copy is rebuilt from its files and archive, without
+  git. The schemas and span rules are this checkout's, recorded in the
+  stamp (the code version and the schemas' position).
 - **An analysis bundle is used only if it was drawn from the same spans
   and planar file** as the version being read (the domains file rebuilt
   here must have the hash the bundle records), not merely the same
@@ -239,7 +243,8 @@ states them.
   the same as reading it as it was. At the 2026-09-23 commit, English's
   coreference gives no spans, because its constructions were renamed
   since (#318 (d)) and today's schema knows only the new names. So
-  `data.lock` must record `planars_commit` as well, and `chapters update`
+  `data.lock` must record the code as well (now its version and the
+  schemas' position), and `chapters update`
   should say whether a change came from the annotation or from the rules
   (move one pin at a time).
 
@@ -260,15 +265,14 @@ states them.
 - **One span table per class**, inside the class's fragment, and **a
   language-wide one** (`spans_table.tex`, Jeff, 2026-10-25): every span of
   the language, grouped by domain type in the schema's class order.
-- **`coded_data/` must be its own clone** of planars-data, or the data
-  version can't be named (git would answer for the planars repository
-  around it); `chapter_data` refuses otherwise. CI now checks planars-data
-  out as a clone into `coded_data/` (it used to copy it without `.git`,
-  which failed the pinned-version test three times on 2026-10-25).
-- **Refusals:** coded_data/ with uncommitted changes for the language is
-  refused unless `--version` is given, so every chapter names a commit it
-  can be rebuilt from. (Phase 2 also refused an `--out` inside this public
-  repository; Phase 3 removed `--out`.)
+- **`coded_data/` had to be its own clone** of planars-data, for git to
+  name the data version. Since unit 18 (2026-11-01) the version is a
+  change-log position and no git is asked.
+- **Refusals:** a language whose files differ from their change log
+  (changed outside the tooling) is refused, so every chapter names a
+  position it can be rebuilt from (before unit 18: uncommitted changes,
+  unless a commit was given). (Phase 2 also refused an `--out` inside this
+  public repository; Phase 3 removed `--out`.)
 - **Checked:** English and the introduction compile with pdflatex in the
   book class with no errors and no undefined values (also a test, skipped
   without pdflatex). Math symbols in schema prose (∈, →, ×) are escaped;
@@ -281,7 +285,7 @@ states them.
 
 ## Phase 3 as built (2026-10-25)
 
-- **`python -m coding build-chapters [--lang LANG [--version COMMIT] |
+- **`python -m coding build-chapters [--lang LANG [--position N] |
   --intro] [--apply]`** (`chapters/build.py`, whose docstring says what
   it writes where). A `coding` command rather than `python -m chapters
   build`, because it writes into planars-data: it runs inside the doors,
@@ -323,10 +327,13 @@ states them.
 - **`chapters update` is `build-chapters --update`**, not a second
   command: one command builds, pins and reports (`chapters/build.py`'s
   docstring says how).
-- **The pin is `.papers/<L>/data.lock`**: the planars-data commit and its
-  date, and the planars commit last built with. The first build pins;
-  every later build reads the data at the pin, and a `--version` other
-  than the pin is refused without `--update`.
+- **The pin is `.papers/<L>/data.lock`**: the language's change-log
+  position and that line's date, and the code version and schemas'
+  position last built with (a planars-data commit and a planars commit
+  until unit 18, 2026-11-01; `migrations/pin_chapters_to_positions.py`
+  moved English's). The first build pins; every later build reads the data
+  at the pin, and a `--position` other than the pin is refused without
+  `--update`.
 - **The report goes one pin at a time** (Phase 1's finding): the code's
   changes are values.tex as built against the old data read with today's
   code; the annotation's are the old data against the new, both with
