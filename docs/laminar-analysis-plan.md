@@ -149,9 +149,17 @@ span table in memory from `planars.reports.language_spans`:
   failure files an issue (a new label in `schemas/issue_labels.yaml`).
   Made-up languages (IDs starting `synth`) are left out of the weekly run
   (Jeff, 2026-11-01); the daily contributor charts still draw them.
-  Where the bundles are kept is open (Jeff, 2026-11-01): the raw
-  permutation draws are rewritten whole on any span change, so committing
-  full bundles grows planars-data's history quickly.
+  **Bundles (Jeff, 2026-11-01):** full bundles are committed to
+  planars-data for now (decision 5), while only English and Araona have
+  them. The raw permutation draws are rewritten whole on any span change,
+  so this grows planars-data's history fast at 30–40 languages. Before
+  that, move to: a small committed results file per language (the numbers
+  chapters read, with the span and planar hashes), and the full bundle as
+  a zip in the Drive analysis folder, latest only (older ones are
+  recomputed from the seed and the result stamp). **Trigger, built into
+  4d:** when the weekly run would commit bundles for a third language, it
+  files the move as a `design` issue rather than relying on anyone to
+  remember (the move itself is #333).
 - **4e, documentation:** the coordinator guide (both kinds of chart, the
   weekly run in "What happens automatically"), the collaborator guide (where
   the charts are and what they are for), a note in the Drive folder.

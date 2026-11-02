@@ -18,8 +18,10 @@ this project is trying to remove.
 
 ## Now
 
-**Next session (Jeff, 2026-11-01):** laminar 4d (the laminar thread
-below; the plan's Phase 4 names its live steps, each shown to Jeff first).
+**Next session (Jeff, 2026-11-01):** build laminar 4d (the laminar thread
+below; the plan's Phase 4d has Jeff's 2026-11-01 decisions: no `synth`
+languages, full bundles in planars-data for now with the #333 trigger;
+don't re-ask. Its live steps are each shown to Jeff first).
 Done 2026-11-01: the worked-examples step in coordinator guide § "Reviewing
 a span rule with the domain expert" (`tests/span_examples/README.md`;
 Phase 11 itself waits for #321 — don't propose starting it), and the
