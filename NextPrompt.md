@@ -18,12 +18,10 @@ this project is trying to remove.
 
 ## Now
 
-**Next (2026-11-01):** laminar 4d is built (progress doc "4d as built");
-its live steps wait for Jeff's go-ahead: the first run by hand
-(`gh workflow run laminar-analysis.yml`: makes the Drive `analysis`
-folders, the first uploads and the first workflow write to `.bundles/`),
-then turn on the commented-out Sunday schedule. Then 4e (documentation).
-Also done 2026-11-01: the worked-examples step in coordinator guide § "Reviewing
+**Next (2026-11-02):** laminar 4e (documentation). 4d is done: the
+first run was clean and the Sunday schedule is on (progress doc "4d as
+built"). **Check** the first scheduled run (Sunday 2026-11-08): with no
+span change it should analyse nothing. Also done 2026-11-01: the worked-examples step in coordinator guide § "Reviewing
 a span rule with the domain expert" (`tests/span_examples/README.md`;
 Phase 11 itself waits for #321 — don't propose starting it), and the
 pink-cell note (#318 item 6). **Check** the 2026-11-02 Sheet validation
@@ -114,9 +112,8 @@ live (2026-10-25; "4c as built"): the first run drew all three languages,
 put the PDFs on Drive and linked them on each status sheet. The `charts`
 Drive kind is enforced since 2026-10-27 (clean writes on 2026-10-26).
 A daily run draws nothing when no span changed (checked 2026-10-27: all
-three "up to date"). 4d, the weekly full analysis, is built (2026-11-01;
-"4d as built"), not yet run live. **Next action:** its first run, with
-Jeff's go-ahead, then 4e. Don't re-ask decision 6's choices. Jeff's cuts to the cross-language
+three "up to date"). 4d, the weekly full analysis, is live (first run clean
+2026-11-02, Sunday schedule on; "4d as built"). **Next action:** 4e. Don't re-ask decision 6's choices. Jeff's cuts to the cross-language
 charts (CCDB thread below) come after Phase 2 (his call, 2026-10-24), so
 they can go in now or between later phases, not in the middle of one.
 

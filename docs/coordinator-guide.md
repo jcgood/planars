@@ -19,7 +19,7 @@ Once set up, the following run without coordinator action:
 | Daily, scheduled 09:00 UTC | `sheet-validation.yml` | Runs `validate-coding`; opens a `sheet-validation` issue if problems found; closes it when clean |
 | After each data refresh | `generate-reports.yml` | Generates and uploads PDF reports to Drive |
 | After each data refresh | `laminar-charts.yml` → `python -m coding laminar-charts --apply` | Redraws the contributor charts of each language whose spans changed and puts them in its Drive folder; files or closes a `laminar-charts-error` issue |
-| Sundays 16:00 UTC (by hand until the first run is checked) | `laminar-analysis.yml` → `python -m coding laminar-analysis` (`--plan`, one `--dataset` job each, `--report`) | The full analysis with the permutation tests, for each dataset whose spans changed: bundle to planars-data's `.bundles/`, PDF to the language's Drive `analysis` folder; files or closes a `laminar-analysis-error` issue, and files a `design` issue once bundles exist for three languages (#333) |
+| Sundays 16:00 UTC | `laminar-analysis.yml` → `python -m coding laminar-analysis` (`--plan`, one `--dataset` job each, `--report`) | The full analysis with the permutation tests, for each dataset whose spans changed: bundle to planars-data's `.bundles/`, PDF to the language's Drive `analysis` folder; files or closes a `laminar-analysis-error` issue, and files a `design` issue once bundles exist for three languages (#333) |
 
 The hooks require a one-time install per machine — see [Regression testing and hooks](#regression-testing-and-hooks). The GitHub Actions require secrets configured in the repo — see [Automated workflows](#automated-workflows).
 
@@ -1037,7 +1037,7 @@ Each issue closes by itself on the next clean run. The run's summary page on Git
 
 **`laminar-charts.yml`** — runs `laminar-charts --apply` (see § "5. Laminar charts for a language") with R and the pinned packages from `renv.lock`, cached between runs. Most days nothing has changed and it draws nothing. The repository is public, so its log says only which languages were drawn or failed and at what stage, never why: the reason can quote the annotation. The `laminar-charts-error` issue gives the command that shows the reason on your machine. You can trigger it manually at any time (`gh workflow run laminar-charts.yml`).
 
-**`laminar-analysis.yml`** — the weekly full analysis (see § "5. Laminar charts for a language"), Sundays 16:00 UTC: a planning job lists the datasets behind their data, one job per dataset runs the permutation tests side by side (about an hour each for English), and a last job files or closes the `laminar-analysis-error` issue. The log, like `laminar-charts.yml`'s, says only which dataset failed and at what stage. A week with no span changes runs nothing. Trigger it by hand with `gh workflow run laminar-analysis.yml`.
+**`laminar-analysis.yml`** — the weekly full analysis (see § "5. Laminar charts for a language"), Sundays 16:00 UTC: a planning job lists the datasets behind their data, one job per dataset runs the permutation tests side by side (up to about four hours each for English, a few minutes for Araona), and a last job files or closes the `laminar-analysis-error` issue. The log, like `laminar-charts.yml`'s, says only which dataset failed and at what stage. A week with no span changes runs nothing. Trigger it by hand with `gh workflow run laminar-analysis.yml`.
 
 ### Drive folder structure
 

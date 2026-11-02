@@ -160,7 +160,7 @@ by workflows. Plan decision 6 and Phase 4a–e have the design.
 | 4a. Local: colours, `--lang`, English drawn, cross-language `--with` | built 2026-10-24 (below) |
 | 4b. `laminar-charts` command: contributor charts to Drive | built 2026-10-24, live 2026-10-25 (below) |
 | 4c. Workflow after the daily refresh, R on the runner | built and live 2026-10-25 (below) |
-| 4d. Weekly full analysis with permutation tests | built 2026-11-01; its three live steps wait for Jeff (below) |
+| 4d. Weekly full analysis with permutation tests | done 2026-11-02: first run clean, Sunday schedule on (below) |
 | 4e. Documentation | not started |
 
 ### 4a as built (2026-10-24)
@@ -327,8 +327,10 @@ by workflows. Plan decision 6 and Phase 4a–e have the design.
   language whose spans can't be read is reported too.
 - **Drive:** new kinds `analysis_charts` (named by dataset, e.g.
   `analysis_types_all_stan1293.pdf`) and the `analysis` folder, in the
-  language folder, no sharing of their own; both in watch until their first
-  clean real write. The PDF is found by its label, so the parallel jobs
+  language folder, no sharing of their own (they inherit the project
+  folder's, so Adam can read them). `analysis_charts` is enforced since
+  the first run's sixteen clean uploads; the folder kind covers every
+  folder, so it stays in watch. The PDF is found by its label, so the parallel jobs
   never write drive_config.json; only the plan job does (the folder IDs).
   The PDF is `contributor_charts.draw_dataset` with the tests: the same
   chapters plus "Statistical tests", a title naming the selection and a
@@ -336,14 +338,15 @@ by workflows. Plan decision 6 and Phase 4a–e have the design.
   50 draws: 43 charts, all four test tables in the bundle).
 - **#333 trigger:** `--plan --apply` files a `design` issue, once, when
   bundles would exist for three languages.
-- **Live steps, each shown to Jeff first (none done yet):** the new label
-  (created by the daily refresh's `labels` step once this is pushed); the
-  first run (`gh workflow run laminar-analysis.yml`), which makes the
-  `analysis` folders, makes the first uploads into them and is the first
-  workflow write to `.bundles/` — 16 jobs for English and Araona, about an
-  hour each for English. The Sunday schedule is commented out in the
-  workflow until then (built on a Sunday: pushing it live would have
-  started the first run unasked); turn it on after the first run.
+- **First run, 2026-11-02** (by hand, Jeff's go-ahead; run 41380878401):
+  all 16 datasets brought up to date, no issue filed, no door violation,
+  nothing from the annotation in any job's log (every line the command
+  printed checked against the planar files). Araona's jobs took 3–4
+  minutes; English's 50 minutes to 4 h 15 min (`types_all`, 289 charts),
+  against the job's 5 h 30 min limit. If English's data grows past that,
+  the job is cut off and the report files `laminar-analysis-error` for
+  that dataset, so it cannot fail silently; the fix then is to split the
+  draws across jobs. The Sunday schedule went on after this run.
 
 ## Findings
 

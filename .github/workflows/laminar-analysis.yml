@@ -22,10 +22,8 @@ name: Weekly analysis
 # access to jcgood/planars-data, PLANARS_OAUTH_CREDENTIALS, GOOGLE_OAUTH_TOKEN).
 
 on:
-  # The weekly schedule goes on once Jeff has seen the first run by hand
-  # (its live steps are each shown to him first; Phase 4d):
-  #   schedule:
-  #     - cron: "0 16 * * 0"    # Sundays 16:00 UTC, after that day's data refresh
+  schedule:
+    - cron: "0 16 * * 0"    # Sundays 16:00 UTC, after that day's data refresh
   workflow_dispatch:        # allow manual trigger from the Actions tab
 
 concurrency:
@@ -97,7 +95,7 @@ jobs:
     needs: plan
     if: needs.plan.outputs.count != '0'
     runs-on: ubuntu-latest
-    timeout-minutes: 330    # under GitHub's six-hour limit; English takes about an hour
+    timeout-minutes: 330    # under GitHub's six-hour limit; English's types_all took 4 h 15 min (2026-11-02)
     permissions:
       contents: read
     strategy:
