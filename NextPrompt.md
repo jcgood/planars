@@ -180,7 +180,7 @@ splits into); (4) definitions to
 tighten: vp_ellipsis's test (#319), flapping and `multiple` (#321);
 (5) QWORDS split, his OK on the new elements;
 (6) a pink cell says what is wrong — done 2026-11-01
-(`validate_coding.write_notes`; Adam not yet told on #318).
+(`validate_coding.write_notes`; Adam told on #318 the same day).
 Asked of Adam on #319 (2026-10-24): what the four `vp_ellipsis` cells
 with two values (`y/unclear`, `both/unclear`) mean.
 Also open, linguistic: displacement, the one standard constituency test

@@ -147,6 +147,11 @@ span table in memory from `planars.reports.language_spans`:
   last run, all four permutation tests; bundles written to planars-data as
   new local-file door kinds; charts to the analysis folder on Drive; a
   failure files an issue (a new label in `schemas/issue_labels.yaml`).
+  Made-up languages (IDs starting `synth`) are left out of the weekly run
+  (Jeff, 2026-11-01); the daily contributor charts still draw them.
+  Where the bundles are kept is open (Jeff, 2026-11-01): the raw
+  permutation draws are rewritten whole on any span change, so committing
+  full bundles grows planars-data's history quickly.
 - **4e, documentation:** the coordinator guide (both kinds of chart, the
   weekly run in "What happens automatically"), the collaborator guide (where
   the charts are and what they are for), a note in the Drive folder.
