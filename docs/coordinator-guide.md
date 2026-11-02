@@ -501,20 +501,22 @@ The expert works through the classes with their own Claude, using a language who
    - the issues the tracking issue names for that class.
 3. **Walk the expert through it** in plain words, a few lines at a time. Cover what the rule does now, what spans their answers give, and each place where the answers and the rule seem to disagree. Put each disagreement as a question, and say what changes under either answer. Where it helps, work out the spans an alternative would give with a scratch script, without changing the module.
 4. **Agree the rule.** It must say what every value a criterion can take does to the span: `y`, `n`, `both`, `na`, `?` and blank. No value may be left to a default (CLAUDE.md, "Explicit, not implicit"). It must also say how complete and partial positions and strict and loose spans are formed, where the class uses them. Use the words in `terms.yaml`. There are three possible outcomes:
-   - **Confirmed as is.** Comment that on the tracking issue and tick the box. The expert sets `status: stable` in `diagnostic_classes_status.yaml`, citing the issue. Only a coordinator promotes a class.
+   - **Confirmed as is.** Write the worked examples (step 5) and open a pull request with only those (step 6); the code needs no change, so it merges once they pass. Comment that on the tracking issue and tick the box. The expert sets `status: stable` in `diagnostic_classes_status.yaml`, citing the issue. Only a coordinator promotes a class.
    - **The rule changes.** Go to step 5.
    - **The data was wrong.** The expert fixes the sheet. After the next daily import, regenerate the snapshots and look again.
 5. **Write it on a branch**, `span-rule/{class}`.
    - Edit `span_rule` in `diagnostic_classes.yaml`. If a criterion's meaning turned out to be unclear, also edit its description in `diagnostic_criteria.yaml`.
+   - Add worked examples under `tests/span_examples/{class}/`: a few small filled tabs, each with the spans the agreed rule should give for it (layout and what to cover: `tests/span_examples/README.md`). Work the spans out from the rule with the expert, not from the code: they are what the code is later checked against, and what any rewrite of it must reproduce. Do this for a confirmed rule too (step 4), on the same kind of branch.
    - Change nothing else: not the module, not the hash, not `status`. Don't run `log-change` either: the other coordinator logs the rule with its module change (CI's "Check every schema change is logged" step fails the branch until then).
    - Run `python -m coding check-codebook`. The only error should be that class's hash mismatch, which is the sign that the code hasn't caught up yet.
 6. **Open a pull request** titled `Span rule: {class}`, and comment the link on the tracking issue. Its body gives:
    - the agreed rule in plain words;
    - each decision and its reason;
-   - the spans the new rule should give for the language.
+   - the spans the new rule should give for the language;
+   - the worked examples, and which point of the rule each shows.
 
-   The test suite will fail on the hash, and CI on the change log, until the code is updated. That is expected.
-7. **The other coordinator** reviews the pull request. They then follow the 7-step workflow above (module, docstring, tests, snapshots) on the same branch. They check that the spans match what the pull request said, stamp the hash, log the change and merge. The expert ticks the box and promotes the class.
+   The test suite will fail on the hash, on any worked example the current code gets wrong, and CI on the change log, until the code is updated. That is expected.
+7. **The other coordinator** reviews the pull request. They then follow the 7-step workflow above (module, docstring, tests, snapshots) on the same branch. They check that the spans match what the pull request said and that every worked example passes (`pytest tests/test_span_examples.py`), stamp the hash, log the change and merge. If an example looks wrong rather than the code, ask the expert on the pull request; don't edit the example to fit. The expert ticks the box and promotes the class.
 
 Answers on one class often settle a question several classes share, such as what `na` means to a span (#133). Record those on the shared issue as well, so later classes start from them.
 

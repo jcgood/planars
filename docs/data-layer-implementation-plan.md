@@ -441,7 +441,9 @@ finished, since its first candidate, the span rules, is what that review
 changes. Meanwhile its cheapest part goes into the review: each rule agreed
 with Adam gets worked examples beside it (a few small filled tabs and the
 spans the rule should give), so the spec is later mostly writing down what
-is settled.
+is settled. Built 2026-11-01: `tests/span_examples/` (its README) and
+`tests/test_span_examples.py`, written at step 5 of coordinator guide
+§ "Reviewing a span rule with the domain expert".
 
 Done when: designed with Jeff (a pause, like Phase 10's); out of scope until then.
 

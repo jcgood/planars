@@ -13,6 +13,8 @@ Run `check_snapshots.py` after any change to analysis logic in `planars/` before
 
 The snapshots exercise every analysis module registered in `_CLASS_HANDLERS` (`planars/reports.py`) and the shared code they call, `planars/spans.py` and `planars/io.py`. A change to any of these should be verified with `check_snapshots.py`.
 
+Snapshots record what the code gives today; a snapshot diff only says that output moved. **Worked examples** record what a span rule *should* give: small made-up languages in `tests/span_examples/` with the spans worked out by hand when the rule was agreed with the domain expert, checked by `tests/test_span_examples.py`. A failing example means the code is wrong, not the example (layout: `tests/span_examples/README.md`).
+
 ---
 
 ## Synthetic test language
