@@ -18,6 +18,14 @@ this project is trying to remove.
 
 ## Now
 
+**Next session, in order (Jeff, 2026-11-01):** (1) add the worked-examples
+step to coordinator guide § "Reviewing a span rule with the domain expert"
+(why: the Phase 11 section of `docs/data-layer-implementation-plan.md`;
+Phase 11 itself waits for #321 — don't propose starting it); (2) the
+pink-cell note (#318 item 6, in the #318 thread below); (3) laminar 4d
+(the laminar thread below). Phase 10 has no unit left to build, only the
+daily-refresh checks in its thread.
+
 Eight live threads. Read whichever matches what you're picking up.
 
 **2026-10-27, English phrasal_accent:** Adam's Claude filled the

@@ -436,6 +436,13 @@ the three hypotheses, and the logic most buried in code today (each
 description and a hash check). Unit 8's single daily-refresh command is
 the step that makes the refresh order movable into the spec later.
 
+**Timing (Jeff, 2026-11-01):** not before the span-rule review (#321) is
+finished, since its first candidate, the span rules, is what that review
+changes. Meanwhile its cheapest part goes into the review: each rule agreed
+with Adam gets worked examples beside it (a few small filled tabs and the
+spans the rule should give), so the spec is later mostly writing down what
+is settled.
+
 Done when: designed with Jeff (a pause, like Phase 10's); out of scope until then.
 
 ---
