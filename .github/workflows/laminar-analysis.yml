@@ -1,0 +1,201 @@
+name: Weekly analysis
+
+# The weekly full analysis (docs/laminar-analysis-plan.md decision 6, Phase
+# 4d): every dataset of every language whose spans changed since its last
+# run, with the four permutation tests. What each step does, and the
+# laminar-analysis-error issue, is coding/laminar_analysis.py's docstring.
+#
+#   plan     lists the (language, dataset) pairs behind their data and makes
+#            each language's Drive analysis folder;
+#   analyse  one job per pair, side by side: analyse, draw, upload the PDF,
+#            commit the bundle to planars-data (.bundles/);
+#   report   files or closes the issue from what the jobs left in planars-data.
+#
+# This repository is public, so this run's log is too. The command holds
+# back everything the annotation could show up in; the plan's list holds only
+# language and dataset names. Nothing is uploaded as a downloadable artifact
+# (anyone can download a public repository's artifacts), which is why each
+# job writes its own results rather than handing them to a later job. Keep
+# it that way: no step here prints annotation.
+#
+# Required secrets: as laminar-charts.yml (PLANARS_DATA_TOKEN with write
+# access to jcgood/planars-data, PLANARS_OAUTH_CREDENTIALS, GOOGLE_OAUTH_TOKEN).
+
+on:
+  # The weekly schedule goes on once Jeff has seen the first run by hand
+  # (its live steps are each shown to him first; Phase 4d):
+  #   schedule:
+  #     - cron: "0 16 * * 0"    # Sundays 16:00 UTC, after that day's data refresh
+  workflow_dispatch:        # allow manual trigger from the Actions tab
+
+concurrency:
+  group: laminar-analysis   # never two weekly runs at once
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write         # the design issue for moving the bundles (#333)
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      count: ${{ steps.plan.outputs.count }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check out planars-data
+        uses: actions/checkout@v5
+        with:
+          repository: jcgood/planars-data
+          token: ${{ secrets.PLANARS_DATA_TOKEN }}
+          path: coded_data
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Write credentials
+        env:
+          OAUTH_CREDS: ${{ secrets.PLANARS_OAUTH_CREDENTIALS }}
+          OAUTH_TOKEN: ${{ secrets.GOOGLE_OAUTH_TOKEN }}
+        run: |
+          mkdir -p ~/.config/planars ~/.config/gspread
+          printf '%s' "$OAUTH_CREDS" > ~/.config/planars/oauth_credentials.json
+          printf '%s' "$OAUTH_TOKEN" > ~/.config/gspread/authorized_user.json
+
+      - name: Configure git identity
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: List the datasets behind their data
+        id: plan
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python -m coding laminar-analysis --plan --apply --github-output "$GITHUB_OUTPUT"
+
+      - name: File an issue if planning failed
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          printf '%s\n\n%s\n\n%s\n' \
+            "## Weekly analysis not run — $(date -u +%Y-%m-%d)" \
+            "The laminar-analysis.yml workflow failed before it could list the datasets to analyse, so nothing was analysed this week. The failed step and its log: $RUN_URL (nothing from the annotation)." \
+            "## What to do"$'\n\n'"Fix the failing step, then run: gh workflow run laminar-analysis.yml. This issue closes by itself when a run brings every dataset up to date." \
+            > /tmp/body.md
+          python -m coding issue --file laminar-analysis-error --replace \
+            --title "Weekly analysis not run ($(date -u +%Y-%m-%d))" --body-file /tmp/body.md
+
+  analyse:
+    needs: plan
+    if: needs.plan.outputs.count != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 330    # under GitHub's six-hour limit; English takes about an hour
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false      # one dataset failing doesn't stop the others
+      max-parallel: 8
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    name: analyse ${{ matrix.dataset }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check out planars-data
+        uses: actions/checkout@v5
+        with:
+          repository: jcgood/planars-data
+          token: ${{ secrets.PLANARS_DATA_TOKEN }}
+          path: coded_data
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install system libraries (PDF pages, R graphics)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpango-1.0-0 libpangocairo-1.0-0 libcairo2 \
+            libcairo2-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libfontconfig1-dev \
+            libpng-dev libjpeg-dev libtiff5-dev libcurl4-openssl-dev libxml2-dev fonts-dejavu
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: renv
+          use-public-rspm: true
+
+      - name: Install the pinned R packages
+        uses: r-lib/actions/setup-renv@v2
+
+      - name: Write credentials
+        env:
+          OAUTH_CREDS: ${{ secrets.PLANARS_OAUTH_CREDENTIALS }}
+          OAUTH_TOKEN: ${{ secrets.GOOGLE_OAUTH_TOKEN }}
+        run: |
+          mkdir -p ~/.config/planars ~/.config/gspread
+          printf '%s' "$OAUTH_CREDS" > ~/.config/planars/oauth_credentials.json
+          printf '%s' "$OAUTH_TOKEN" > ~/.config/gspread/authorized_user.json
+
+      - name: Configure git identity
+        # The local-file door commits the bundle to planars-data when the
+        # command ends (and replays it on top of the other jobs' pushes).
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Analyse, draw, upload and commit
+        env:
+          LANG_ID: ${{ matrix.lang }}
+          DATASET: ${{ matrix.dataset }}
+        run: python -m coding laminar-analysis --lang "$LANG_ID" --dataset "$DATASET" --apply
+
+  report:
+    needs: [plan, analyse]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write         # file and close the laminar-analysis-error issue
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check out planars-data
+        # Checked out now, after every analyse job has pushed its bundle.
+        uses: actions/checkout@v5
+        with:
+          repository: jcgood/planars-data
+          token: ${{ secrets.PLANARS_DATA_TOKEN }}
+          path: coded_data
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Configure git identity
+        # Every laminar-analysis run checks it (operations.yaml preconditions).
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: File or close the issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PLANNED: ${{ needs.plan.outputs.matrix }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: python -m coding laminar-analysis --report "$PLANNED" --run-url "$RUN_URL" --apply

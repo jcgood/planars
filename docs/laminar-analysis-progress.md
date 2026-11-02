@@ -8,7 +8,7 @@ the current state; update it at every phase boundary, in the same commit.
 | 1. Take out the Chichewa assumptions, in place | done 2026-10-24 |
 | 2. Move the code (`laminar/`, `planarsviz/` to the root) | done 2026-10-24 |
 | 3. Connect a planars language (adapter, *k of n*, metadata) | done 2026-10-24 |
-| 4. Run English; charts to contributors through Drive (revised) | 4a and 4b built 2026-10-24, 4c 2026-10-25; 4b and 4c live 2026-10-25; 4d–e not started |
+| 4. Run English; charts to contributors through Drive (revised) | 4a and 4b built 2026-10-24, 4c 2026-10-25; 4b and 4c live 2026-10-25; 4d built 2026-11-01, not yet live; 4e not started |
 | 5. Documentation and tests | not started |
 
 ## Phase 1 as built (2026-10-24)
@@ -160,7 +160,7 @@ by workflows. Plan decision 6 and Phase 4a–e have the design.
 | 4a. Local: colours, `--lang`, English drawn, cross-language `--with` | built 2026-10-24 (below) |
 | 4b. `laminar-charts` command: contributor charts to Drive | built 2026-10-24, live 2026-10-25 (below) |
 | 4c. Workflow after the daily refresh, R on the runner | built and live 2026-10-25 (below) |
-| 4d. Weekly full analysis with permutation tests | not started |
+| 4d. Weekly full analysis with permutation tests | built 2026-11-01; its three live steps wait for Jeff (below) |
 | 4e. Documentation | not started |
 
 ### 4a as built (2026-10-24)
@@ -302,6 +302,48 @@ by workflows. Plan decision 6 and Phase 4a–e have the design.
   (#325), which the door did not count as a dropped connection; fixed in
   `drive_door._dropped_connection`, and the rerun drew English and closed
   #325.
+
+### 4d as built (2026-11-01)
+
+- **`python -m coding laminar-analysis`** (`coding/laminar_analysis.py`, its
+  `operations.yaml` record) and **`.github/workflows/laminar-analysis.yml`**,
+  Sundays 16:00 UTC and by hand, in three jobs: `--plan` lists the
+  (language, dataset) pairs behind their data and makes each one's Drive
+  `analysis` folder; one `--dataset` job per pair, side by side (up to 8),
+  runs the four tests (5000 draws, seed 0), uploads the PDF and commits the
+  bundle; `--report` files or closes `laminar-analysis-error` (new label).
+  `synth` languages left out.
+- **No artifacts** (Claude's call, not in the plan): a public repository's
+  artifacts can be downloaded by anyone, so a job can't hand its bundle or
+  charts to a later one. Each job writes its own results: the bundle to
+  planars-data (the door's push now replays on top of the other jobs'
+  pushes up to five times, `file_door.PUSH_TRIES`; each job writes only its
+  own folder, so the replays never conflict), the PDF to Drive.
+- **The bundle is the record:** `.bundles/{lang}/{dataset}/run.json` holds
+  the fingerprint (domains file, planar file, chart code's git version,
+  draws), written last, after the upload. No state file. The report counts
+  a pair failed when its `run.json` still has the fingerprint the plan saw,
+  so a daily refresh moving the data on mid-run is not a failure; a
+  language whose spans can't be read is reported too.
+- **Drive:** new kinds `analysis_charts` (named by dataset, e.g.
+  `analysis_types_all_stan1293.pdf`) and the `analysis` folder, in the
+  language folder, no sharing of their own; both in watch until their first
+  clean real write. The PDF is found by its label, so the parallel jobs
+  never write drive_config.json; only the plan job does (the folder IDs).
+  The PDF is `contributor_charts.draw_dataset` with the tests: the same
+  chapters plus "Statistical tests", a title naming the selection and a
+  first page saying what it is (checked by drawing Araona's types_all with
+  50 draws: 43 charts, all four test tables in the bundle).
+- **#333 trigger:** `--plan --apply` files a `design` issue, once, when
+  bundles would exist for three languages.
+- **Live steps, each shown to Jeff first (none done yet):** the new label
+  (created by the daily refresh's `labels` step once this is pushed); the
+  first run (`gh workflow run laminar-analysis.yml`), which makes the
+  `analysis` folders, makes the first uploads into them and is the first
+  workflow write to `.bundles/` — 16 jobs for English and Araona, about an
+  hour each for English. The Sunday schedule is commented out in the
+  workflow until then (built on a Sunday: pushing it live would have
+  started the first run unasked); turn it on after the first run.
 
 ## Findings
 

@@ -19,6 +19,7 @@ Once set up, the following run without coordinator action:
 | Daily, scheduled 09:00 UTC | `sheet-validation.yml` | Runs `validate-coding`; opens a `sheet-validation` issue if problems found; closes it when clean |
 | After each data refresh | `generate-reports.yml` | Generates and uploads PDF reports to Drive |
 | After each data refresh | `laminar-charts.yml` → `python -m coding laminar-charts --apply` | Redraws the contributor charts of each language whose spans changed and puts them in its Drive folder; files or closes a `laminar-charts-error` issue |
+| Sundays 16:00 UTC (by hand until the first run is checked) | `laminar-analysis.yml` → `python -m coding laminar-analysis` (`--plan`, one `--dataset` job each, `--report`) | The full analysis with the permutation tests, for each dataset whose spans changed: bundle to planars-data's `.bundles/`, PDF to the language's Drive `analysis` folder; files or closes a `laminar-analysis-error` issue, and files a `design` issue once bundles exist for three languages (#333) |
 
 The hooks require a one-time install per machine — see [Regression testing and hooks](#regression-testing-and-hooks). The GitHub Actions require secrets configured in the repo — see [Automated workflows](#automated-workflows).
 
@@ -315,8 +316,8 @@ See [analyses.md](analyses.md) for what each analysis computes.
 The laminar analysis (do the spans nest? see [laminar-analysis-plan.md](laminar-analysis-plan.md))
 runs on any language annotated through planars. Charts will reach
 contributors in their language's Drive folder by themselves (the plan's
-Phase 4b–4d, being built): reality-check charts after each daily refresh,
-the full analysis with its statistical tests weekly.
+Phase 4b–4d): reality-check charts after each daily refresh, the full
+analysis with its statistical tests weekly.
 
 The reality-check charts are `python -m coding laminar-charts` (dry run;
 `--apply` draws and uploads; `--lang`, `--force`). For each language whose
@@ -330,6 +331,19 @@ refresh; run it yourself only to redraw at once (it needs R locally, as
 below). To look at the PDFs without uploading, or to see why a language
 failed:
 `python -m laminar.contributor_charts stan1293 OUT_DIR`.
+
+The weekly full analysis is `python -m coding laminar-analysis` (dry run:
+which datasets are behind their data). For every dataset of each language
+whose spans, planar or chart code changed since its last run (made-up
+`synth` languages left out), it runs the four permutation tests (5000 draws
+each), commits the bundle to planars-data under
+`.bundles/{lang}/{dataset}/`, and puts one PDF per dataset,
+`analysis_{grouping}_{selection}_{lang}.pdf`, in an `analysis` folder
+inside the language's Drive folder. The `laminar-analysis.yml` workflow
+runs it on Sundays, one job per dataset; to run one dataset yourself:
+`python -m coding laminar-analysis --lang stan1293 --dataset stan1293_types_all --apply`
+(about an hour for English). To see why one failed:
+`python -m laminar charts <dataset> --apply` (writes locally only).
 
 For working on the analysis yourself, one local command does all of it:
 
@@ -1022,6 +1036,8 @@ Each issue closes by itself on the next clean run. The run's summary page on Git
 **`generate-reports.yml`** — runs `generate-reports --apply` and uploads refreshed PDF reports to Drive. The report timestamp at the top of each PDF shows when it was last regenerated. You can trigger it manually at any time. Requires WeasyPrint system libraries (installed automatically in the workflow; not needed locally unless you run `generate-reports --apply` yourself).
 
 **`laminar-charts.yml`** — runs `laminar-charts --apply` (see § "5. Laminar charts for a language") with R and the pinned packages from `renv.lock`, cached between runs. Most days nothing has changed and it draws nothing. The repository is public, so its log says only which languages were drawn or failed and at what stage, never why: the reason can quote the annotation. The `laminar-charts-error` issue gives the command that shows the reason on your machine. You can trigger it manually at any time (`gh workflow run laminar-charts.yml`).
+
+**`laminar-analysis.yml`** — the weekly full analysis (see § "5. Laminar charts for a language"), Sundays 16:00 UTC: a planning job lists the datasets behind their data, one job per dataset runs the permutation tests side by side (about an hour each for English), and a last job files or closes the `laminar-analysis-error` issue. The log, like `laminar-charts.yml`'s, says only which dataset failed and at what stage. A week with no span changes runs nothing. Trigger it by hand with `gh workflow run laminar-analysis.yml`.
 
 ### Drive folder structure
 

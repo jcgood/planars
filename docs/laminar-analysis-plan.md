@@ -159,7 +159,8 @@ span table in memory from `planars.reports.language_spans`:
   recomputed from the seed and the result stamp). **Trigger, built into
   4d:** when the weekly run would commit bundles for a third language, it
   files the move as a `design` issue rather than relying on anyone to
-  remember (the move itself is #333).
+  remember (the move itself is #333). Built 2026-11-01 (progress doc,
+  "4d as built").
 - **4e, documentation:** the coordinator guide (both kinds of chart, the
   weekly run in "What happens automatically"), the collaborator guide (where
   the charts are and what they are for), a note in the Drive folder.

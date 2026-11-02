@@ -93,6 +93,40 @@ def test_a_long_chapter_is_listed_by_group(tmp_path):
     assert "3–47" in divider
 
 
+def test_the_weekly_analysis_pdf_says_what_it_is(tmp_path):
+    _setup(tmp_path, [("fragmentation_test", "tests", "Fragmentation against chance", 1)])
+    pdf, _n = cc.combine(tmp_path, DATASET, "types", "stan1293", "2026-10-25", SOURCE,
+                         analysis=("complete", 5000))
+    cover = PdfReader(io.BytesIO(pdf)).pages[0].extract_text()
+    assert "analysis by domain" in cover and "spans over complete positions" in cover
+    assert "5000 random draws" in cover and "Statistical tests" in cover
+
+
+def test_draw_dataset_runs_the_exporter_with_the_tests_then_the_renderer(tmp_path, monkeypatch):
+    """No R: the two commands are recorded and the renderer's output faked."""
+    run: list[list[str]] = []
+
+    def fake_run(cmd, what):
+        run.append(cmd)
+        if what.startswith("Drawing"):
+            _setup(tmp_path / "charts" / DATASET, [("pooled_plot", "spans", "Every test's span", 1)])
+
+    def write_inputs(lang_id, apply, out_dir, datasets, table):
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / f"source_{datasets[0]}.json").write_text(SOURCE)
+        return datasets
+
+    monkeypatch.setattr(cc, "_run", fake_run)
+    monkeypatch.setattr(cc, "write_inputs", write_inputs)
+    monkeypatch.setattr(cc, "parse_dataset", lambda d: ("stan1293", "types", "all"))
+    drawn = cc.draw_dataset("stan1293", DATASET, tmp_path, "2026-10-25", table=None,
+                            permutations=5000)
+    assert drawn.n_charts == 1 and drawn.pdf.startswith(b"%PDF-")
+    export, render = run
+    assert export.count("5000") == 4, "all four permutation tests"
+    assert "laminar/render_planarsviz.R" in render
+
+
 @pytest.mark.parametrize("part, title, message", [
     ("nowhere", "A title", "PARTS doesn't list"),
     ("spans", "", "no part or title"),

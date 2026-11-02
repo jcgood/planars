@@ -375,7 +375,7 @@ def _every_identity():
     """One identity of every kind (and every name a kind takes)."""
     for kind, rule in drive_door.KINDS.items():
         for name in (sorted(rule["name"]) if rule["name"] else [None]):
-            needs_lang = (name in ("language", "archive") if kind == "folder"
+            needs_lang = (name in drive_door._LANGUAGE_FOLDERS if kind == "folder"
                           else name != "all_languages" if kind == "notebook"
                           else rule["lang"] == "required")
             yield drive_door.Identity(kind, LANG if needs_lang else None,

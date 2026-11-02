@@ -114,6 +114,14 @@ it), so what someone wrote is never lost. Like the state files: rule 1 checked,
 only what differs written, committed with the rest, no archive copy or
 change-log line.
 
+**The analysis bundles** (``BundleFile``; docs/laminar-analysis-plan.md
+Phase 4d): each dataset's bundle from the weekly analysis, under
+``.bundles/{lang}/{dataset}/`` (``state_files.BUNDLES_DIR``), written by
+laminar-analysis with ``write_bundle`` and ``remove_bundle``. Derived and
+recomputable, so like the state files: rule 1 checked, only what differs
+written, committed with the rest (the commit message names the bundle, not
+each file), no archive copy or change-log line.
+
 **Enforced** (unit 6c, 2026-10-22): the door watched live writes first
 (design § 4.1, the Drive door's § 4 rule), letting a broken rule through and
 filing a ``door-violation`` issue, until its first real data-file write went
@@ -530,6 +538,100 @@ def paper_files(folder: str, pattern: str) -> List[Path]:
     """The files under ``.papers/<folder>`` matching ``pattern``, in name order."""
     base = state_files.PAPERS_DIR / folder
     return sorted(base.glob(pattern)) if base.is_dir() else []
+
+
+# ---------------------------------------------------------------------------
+# The weekly analysis's bundles (docs/laminar-analysis-plan.md Phase 4d)
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class BundleFile:
+    """One file of a dataset's analysis bundle under ``.bundles/``
+    (``stan1293/stan1293_types_all/data/spans.tsv``). Derived and
+    recomputable (the permutation draws from their seed), so like the state
+    files: no archive copy or change-log line (git keeps the history); the
+    door checks rule 1, writes only what differs, and commits."""
+    lang_id: str
+    dataset: str
+    relpath: str
+
+    def __post_init__(self) -> None:
+        for part in (self.lang_id, self.dataset):
+            if not part or "/" in part or part.startswith("."):
+                raise ValueError(f"a bundle's language and dataset are plain names: {part!r}")
+        parts = Path(self.relpath).parts
+        if not parts or Path(self.relpath).is_absolute() or ".." in parts:
+            raise ValueError(f"a bundle file's path must lie inside its bundle: {self.relpath!r}")
+
+    @property
+    def path(self) -> Path:
+        return bundle_dir(self.lang_id, self.dataset) / self.relpath
+
+
+def bundle_dir(lang_id: str, dataset: str) -> Path:
+    """Where a dataset's committed bundle lives: ``.bundles/{lang}/{dataset}/``."""
+    return state_files.BUNDLES_DIR / lang_id / dataset
+
+
+def bundle_files(lang_id: str, dataset: str) -> List[str]:
+    """Every file of a committed bundle, as paths within it, in name order."""
+    base = bundle_dir(lang_id, dataset)
+    return sorted(str(p.relative_to(base)) for p in base.rglob("*") if p.is_file()) \
+        if base.is_dir() else []
+
+
+def bundle_languages() -> List[str]:
+    """The languages with at least one committed bundle."""
+    base = state_files.BUNDLES_DIR
+    return sorted(d.name for d in base.iterdir() if d.is_dir() and any(d.iterdir())) \
+        if base.is_dir() else []
+
+
+def write_bundle(target: BundleFile, content: Union[str, bytes]) -> bool:
+    """Write one bundle file if it differs from what is there. True if written."""
+    path = target.path
+    new = _bytes(content)
+    if path.exists() and path.read_bytes() == new:
+        return False
+    run = _runs[-1] if _runs else None
+    _act(run, target, _bundle_problems(run, "write"))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(new)
+    _note_bundle(run, target, path)
+    return True
+
+
+def remove_bundle(target: BundleFile) -> bool:
+    """Delete one bundle file (one the latest export no longer makes). True
+    if there was one."""
+    path = target.path
+    if not path.exists():
+        return False
+    run = _runs[-1] if _runs else None
+    _act(run, target, _bundle_problems(run, "remove"))
+    path.unlink()
+    _note_bundle(run, target, path)
+    return True
+
+
+def _note_bundle(run: Optional[_Run], target: BundleFile, path: Path) -> None:
+    """Commit the file; the commit message names the bundle once, not each of
+    its hundred-odd files."""
+    if run is not None:
+        run.written.append(path)
+        name = f"{state_files.BUNDLES_DIR.name}/{target.lang_id}/{target.dataset}/"
+        run.state[name] = "updated"
+
+
+def _bundle_problems(run: Optional[_Run], action: str) -> List[str]:
+    """Rule 1 for .bundles/: a command is running, and this invocation writes."""
+    if run is None:
+        return ["no command is running, so the door cannot tell whether it may write "
+                "(run it through `python -m coding`)"]
+    if run.may_write:
+        return []
+    return [f"`{run.command}` was run without the flag that lets it write files (a dry "
+            f"run), but tried to {action} an analysis bundle file"]
 
 
 def stamp() -> str:
@@ -963,6 +1065,8 @@ def _where(target) -> str:
     """How a message or commit names a file: its path within planars-data."""
     if isinstance(target, PaperFile):
         return f"{state_files.PAPERS_DIR.name}/{target.relpath}"
+    if isinstance(target, BundleFile):
+        return f"{state_files.BUNDLES_DIR.name}/{target.lang_id}/{target.dataset}/{target.relpath}"
     if isinstance(target, StateFile):
         return target.relpath
     return f"{target.lang_id}/{target.relpath}"
@@ -1282,17 +1386,26 @@ def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:
 
 def push(repo: Path) -> subprocess.CompletedProcess:
     """Push; if GitHub refuses because someone else pushed meanwhile (a
-    person during a daily refresh, 2026-10-22), replay this repository's
-    commits on top of theirs and push again. A replay that conflicts is
-    undone, and the refused push's result returned, so the local commit
-    stays as it was."""
+    person during a daily refresh, 2026-10-22; the weekly analysis's jobs,
+    which push side by side), replay this repository's commits on top of
+    theirs and push again, up to ``PUSH_TRIES`` times. A replay that
+    conflicts is undone, and the refused push's result returned, so the
+    local commit stays as it was."""
     first = _git(repo, "push")
     if first.returncode == 0:
         return first
-    if _git(repo, "pull", "--rebase").returncode != 0:
-        _git(repo, "rebase", "--abort")
-        return first
-    return _git(repo, "push")
+    done = first
+    for _ in range(PUSH_TRIES - 1):
+        if _git(repo, "pull", "--rebase").returncode != 0:
+            _git(repo, "rebase", "--abort")
+            return first
+        done = _git(repo, "push")
+        if done.returncode == 0:
+            return done
+    return done
+
+
+PUSH_TRIES = 5
 
 
 def _commit(run: _Run) -> None:

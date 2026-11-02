@@ -39,6 +39,7 @@ _COMMANDS = {
     "generate-notebooks":          "coding.generate_notebooks",
     "generate-reports":            "coding.generate_reports",
     "laminar-charts":              "coding.laminar_charts",
+    "laminar-analysis":            "coding.laminar_analysis",
     # The chapters package's one writer, run here so its writes go through
     # the local-file door (docs/chapter-generation-plan.md, Phase 3).
     "build-chapters":              "chapters.build",

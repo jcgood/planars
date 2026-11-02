@@ -28,6 +28,11 @@ Phase 10 unit 18), so a page printed or shared alone still says what it is. The 
 the page, not drawn into the chart, so the charts themselves are the same
 as everywhere else (Chichewa's and CCDB's reference images are unaffected).
 
+**The weekly analysis** (Phase 4d, ``python -m coding laminar-analysis``)
+draws its PDFs here too, one dataset at a time (``draw_dataset`` with
+``permutations``): the same PDF, with the four tests' charts, a title naming
+the selection, and a first page saying it is the analysis.
+
 **When to redraw** is ``fingerprint()``: the two domains files (the spans,
 which is all a chart is drawn from apart from the planar file) plus the
 planar file and the chart code (git's record of ``laminar/`` and
@@ -49,7 +54,7 @@ from pathlib import Path
 from laminar.charts import export_command, render_command
 from laminar.datasets import REPO, dataset_settings
 from laminar.planars_language import (
-    dataset_name, input_texts, planar_file, span_table, write_inputs,
+    dataset_name, input_texts, parse_dataset, planar_file, span_table, write_inputs,
 )
 from planars.languages import get_display_name
 
@@ -147,22 +152,30 @@ def draw(lang_id: str, work: Path, date: str, table=None) -> list[Drawn]:
     """Draw both contributor datasets in `work` and return their PDFs.
     `date` (YYYY-MM-DD) goes on every page."""
     table = span_table(lang_id) if table is None else table
-    datasets = contributor_datasets(lang_id)
+    return [draw_dataset(lang_id, dataset, work, date, table)
+            for dataset in contributor_datasets(lang_id).values()]
+
+
+def draw_dataset(lang_id: str, dataset: str, work: Path, date: str, table,
+                 permutations: int = 0) -> Drawn:
+    """Export and draw one dataset in `work` and return its PDF. With
+    `permutations`, the four permutation tests run with that many draws each
+    and the PDF is the weekly analysis's (its first page says so); the
+    bundle is left in ``work / "chart_data" / dataset``
+    (coding/laminar_analysis.py commits it)."""
+    _lang, grouping, selection = parse_dataset(dataset)
     domains = work / "domains"
-    write_inputs(lang_id, apply=True, out_dir=domains, datasets=list(datasets.values()),
-                 table=table)
-    drawn = []
-    for grouping, dataset in datasets.items():
-        bundles, charts = work / "chart_data", work / "charts"
-        _run(export_command(dataset, dataset_settings(dataset), 0,
-                            domains=domains / f"domains_{dataset}.tsv", output_dir=bundles),
-             f"Exporting {dataset}")
-        _run(render_command(dataset, None, None, bundle_dir=bundles, output_dir=charts),
-             f"Drawing {dataset}")
-        source = (domains / f"source_{dataset}.json").read_text(encoding="utf-8")
-        pdf, n = combine(charts / dataset, dataset, grouping, lang_id, date, source)
-        drawn.append(Drawn(grouping, dataset, pdf, n))
-    return drawn
+    write_inputs(lang_id, apply=True, out_dir=domains, datasets=[dataset], table=table)
+    bundles, charts = work / "chart_data", work / "charts"
+    _run(export_command(dataset, dataset_settings(dataset), permutations,
+                        domains=domains / f"domains_{dataset}.tsv", output_dir=bundles),
+         f"Exporting {dataset}")
+    _run(render_command(dataset, None, None, bundle_dir=bundles, output_dir=charts),
+         f"Drawing {dataset}")
+    source = (domains / f"source_{dataset}.json").read_text(encoding="utf-8")
+    pdf, n = combine(charts / dataset, dataset, grouping, lang_id, date, source,
+                     analysis=(selection, permutations) if permutations else None)
+    return Drawn(grouping, dataset, pdf, n)
 
 
 # ── One PDF ─────────────────────────────────────────────────────────────────
@@ -222,13 +235,35 @@ def _contents(rows: list[tuple[str, int]]) -> str:
                                 for text, page in rows) + "</table>")
 
 
-def _cover(title: str, stamp: str, parts: list[tuple[str, int, int]]) -> bytes:
+CONTRIBUTOR_COVER = (
+    "These charts are drawn from the annotation by the project's tooling whenever the "
+    "spans it gives change, to help you check your data: a span that looks wrong usually "
+    "means a cell that needs another look. They leave out the statistical tests, which "
+    "are run separately for the analysis.")
+
+# What each selection keeps (planars_language.SELECTIONS), for the weekly
+# analysis's titles and first page.
+SELECTION_WORDS = {
+    "all": "every span",
+    "complete": "spans over complete positions",
+    "partial": "spans over partial positions",
+    "distinct": "every span, a construction's identical spans counted once",
+}
+
+
+def analysis_cover(selection: str, permutations: int) -> str:
+    return (f"The weekly analysis of the annotation: {SELECTION_WORDS[selection]}, with the "
+            f"four statistical tests ({permutations} random draws each). Drawn by the "
+            "project's tooling each week the spans change; the data behind them is kept in "
+            "planars-data. Not for checking the annotation: the contributor charts in the "
+            "language's folder are drawn daily for that.")
+
+
+def _cover(title: str, stamp: str, parts: list[tuple[str, int, int]],
+           text: str = CONTRIBUTOR_COVER) -> bytes:
     """parts: (chapter title, number of charts, first page)."""
     body = (f"<h1>{html.escape(title)}</h1><p>{html.escape(stamp)}</p>"
-            "<p>These charts are drawn from the annotation by the project's tooling "
-            "whenever the spans it gives change, to help you check your data: a span "
-            "that looks wrong usually means a cell that needs another look. They leave "
-            "out the statistical tests, which are run separately for the analysis.</p>"
+            f"<p>{html.escape(text)}</p>"
             "<p>Each chapter starts with a page listing its charts; the bookmarks go to any "
             "chapter or chart.</p><h2>Chapters</h2>"
             + _contents([(f"{i}. {name} ({n} chart{'s' if n != 1 else ''})", page)
@@ -261,10 +296,12 @@ def _manifest(chart_dir: Path, dataset: str) -> list[dict[str, str]]:
 
 
 def combine(chart_dir: Path, dataset: str, grouping: str, lang_id: str, date: str,
-            source_json: str) -> tuple[bytes, int]:
+            source_json: str, analysis: tuple[str, int] | None = None) -> tuple[bytes, int]:
     """One PDF of every chart the renderer listed in its manifest: a first
     page, a divider opening each chapter, bookmarks, and a strip above each
-    chart page. Returns the PDF and the number of charts."""
+    chart page. Returns the PDF and the number of charts. `analysis`
+    (selection, permutations) makes it the weekly analysis's: its title
+    names the selection and its first page says what it is."""
     from pypdf import PdfReader, PdfWriter, Transformation
 
     rows = _manifest(chart_dir, dataset)
@@ -280,7 +317,13 @@ def combine(chart_dir: Path, dataset: str, grouping: str, lang_id: str, date: st
     parts = [p for p, r in by_part.items() if r]
     readers = {row["file"]: PdfReader(chart_dir / row["file"]) for row in rows}
 
-    title = f"{get_display_name(lang_id)}: charts {GROUPING_WORDS[grouping]}"
+    if analysis:
+        title = (f"{get_display_name(lang_id)}: analysis {GROUPING_WORDS[grouping]}, "
+                 f"{SELECTION_WORDS[analysis[0]]}")
+        cover_text = analysis_cover(*analysis)
+    else:
+        title = f"{get_display_name(lang_id)}: charts {GROUPING_WORDS[grouping]}"
+        cover_text = CONTRIBUTOR_COVER
     full, short = _drawn_from(source_json, lang_id)
     stamp = f"Drawn {date}; {_completeness(source_json)}; {short}"
     cover_stamp = f"Drawn {date}; {_completeness(source_json)}. Drawn from: {full}"
@@ -298,7 +341,8 @@ def combine(chart_dir: Path, dataset: str, grouping: str, lang_id: str, date: st
                 n = len(readers[row["file"]].pages)
                 ranges[row["file"]] = (page, page + n - 1)
                 page += n
-        cover = _cover(title, cover_stamp, [(PARTS[p][0], len(by_part[p]), part_start[p]) for p in parts])
+        cover = _cover(title, cover_stamp, [(PARTS[p][0], len(by_part[p]), part_start[p]) for p in parts],
+                       cover_text)
         dividers = {p: _divider(i, p, [(r["title"], *ranges[r["file"]]) for r in by_part[p]])
                     for i, p in enumerate(parts, start=1)}
         measured = {"cover": len(PdfReader(io.BytesIO(cover)).pages),

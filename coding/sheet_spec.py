@@ -481,6 +481,7 @@ _PDF_MIME = "application/pdf"
 ROOT_FOLDER_NAME = "ConstituencyTypology"
 ARCHIVE_FOLDER_NAME = "_archived"
 STATUS_FOLDER_NAME = "Annotation Status"
+ANALYSIS_FOLDER_NAME = "analysis"   # in a language folder: the weekly analysis charts
 
 
 @dataclass(frozen=True)
@@ -514,6 +515,11 @@ def file_spec(identity) -> FileSpec:
         by = {"classes": "class", "types": "type"}[identity.name]
         return FileSpec(f"charts_by_{by}_{lang}.pdf", folder("language", lang), _PDF_MIME,
                         PDF, True)
+    if kind == "analysis_charts":
+        # The weekly analysis (coding/laminar_analysis.py): one PDF per
+        # dataset, in the language's analysis folder.
+        return FileSpec(f"analysis_{identity.name}_{lang}.pdf", folder("analysis", lang),
+                        _PDF_MIME, PDF, True)
     if kind == "notebook":
         if identity.name == "all_languages":
             return FileSpec("all_languages.ipynb", folder("root"), _JSON_MIME,
@@ -532,6 +538,9 @@ def file_spec(identity) -> FileSpec:
         # which are labelled archive folders too.
         return FileSpec(ARCHIVE_FOLDER_NAME, folder("language", lang), _FOLDER_MIME,
                         NO_CONTENT, False)
+    if kind == "folder" and identity.name == "analysis":
+        return FileSpec(ANALYSIS_FOLDER_NAME, folder("language", lang), _FOLDER_MIME,
+                        NO_CONTENT, True)
     raise ValueError(f"a {kind} is a spreadsheet, not a file with a file spec")
 
 
@@ -612,6 +621,8 @@ _SHARING: Dict[str, Dict[str, Optional[str]]] = {
     # coordinators have the root's writer; no link share, since they come
     # from unpublished annotation.
     "charts":            {"who": _NOBODY, "role": None, "link": None},
+    # The weekly analysis charts: the same, in the language's analysis folder.
+    "analysis_charts":   {"who": _NOBODY, "role": None, "link": None},
 }
 # Folders differ by which folder: a language folder lets its annotator see
 # their files; the Annotation Status folder holds every language's status
@@ -622,6 +633,8 @@ _FOLDER_SHARING: Dict[str, Dict[str, Optional[str]]] = {
     "status":   {"who": _ALL_ANNOTATORS, "role": READER, "link": None},
     "root":     {"who": _COORDINATORS, "role": WRITER, "link": None},
     "archive":  {"who": _NOBODY, "role": None, "link": None},
+    # Inside the language folder, whose sharing it inherits.
+    "analysis": {"who": _NOBODY, "role": None, "link": None},
 }
 
 

@@ -46,6 +46,8 @@ NOT_THROUGH_THE_DOOR: Dict[Site, str] = {
     ("import_sheets.py", "_write_error_report", "write_text"):
         "not in planars-data: import_errors/ at the repo root",
     ("daily_refresh.py", "summary", "open"): "not in planars-data: the Actions run's summary page",
+    ("laminar_analysis.py", "plan", "open"):
+        "not in planars-data: the Actions run's GITHUB_OUTPUT (the list of datasets to run)",
     ("glottolog.py", "_save_cache", "open"): "not in planars-data: glottolog_cache.json",
     ("glottolog.py", "_save_cache", "json.dump"): "not in planars-data: glottolog_cache.json",
     ("glottolog.py", "_update_languages_yaml", "open"):

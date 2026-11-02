@@ -256,6 +256,49 @@
   cascades_triggered: []
   modes: []
 
+- id: laminar_analysis
+  cli_command: laminar-analysis
+  writes_to_drive: true
+  writes_locally: true
+  description: >-
+    The weekly full analysis (coding/laminar_analysis.py; run by
+    laminar-analysis.yml): for each dataset of each language whose spans,
+    planar or chart code changed since its last run (made-up synth languages
+    left out), the bundle with all four permutation tests, committed to
+    planars-data's .bundles/, and its charts as one PDF in the language's
+    Drive analysis folder. --plan lists the datasets, --dataset runs one,
+    --report files or closes the issue.
+  side_effects:
+    - >-
+      --plan --apply: makes each listed language's analysis folder inside its
+      Drive language folder (ID saved in drive_config.json as
+      analysis_folder_id); files a design issue, once, when bundles would
+      exist for three languages (the move planned in #333)
+    - >-
+      --dataset --apply: create-or-update uploads
+      analysis_{grouping}_{selection}_{lang_id}.pdf into the analysis folder
+      (found by its label; no sharing of its own), then writes the bundle
+      under .bundles/{lang_id}/{dataset}/ through the local-file door, with
+      run.json (its fingerprint) last
+    - >-
+      --report --apply: files (rewriting the open one) or closes the
+      laminar-analysis-error issue, naming each dataset whose bundle the run
+      did not replace, never the reason (it can quote the annotation)
+  idempotent: true
+  idempotency_note: >-
+    A dataset whose committed run.json fingerprint matches its data is not
+    run again (unless --force). The PDF is updated in place; run.json is
+    written only after the upload, so a job that fails partway runs again
+    next week.
+  apply_gate: "--apply"
+  preconditions: [coded_data_git_identity_configured]
+  facts_touched:
+    - {fact: planar_sheet_structure, role: reads}
+    - {fact: diagnostics_scope, role: reads}
+    - {fact: languages_metadata, role: reads}
+  cascades_triggered: []
+  modes: []
+
 - id: build_chapters
   cli_command: build-chapters
   writes_to_drive: false

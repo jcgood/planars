@@ -313,6 +313,22 @@ labels:
       libraries) fails before the command runs.
     filed_by: laminar-charts --apply (laminar-charts.yml)
 
+  - name: laminar-analysis-error
+    color: "d73a4a"
+    description: "The weekly analysis did not bring some datasets up to date."
+    meaning: >-
+      The weekly full analysis (`laminar-analysis.yml`; `laminar-analysis
+      --report --apply`) did not replace some datasets' bundles, so their
+      bundles in planars-data's `.bundles/` and their PDFs in the language's
+      Drive `analysis` folder are from an earlier run. The issue names each
+      dataset and links the run, whose job logs say at what stage it
+      failed; the reason is left out (it can quote the annotation, and the
+      repository is public), and the issue gives the command that shows it.
+      Resolve: fix the cause, then `gh workflow run laminar-analysis.yml`.
+      Auto-closed when a run brings every dataset up to date. Also filed by
+      the workflow itself when its planning step fails.
+    filed_by: laminar-analysis --report --apply (laminar-analysis.yml)
+
   - name: chapter-behind
     color: "fbca04"
     description: "A chapter's data or code has moved on since the version it is built from."

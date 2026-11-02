@@ -71,7 +71,8 @@ tests). Reads pass straight through. Every write is checked first:
   their order and protection, and that each proposal tab written has its
   source's columns and What changed?.
 - **Rule 8, the files that are not spreadsheets** (``FILE_KINDS``: notes
-  Docs, reports, contributor charts, notebooks, folders; design § 8, "5f";
+  Docs, reports, contributor charts, analysis charts, notebooks, folders;
+  design § 8, "5f";
   ``sheet_spec.file_spec``): a create, rename, move or upload sends only the
   spec's name, folder, type and kind of content (a notebook's and a PDF's
   checked by their form; the manifest, checked against its contract, was
@@ -185,7 +186,14 @@ COPY_SHEETS: Dict[str, Tuple[str, str]] = {
 NOTES_DOC = "notes_doc"
 SHEET_KINDS: FrozenSet[str] = frozenset({CLASS_SHEET, *COPY_SHEETS, STATUS_SHEET,
                                          PROPOSAL_SHEET})
-FILE_KINDS: FrozenSet[str] = frozenset({NOTES_DOC, "report", "charts", "notebook", "folder"})
+# A language's weekly analysis charts (Phase 4d), named by dataset
+# (grouping_selection).
+ANALYSIS_CHARTS = "analysis_charts"
+ANALYSIS_DATASETS: FrozenSet[str] = frozenset(
+    f"{grouping}_{selection}" for grouping in ("types", "classes")
+    for selection in ("all", "complete", "partial", "distinct"))
+FILE_KINDS: FrozenSet[str] = frozenset({NOTES_DOC, "report", "charts", ANALYSIS_CHARTS,
+                                        "notebook", "folder"})
 # The kinds of file that may be put in Drive's trash (rule 8): the tooling
 # writes every cell of them, so nobody's work is in one. (The manifest was
 # one too, for one run of migrations/trash_manifest.py, 2026-10-29.)
@@ -241,17 +249,22 @@ KINDS: Dict[str, Dict[str, Any]] = {
     # A language's contributor charts, one PDF per grouping
     # (laminar/contributor_charts.py; coding/laminar_charts.py).
     "charts":            {"lang": _LANG, "class": None, "name": {"classes", "types"}},
+    # A language's weekly analysis charts, one PDF per dataset, in its
+    # analysis folder (coding/laminar_analysis.py). The names are
+    # laminar/planars_language.py's groupings x selections
+    # (tests/test_laminar_analysis.py checks they agree).
+    ANALYSIS_CHARTS:     {"lang": _LANG, "class": None, "name": ANALYSIS_DATASETS},
     # These two depend on the name: see Identity.__post_init__. (A
     # "validation" notebook was retired 2026-10-23,
     # migrations/retire_validation_notebooks.py; the ones made are in the trash.)
     "notebook":          {"lang": _BY_NAME, "class": None,
                           "name": {"domains", "report", "all_languages"}},
     "folder":            {"lang": _BY_NAME, "class": None,
-                          "name": {"root", "language", "archive", "status"}},
+                          "name": {"root", "language", "archive", "status", "analysis"}},
 }
 # Folders that belong to one language; the others belong to none. Every
 # notebook belongs to one language except all_languages.
-_LANGUAGE_FOLDERS = {"language", "archive"}
+_LANGUAGE_FOLDERS = {"language", "archive", "analysis"}
 
 # The Drive properties a file's identity is written to, and a tab's labels
 # (its kind, one of the three below, which sheet_spec uses too, and its
@@ -352,6 +365,12 @@ def lang_file(kind: str, lang_id: str) -> Identity:
 def charts(grouping: str, lang_id: str) -> Identity:
     """A language's contributor charts PDF, by ``classes`` or ``types``."""
     return Identity("charts", lang_id, name=grouping)
+
+
+def analysis_charts(dataset_part: str, lang_id: str) -> Identity:
+    """A language's weekly analysis charts PDF for one dataset, named by the
+    dataset less its language (``types_all``)."""
+    return Identity(ANALYSIS_CHARTS, lang_id, name=dataset_part)
 
 
 def notebook(name: str, lang_id: Optional[str] = None) -> Identity:

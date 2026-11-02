@@ -39,8 +39,10 @@ and, at planars-data's top level, ``ID_FILE`` (``drive_config.json``): the
 Drive IDs of the files the tooling made; and ``PAPERS_DIR``
 (``.papers/``), the chapters written from the annotation
 (``python -m coding build-chapters``; docs/chapter-generation-plan.md,
-decision 2). Not state, but tooling writes there, so its place is stated
-here with the rest.
+decision 2); and ``BUNDLES_DIR`` (``.bundles/``), the weekly analysis's
+bundles, one folder per language and dataset (``python -m coding
+laminar-analysis``; docs/laminar-analysis-plan.md Phase 4d). Not state,
+but tooling writes there, so their places are stated here with the rest.
 
 This module is the one statement of where they are; every reader uses these
 names at call time (tests point them at a temporary folder,
@@ -71,6 +73,7 @@ LAMINAR_CHARTS_STATE_PATH = STATE_DIR / "laminar_charts_state.json"
 OVERLEAF_STATE_PATH = STATE_DIR / "overleaf_state.json"
 ID_FILE = CODED_DATA / "drive_config.json"
 PAPERS_DIR = CODED_DATA / ".papers"
+BUNDLES_DIR = CODED_DATA / ".bundles"
 
 
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:
