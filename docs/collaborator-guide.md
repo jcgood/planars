@@ -81,7 +81,7 @@ Pink means the value is not in the allowed list for that criterion. Common cause
 - A value that is valid in another column but not this one (e.g. `both` in a column that only accepts `y/n`)
 - A cell that was accidentally cleared
 
-Fix the cell using the dropdown. The pink goes within a day.
+A pink cell with a value in it has a note saying what is wrong (hover over the cell; the note starts "Automatic check:"). Fix the cell using the dropdown. The pink and the note go within a day. A note of your own on the cell is kept.
 
 ### Using the Example, Gloss, Translation, Source and Comments columns
 

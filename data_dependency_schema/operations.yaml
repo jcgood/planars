@@ -461,7 +461,7 @@
   side_effects:
     - "overwrites coded_data/{lang}/{class}/{construction}.tsv from the live sheet, incrementally per tab, through the local-file door (previous version archived, change-log line)"
     - "paints pink highlighting on invalid cells (all tabs, any status)"
-    - "with --apply, when it wrote any TSV, runs validate-coding's revalidation (pink cells and the Status tab's problems column)"
+    - "with --apply, when it wrote any TSV, runs validate-coding's revalidation (pink cells, their notes and the Status tab's problems column)"
     - "commits and pushes the files it wrote in planars-data when it ends (the local-file door; until Phase 10 unit 6a it left them for the coordinator to commit)"
   idempotent: true
   idempotency_note: >-
@@ -491,6 +491,7 @@
     non-zero on errors (used by the sheet-validation workflow).
   side_effects:
     - "updates highlight_cells/clear_highlights on live tabs to reflect current validation state"
+    - "rewrites its own cell notes (from CHECK_NOTE_MARKER on) saying what is wrong with each invalid value, keeping any other note on the cell"
     - "rewrites the Status tab's problems column (planar.yaml status_tab, role: problems) where it differs"
   idempotent: true
   idempotency_note: >-

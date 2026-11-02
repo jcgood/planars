@@ -40,7 +40,10 @@ Reaches Drive only through the doorway (``get_doorway()``).
 
 Reads cell values from local TSVs (written by import-sheets) rather than
 re-fetching them from Google Sheets, then writes pink highlights back to
-Sheets only where invalid cells are found. Local TSVs must exist — if any
+Sheets only where invalid cells are found. A cell with a wrong value also
+gets a note saying what is wrong (``write_notes``, #318 item 6); the check
+owns only notes, or the end of a note, from ``CHECK_NOTE_MARKER`` on, so an
+annotator's note or restructure-sheets' is kept. Local TSVs must exist — if any
 are missing, run `python -m coding import-sheets` first. Each tab's Status
 is read live from the sheet.
 """
@@ -426,6 +429,71 @@ def highlight_cells(ws, bad_cells: List[Tuple[int, int]]) -> None:
         ws.spreadsheet.batch_update({"requests": requests})
 
 
+# A pink cell with a wrong value carries a note saying what is wrong (#318
+# item 6): otherwise an in-progress tab's annotator sees only the colour.
+# Other notes on the same cell (an annotator's own, or restructure-sheets'
+# quote of a split element's old answers) are kept: the check owns only the
+# text from its marker to the end of the note, and rewrites only that.
+CHECK_NOTE_MARKER = "Automatic check: "
+_NOTE_FIELDS = "sheets(properties(title),data(rowData(values(note))))"
+
+
+def read_notes(ss) -> Dict[str, Dict[Tuple[int, int], str]]:
+    """Every cell note in ``ss``: {tab title: {(row_idx, col_idx): note}}. One read."""
+    meta = ss.fetch_sheet_metadata(params={"includeGridData": "true", "fields": _NOTE_FIELDS})
+    out: Dict[str, Dict[Tuple[int, int], str]] = {}
+    for sheet in meta.get("sheets", []):
+        notes: Dict[Tuple[int, int], str] = {}
+        for r, row in enumerate((sheet.get("data") or [{}])[0].get("rowData", [])):
+            for c, cell in enumerate(row.get("values", [])):
+                if cell.get("note"):
+                    notes[(r, c)] = cell["note"]
+        out[sheet["properties"]["title"]] = notes
+    return out
+
+
+def _others_part(note: str) -> str:
+    """The part of a cell's note the check didn't write."""
+    if note.startswith(CHECK_NOTE_MARKER):
+        return ""
+    head, sep, _ours = note.partition("\n\n" + CHECK_NOTE_MARKER)
+    return head if sep else note
+
+
+def note_requests(ws, existing: Dict[Tuple[int, int], str],
+                  issues: List[ValidationIssue]) -> List[dict]:
+    """The writes that make the check's notes on ``ws`` say what ``issues``
+    say: a note on each cell with a wrong value, and none left on a cell
+    that no longer has one. Blank cells get no note (they need no telling)."""
+    ours: Dict[Tuple[int, int], List[str]] = {}
+    for issue in issues:
+        if issue.cell is not None and issue.kind == INVALID:
+            ours.setdefault(issue.cell, []).append(issue.message)
+    requests = []
+    for cell in sorted(set(ours) | {k for k, v in existing.items() if _others_part(v) != v}):
+        old = existing.get(cell, "")
+        others = _others_part(old)
+        mine = CHECK_NOTE_MARKER + "; ".join(ours[cell]) if cell in ours else ""
+        new = "\n\n".join(p for p in (others, mine) if p)
+        if new == old:
+            continue
+        r, c = cell
+        requests.append({"updateCells": {
+            "range": {"sheetId": ws.id, "startRowIndex": r, "endRowIndex": r + 1,
+                      "startColumnIndex": c, "endColumnIndex": c + 1},
+            "rows": [{"values": [{"note": new}]}],
+            "fields": "note"}})
+    return requests
+
+
+def write_notes(ws, existing: Dict[Tuple[int, int], str],
+                issues: List[ValidationIssue]) -> None:
+    requests = note_requests(ws, existing, issues)
+    if requests:
+        with drive_door.always_on("highlighting"):
+            ws.spreadsheet.batch_update({"requests": requests})
+
+
 def clear_highlights(ws) -> None:
     """Clear all pink highlighting from a worksheet by resetting backgrounds to white."""
     body = {"requests": [{
@@ -771,10 +839,13 @@ def local_tab_issues(lang_id: str, class_name: str, construction: str,
                                     class_name=class_name, lang_id=lang_id)[1]
 
 
-def _paint(ws, issues: List[ValidationIssue]) -> List[ValidationIssue]:
-    """Repaint the Sheet's pink highlights from ``issues``; return them."""
+def _paint(ws, issues: List[ValidationIssue],
+           notes: Dict[Tuple[int, int], str]) -> List[ValidationIssue]:
+    """Repaint the Sheet's pink highlights and the check's cell notes from
+    ``issues`` (``notes``: the tab's notes now, from ``read_notes``); return them."""
     clear_highlights(ws)
     highlight_cells(ws, [issue.cell for issue in issues if issue.cell is not None])
+    write_notes(ws, notes, issues)
     return issues
 
 
@@ -1075,6 +1146,7 @@ def revalidate_sheets(
             notice_lines: List[str] = []
             finished: List[str] = []
             system_tabs = set(system_tab_titles())
+            tab_notes = read_notes(ss)
             for ws in ss.worksheets():
                 construction = ws.title
                 if construction in system_tabs:
@@ -1083,7 +1155,8 @@ def revalidate_sheets(
                 try:
                     issues = _paint(ws, local_tab_issues(
                         lang_id, class_name, construction, info,
-                        pair_row_constructions, keyed_row_constructions))
+                        pair_row_constructions, keyed_row_constructions),
+                        tab_notes.get(construction, {}))
                     header_issue = _check_header_sync(ws, lang_id, class_name, construction)
                     if header_issue:
                         issues = [header_issue] + issues

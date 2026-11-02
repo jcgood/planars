@@ -538,10 +538,11 @@ class FakeSpreadsheet:
 
     def fetch_sheet_metadata(self, params: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
         """Each tab's properties, developer metadata and protected ranges; and,
-        when the field mask asks for ``dataValidation``, each tab's cells (value
-        and dropdown) over its used rows, as refresh-dropdowns reads them. The
-        mask is not otherwise interpreted, nor ``ranges``. Like Google, a key
-        with nothing in it is left out."""
+        when the field mask asks for ``dataValidation`` or ``note``, each tab's
+        cells over its used rows with whichever of value, dropdown and note
+        the mask names (refresh-dropdowns reads the first two, validate-coding
+        the notes). The mask is not otherwise interpreted, nor ``ranges``.
+        Like Google, a key with nothing in it is left out."""
         fields = str((params or {}).get("fields", ""))
         sheets = []
         for i, ws in enumerate(self._worksheets):
@@ -553,7 +554,7 @@ class FakeSpreadsheet:
                          if p["range"].get("sheetId", 0) == ws.id]
             if protected:
                 sheet["protectedRanges"] = protected
-            if "dataValidation" in fields:
+            if "dataValidation" in fields or "note" in fields:
                 sheet["properties"]["gridProperties"] = {"rowCount": ws.row_count}
                 rows, cols = ws._used_range()
                 row_data = []
@@ -562,10 +563,13 @@ class FakeSpreadsheet:
                     for c in range(cols):
                         cell = ws._cells.get((r, c))
                         out: Dict[str, Any] = {}
-                        if cell is not None and cell.value != "":
+                        if cell is not None and cell.value != "" and "formattedValue" in fields:
                             out["formattedValue"] = cell.value
-                        if cell is not None and cell.validation is not None:
+                        if (cell is not None and cell.validation is not None
+                                and "dataValidation" in fields):
                             out["dataValidation"] = cell.validation
+                        if cell is not None and cell.note and "note" in fields:
+                            out["note"] = cell.note
                         values.append(out)
                     row_data.append({"values": values})
                 sheet["data"] = [{"rowData": row_data}]

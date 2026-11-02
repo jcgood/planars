@@ -18,12 +18,14 @@ this project is trying to remove.
 
 ## Now
 
-**Next session, in order (Jeff, 2026-11-01):** (1) add the worked-examples
-step to coordinator guide § "Reviewing a span rule with the domain expert"
-(why: the Phase 11 section of `docs/data-layer-implementation-plan.md`;
-Phase 11 itself waits for #321 — don't propose starting it); (2) the
-pink-cell note (#318 item 6, in the #318 thread below); (3) laminar 4d
-(the laminar thread below). Phase 10 has no unit left to build, only the
+**Next session (Jeff, 2026-11-01):** laminar 4d (the laminar thread
+below; the plan's Phase 4 names its live steps, each shown to Jeff first).
+Done 2026-11-01: the worked-examples step in coordinator guide § "Reviewing
+a span rule with the domain expert" (`tests/span_examples/README.md`;
+Phase 11 itself waits for #321 — don't propose starting it), and the
+pink-cell note (#318 item 6). **Check** the 2026-11-02 Sheet validation
+run: green, and English's pink cells with a value now carry an
+"Automatic check:" note. Phase 10 has no unit left to build, only the
 daily-refresh checks in its thread.
 
 Eight live threads. Read whichever matches what you're picking up.
@@ -177,12 +179,8 @@ Applied live the same day (every language's sheets now match). **Next:**
 splits into); (4) definitions to
 tighten: vp_ellipsis's test (#319), flapping and `multiple` (#321);
 (5) QWORDS split, his OK on the new elements;
-(6) a pink cell says nothing about what is wrong (warnings on in-progress
-tabs reach the annotator only as pink; 2026-10-24, Jeff asked): put the
-issue's message in a note on the cell (`validate_coding.highlight_cells`).
-Mind that restructure-sheets already writes cell notes (a split element's
-old answers), so clearing must remove only validate-coding's own notes, and
-the class-sheet spec in `sheet_spec.py` (enforced live) must allow them.
+(6) a pink cell says what is wrong — done 2026-11-01
+(`validate_coding.write_notes`; Adam not yet told on #318).
 Asked of Adam on #319 (2026-10-24): what the four `vp_ellipsis` cells
 with two values (`y/unclear`, `both/unclear`) mean.
 Also open, linguistic: displacement, the one standard constituency test

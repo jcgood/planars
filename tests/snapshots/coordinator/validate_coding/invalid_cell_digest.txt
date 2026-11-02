@@ -1,10 +1,11 @@
 SUMMARY
-     2  batch_request
+     3  batch_request
      1    └─ repeatCell
-     1    └─ updateCells
+     2    └─ updateCells
 
 SHEET OPERATIONS
 
   stan1293/class:ciscategorial  tab=general
     repeatCell: col 0 (Element) rows 0-143
     updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 2, "endRowIndex": 3, "startColumnIndex": 3, "endColumnIndex": 4}, "rows": [{"values": [{"userEnteredFormat": {
+    updateCells: {"range": {"sheetId": 149484479, "startRowIndex": 2, "endRowIndex": 3, "startColumnIndex": 3, "endColumnIndex": 4}, "rows": [{"values": [{"note": "Automatic che

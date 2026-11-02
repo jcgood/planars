@@ -531,6 +531,49 @@ def test_fixing_the_value_clears_its_highlight(env):
     assert ws._cell(2, 3).background == vc._WHITE
 
 
+def test_pink_cell_says_what_is_wrong_and_the_note_goes_once_fixed(env):
+    doorway, coded, run_main = env
+    set_cell(coded, "stan1293", "ciscategorial", "general",
+            "Element", "and", "V-combines", "maybe")
+    run_main(["validate-coding", "--lang", "stan1293"])
+    ws = tab(doorway, "stan1293", "ciscategorial", "general")
+    note = ws._cell(2, 3).note
+    assert note.startswith(vc.CHECK_NOTE_MARKER) and "'maybe'" in note
+
+    set_cell(coded, "stan1293", "ciscategorial", "general",
+            "Element", "and", "V-combines", "y")
+    run_main(["validate-coding", "--lang", "stan1293"])
+    assert not ws._cell(2, 3).note
+
+
+def test_check_note_keeps_someone_elses_note(env):
+    doorway, coded, run_main = env
+    ws = tab(doorway, "stan1293", "ciscategorial", "general")
+    ws._cell(2, 3).note = "Was 'and/or': y"
+    set_cell(coded, "stan1293", "ciscategorial", "general",
+            "Element", "and", "V-combines", "maybe")
+    run_main(["validate-coding", "--lang", "stan1293"])
+    note = ws._cell(2, 3).note
+    assert note.startswith("Was 'and/or': y\n\n" + vc.CHECK_NOTE_MARKER)
+
+    set_cell(coded, "stan1293", "ciscategorial", "general",
+            "Element", "and", "V-combines", "y")
+    run_main(["validate-coding", "--lang", "stan1293"])
+    assert ws._cell(2, 3).note == "Was 'and/or': y"
+
+
+def test_note_requests_write_only_what_changes():
+    class _Ws:
+        id = 7
+    invalid = vc._invalid("w", 3, "x", "c", "q", "should be 'na'", (2, 3), "unexpected 'q'")
+    blank = vc._blank("w", "c", (4, 3))
+    same = {(2, 3): vc.CHECK_NOTE_MARKER + "unexpected 'q'"}
+    assert vc.note_requests(_Ws, same, [invalid, blank]) == []
+    assert vc.note_requests(_Ws, {(9, 9): "an annotator's note"}, []) == []
+    (req,) = vc.note_requests(_Ws, {}, [invalid, blank])
+    assert req["updateCells"]["rows"] == [{"values": [{"note": vc.CHECK_NOTE_MARKER + "unexpected 'q'"}]}]
+
+
 def test_apply_mutation_digest(env):
     """The rendered mutation log for one tab's revalidation -- the artifact a
     human actually reviews, tab titles and column headers resolved rather than
@@ -548,7 +591,8 @@ def test_apply_mutation_digest(env):
     info = param_map["ciscategorial"]["general"]
     vc._paint(ws, vc.local_tab_issues(
         "stan1293", "ciscategorial", "general", info,
-        vc._get_pair_row_constructions(), vc._get_keyed_row_constructions()))
+        vc._get_pair_row_constructions(), vc._get_keyed_row_constructions()),
+        vc.read_notes(ws.spreadsheet).get("general", {}))
 
     check_snapshot("invalid_cell_digest.txt", render(doorway.mutations))
 
