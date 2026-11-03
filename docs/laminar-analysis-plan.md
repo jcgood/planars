@@ -163,7 +163,8 @@ span table in memory from `planars.reports.language_spans`:
   "4d as built").
 - **4e, documentation:** the coordinator guide (both kinds of chart, the
   weekly run in "What happens automatically"), the collaborator guide (where
-  the charts are and what they are for), a note in the Drive folder.
+  the charts are and what they are for). Done 2026-11-02 (progress doc,
+  "4e as built"); the note in the Drive folder was dropped there.
 - **Live steps, each named to Jeff first:** the first upload to a language's
   Drive folder; the first write to planars-data by a workflow; the new label.
 

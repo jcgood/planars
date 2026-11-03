@@ -8,7 +8,7 @@ the current state; update it at every phase boundary, in the same commit.
 | 1. Take out the Chichewa assumptions, in place | done 2026-10-24 |
 | 2. Move the code (`laminar/`, `planarsviz/` to the root) | done 2026-10-24 |
 | 3. Connect a planars language (adapter, *k of n*, metadata) | done 2026-10-24 |
-| 4. Run English; charts to contributors through Drive (revised) | 4a and 4b built 2026-10-24, 4c 2026-10-25; 4b and 4c live 2026-10-25; 4d built 2026-11-01, not yet live; 4e not started |
+| 4. Run English; charts to contributors through Drive (revised) | 4a and 4b built 2026-10-24, 4c 2026-10-25; 4b and 4c live 2026-10-25; 4d built 2026-11-01, live 2026-11-02; 4e done 2026-11-02 |
 | 5. Documentation and tests | not started |
 
 ## Phase 1 as built (2026-10-24)
@@ -161,7 +161,7 @@ by workflows. Plan decision 6 and Phase 4a–e have the design.
 | 4b. `laminar-charts` command: contributor charts to Drive | built 2026-10-24, live 2026-10-25 (below) |
 | 4c. Workflow after the daily refresh, R on the runner | built and live 2026-10-25 (below) |
 | 4d. Weekly full analysis with permutation tests | done 2026-11-02: first run clean, Sunday schedule on (below) |
-| 4e. Documentation | not started |
+| 4e. Documentation | done 2026-11-02 (below) |
 
 ### 4a as built (2026-10-24)
 
@@ -347,6 +347,23 @@ by workflows. Plan decision 6 and Phase 4a–e have the design.
   the job is cut off and the report files `laminar-analysis-error` for
   that dataset, so it cannot fail silently; the fix then is to split the
   draws across jobs. The Sunday schedule went on after this run.
+
+### 4e as built (2026-11-02)
+
+- **Coordinator guide:** "What happens automatically" already had both
+  workflows (written with 4c and 4d); § "5. Laminar charts for a
+  language" no longer says the charts "will" reach contributors, says the
+  status sheet links the contributor PDFs, gives English's real run times
+  (50 minutes to over four hours; the job limit), and points to the
+  collaborator guide's section.
+- **Collaborator guide:** new § "Charts of how your spans nest" (the two
+  daily PDFs, the `analysis` folder, what each is for, not to share them
+  outside the project); "Viewing your results" no longer says the
+  coordinator imports the sheets (the daily refresh does).
+- **No note in the Drive folder** (Claude's call, against the plan): each
+  PDF's first page says what it shows, the status sheet links the daily
+  ones and the collaborator guide explains both, so a note would be a
+  fourth description to keep in step, written by hand on Drive.
 
 ## Findings
 

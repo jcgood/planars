@@ -314,10 +314,11 @@ See [analyses.md](analyses.md) for what each analysis computes.
 #### 5. Laminar charts for a language
 
 The laminar analysis (do the spans nest? see [laminar-analysis-plan.md](laminar-analysis-plan.md))
-runs on any language annotated through planars. Charts will reach
-contributors in their language's Drive folder by themselves (the plan's
-Phase 4b–4d): reality-check charts after each daily refresh, the full
-analysis with its statistical tests weekly.
+runs on any language annotated through planars. Charts reach
+contributors in their language's Drive folder by themselves: reality-check
+charts after each daily refresh, the full analysis with its statistical
+tests weekly. The collaborator guide § "Charts of how your spans nest" is
+what contributors are told about them.
 
 The reality-check charts are `python -m coding laminar-charts` (dry run;
 `--apply` draws and uploads; `--lang`, `--force`). For each language whose
@@ -326,7 +327,8 @@ the language's Drive folder, `charts_by_class_{lang}.pdf` and
 `charts_by_type_{lang}.pdf`: every chart drawn without the permutation
 tests, in chapters (the combined forest first), each opened by a page
 listing its charts with page numbers, with bookmarks, and above each page
-the chart's title, the date and how complete the annotation was. The `laminar-charts.yml` workflow runs it after each daily
+the chart's title, the date and how complete the annotation was. Each
+language's status sheet links the two PDFs. The `laminar-charts.yml` workflow runs it after each daily
 refresh; run it yourself only to redraw at once (it needs R locally, as
 below). To look at the PDFs without uploading, or to see why a language
 failed:
@@ -342,7 +344,8 @@ each), commits the bundle to planars-data under
 inside the language's Drive folder. The `laminar-analysis.yml` workflow
 runs it on Sundays, one job per dataset; to run one dataset yourself:
 `python -m coding laminar-analysis --lang stan1293 --dataset stan1293_types_all --apply`
-(about an hour for English). To see why one failed:
+(for English, 50 minutes to over four hours depending on the dataset; the
+workflow's limit is 5 h 30 min per job). To see why one failed:
 `python -m laminar charts <dataset> --apply` (writes locally only).
 
 For working on the analysis yourself, one local command does all of it:

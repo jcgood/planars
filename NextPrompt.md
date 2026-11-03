@@ -18,16 +18,17 @@ this project is trying to remove.
 
 ## Now
 
-**Next (2026-11-02):** laminar 4e (documentation). 4d is done: the
-first run was clean and the Sunday schedule is on (progress doc "4d as
-built"). **Check** the first scheduled run (Sunday 2026-11-08): with no
-span change it should analyse nothing. Also done 2026-11-01: the worked-examples step in coordinator guide § "Reviewing
-a span rule with the domain expert" (`tests/span_examples/README.md`;
-Phase 11 itself waits for #321 — don't propose starting it), and the
-pink-cell note (#318 item 6). **Check** the 2026-11-02 Sheet validation
-run: green, and English's pink cells with a value now carry an
-"Automatic check:" note. Phase 10 has no unit left to build, only the
-daily-refresh checks in its thread.
+**Next (2026-11-02):** laminar Phase 4 is done (4e, documentation,
+2026-11-02; progress doc "4e as built"). Next in that thread: Phase 5
+(moving the analysis docs and tests to where the code is; the plan), or
+the "To fix" finding in the progress doc (English's by-class pooled
+chart cuts off its legend). **Check** the first scheduled weekly run
+(Sunday 2026-11-08): with no span change it should analyse nothing.
+Checked 2026-11-02: the refresh and Sheet validation were green, and all
+15 pink cells with a value on English's sheets carry an "Automatic
+check:" note. Phase 11 waits for #321 — don't propose starting it.
+Phase 10 has no unit left to build, only the daily-refresh checks in its
+thread.
 
 Eight live threads. Read whichever matches what you're picking up.
 
@@ -113,7 +114,8 @@ put the PDFs on Drive and linked them on each status sheet. The `charts`
 Drive kind is enforced since 2026-10-27 (clean writes on 2026-10-26).
 A daily run draws nothing when no span changed (checked 2026-10-27: all
 three "up to date"). 4d, the weekly full analysis, is live (first run clean
-2026-11-02, Sunday schedule on; "4d as built"). **Next action:** 4e. Don't re-ask decision 6's choices. Jeff's cuts to the cross-language
+2026-11-02, Sunday schedule on; "4d as built"); 4e done 2026-11-02.
+**Next action:** Phase 5. Don't re-ask decision 6's choices. Jeff's cuts to the cross-language
 charts (CCDB thread below) come after Phase 2 (his call, 2026-10-24), so
 they can go in now or between later phases, not in the middle of one.
 

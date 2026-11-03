@@ -66,9 +66,18 @@ If the coordinator edits the planar or diagnostics while your changes are waitin
 
 ### Viewing your results
 
-Once your coordinator has imported your filled sheet, results appear in your contributor Colab notebook. Open the notebook link from the same Drive folder as your sheet and choose **Runtime → Run all**. Sign in with your Google account when prompted.
+Your sheets are read every day, and the results appear in your contributor Colab notebook. Open the notebook link from the same Drive folder as your sheet and choose **Runtime → Run all**. Sign in with your Google account when prompted.
 
 The notebook shows a domain chart and a text report for each analysis class. See the [Notebooks guide](notebooks.md) for a walkthrough of how to read the chart and what the different span types mean.
+
+### Charts of how your spans nest
+
+Your language's Drive folder also holds charts that show whether the spans from your annotation nest inside each other, the project's main question. You don't need to do anything to get them.
+
+- **`charts_by_class_….pdf` and `charts_by_type_….pdf`** are redrawn within a day whenever your answers change a span. The first file groups the spans by class, the second by domain type. Your status sheet links to both. Use them as a check: a span in an odd place often means a cell needs a second look.
+- **The `analysis` folder** holds the full analysis, redrawn on Sundays when your spans have changed. Its PDFs add statistical tests of whether the spans nest more than chance would predict.
+
+Each PDF opens with a page saying what it shows, and each page gives the date it was drawn and how complete the annotation was then. The charts come from unpublished annotation, so share them only with the project.
 
 ---
 
