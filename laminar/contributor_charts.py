@@ -35,8 +35,8 @@ the selection, and a first page saying it is the analysis.
 
 **When to redraw** is ``fingerprint()``: the two domains files (the spans,
 which is all a chart is drawn from apart from the planar file) plus the
-planar file and the chart code (git's record of ``laminar/`` and
-``planarsviz/``). Completeness and the planars-data commit are left out, so
+planar file and the chart code (git's record of the code files in
+``laminar/`` and ``planarsviz/``; their documentation is left out). Completeness and the planars-data commit are left out, so
 annotation that changes no span redraws nothing.
 """
 
@@ -118,14 +118,17 @@ def contributor_datasets(lang_id: str) -> dict[str, str]:
 
 def code_version() -> str:
     """git's record of the chart code as committed (``laminar/``,
-    ``planarsviz/``): changes when either does."""
-    done = subprocess.run(["git", "-C", str(REPO), "rev-parse",
-                           *(f"HEAD:{f}" for f in _CODE_FOLDERS)],
-                          capture_output=True, text=True)
-    if done.returncode != 0:
+    ``planarsviz/``), as one hash: changes when a code file in either does,
+    not when the documentation beside it does (``coding.versions.is_result_code``)."""
+    from coding.versions import is_result_code
+    done = subprocess.run(["git", "-C", str(REPO), "ls-tree", "-r", "HEAD", "--",
+                           *_CODE_FOLDERS], capture_output=True, text=True)
+    if done.returncode != 0 or not done.stdout.strip():
         raise DrawingFailed("Could not read the chart code's version from git: "
-                            + (done.stderr.strip() or done.stdout.strip()))
-    return " ".join(done.stdout.split())
+                            + (done.stderr.strip() or done.stdout.strip() or "no files"))
+    code = [line for line in done.stdout.splitlines()
+            if is_result_code(line.split("\t", 1)[1])]
+    return hashlib.sha256("\n".join(code).encode("utf-8")).hexdigest()
 
 
 def fingerprint(lang_id: str, table) -> str:

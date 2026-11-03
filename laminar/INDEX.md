@@ -1,0 +1,465 @@
+# laminar/ — index of modules
+
+One entry per module in this package (and the `python -m laminar charts`
+command). The walkthrough of the analysis itself is `README.md` beside this
+file. The porting checks, verification scripts and exploratory prototypes
+that stayed in `NonCollaborative/scripts/` are indexed in
+`NonCollaborative/scripts/INDEX.md`.
+
+**Paths.** The modules run from anywhere, as `python -m laminar.<module>`
+(the renderer, `Rscript laminar/render_planarsviz.R`, from the repo root).
+For Chichewa (nyan1308) and the 21 CCDB structures they read
+`NonCollaborative/domains/` and `NonCollaborative/planar_tables/` and write
+to `NonCollaborative/results/` (those paths are frozen, plan decision 8), so
+**every `domains/`, `planar_tables/` and `results/` path below is relative to
+`NonCollaborative/`**. A language annotated through planars (e.g.
+`stan1293_types_all`) works in planars-data's `coded_data/.analysis/<lang>/`
+instead (`datasets.bundle_root()`, `charts_root()`).
+
+## Core Analysis
+
+**Every script below runs on any dataset** (since 2026-10-24, laminar
+analysis plan Phase 1; before that most of them assumed nyan1308).
+`--domain-file domains_<dataset>.tsv` names the dataset, and the rest follows
+from the name through `datasets.py`: its groupings (a CCDB structure gets
+`ccdb`), its planar table's position count, and output under
+`results/<dataset>/<topic>/<dataset>_*`. The domain types and bundles
+analysed are the ones the data actually has (`planars_groupings.py`), so a
+script run on its own gives the same numbers as the exported bundle.
+Default: nyan1308, whose paths the outputs below show. To export and draw a
+whole dataset, use `python -m laminar charts <dataset> --apply`.
+
+**`laminar/laminar_analysis.py`**
+- **Purpose**: Main workhorse for laminar family enumeration
+- **Input**: Domain span TSV file (`domains/domains_{lang_id}.tsv`)
+- **Algorithm**: Four-phase approach:
+  1. Conflict detection (O(n²)) — classify span pairs as nested/disjoint/conflict
+  2. Bron-Kerbosch enumeration (complement graph) — find all maximal independent sets
+  3. Tree construction — build parent maps and Newick trees
+  4. Analysis — test three hypotheses (Tree, Morphosyntax/Phonology divide, Word)
+- **Output**: the four-phase report on stdout, and a result dict for callers
+  (`spans`, `adjacency`, `families`, `span_family_count`, `n_families`,
+  `truncated`). It writes nothing to disk. Until the 2026-09-20 cutover it
+  also wrote the charts' R scripts; the `planarsviz` package draws them now
+  from the bundle `export_planarsviz_data.py` writes.
+- **Run it**: `python -m laminar.laminar_analysis` prints the report
+  for nyan1308 pooled, then per domain type, then per bundle;
+  `--domain-file` picks another dataset.
+- **Dependencies**: `pandas`
+- **Reading the rows instead of the spans**: `load_spans()` aggregates rows
+  that share a span, which throws away each row's own `Domain_Type`. Callers
+  that need the per-row labels — a permutation test over which label sits on
+  which row, say — use `load_domain_dataframe()` (read and clean, no subset
+  filter, no aggregation) and then `aggregate_spans()` themselves.
+  `load_spans()` is those two in sequence and is unchanged.
+
+**`laminar/refinement_counts.py`**
+- **Purpose**: For each of the 69 maximal laminar families, count how many
+  finer trees hide inside it at its polytomies (nodes with more than two
+  children) — i.e. how much tree structure the family leaves undetermined
+- **Two conventions, both reported** because whether constituents must be
+  binary is an open question: little Schröder per polytomy (any arity
+  allowed; this project calls the sequence "super-Catalan", see
+  `laminar/catalan.py`) and Catalan per polytomy (binary only). Totals
+  across all 69 families: 8,599,689 against 125,032.
+- **Output**: `results/nyan1308/laminar-families/nyan1308_refinement_counts.tsv` (per family),
+  `results/nyan1308/laminar-families/nyan1308_refinement_polytomies.tsv` (per distinct polytomy, so
+  the aggregate can be checked against the nodes it came from)
+- **Example**: `python -m laminar.refinement_counts`
+
+**`laminar/span_placement_test.py`**
+- **Purpose**: A different Tree-hypothesis test from the fragmentation test
+  below, though it looks similar. That one shuffles which *label* sits on
+  which test; this one holds a group's own span *lengths* fixed and asks
+  whether the real *positions* of those spans produce fewer conflicting
+  trees than an arbitrary placement of same-length spans would.
+- **Method**: every span redraws a uniformly random legal left edge for its
+  own length (a length-22 span has exactly one legal position on this
+  22-position structure, a length-2 span has 21 — smaller spans get more
+  freedom purely from that constraint), grouped by length so same-length
+  spans can never collide; 5000 draws, run for "all" plus the five domain
+  types plus the three bundles, one shared random stream. Every group draws
+  over the full 22-position structure regardless of its own observed range.
+- **Finding**: morphosyntactic (p=0.019) and syntax-like without
+  tonosegmental (p=0.020) are genuinely more tree-like than their own span
+  lengths predict; syntax-like (p=0.051) and phonology-like (p=0.077) trend
+  the same way more mildly. Tonosegmental (p=0.755) and intonational
+  (p=0.901) trend the other way — not more coherent than chance given their
+  sizes. The pooled result (p=0.335) is unremarkable; the breakdown is
+  where the signal is, and it points differently than the fragmentation
+  test's own findings, since the two ask genuinely different questions
+  about the same 26 spans.
+- **Output**: `results/nyan1308/counts-and-chance/nyan1308_span_placement_test.tsv` (one row per
+  group), `_span_placement_null_tally.tsv` (`group, family_count, n` —
+  a tally, not one row per draw)
+- **Example**: `python -m laminar.span_placement_test`
+- **Also in the bundle**, since 2026-09-21: the exporter calls this same
+  `run_test()` behind `--span-placement-permutations`, so the package's
+  charts and the committed TSVs above carry the same numbers.
+
+*(The R that drew this test, `analysis/span_placement_test_plot.r`, was
+archived to `NonCollaborative/OlderFiles/planarsviz_superseded/scripts/analysis/` on
+2026-09-21. The package draws all three of its charts now —
+`plot_span_placement_test()`, with `groups` and `view` — from a bundle
+exported with `--span-placement-permutations`. Panels there still use
+independent axes (`scales = "free"`), unlike the fragmentation chart: the
+absolute family count is not comparable across groups of very different span
+counts, so a shared axis would squash the small groups and misplace their own
+annotations, which actually happened with `scales = "free_x"` alone.)*
+
+**`laminar/class_fragmentation_test.py`**
+- **Purpose**: Ask whether a domain class is more fragmented than its own
+  number of tests would predict by chance. A class with many tests has more
+  chances to produce conflicting spans, so a raw family count cannot be read
+  as fragmentation on its own.
+- **Method**: shuffle `Domain_Type` labels across the 95 cleaned test rows,
+  holding each class's row count fixed, rebuild the conflict graph and
+  re-count families; 5000 draws. Classes and bundles share one pass — a
+  bundle's test count does not change under a per-type shuffle.
+- **Finding**: tonosegmental's 9 families look like the worst fragmentation
+  until you notice it carries 44 of the 95 tests, where chance alone gives
+  about 17 — so it leans *more* laminar than chance, though not below 0.05
+  (p=0.143). Intonational is the one class that is (1 family where chance
+  gives about 3, p=0.034). Morphosyntactic, phonological and length are
+  unremarkable. Small p here means fewer families than chance: more laminar.
+- **Output**: `results/nyan1308/counts-and-chance/nyan1308_class_fragmentation_test.tsv` (5 domain
+  types), `_bundle_fragmentation_test.tsv` (3 bundles),
+  `_fragmentation_null_draws.tsv` (every draw, long format, for the chart).
+  The two summary files record the draw count and seed that produced them.
+- **Imports**: its groups from `planars_groupings.permutation_groups()`,
+  `CLASS_COLORS` from `planars_groupings.py` — each defined in one place,
+  not redefined here
+- **Also called by the exporter**, through `run_test()`, when
+  `--fragmentation-permutations` is given, with the same groups.
+- **Example**: `python -m laminar.class_fragmentation_test`
+  (reproduces the committed files exactly: 5000 draws, seed 0)
+
+*(The R that drew this test, `analysis/fragmentation_test_plot.r`, was archived
+to `NonCollaborative/OlderFiles/planarsviz_superseded/scripts/analysis/` on 2026-09-21. The
+package draws both of its charts now — `plot_fragmentation_test()`, chart 19,
+with `groups` for the two-bundle variant — from a bundle exported with
+`--fragmentation-permutations`. Until then it and the package both wrote
+`nyan1308_fragmentation_test_plot.pdf` and nothing recorded which had won.)*
+
+**`laminar/laminar_tree_counts.py`**
+- **Purpose**: Count maximal laminar families pooled, per domain class, per
+  bundle, and with size-2 (adjacent-position) spans removed
+- **Output**: `results/nyan1308/counts-and-chance/nyan1308_tree_counts.tsv`. The bar charts of these
+  counts are drawn by the package; until the 2026-09-20 cutover this script
+  drew them itself, in matplotlib.
+- **Example**: `python -m laminar.laminar_tree_counts`
+
+**`laminar/boundary_strength.py`**
+- **Purpose**: Per-position boundary ("juncture") strength — for each cut
+  between positions, how strongly it is treated as a constituent edge across
+  the 69 families, on each side. A different unit of analysis from everything
+  else here: the object measured is a juncture, not a domain.
+- **Two measures**: `summed` (the analytical target — every span with that
+  edge counts, including nested ones) and `capped` (how many of the 69
+  families have at least one span with that edge, a reference line). See the
+  module docstring for why they diverge.
+- **Output**: `results/nyan1308/boundaries/nyan1308_boundary_strength.tsv`; `--subset` restricts
+  the analysis to some domain types and tags the filename with them. The
+  charts are drawn by the package; this script drew them in matplotlib until
+  the cutover.
+- **Example**: `python -m laminar.boundary_strength`
+- **`strength_from_families()`** is the reusable core (spans + an
+  already-enumerated family list in, summed/capped left/right dicts out),
+  factored out so `boundary_strength_test.py` below can run the same
+  counting logic on a permuted replicate's own spans/families.
+
+**`laminar/boundary_strength_test.py`**
+- **Purpose**: Is `boundary_strength.py`'s per-position strength — and,
+  specifically, the jump from one position to the next — higher than a
+  same-length-profile random arrangement of spans would produce by chance?
+  A direct stress test of the "clear quantal jump" claim on the left edge
+  of the orthographic word (and the more equivocal one on the right) made
+  informally from the bar chart.
+- **Method**: reuses `span_placement_test.py`'s null model and groups
+  exactly (same `random_replicate()`, same "draw over the full
+  22-position structure regardless of group" convention) but computes a
+  fresh boundary-strength curve from each replicate's own family
+  enumeration, rather than just a family count. Two statistics per
+  (group, side, position): `level` (the strength itself) and `jump`
+  (`strength[p] - strength[p-1]`, signed — the direct test of a rise at a
+  candidate left edge). One-sided `p_value_ge_observed` (small = higher
+  than chance), the mirror of `span_placement_test.py`'s own convention.
+- **Finding**: on the pooled data, the left-edge jump at position 5 is
+  robustly significant (p=0.0010, 5000 draws) — the "clear jump" claim
+  holds up quantitatively. The best right-edge position (21, on the jump
+  statistic) lands at p=0.0522 — right at the edge of the conventional
+  threshold, matching the talk's own "more diffuse" hedge almost exactly.
+  Tonosegmental's right edge at position 17 (the final vowel) is the
+  single strongest result of any group (p=0.0004).
+- **Output**: `results/nyan1308/boundaries/nyan1308_boundary_strength_test.tsv` — one row per
+  (group, side, statistic, position): `observed`, `null_mean`, `null_p05`,
+  `null_p95`, `p_value_ge_observed`, plus `n_permutations`/`seed`. No raw
+  per-draw table — only percentiles are kept, the same choice
+  `boundary_strength_density.tsv`'s precomputed curves already made, since
+  the chart needs an envelope band, not a distribution shape.
+- **Also called by the exporter**, through `run_test()`, when
+  `--boundary-strength-test-permutations` is given.
+- **Example**: `python -m laminar.boundary_strength_test`
+  (reproduces the committed file exactly: 5000 draws, seed 0)
+- **In the package** as `plot_boundary_strength_test()` — written directly
+  there from the start, like `plot_fragmentation_test()`, with no earlier
+  script to port or reference image to freeze.
+
+**`laminar/planars_groupings.py`**
+- **Purpose**: The named groupings of domain types, defined once — `BUNDLES`
+  (the three pooled morphosyntax/phonology approximations, with colours and
+  display labels) and `FILTERS` (the domain types a subset analysis leaves
+  out), plus `GROUPINGS`, which packages the two under a dataset name: the
+  exporter's `--groupings` picks `"chichewa"` (today's `BUNDLES`/`FILTERS`,
+  unchanged), `"ccdb"` (one bundle, morphosyntactic + indeterminate, no
+  filters), or, for a language annotated through planars, `"planars_types"`
+  / `"planars_classes"` (built from the schema's domain types; see
+  `planars_language.py`). Also `CLASS_COLORS` (the six domain-type colours,
+  in one place: `class_fragmentation_test.py` and the exporter's
+  `DOMAIN_TYPE_STYLE`, which is how they reach R, import them),
+  `CLASS_ORDER` (the order domain types are listed in) and
+  `observed_groups()`/`permutation_groups()`, the one place every script
+  and the exporter build a dataset's groups: only the types and bundles its
+  data has, in a fixed order (the permutation tests' numbers depend on it).
+  Not runnable on its own.
+
+**`laminar/datasets.py`**
+- **Purpose**: What a dataset name means — its domains file, planar table
+  and position count, and its settings (`dataset_settings()`: its own
+  `chart_settings_<dataset>.json`, else its CCDB import file, else the
+  exporter's defaults). Also the command-line options every standalone
+  analysis script shares. Read by those scripts, the exporter and
+  `python -m laminar charts`. Not runnable on its own. A planars
+  language's datasets (`<lang>_<types|classes>_<selection>`) have their
+  files in the planars-data clone (`coded_data/.analysis/<lang>/`, working
+  files never committed) and their settings
+  from `planars_language.py`.
+
+**`laminar/planars_language.py`**
+- **Purpose**: Connects a language annotated through planars (English
+  first) to the analysis: builds its span table from
+  `planars.reports.language_spans`, with each span's domain type or class,
+  construction, partial/complete basis and three weights, and writes one
+  domains file (plus a `source_<dataset>.json`: planars-data commit,
+  annotation completeness) per grouping × selection. `python -m laminar
+  charts <lang>_…` runs it before every export. Details: its docstring.
+- **Example**: `python -m laminar.planars_language stan1293` (dry run)
+
+**`laminar/export_planarsviz_illustrations.py`**
+- **Purpose**: Writes the `illustrations` bundle — the one `planarsviz`
+  bundle with no language behind it (phase E, 2026-09-22): every (or a
+  sample of) n-ary tree shape for small leaf counts, Catalan/little Schröder
+  count growth, and a uniformly-random tree sample for the ghost-overlay
+  chart. Reuses `laminar/catalan.py`'s enumeration and sampling directly rather than
+  re-deriving either.
+- **Output**: `results/chart_data/illustrations/data/tree_shapes.tsv`,
+  `tree_count_growth.tsv`, `random_trees.tsv`, `metadata.json`.
+- **Example**: `python -m laminar.export_planarsviz_illustrations`
+  (`--seed`, `--n-random-trees`, `--n-leaves`, `--tree-counts-max-n`)
+
+**`laminar/export_cross_language.py`**
+- **Purpose**: Writes the `cross_language` bundle, setting every
+  structure's own bundle side by side (nyan1308 and the 21 CCDB
+  structures, 2026-09-23; plan `NonCollaborative/docs/PLAN_cross_language_charts.md`). Reads
+  the per-language bundles and re-runs no analysis; the one computation of
+  its own is the label shuffle behind the conflicts-and-the-divide chart's
+  p-value. Refuses a bundle exported without all four permutation flags.
+- **Output**: `results/chart_data/cross_language/data/` (`structures.tsv`,
+  `family_count_tests.tsv`, `pooled_tests.tsv`, `conflict_divide.tsv`,
+  `boundary_profile.tsv`, `convergent_spans.tsv`, `summary.tsv`,
+  `metadata.json`), plus `results/cross_language/cross_language_summary.md`
+  and `.tex`.
+- **Example**: `python -m laminar.export_cross_language --apply`
+  (dry run without `--apply`; `--shuffles`, `--seed`,
+  `--convergence-ranks`). Then, from the repo root, draw with `Rscript
+  laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data/cross_language
+  --output NonCollaborative/results`.
+
+**`laminar/arbitrary_layers_test.py`**
+- **Purpose**: the third and weakest of the project's three permutation
+  nulls. It holds nothing about the real data except how many spans a group
+  has: each draw picks that many intervals of arbitrary size at arbitrary
+  positions. This is the baseline a raw family count is implicitly read
+  against, which is why it is worth measuring rather than assuming.
+- **How the three differ**: `class_fragmentation_test.py` shuffles which
+  domain-type label sits on which test with every span fixed in place;
+  `span_placement_test.py` holds each span's own length and randomizes its
+  position; this one randomizes size and position together.
+- **The root**: if a group's real spans include the full-structure span, the
+  null fixes it and draws the rest freely; otherwise all are free. The
+  `includes_root` column records which, and it is what keeps a group's null
+  and its observed set comparable.
+- **Finding**: pooled, nyan1308's 69 families sit at p=0.287 against a null
+  averaging 90.9 — unremarkable. The breakdown is where the signal is:
+  syntax-like (p=0.014) and morphosyntactic (p=0.044) are unusually laminar
+  even against this weakest null; phonology-like (p=0.058) and syntax-like
+  without tonosegmental (p=0.064) sit just outside; tonosegmental (0.540),
+  intonational (0.666) and length (0.549) are not.
+- **The enumeration cap is raised to 50,000 for the duration of a run and
+  restored afterwards** (`raised_family_cap()`), because arbitrary intervals
+  cross far more chaotically than real domains and the default 1000
+  truncates this null badly. A truncated draw counts as its cap rather than
+  its real value, so a bundle test fails if any draw hits even the raised one.
+- **Output**: `results/nyan1308/counts-and-chance/nyan1308_arbitrary_layers_test.tsv`
+  and `_arbitrary_layers_null_tally.tsv`
+- **Example**: `python -m laminar.arbitrary_layers_test`
+- **Also in the bundle**, behind `--arbitrary-layers-permutations`, drawn by
+  the package as `plot_arbitrary_layers_test()`.
+
+## Data export
+
+**`laminar/import_ccdb.py`**
+- **Purpose**: The one place that reads the Constituency and Convergence
+  Database (CCDB) clone (default `~/gitrepos/Constituency-Database`,
+  read-only — this script never writes to, commits to, fetches, or pulls
+  it). For every CCDB planar structure that has at least one constituency
+  test (21 of the 24 the clone lists; the other 3 have a planar table but no
+  tests, and are only reported), it writes the files this project's own
+  tools already read: `domains/domains_<Planar_ID>.tsv`,
+  `planar_tables/planar_<Planar_ID>.tsv`, and
+  `planar_tables/ccdb_<Planar_ID>.json` (root position, the CCDB commit read
+  from, a headline count). Step 1 of `NonCollaborative/docs/PLAN_ccdb_planarsviz.md`.
+- **Test labels**: CCDB's own short label is missing (its own "NA") for
+  every test in 8 of the 21 structures and duplicated across distinct tests
+  in 3 more, so `Test_Labels` is rebuilt from `Domain_ID` instead (unique by
+  construction); CCDB's original value is kept alongside it in a new
+  `CCDB_Test_Labels` column rather than dropped.
+- **Checks that stop one structure's import** (a named error, not a
+  traceback; every other structure still gets processed): two tests sharing
+  a rebuilt label, a `Size` that disagrees with its own edges, an edge
+  outside the planar structure, or planar-table positions that skip a
+  number. Refuses to run at all if the CCDB clone has uncommitted changes to
+  the files it reads, so the commit recorded in each JSON file always names
+  the exact content read.
+- **Dry run by default**; `--apply` writes. Re-running with no change to the
+  CCDB clone reproduces the same files byte-for-byte.
+- **Example**: `python -m laminar.import_ccdb` (dry run, all
+  structures), `python -m laminar.import_ccdb --apply`,
+  `python -m laminar.import_ccdb --planar-id chac1251_verbal --apply`
+
+**`laminar/export_planarsviz_data.py`**
+- **Purpose**: Export validated Python analysis results for the `planarsviz` R package
+- **Output**: `results/chart_data/<dataset>/data/` TSV/JSON bundle
+- **Source of truth**: Reuses `laminar_analysis.py`; does not re-enumerate families
+- **Position count**: reads the number of positions from the planar
+  table rather than inferring it from the largest span edge seen in the
+  domain file. This matters because a structure's last positions may be
+  reached by no test at all — Mebengokre has 32 positions but its spans
+  stop at 22.
+- **`--root-position N`**: the root position, for a planar table that
+  doesn't mark it with `Elements` = `root` (no CCDB table does).
+- **`--groupings {chichewa,ccdb}`**: which named domain-type bundle/filter
+  set to analyse with (`planars_groupings.py`) — `chichewa` (default,
+  nyan1308's phonology-like/syntax-like bundles and `no_tono` filter) or
+  `ccdb` (CCDB structures' single morphosyntactic+indeterminate bundle, no
+  filters)
+- **`--planar-type`, `--language-name`, `--forest-axis`**: chart-title
+  wording and where each per-domain-type forest's axis stops. A CCDB
+  structure sets all of these itself via `python -m laminar charts` below,
+  rather than needing them typed by hand.
+- **Records its inputs relative to the repo root** in `metadata.json`
+  (`source_domain_file`, `producer`), so a bundle does not depend on where
+  the exporter was run from.
+- **Example**: `python -m laminar.export_planarsviz_data --domain-file NonCollaborative/domains/domains_nyan1308.tsv`
+  (for a CCDB structure, use `python -m laminar charts` instead of calling
+  this directly — see the Core Analysis note above)
+
+**`laminar/render_planarsviz.R`**
+- **Purpose**: Render the charts from a validated planarsviz bundle — the only
+  planarsviz code that writes files
+- **Output**: one PDF per chart in `--output` (default `<bundle>/plots`), plus
+  `<dataset>/<dataset>_planarsviz_manifest.tsv` listing every file written and its canvas
+  size. For nyan1308 the published copies live in `results/`.
+- **Plots**: not a fixed list — the charts come from what the bundle holds (a
+  pooled pair per domain type, a forest per `forests.json` entry plus one chart
+  per tree in that forest, a variant per highlight and per filter subset, and so
+  on). Run with `--list` to see the charts a given bundle supports.
+- **Example** (from the repo root): `Rscript laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data/nyan1308 --output NonCollaborative/results`
+
+**`python -m laminar charts <dataset>`**
+- **Purpose**: Draw every chart for one language in one step: works out the
+  exporter's options from the dataset name (root position, groupings and
+  display name from `planar_tables/chart_settings_<dataset>.json` or a CCDB
+  structure's `planar_tables/ccdb_<dataset>.json`), prints the exporter and
+  renderer commands, and with `--apply` runs them. Holds no analysis or
+  drawing code of its own. Replaced `planarsviz_language.py` (2026-10-24).
+- **Output**: the bundle in `results/chart_data/<dataset>/`, the charts in
+  `results/<dataset>/<topic>/`
+- **Example**: `python -m laminar charts chac1251_verbal --apply`
+  (dry run without `--apply`; all four permutation tests run at 5000 draws
+  by default; `--no-permutations` skips them, `--permutations N` sets the
+  count, `--formats pdf,png`, `--plots a,b`)
+
+**`python -m laminar charts --ccdb`**
+- **Purpose**: Run the one-language command over every CCDB structure
+  `laminar.import_ccdb` wrote (found from its `planar_tables/ccdb_<Planar_ID>.json`
+  files) and write one summary of how it went, rather than calling the
+  one-language command by hand 21 times. A structure that fails does not
+  stop the others. Holds no analysis or drawing code of its own.
+  Plan step 4, `NonCollaborative/docs/PLAN_ccdb_planarsviz.md`. Replaced
+  `planarsviz_ccdb_batch.py` (2026-10-24).
+- **Output**: each structure's full output in
+  `results/ccdb_batch/<Planar_ID>.log`; a combined
+  `results/ccdb_batch/summary.md` reporting, per structure, whether the
+  export and render worked and which charts failed, which chart kinds it
+  has none of (not necessarily wrong — the renderer leaves a chart out when
+  the bundle has nothing for it), and anything worth a second look (very
+  few families, more spans than the 26 letters two charts label spans
+  with, very long structures, characters the standard PDF fonts can't
+  draw, truncated permutation draws).
+- **`--summary-only`** rewrites the summary from the logs and bundles
+  already on disk, without running anything; `--jobs N` sets how many run at once.
+- **Example**: `python -m laminar charts --ccdb` (dry run: lists what
+  would run), `python -m laminar charts --ccdb --apply` (all 21),
+  `python -m laminar charts --ccdb --apply --only chac1251_nominal,mart1259_verbal`,
+  `python -m laminar charts --ccdb --summary-only`
+
+**`laminar/contributor_charts.py`**
+- **Purpose**: draws a planars language's two contributor PDFs, by class and
+  by domain type (`<lang>_classes_all`, `<lang>_types_all`), without the
+  permutation tests: one PDF per dataset, with a first page, a divider per
+  chapter and a strip above each chart saying what it is, when it was drawn
+  and how complete the annotation was. Only draws: `python -m coding
+  laminar-charts` (daily) decides when and uploads to Drive, and
+  `python -m coding laminar-analysis` (weekly) draws its full-analysis PDFs
+  through it too. `fingerprint()` decides when a language needs redrawing.
+- **Details**: the module's docstring; plan decision 6, Phases 4b and 4d.
+
+**`laminar/catalan.py`** (moved here from `exploratory/catalan.py`, 2026-10-24)
+- **Purpose**: Live, actively-used counting/enumeration/sampling for n-ary
+  ordered trees (each internal node ≥2 children): `all_trees_new()` (OEIS
+  A001003, little Schröder numbers — the correct sequence for this, verified
+  against `results/nyan1308/counts-and-chance/tree_counting_equations.tex`'s
+  closed form and recurrence), `catalan_number()` (binary trees, reindexed by
+  leaf count), `enumerate_trees()` (exhaustive, small n only), and the
+  uniform sampler `sample_tree()`/`sample_forest()`/`sample_labeled_tree()`
+  (moved here 2026-09-22 from the now-archived
+  `analysis/random_tree_overlay.py`, whose only remaining job — writing a
+  generated `.r` file — the `illustrations` bundle replaced). Imported
+  directly by `laminar/export_planarsviz_illustrations.py`.
+- **Note**: `all_trees_old()` and `OCPSplus()` are kept on purpose as
+  documented-broken comparisons (see their own docstrings for the exact
+  bugs), not live code — everything else in this file is correct and used.
+
+
+## Where the charts went
+
+Until the 2026-09-20 cutover, most charts were drawn by generated R scripts
+sitting in `results/` beside the PDFs, written by generator functions in
+`analysis/laminar_analysis.py`. The `planarsviz` package replaced all of them.
+
+- The scripts are archived in `NonCollaborative/OlderFiles/planarsviz_superseded/`, where
+  the porting checks still run them to prove the package draws the same thing.
+  Do not delete them — see that directory's `README.md`.
+- The generators are gone from `laminar_analysis.py` (cutover step C3), as is
+  the matplotlib plotting that was in `laminar_tree_counts.py` and
+  `boundary_strength.py`.
+- Phase E (2026-09-22) absorbed the last three generated-script cases:
+  `generate_supercatalan_rows.py` + `render_supercatalan_rows.r` (the
+  tree-shape rows) and `analysis/random_tree_overlay.py` (the random-sample
+  overlay, the one generated R script that had been sitting in `results/`
+  the whole time, since it was never a fixed chart to port until its sample
+  got a recorded seed). No generated script writes into `results/` any more.
+- `NonCollaborative/scripts/planarsviz_checks/` holds the porting checks — the R ones reach the archive
+  through `superseded.R`, the Python ones through `superseded.py`.
+

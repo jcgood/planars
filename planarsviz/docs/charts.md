@@ -4,7 +4,7 @@ Every chart the library draws: what it shows, the call, its options, the
 canvas it was designed for, and an example from nyan1308 (Chichewa). The
 **renderer name** is what `laminar/render_planarsviz.R --plots` takes and
 what follows the dataset in the file name; **old file** is the file in
-`results/` it replaces.
+`NonCollaborative/results/` it replaces.
 
 The canvases below are for 22 positions (nyan1308). Every chart with a
 position axis is widened in proportion for a structure with more
@@ -49,7 +49,7 @@ One line per test across the planar positions, coloured by domain type.
 Tests that pick out the same span share a numbered layer (1 = largest). The
 dotted line marks the root.
 
-![Pooled plot](planarsviz_charts/pooled_plot.png)
+![Pooled plot](charts/pooled_plot.png)
 
 ```r
 plot_pooled(bundle)                                        # all tests
@@ -76,9 +76,9 @@ tests (0.7 cm each, at least 7 cm).
 
 Grouped by domain type · one type, local layers · one type, global layers:
 
-![Grouped](planarsviz_charts/pooled_domainplot.png)
-![Phonological](planarsviz_charts/pooled_plot_phonological.png)
-![Phonological, global layers](planarsviz_charts/pooled_plot_phonological_global_layers.png)
+![Grouped](charts/pooled_domainplot.png)
+![Phonological](charts/pooled_plot_phonological.png)
+![Phonological, global layers](charts/pooled_plot_phonological_global_layers.png)
 
 ---
 
@@ -87,7 +87,7 @@ Grouped by domain type · one type, local layers · one type, global layers:
 How often each position is the start or end of a test's span: all tests in
 the top panel, then split by domain type.
 
-![Boundary skyline](planarsviz_charts/boundary_skyline.png)
+![Boundary skyline](charts/boundary_skyline.png)
 
 ```r
 plot_boundary_skyline(bundle)
@@ -105,7 +105,7 @@ Every span except the full root as a horizontal segment, ordered by how many
 maximal families contain it (fewest at the bottom); width and opacity show
 that share, colour the span's main domain type.
 
-![Span chart](planarsviz_charts/spanchart.png)
+![Span chart](charts/spanchart.png)
 
 ```r
 plot_span_chart(bundle)
@@ -126,7 +126,7 @@ All maximal families of one domain type (or bundle of types), each drawn as
 a faint tree and stacked, so structure shared by many families reads darker
 and thicker.
 
-![Phonological forest](planarsviz_charts/phon_laminar_forest.png)
+![Phonological forest](charts/phon_laminar_forest.png)
 
 ```r
 plot_laminar_forest(bundle, "phon")
@@ -145,7 +145,7 @@ The same forest taken apart: each maximal family drawn as its own labelled
 tree, rather than stacked with the rest. Drawn by the same code as the
 exemplary trees below, keyed by forest and tree number instead of family id.
 
-![One syntax-like family](planarsviz_charts/syntaxlike_tree_09.png)
+![One syntax-like family](charts/syntaxlike_tree_09.png)
 
 ```r
 plot_forest_tree(bundle, "syntaxlike", 9)
@@ -171,7 +171,7 @@ shows how many trees share a branch, thickness how many tests support the
 span. One function draws the coloured domain-type overlay, the black
 all-families overlay, and the version with highlighted position labels.
 
-![Overlay with legend](planarsviz_charts/laminar_overlay_legend.png)
+![Overlay with legend](charts/laminar_overlay_legend.png)
 
 ```r
 plot_laminar_overlay(bundle)                                   # coloured by domain type
@@ -202,7 +202,7 @@ Canvas 20 × 14 in.
 
 All families, orthographic word highlighted:
 
-![Highlighted overlay](planarsviz_charts/all_families_labeled_orthographic_word_legend.png)
+![Highlighted overlay](charts/all_families_labeled_orthographic_word_legend.png)
 
 ---
 
@@ -212,7 +212,7 @@ The most consensus-like family — the one whose spans occur in the most
 families overall — with each branch's opacity and thickness showing the
 share of all families containing it.
 
-![Frequency tree](planarsviz_charts/freqtree.png)
+![Frequency tree](charts/freqtree.png)
 
 ```r
 plot_frequency_tree(bundle)
@@ -234,7 +234,7 @@ binarily, drawn solid. Every span rests on at least one test, so this is the
 most branching structure the data supports — for nyan1308, 13 nested spans
 with 7 strictly binary nodes and nothing wider than four children.
 
-![Maximal binary branching](planarsviz_charts/most_binary_tree.png)
+![Maximal binary branching](charts/most_binary_tree.png)
 
 ```r
 plot_frequency_tree(bundle, selection = "most_binary", weight = "none",
@@ -250,7 +250,7 @@ A second version traces a highlight's extent — for nyan1308, the
 orthographic word — with thicker edges running down to its first and last
 positions:
 
-![Word extent traced](planarsviz_charts/most_binary_tree_orthographic_word.png)
+![Word extent traced](charts/most_binary_tree_orthographic_word.png)
 
 ```r
 plot_frequency_tree(bundle, selection = "most_binary", weight = "none",
@@ -274,7 +274,7 @@ the bundle.
 The most consensus-like family overall and in each conflict group, each
 weighted by frequency within its group. Needs conflict groups in the bundle.
 
-![Four trees](planarsviz_charts/four_trees.png)
+![Four trees](charts/four_trees.png)
 
 ```r
 plot_four_trees(bundle)
@@ -295,7 +295,7 @@ Every family stacked in a large panel, and below it one panel per conflict
 group. Groups larger than the exporter's cap (12) show a selection chosen to
 cover every span in the group.
 
-![Conflict groups](planarsviz_charts/conflict_groups.png)
+![Conflict groups](charts/conflict_groups.png)
 
 ```r
 plot_conflict_groups(bundle)
@@ -319,7 +319,7 @@ family with the least evidence), each drawn as a clean tree beside the
 pooled plot of the tests that produced it. Layer numbers are the all-tests
 plot's. Also as a pair of 16:9 slides.
 
-![Exemplary tree page](planarsviz_charts/exemplary_trees_1.png)
+![Exemplary tree page](charts/exemplary_trees_1.png)
 
 ```r
 plot_exemplary_tree(bundle, rank = 1)                          # print page
@@ -344,8 +344,8 @@ page and evidence heights grow with the number of tests.
 
 Slide tree · slide evidence:
 
-![Slide tree](planarsviz_charts/exemplary_trees_slide_1_tree.png)
-![Slide evidence](planarsviz_charts/exemplary_trees_slide_1_evidence.png)
+![Slide tree](charts/exemplary_trees_slide_1_tree.png)
+![Slide evidence](charts/exemplary_trees_slide_1_evidence.png)
 
 ---
 
@@ -355,7 +355,7 @@ One row per span, ordered by how many maximal families contain it, drawn
 like a pooled plot with its layer number at both edges, in a colour blended
 from its domain types, with the family count at the right.
 
-![ForestSpans plot](planarsviz_charts/forestspans_plot.png)
+![ForestSpans plot](charts/forestspans_plot.png)
 
 ```r
 plot_forestspans(bundle)
@@ -381,7 +381,7 @@ How many maximal families the data allows: per domain type, per class
 bundle, for all tests, and for all tests without size-2 spans. The two
 horizontal charts have transparent backgrounds for slides.
 
-![Tree counts by class](planarsviz_charts/tree_count_by_class.png)
+![Tree counts by class](charts/tree_count_by_class.png)
 
 ```r
 plot_tree_counts(bundle, "by_class")
@@ -395,7 +395,7 @@ adjacent). Renderer names `tree_count_<chart>`; old files
 `nyan1308_tree_count_<chart>.pdf`. Ported from matplotlib: fonts differ
 slightly from the old files.
 
-![Without size-2 spans](planarsviz_charts/tree_count_without_adjacent.png)
+![Without size-2 spans](charts/tree_count_without_adjacent.png)
 
 ---
 
@@ -407,7 +407,7 @@ there; black marks count the families with at least one such span, never
 above the dotted line at the family count. The distributions chart shows
 the same strengths as two smoothed curves.
 
-![Boundary strength](planarsviz_charts/boundary_strength.png)
+![Boundary strength](charts/boundary_strength.png)
 
 ```r
 plot_boundary_strength(bundle)
@@ -427,7 +427,7 @@ Canvas 11 × 7 in (bars), 11 × 5 in (distributions). Renderer names
 slightly. The no-tonosegmental legend now gives that analysis's own family
 count (24); the old file said 69.
 
-![Distributions](planarsviz_charts/boundary_strength_distributions.png)
+![Distributions](charts/boundary_strength_distributions.png)
 
 ---
 
@@ -436,7 +436,7 @@ count (24); the old file said 69.
 Left and right boundary strength as paired bars over smoothed curves, with
 boxed position labels coloured by a highlight.
 
-![Boundary-strength overlay](planarsviz_charts/boundary_strength_overlay.png)
+![Boundary-strength overlay](charts/boundary_strength_overlay.png)
 
 ```r
 plot_boundary_strength_overlay(bundle)
@@ -464,7 +464,7 @@ permuted domain-type labels — with the observed count as a filled dot and the
 one-sided p-value at the right. Domain types and bundles are two stacked
 panels on one shared x axis, so the raw scale stays comparable.
 
-![Fragmentation test](planarsviz_charts/fragmentation_test.png)
+![Fragmentation test](charts/fragmentation_test.png)
 
 ```r
 plot_fragmentation_test(bundle)
@@ -510,7 +510,7 @@ p-value in the panel. Panels share no axis — an absolute family count is not
 comparable across groups with very different span counts, and the comparable
 quantity is each panel's own p-value.
 
-![Span-placement test](planarsviz_charts/span_placement_test_syntaxlike_plot.png)
+![Span-placement test](charts/span_placement_test_syntaxlike_plot.png)
 
 ```r
 plot_span_placement_test(bundle)
@@ -594,7 +594,7 @@ bundle <- read_planars_bundle("results/chart_data/nyan1308")  # for 17b/17c only
 One row of every (or a sample of) the n-ary tree shapes with a given leaf
 count.
 
-![Tree shapes, n=4](planarsviz_charts/tree_shapes_n4.png)
+![Tree shapes, n=4](charts/tree_shapes_n4.png)
 
 ```r
 plot_tree_shapes(ref, 4)
@@ -616,7 +616,7 @@ OEIS A001003) against leaf count, log scale — how fast the tree space grows.
 A new chart: the old scripts only ever showed this as
 `tree_counting_equations.tex`'s static table.
 
-![Tree-shape count growth](planarsviz_charts/tree_count_growth.png)
+![Tree-shape count growth](charts/tree_count_growth.png)
 
 ```r
 plot_tree_count_growth(ref, bundle)
@@ -637,7 +637,7 @@ to the handful of laminar families actually observed. Reuses chart 5's
 span/strength colouring: there is no target span to highlight in a purely
 combinatorial sample, so every edge is the same fixed alpha.
 
-![Random tree overlay](planarsviz_charts/random_tree_overlay.png)
+![Random tree overlay](charts/random_tree_overlay.png)
 
 ```r
 plot_random_tree_overlay(ref, bundle)
@@ -678,7 +678,7 @@ At each position: the real value (line and points) against the null's
 `p_value_ge_observed` below `alpha` are filled, the rest open, so a run of
 filled points stands out from noise.
 
-![Boundary-strength test](planarsviz_charts/boundary_strength_test_jump_all.png)
+![Boundary-strength test](charts/boundary_strength_test_jump_all.png)
 
 ```r
 plot_boundary_strength_test(bundle)                          # pooled, jump
@@ -717,7 +717,7 @@ checks it instead: `tests/test_planarsviz_bundle.py`'s
 `test_boundary_strength_test_covers_every_position` confirms every group has
 exactly one row per (side, statistic, position) and that the jump
 statistic's position-1 row is always zero — a shape check, not a check of
-the p-values or observed strengths themselves. No `scripts/planarsviz_checks/`
+the p-values or observed strengths themselves. No `NonCollaborative/scripts/planarsviz_checks/`
 check compares this chart's numbers against an independent run, unlike the
 fragmentation test's `check_fragmentation.R`: `boundary_strength_test.py`'s
 `run_test()` is the only place these numbers are computed, so there is
@@ -726,7 +726,7 @@ nothing separate to check it against.
 ## 19. Across languages
 
 Every structure side by side: nyan1308 and the 21 CCDB structures
-(2026-09-23; plan `docs/PLAN_cross_language_charts.md`). Its own bundle,
+(2026-09-23; plan `NonCollaborative/docs/PLAN_cross_language_charts.md`). Its own bundle,
 built only by reading the per-language bundles (contract:
 `planarsviz/inst/data-contract.md`, "Cross-language bundle"):
 
@@ -739,7 +739,7 @@ Several split each structure's tests into a *syntax side* and a *phonology
 side*: in CCDB, morphosyntactic and indeterminate against phonological; in
 Chichewa, its own syntax-like (morphosyntactic, tonosegmental, length) against
 phonology-like (phonological, intonational). Canvas 9 × 8 in unless given. All
-land in `results/cross_language/`, named `cross_language_<renderer name>.pdf`.
+land in `NonCollaborative/results/cross_language/`, named `cross_language_<renderer name>.pdf`.
 None has a reference image yet: they are new charts, not ports, and are
 still open to Jeff's cuts. `tests/test_planarsviz_cross_language_bundle.py`
 checks the bundle against its sources instead.
@@ -752,7 +752,7 @@ null's 5th–95th percentile on the same scale. Left of 1 = more tree-like than
 chance. The caption gives the count below the median, its sign-test p and
 Fisher's combined p, with the caveat that structures are not independent.
 
-![Tree-likeness](planarsviz_charts/cross_language_tree_likeness.png)
+![Tree-likeness](charts/cross_language_tree_likeness.png)
 
 ```r
 plot_cross_language_tree_likeness(ref, role = "all")
@@ -772,7 +772,7 @@ structure's arbitrary-layers null (5th–95th) as a grey bar; structures
 outside it, and Chichewa, are labelled. Canvas 9 × 6 in. Renderer name
 `families_vs_size`.
 
-![Families against size](planarsviz_charts/cross_language_families_vs_size.png)
+![Families against size](charts/cross_language_families_vs_size.png)
 
 ### 19c. Conflicts and the divide
 
@@ -784,14 +784,14 @@ list. A span on both sides counts as within a side in any pair. Structures
 with no span purely on one side are listed without points. Renderer name
 `divide`.
 
-![Divide](planarsviz_charts/cross_language_divide.png)
+![Divide](charts/cross_language_divide.png)
 
 ### 19d. Which side is more tree-like
 
 Span-placement p-value for each structure's syntax-side and phonology-side
 tests, joined. Canvas 8 × 7.5 in. Renderer name `side_p`.
 
-![Side p-values](planarsviz_charts/cross_language_side_p.png)
+![Side p-values](charts/cross_language_side_p.png)
 
 ### 19e. Edges around the root
 
@@ -800,7 +800,7 @@ right edges as two panels, summed boundary strength scaled by the
 structure's own maximum; orange dots where the boundary-strength test's jump
 has p < 0.05 (uncorrected). Canvas 13 × 7 in. Renderer name `edges`.
 
-![Edges](planarsviz_charts/cross_language_edges.png)
+![Edges](charts/cross_language_edges.png)
 
 ### 19f. Most convergent spans
 
@@ -809,14 +809,14 @@ levels, at least `min_tests` tests, default 2) as segments on the
 root-relative axis, thicker with more tests; grey is the structure's extent.
 Canvas 11 × 13 in. Renderer name `convergence`.
 
-![Convergence](planarsviz_charts/cross_language_convergence.png)
+![Convergence](charts/cross_language_convergence.png)
 
 ```r
 plot_cross_language_convergence(ref, min_tests = 2L)
 ```
 
 The summary table (plan item F) is not a chart: the exporter writes it as
-`results/cross_language/cross_language_summary.md` and `.tex`, and as the
+`NonCollaborative/results/cross_language/cross_language_summary.md` and `.tex`, and as the
 bundle's `summary.tsv`.
 
 ---
@@ -831,4 +831,4 @@ file name for every chart except:
 | `nyan1308_all_families_labeled_wordhood.pdf` | `nyan1308_all_families_labeled_orthographic_word.pdf` | The name comes from the highlight id in the data. |
 | `nyan1308_all_families_labeled_wordhood_legend.pdf` | `nyan1308_all_families_labeled_orthographic_word_legend.pdf` | Same. |
 | `nyan1308_random_tree_overlay.pdf` | `illustrations_random_tree_overlay.pdf` | Belongs to the `illustrations` dataset now, not `nyan1308` — its sample isn't this language's data, only its positions. |
-| `supercatalan_trees_n2.pdf` .. `_n5_sample15.pdf` | `illustrations_tree_shapes_n2.pdf` .. `_n5.pdf` | Same reason; the `_sample15` suffix moved into `docs/PLANARSVIZ_LIBRARY_PROGRESS.md`'s own record rather than the filename. |
+| `supercatalan_trees_n2.pdf` .. `_n5_sample15.pdf` | `illustrations_tree_shapes_n2.pdf` .. `_n5.pdf` | Same reason; the `_sample15` suffix moved into `NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`'s own record rather than the filename. |

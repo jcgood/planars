@@ -9,7 +9,7 @@ the current state; update it at every phase boundary, in the same commit.
 | 2. Move the code (`laminar/`, `planarsviz/` to the root) | done 2026-10-24 |
 | 3. Connect a planars language (adapter, *k of n*, metadata) | done 2026-10-24 |
 | 4. Run English; charts to contributors through Drive (revised) | 4a and 4b built 2026-10-24, 4c 2026-10-25; 4b and 4c live 2026-10-25; 4d built 2026-11-01, live 2026-11-02; 4e done 2026-11-02 |
-| 5. Documentation and tests | not started |
+| 5. Documentation and tests | done 2026-11-03 |
 
 ## Phase 1 as built (2026-10-24)
 
@@ -364,6 +364,41 @@ by workflows. Plan decision 6 and Phase 4a–e have the design.
   PDF's first page says what it shows, the status sheet links the daily
   ones and the collaborator guide explains both, so a note would be a
   fourth description to keep in step, written by hand on Drive.
+
+## Phase 5 as built (2026-11-03)
+
+- **Docs beside the code.** `NonCollaborative/scripts/README_laminar_analysis.md`
+  is `laminar/README.md`. `NonCollaborative/scripts/INDEX.md` was split:
+  the module entries are `laminar/INDEX.md` (with a new entry for
+  `contributor_charts.py`, which it lacked); the porting checks,
+  verification and exploratory scripts stay indexed where they are. The
+  planarsviz guide, tutorial and chart catalogue (with its images) are
+  `planarsviz/docs/guide.md`, `tutorial.md`, `charts.md` and `charts/`.
+  Every link and path in them, in `planarsviz/README.md`, `DESCRIPTION`
+  (and its generated help page), `NonCollaborative/results/visualizations.md`,
+  the three CLAUDE.md files and the README now names the new places. The
+  progress logs and plans under `NonCollaborative/docs/` keep the old
+  names: they record what was there at the time.
+- **Tests.** The five analysis tests that need no R
+  (`test_planarsviz_{bundle,shifted_bundle,cross_language_bundle,illustrations_bundle,export_leftovers}.py`)
+  are in `tests/`, about two seconds in all; they find `NonCollaborative/`
+  through `laminar.datasets.NC`. The R tests, the tree-traversal snapshots
+  (an old prototype's, 49 s) and the shifted bundle's inputs stay in
+  `NonCollaborative/tests/`; CI still runs that folder's no-R part.
+- **Documentation is not result code** (found doing this): moving docs into
+  `laminar/` and `planarsviz/` would have made every docs edit raise the
+  code version (the pre-commit hook) and redraw every language's charts
+  (the chart fingerprint hashed the whole folders). `planarsviz/README.md`
+  and `inst/data-contract.md` already did. Now `coding/versions.py`
+  says once what result code is (`is_result_code`, `result_code_pathspecs`:
+  `RESULT_CODE`'s folders minus Markdown files and `planarsviz/docs/`), and
+  the hook, `check_snapshots.py`, the stamp's "uncommitted changes" and
+  `contributor_charts.code_version()` all read it. The fingerprint's form
+  changed, so the next daily run redraws each language's contributor charts
+  once (and the next weekly run re-analyses), with nothing else changed.
+- **Side fix:** `laminar/README.md`'s Python example called `main()`
+  unqualified and named a domains file that doesn't exist; now one call, on
+  `domains_arao1248_verbal.tsv`, checked to run.
 
 ## Findings
 

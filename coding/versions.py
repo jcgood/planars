@@ -59,8 +59,33 @@ ISSUE = re.compile(r"#(\d+)")
 
 # The code that produces results: a commit changing any of it raises the
 # code version (bump_version_hook.py and check_snapshots.py read this;
-# design § 5, Q3).
+# design § 5, Q3), and the contributor charts are redrawn when the chart code
+# in it changes (laminar/contributor_charts.py). The documentation kept
+# beside that code is not part of it: editing a README or the planarsviz
+# guide changes no result, so it raises no version and redraws no chart.
+# Every reader asks is_result_code() or result_code_pathspecs(), never the
+# folders alone.
 RESULT_CODE = ("planars", "laminar", "chapters", "planarsviz")
+DOC_SUFFIXES = (".md",)
+DOC_FOLDERS = ("planarsviz/docs",)
+
+
+def is_result_code(path: str) -> bool:
+    """Whether this repository path (relative, with ``/``) is code that
+    produces results: under a RESULT_CODE folder and not documentation."""
+    parts = path.split("/")
+    if parts[0] not in RESULT_CODE or len(parts) < 2:
+        return False
+    if any(path == f or path.startswith(f + "/") for f in DOC_FOLDERS):
+        return False
+    return not path.endswith(DOC_SUFFIXES)
+
+
+def result_code_pathspecs() -> List[str]:
+    """is_result_code() as git pathspecs, for ``git status``/``git diff``."""
+    return [*RESULT_CODE,
+            *(f":(exclude,glob)**/*{s}" for s in DOC_SUFFIXES),
+            *(f":(exclude){f}" for f in DOC_FOLDERS)]
 PYPROJECT = source_log.ROOT / "pyproject.toml"
 _VERSION_LINE = re.compile(r'^version = "([^"]+)"$', re.MULTILINE)
 
@@ -164,7 +189,7 @@ def code_changed() -> Optional[bool]:
     if not (source_log.ROOT / ".git").exists():
         return None
     done = subprocess.run(["git", "-C", str(source_log.ROOT), "status", "--porcelain", "--",
-                           *RESULT_CODE], capture_output=True, text=True)
+                           *result_code_pathspecs()], capture_output=True, text=True)
     if done.returncode != 0:
         return None
     return any(l.strip() for l in done.stdout.splitlines())

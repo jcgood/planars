@@ -1,16 +1,16 @@
 """The shifted nyan1308 bundle must have exactly nyan1308's structure, moved.
 
-docs/PLAN_planarsviz_library.md section 10.2. Build and export it first:
-the two commands are in tests/fixtures/make_shifted_nyan.py's docstring.
+NonCollaborative/docs/PLAN_planarsviz_library.md section 10.2. Build and
+export it first: the two commands are in
+NonCollaborative/tests/fixtures/make_shifted_nyan.py's docstring.
 """
 
 import csv
 import json
-from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).parents[1]
+from laminar.datasets import NC as ROOT   # NonCollaborative/, where the bundles stay
 NYAN = ROOT / "results" / "chart_data" / "nyan1308" / "data"
 SHIFTED = ROOT / "results" / "chart_data" / "shifted_nyan" / "data"
 SHIFT = 2

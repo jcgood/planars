@@ -44,7 +44,7 @@ match.
 
 **Two files, two jobs.** This file says what each artifact in `results/`
 *shows* and what it means for the analysis.
-[`../docs/planarsviz_charts.md`](../docs/planarsviz_charts.md) is the chart
+[`planarsviz/docs/charts.md`](../../planarsviz/docs/charts.md) is the chart
 catalogue: every chart the package draws, its R call, its options, its canvas
 and an example image. Look there for how to draw a chart, here for what to
 make of it. A few charts in `results/` have a catalogue entry but no section
@@ -1111,7 +1111,7 @@ python -m laminar.refinement_counts
 These are in `results/` and drawn by the same two commands at the top of this
 file, but have no section of their own here — there is nothing to say about
 them beyond what they are, and
-[`../docs/planarsviz_charts.md`](../docs/planarsviz_charts.md) says that,
+[`planarsviz/docs/charts.md`](../../planarsviz/docs/charts.md) says that,
 with an example image, its options and its canvas size.
 
 | File | `--plots` name | Catalogue section |
@@ -1225,7 +1225,7 @@ checking the fonts look right since they need a different PDF device than every 
 
 `results/cross_language/` sets all 22 structures side by side (nyan1308 and the 21 CCDB
 structures; 2026-09-23, plan `../docs/PLAN_cross_language_charts.md`). Each chart is described,
-with an example image, in [`../docs/planarsviz_charts.md` §19](../docs/planarsviz_charts.md#19-across-languages);
+with an example image, in [`planarsviz/docs/charts.md` §19](../../planarsviz/docs/charts.md#19-across-languages);
 the bundle's tables in `planarsviz/inst/data-contract.md`, "Cross-language bundle". The
 `--plots` names are in brackets.
 
@@ -1293,6 +1293,6 @@ Re-run both whenever any language's bundle is re-exported;
   checks compare against (`reference/`) and the comparison images those
   checks write (`comparisons/`). Both are grouped by dataset first and then
   by topic — see
-  [`../docs/planarsviz_guide.md` §6](../docs/planarsviz_guide.md#6-check-a-chart)
+  [`planarsviz/docs/guide.md` §6](../../planarsviz/docs/guide.md#6-check-a-chart)
   for the current layout (`reference/nyan1308/<topic>/`,
   `comparisons/shifted_nyan/shifted/` for the shifted-data comparisons).

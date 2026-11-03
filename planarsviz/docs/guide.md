@@ -2,8 +2,8 @@
 
 How to go from a domains file to finished charts, how to add a new
 language, and how to check that a chart is right. For what each chart shows
-and its options, see the [chart catalogue](planarsviz_charts.md). For the
-package overview, see [`planarsviz/README.md`](../../planarsviz/README.md).
+and its options, see the [chart catalogue](charts.md). For the
+package overview, see [`planarsviz/README.md`](../README.md).
 
 Since 2026-10-24 the analysis code is the `laminar/` package and the R package
 is `planarsviz/`, both at the repo root. The `python -m laminar …` commands
@@ -22,7 +22,7 @@ stay.
 | Analyse and export | `laminar/export_planarsviz_data.py` (Python) | a bundle: `results/chart_data/<dataset>/data/` |
 | Draw | the `planarsviz` R package, `plot_*()` functions | ggplot / patchwork objects |
 | Save everything | `laminar/render_planarsviz.R` | PDFs and PNGs, plus `<dataset>/<dataset>_planarsviz_manifest.tsv` |
-| Check | `scripts/planarsviz_checks/` | comparison images and pass/fail messages |
+| Check | `NonCollaborative/scripts/planarsviz_checks/` | comparison images and pass/fail messages |
 
 The exporter does all analysis by calling the existing, verified Python
 functions (`laminar_analysis.py`, `laminar_tree_counts.py`,
@@ -261,7 +261,7 @@ Steps 3–6 apply either way:
 
 For a full walk-through of this route on one real language, start to
 finish — including which charts to look at first and what the numbers
-mean — see [the tutorial](planarsviz_tutorial.md). This section only says
+mean — see [the tutorial](tutorial.md). This section only says
 what each piece does.
 
 **Every CCDB structure at once:** `python -m laminar charts --ccdb` runs
@@ -288,29 +288,29 @@ chart that script drew is itself the reference —
 frozen before the package could overwrite it — and `check_fragmentation.R`
 compares against that rather than running an older script.
 
-- `scripts/planarsviz_checks/check_*.R` — runs the old script in memory
+- `NonCollaborative/scripts/planarsviz_checks/check_*.R` — runs the old script in memory
   (files untouched), draws the same chart with the library, compares the
   underlying plot data number by number, renders both and reports the
   share of differing pixels. Given another bundle and `library-only`, it
   renders that bundle beside nyan1308 instead. Each script's header gives
   its exact arguments (the pooled and skyline checks also take a domains
   file).
-- `scripts/planarsviz_checks/verify_*_export.py` — checks the exporter's
+- `NonCollaborative/scripts/planarsviz_checks/verify_*_export.py` — checks the exporter's
   numbers, trees and selections against the old scripts' own output.
-- `scripts/planarsviz_checks/check_renderer.py <render folder>` — compares a
+- `NonCollaborative/scripts/planarsviz_checks/check_renderer.py <render folder>` — compares a
   full nyan1308 render with the frozen reference images.
-- `pytest tests/test_planarsviz_checks.py` — runs all 23 checks above and
+- `pytest NonCollaborative/tests/test_planarsviz_checks.py` (from the repo root) — runs all 23 checks above and
   compares each one's output against a snapshot, so a drifted chart fails
   instead of printing a number nobody reads. About six or seven minutes.
 - `pytest tests/test_planarsviz_bundle.py tests/test_planarsviz_shifted_bundle.py`
-  — bundle contents for nyan1308 and for the shifted test data.
+  (from the repo root; these two are in the main suite) — bundle contents for nyan1308 and for the shifted test data.
 
 Comparison images (reference | new | differences) are in
 `results/chart_checks/comparisons/nyan1308/`, and
 `comparisons/shifted_nyan/shifted/` holds each chart drawn from nyan1308
 beside the same chart from the **shifted test data**: nyan1308 with every
 position moved by two, labels renamed and one domain type renamed
-(`tests/fixtures/make_shifted_nyan.py`). A chart that draws that data
+(`NonCollaborative/tests/fixtures/make_shifted_nyan.py`). A chart that draws that data
 correctly has no nyan1308 facts built in.
 
 Both `results/chart_checks/reference/` and `results/chart_checks/comparisons/`
@@ -365,7 +365,7 @@ installed packages still match the lockfile.
 Two things worth knowing:
 
 - **The lockfile covers more than the package's own `DESCRIPTION`.** Three of
-  the archived scripts in `OlderFiles/planarsviz_superseded/` load `pacman`,
+  the archived scripts in `NonCollaborative/OlderFiles/planarsviz_superseded/` load `pacman`,
   `here` and `tidyverse`, and one loads `ggsci`. The checks run those
   scripts, so those versions matter as much as the package's own and are
   pinned too. (`cowplot`, used by `plot_tree_shapes()`, is pinned for the
@@ -396,14 +396,14 @@ bring the lockfile back in line, and commit it with the change.
 | `python -m laminar charts <dataset>` | One dataset, export and render, in one command. |
 | `python -m laminar charts --ccdb` | Runs the one-language command for every CCDB structure and summarises. |
 | `laminar/render_planarsviz.R` | The renderer. |
-| `scripts/planarsviz_checks/` | Porting checks. |
+| `NonCollaborative/scripts/planarsviz_checks/` | Porting checks. |
 | `results/<dataset>/` | Published charts, grouped into `laminar-families/`, `pooled/`, `boundaries/` and `counts-and-chance/`. |
 | `results/chart_data/<dataset>/` | Bundles (`data/`) and rendered charts (`plots/`). |
 | `results/chart_checks/reference/<dataset>/` | Frozen images of the old charts, grouped into `laminar-families/`, `pooled/`, `boundaries/` and `counts-and-chance/`. |
 | `results/chart_checks/comparisons/<dataset>/` | Side-by-side and difference images (reference \| new \| difference) the porting checks write. |
 | `results/ccdb_batch/` | Per-structure logs and `summary.md` from the CCDB batch. |
-| `docs/PLAN_planarsviz_library.md` | Why the library is built this way. |
-| `docs/PLANARSVIZ_LIBRARY_PROGRESS.md` | What was checked, chart by chart, and open questions. |
-| `docs/PLAN_ccdb_planarsviz.md` | Why and how the 21 CCDB structures were put through the same pipeline. |
-| `docs/CCDB_PLANARSVIZ_PROGRESS.md` | Current state of that work. |
-| `docs/planarsviz_tutorial.md` | One language, start to finish, as a walk-through rather than a reference. |
+| `NonCollaborative/docs/PLAN_planarsviz_library.md` | Why the library is built this way. |
+| `NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md` | What was checked, chart by chart, and open questions. |
+| `NonCollaborative/docs/PLAN_ccdb_planarsviz.md` | Why and how the 21 CCDB structures were put through the same pipeline. |
+| `NonCollaborative/docs/CCDB_PLANARSVIZ_PROGRESS.md` | Current state of that work. |
+| `planarsviz/docs/tutorial.md` | One language, start to finish, as a walk-through rather than a reference. |

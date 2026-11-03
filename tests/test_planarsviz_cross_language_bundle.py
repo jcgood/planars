@@ -12,11 +12,10 @@ import csv
 import hashlib
 import json
 from itertools import combinations
-from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).parents[1]
+from laminar.datasets import NC as ROOT   # NonCollaborative/, where the 22 bundles stay
 CHART_DATA = ROOT / "results" / "chart_data"
 BUNDLE = CHART_DATA / "cross_language" / "data"
 NOT_STRUCTURES = {"illustrations", "shifted_nyan", "cross_language"}
@@ -43,7 +42,7 @@ def test_every_structure_present_once_and_no_input_changed():
         assert hashlib.sha256(path.read_bytes()).hexdigest() == entry["metadata_sha256"], (
             f"{entry['dataset']}'s bundle changed after the cross-language bundle was written. Re-run:\n"
             "    python -m laminar.export_cross_language --apply\n"
-            "from NonCollaborative/, then redraw its charts."
+            "then redraw its charts."
         )
     for table in ("structures.tsv", "conflict_divide.tsv", "summary.tsv"):
         assert sorted(r["dataset"] for r in read_tsv(BUNDLE / table)) == names, table

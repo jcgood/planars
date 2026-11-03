@@ -177,7 +177,10 @@ why:
 - **The version bump is its own hook**, `bump_version_hook.py`, run on
   every commit and reading `versions.RESULT_CODE`, so the list is in one
   place (the snapshot hook still runs only for `planars/`).
-  `check_snapshots.py`'s pre-push warning reads the same list.
+  `check_snapshots.py`'s pre-push warning reads the same list. Since
+  2026-11-03 the documentation in those folders (Markdown files,
+  `planarsviz/docs/`) is not counted (`versions.is_result_code`,
+  `result_code_pathspecs`): it changes no result.
 - **Charts:** the full stamp is on the first page; each page's strip has
   the code version and the language's position, which fit the narrowest
   chart. **Reports:** one line under the date.

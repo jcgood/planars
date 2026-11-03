@@ -3,10 +3,8 @@
 import csv
 import hashlib
 import json
-from pathlib import Path
 
-
-ROOT = Path(__file__).parents[1]
+from laminar.datasets import NC as ROOT   # NonCollaborative/, where nyan1308's bundle stays
 BUNDLE = ROOT / "results" / "chart_data" / "nyan1308" / "data"
 RESULTS = ROOT / "results" / "chart_data" / "nyan1308"
 SOURCE = ROOT / "domains" / "domains_nyan1308.tsv"

@@ -67,7 +67,7 @@ tab is each language's status sheet.
 | Changes to the sources, and the versions counted from them | `schemas/changes.tsv` and `coded_data/{lang_id}/changes.tsv` (`coding/source_log.py`, `coding/versions.py`); design `docs/change-log-design.md` |
 | Decisions (what a `diagnostics`/`linguistics` issue settled) | `schemas/decisions.tsv` (framework) and `coded_data/{lang_id}/decisions.tsv` (one language), written by `record-decision`; coordinator guide § "Closing a decision issue" |
 | One-time migrations | `migrations/` — convention in `migrations/README.md` |
-| Laminar-family analysis and charts | `laminar/` (run `python -m laminar charts <dataset>`) and `planarsviz/` (R chart package); plan `docs/laminar-analysis-plan.md`, state `docs/laminar-analysis-progress.md` |
+| Laminar-family analysis and charts | `laminar/` (run `python -m laminar charts <dataset>`; guide `laminar/README.md`, module index `laminar/INDEX.md`) and `planarsviz/` (R chart package; guide, tutorial and chart catalogue in `planarsviz/docs/`); plan `docs/laminar-analysis-plan.md`, state `docs/laminar-analysis-progress.md` |
 | Chapters written from the annotation (values, fragments, outline, prose slots) | `chapters/` (`python -m chapters values`; built with `python -m coding build-chapters` into `coded_data/.papers/`); plan and state `docs/chapter-generation-plan.md` |
 | Personal working area, not the pipeline | `NonCollaborative/` |
 
@@ -280,8 +280,9 @@ python generate_snapshots.py            # regenerate span snapshots; review with
   separately).
 - Notebooks run in Colab, not locally; Colab installs the package from GitHub,
   so a library change needs a version bump. The pre-commit hook does it for
-  any change to code that produces results (`versions.RESULT_CODE`: every
-  result records the version, unit 18); bump by hand for a `schemas/`
+  any change to code that produces results (`versions.is_result_code`:
+  `RESULT_CODE`'s folders, not the docs kept in them; every result records
+  the version, unit 18); bump by hand for a `schemas/`
   change Colab reads.
 - **Audits** happen in an `audit` issue: the daily refresh files one when
   none has closed in 30 days; open one by hand after a cross-cutting change.

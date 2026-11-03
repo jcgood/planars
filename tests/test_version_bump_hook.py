@@ -32,6 +32,23 @@ def test_result_code_raises_the_version(path):
 
 
 @pytest.mark.parametrize("path", ["docs/testing.md", "coding/issues.py", "planars_notes.md",
-                                  "schemas/terms.yaml"])
+                                  "schemas/terms.yaml",
+                                  # documentation kept beside the result code
+                                  "laminar/README.md", "laminar/INDEX.md", "planars/CLAUDE.md",
+                                  "planarsviz/docs/guide.md", "planarsviz/docs/charts/spanchart.png",
+                                  "planarsviz/inst/data-contract.md"])
 def test_other_files_do_not(path):
     assert not changes_result_code([path])
+
+
+def test_the_git_pathspecs_agree_with_the_rule():
+    """git's view (used by check_snapshots.py and the stamp) and
+    is_result_code() pick the same files out of the repository."""
+    import subprocess
+    from coding.versions import RESULT_CODE, is_result_code, result_code_pathspecs
+    def files(*spec):
+        return set(subprocess.run(["git", "ls-files", "--", *spec], capture_output=True,
+                                  text=True, check=True).stdout.splitlines())
+    by_git = files(*result_code_pathspecs())
+    assert by_git == {p for p in files(*RESULT_CODE) if is_result_code(p)}
+    assert "laminar/charts.py" in by_git and "laminar/README.md" not in by_git

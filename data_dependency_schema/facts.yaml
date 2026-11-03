@@ -628,7 +628,7 @@
   locations:
     - {entity: change_log, detail: "the positions name lines of schemas/changes.tsv and coded_data/{lang}/changes.tsv; each line's previous version and fingerprint let source_log.files_at rebuild and check a past state"}
     - {entity: derived_artifact, detail: "the result's copy: a bundle's source_<dataset>.json and metadata.json (planars_source.stamp), a chart's or report's page text, a chapter's data.lock and values"}
-    - {entity: code_comment, detail: "pyproject.toml's version, raised by bump_version_hook.py for any commit changing versions.RESULT_CODE"}
+    - {entity: code_comment, detail: "pyproject.toml's version, raised by bump_version_hook.py for any commit changing result code (versions.is_result_code: RESULT_CODE's folders, not the documentation in them)"}
   authoritative: change_log
   cascade:
     direction: automatic

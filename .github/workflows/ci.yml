@@ -56,7 +56,8 @@ jobs:
       # compare against reference images rendered on a Mac -- Linux fonts
       # differ, so every glyph would count as a changed pixel and they would
       # fail here on charts that are fine. Those are marked needs_r and stay a
-      # local gate. What is left needs nothing but Python and had never run
-      # anywhere automatically.
+      # local gate. The bundle tests that need no R moved to tests/ (run
+      # above); what is left here is the tree-traversal snapshots of an old
+      # prototype.
       - name: Run the NonCollaborative tests that need no R
         run: pytest NonCollaborative/tests -m "not needs_r"

@@ -1,16 +1,15 @@
 """Regression checks for the committed illustrations planarsviz export.
 
 Unlike test_planarsviz_bundle.py's nyan1308 bundle, this one has no language
-behind it (phase E, docs/PLANARSVIZ_LIBRARY_PROGRESS.md, 2026-09-22) -- see
-planarsviz/inst/data-contract.md's "Illustrations bundle" section for the
-contract these assertions are checking.
+behind it (phase E, NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md,
+2026-09-22) -- see planarsviz/inst/data-contract.md's "Illustrations bundle"
+section for the contract these assertions are checking.
 """
 
 import csv
 import json
-from pathlib import Path
 
-ROOT = Path(__file__).parents[1]
+from laminar.datasets import NC as ROOT   # NonCollaborative/, where the bundle stays
 BUNDLE = ROOT / "results" / "chart_data" / "illustrations" / "data"
 
 

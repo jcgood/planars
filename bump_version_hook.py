@@ -4,7 +4,8 @@ produces results.
 
 Runs on every commit. If any staged file is under one of
 ``coding.versions.RESULT_CODE`` (the library, the analysis, the chapter
-builder, the R chart package), it raises the alpha number in
+builder, the R chart package) and is not documentation
+(``versions.is_result_code``), it raises the alpha number in
 pyproject.toml's version (0.1.0aN -> 0.1.0aN+1) unless the commit already
 changes it, and stages that too. Every result records this version
 (``versions.stamp``; Phase 10 unit 18, docs/result-stamp-design.md § 5), so
@@ -35,9 +36,10 @@ def bump_version(text: str) -> str:
 
 
 def changes_result_code(paths: Iterable[str]) -> bool:
-    """Whether any of these repository paths is code that produces results."""
-    from coding.versions import RESULT_CODE
-    return any(Path(p).parts[:1] and Path(p).parts[0] in RESULT_CODE for p in paths)
+    """Whether any of these repository paths is code that produces results
+    (``coding.versions.is_result_code``: documentation beside it isn't)."""
+    from coding.versions import is_result_code
+    return any(is_result_code(p) for p in paths)
 
 
 def _git(*args: str) -> str:

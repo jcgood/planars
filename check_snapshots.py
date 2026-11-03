@@ -63,9 +63,9 @@ def main() -> None:
     # (bump_version_hook.py raises it; this catches a commit made without
     # the hook). Every result records the version (unit 18), and Colab
     # installs planars from GitHub; without a bump pip won't reinstall.
-    from coding.versions import RESULT_CODE
+    from coding.versions import RESULT_CODE, result_code_pathspecs
     code_changed = subprocess.run(
-        ["git", "diff", "origin/main..HEAD", "--name-only", "--", *RESULT_CODE],
+        ["git", "diff", "origin/main..HEAD", "--name-only", "--", *result_code_pathspecs()],
         capture_output=True, text=True,
     ).stdout.strip()
     version_changed = subprocess.run(

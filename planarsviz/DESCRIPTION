@@ -12,8 +12,8 @@ Description:
     representative trees, conflict groups, tree counts and boundary
     strength. Analysis stays in Python; the package reads a data bundle
     exported by laminar/export_planarsviz_data.py and returns plot
-    objects. See README.md, NonCollaborative/docs/planarsviz_guide.md and
-    NonCollaborative/docs/planarsviz_charts.md.
+    objects. See README.md, docs/guide.md, docs/tutorial.md and
+    docs/charts.md.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends:

@@ -8,8 +8,8 @@ after Chichewa to go through it; every command below was run, exactly as
 written, and what it printed is what you should see.
 
 This is a walk-through, not a reference. For what an option does, see the
-[user guide](planarsviz_guide.md); for what a chart shows and how to change
-it, the [chart catalogue](planarsviz_charts.md).
+[user guide](guide.md); for what a chart shows and how to change
+it, the [chart catalogue](charts.md).
 
 **Run the `python -m laminar …` commands from anywhere** (the repo root is
 simplest), with the project's Python environment active; the renderer is run
@@ -91,7 +91,7 @@ indeterminate; `chichewa` (the default) is Chichewa's phonology-like and
 syntax-like bundles, which assume Chichewa's domain types. For a new language
 `ccdb` is usually the right choice. `forest_axis: "planar"` makes each
 domain type's forest run over the whole structure rather than stopping at
-that type's last position. The [guide](planarsviz_guide.md#5-add-a-new-language)
+that type's last position. The [guide](guide.md#5-add-a-new-language)
 has the details.
 
 ---
@@ -172,16 +172,16 @@ Chart files are named `<dataset>_<chart name>.pdf`. Four to open first:
 1. **`pooled/chac1251_verbal_pooled_plot.pdf`** — every test as one line
    across the positions, coloured by domain type. This is the data itself;
    check it against what you know of the language before reading anything
-   drawn from it ([catalogue §1](planarsviz_charts.md#1-pooled-plots)).
+   drawn from it ([catalogue §1](charts.md#1-pooled-plots)).
 2. **`counts-and-chance/chac1251_verbal_tree_count_by_class.pdf`** — how many
    different constituency trees (maximal laminar families) the tests allow,
-   for each domain type ([§11](planarsviz_charts.md#11-tree-count-bar-charts)).
+   for each domain type ([§11](charts.md#11-tree-count-bar-charts)).
 3. **`laminar-families/chac1251_verbal_laminar_overlay.pdf`** — all those
    trees stacked on one another: branches many trees share come out dark
-   ([§5](planarsviz_charts.md#5-stacked-overlays)).
+   ([§5](charts.md#5-stacked-overlays)).
 4. **`boundaries/chac1251_verbal_boundary_strength.pdf`** — how strongly each
    position works as a left or right edge of a constituent
-   ([§12](planarsviz_charts.md#12-boundary-strength)).
+   ([§12](charts.md#12-boundary-strength)).
 
 After those, `laminar-families/` holds each domain type's forest (every tree
 its tests allow) and the exemplary trees; `counts-and-chance/` and
@@ -212,10 +212,10 @@ something different fixed. For the first three, a **small p-value (below
 
 | Test | Keeps fixed | Chácobo verbal |
 |---|---|---|
-| Fragmentation ([§14](planarsviz_charts.md#14-fragmentation-test)) | the tests; shuffles which domain type each belongs to | nothing small (p from 0.32 to 0.86): no domain type is more tree-like than a same-sized handful of tests of any type |
-| Span placement ([§15](planarsviz_charts.md#15-span-placement-test)) | each span's length; moves it to a random place | morphosyntactic + indeterminate p = 0.043; everything else above 0.12 |
-| Arbitrary layers ([§16](planarsviz_charts.md#16-arbitrary-layers-test)) | only how many spans there are | morphosyntactic + indeterminate p = 0.035; all tests pooled 0.088 |
-| Boundary strength ([§18](planarsviz_charts.md#18-boundary-strength-test)) | as span placement, but asks about each position's edge strength; **small p = a stronger edge than chance** | left edges at positions 6 and 7, just before the verb core at 8 (position 7: p = 0.0004); a weaker right edge at 12 (p = 0.047) |
+| Fragmentation ([§14](charts.md#14-fragmentation-test)) | the tests; shuffles which domain type each belongs to | nothing small (p from 0.32 to 0.86): no domain type is more tree-like than a same-sized handful of tests of any type |
+| Span placement ([§15](charts.md#15-span-placement-test)) | each span's length; moves it to a random place | morphosyntactic + indeterminate p = 0.043; everything else above 0.12 |
+| Arbitrary layers ([§16](charts.md#16-arbitrary-layers-test)) | only how many spans there are | morphosyntactic + indeterminate p = 0.035; all tests pooled 0.088 |
+| Boundary strength ([§18](charts.md#18-boundary-strength-test)) | as span placement, but asks about each position's edge strength; **small p = a stronger edge than chance** | left edges at positions 6 and 7, just before the verb core at 8 (position 7: p = 0.0004); a weaker right edge at 12 (p = 0.047) |
 
 Read together: morphosyntactic and indeterminate tests pooled are somewhat
 more tree-like than randomly placed spans would be, and there is a strong
@@ -223,7 +223,7 @@ left edge immediately before the verb core. With 38 tests these are modest
 results. The boundary-strength test asks its question once per position and
 side, 56 times here, so two or three p-values under 0.05 would turn up by
 chance alone; position 7's 0.0004 is the one that stands out. How the charts encode all this, and what they do and don't establish,
-is in [CHART_MECHANICS_AND_UNCERTAINTY.md](CHART_MECHANICS_AND_UNCERTAINTY.md).
+is in [CHART_MECHANICS_AND_UNCERTAINTY.md](../../NonCollaborative/docs/CHART_MECHANICS_AND_UNCERTAINTY.md).
 
 ---
 
@@ -240,7 +240,7 @@ bundle's `spans.tsv` and `tests.tsv`. A span in the wrong place is almost
 always a wrong `Left_Edge`/`Right_Edge` in the domains file, or the wrong
 root position — the dry run's settings block (§2) shows where the root came
 from. If the data is right, the chart's own options are in the
-[catalogue](planarsviz_charts.md), under the chart's name.
+[catalogue](charts.md), under the chart's name.
 
 **Known things to check in a new language** (the CCDB batch summary flags
 these automatically):
@@ -259,8 +259,9 @@ to fix one language hasn't broken the charts in general. Before committing a
 change to the package or the exporter:
 
 ```sh
-pytest tests -m "not needs_r"
+pytest tests/test_planarsviz_*.py
 ```
 
-which checks the bundles (about a minute), and, if you changed anything under
-`planarsviz/`, the chart checks in the [guide, §6](planarsviz_guide.md#6-check-a-chart).
+from the repo root, which checks the bundles (a few seconds; the full `pytest`
+runs them too), and, if you changed anything under
+`planarsviz/`, the chart checks in the [guide, §6](guide.md#6-check-a-chart).

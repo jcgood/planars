@@ -45,8 +45,7 @@ record is `NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`.
 
 Those are the packages the code needs. Which *versions* it was checked
 against is a separate question, and `renv.lock` at the repo root answers it —
-see "Package versions" in
-[`NonCollaborative/docs/planarsviz_guide.md`](../NonCollaborative/docs/planarsviz_guide.md).
+see "Package versions" in the [user guide](docs/guide.md).
 
 ## Quick start
 
@@ -85,9 +84,11 @@ its intended canvas size attached as `planarsviz_size` and
 
 ## Documentation
 
-- **User guide** — `NonCollaborative/docs/planarsviz_guide.md`: exporting, drawing,
+- **User guide** — [`docs/guide.md`](docs/guide.md): exporting, drawing,
   rendering, adding a language, the settings files, and checking charts.
-- **Chart catalogue** — `NonCollaborative/docs/planarsviz_charts.md`: every chart, what it
+- **Tutorial** — [`docs/tutorial.md`](docs/tutorial.md): one language
+  (Chácobo verbal) from nothing to finished charts, in order.
+- **Chart catalogue** — [`docs/charts.md`](docs/charts.md): every chart, what it
   shows, the call that draws it, its options and an example.
 - **Bundle contents** — `inst/data-contract.md`: every file the exporter
   writes and what each column means.

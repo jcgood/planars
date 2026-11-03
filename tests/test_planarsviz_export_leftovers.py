@@ -5,11 +5,8 @@ the bundle, so a table left over from an earlier export would be drawn as if it
 belonged to the data just exported (found 2026-09-23, CCDB step 5).
 """
 
-from pathlib import Path
-
+from laminar.datasets import NC as ROOT   # NonCollaborative/, where the CCDB domains files stay
 from laminar.export_planarsviz_data import export_bundle
-
-ROOT = Path(__file__).parents[1]
 
 TABLES = [
     "fragmentation_test.tsv", "fragmentation_null.tsv",
