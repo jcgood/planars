@@ -105,8 +105,8 @@ and undone on rollback (``restructure_sheets._rollback_unit``). The door places 
 label (read once per command); the files made before labels existed were
 labelled by ``migrations/label_drive_files.py``. Every kind has a spec
 (``SHEET_KINDS``, ``FILE_KINDS``). A write to a file the door cannot place
-passes unchecked by rules 1-4, 6 and 8 for now; before the last kind is
-enforced, such a write is refused (design § 5).
+is refused in every mode (design § 5; since 2026-11-02): with no kind it has
+no rules to be checked by.
 
 Each tab of a class sheet is labelled too, with Sheets developer metadata:
 its kind (locked, construction, status) and its name. When a command that
@@ -122,7 +122,8 @@ terminal reaches no one). Tests use enforce for everything. Live runs use
 ``LIVE_MODE`` (watch), except that a broken rule on a file whose kind is in
 ``LIVE_ENFORCED_KINDS`` (class sheets since 2026-10-19; status sheets and
 the diagnostics Sheet since 2026-10-21; contributor charts since 2026-10-27;
-the weekly analysis PDFs since 2026-11-02)
+the weekly analysis PDFs, proposal sheets, planar Sheets, notebooks and
+folders since 2026-11-02; notes Docs and reports still watched)
 raises: each check
 is told which file it is for, and its kind decides.
 
@@ -163,8 +164,12 @@ WATCH = "watch"
 # every status sheet rebuilt 2026-10-20 and -21, the diagnostics push of
 # 2026-10-19); contributor charts since 2026-10-27 (six uploads by
 # laminar-charts on 2026-10-26); the weekly analysis PDFs since 2026-11-02
-# (sixteen uploads by laminar-analysis that day). Everything else stays in
-# LIVE_MODE, watch.
+# (sixteen uploads by laminar-analysis that day); and the same day the
+# proposal sheets (24 writes by proposal-sheets, 2026-10-22 to -28), the
+# planar Sheets (5, locking them, 2026-10-24), notebooks (38 by
+# generate-notebooks and a migration, 2026-10-24 to 11-02) and folders (3,
+# 2026-10-30 to 11-02). Notes Docs and reports, never yet written through
+# the door, stay in LIVE_MODE, watch.
 LIVE_MODE = WATCH
 CLASS_SHEET = drive_labels.CLASS_SHEET
 PLANAR_SHEET = drive_labels.PLANAR_SHEET
@@ -174,7 +179,8 @@ STATUS_SHEET = "status_sheet"
 # annotator proposes changes to the planar and the diagnostics file.
 PROPOSAL_SHEET = "proposal_sheet"
 LIVE_ENFORCED_KINDS: FrozenSet[str] = frozenset({CLASS_SHEET, STATUS_SHEET, DIAGNOSTICS_SHEET,
-                                                 "charts", "analysis_charts"})
+                                                 PROPOSAL_SHEET, PLANAR_SHEET, "charts",
+                                                 "analysis_charts", "notebook", "folder"})
 # The Sheets that are a one-tab copy of one file, and what the door calls
 # that file and the Sheet in what it reports (sheet_spec.copy_sheet_spec).
 COPY_SHEETS: Dict[str, Tuple[str, str]] = {
@@ -788,9 +794,9 @@ class CheckedDoorway:
         the sharing rule expects reader; and the reverse when undone."""
         identity = self._identify(file_id)
         if identity is None:
+            # Refused: _check refuses every write to a file with no label.
             self._check(f"mark {file_id} {'archived' if archived else 'live'}",
-                        [f"{file_id} has no label, so the door cannot say what it is"])
-            return
+                        target=file_id)
         labels: Dict[str, Optional[str]] = {STATE_LABEL: ARCHIVED if archived else None}
         self._write_labels(file_id, labels,
                            f"mark {identity.describe()} {'archived' if archived else 'live'}")
@@ -1063,6 +1069,14 @@ class CheckedDoorway:
             if not allowed:
                 found.insert(0, f"`{ctx.command}` was run without the flag that lets "
                                 "it write to Drive (a dry run), but tried to write")
+        if isinstance(target, str) and self._identify(target) is None:
+            # A file the door can't place has no kind, so no rule and no mode
+            # to go by: refused in every mode (design § 5, 2026-11-02).
+            command = ctx.command if ctx else "(no command)"
+            messages = [f"{command}: {what}: {p}" for p in [
+                f"{target} has no label, so the door cannot say what it is "
+                "(every file the tooling makes is labelled when made)", *found]]
+            raise DoorViolation("The Drive door refused a write.\n  " + "\n  ".join(messages))
         self._act(what, found, target)
 
     def _mode_label(self) -> str:
@@ -1287,7 +1301,8 @@ class CheckedDoorway:
         notebook or folder, from its spec (``sheet_spec.file_spec``): each
         part the write sends (name, folder, type, content) must be the
         spec's, and a file only one of which may exist is not made twice.
-        Nothing for a spreadsheet, or a file the door can't place."""
+        Nothing for a spreadsheet; a file the door can't place is refused
+        by ``_check`` instead."""
         if identity is None or identity.kind not in FILE_KINDS:
             return []
         from .sheet_spec import content_problems, file_spec

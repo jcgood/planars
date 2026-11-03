@@ -679,15 +679,26 @@ def test_live_a_class_sheet_is_enforced_and_other_kinds_are_watched(
     assert len(github.list_issues(drive_door.VIOLATION_LABEL)) == 1
 
 
-def test_a_sheet_the_door_cannot_place_is_not_held_to_class_sheet_rules(env):
-    fake, door, _, _ = env
+@pytest.mark.parametrize("mode", [drive_door.ENFORCE, drive_door.WATCH])
+def test_a_file_the_door_cannot_place_is_refused_in_every_mode(env, github, mode):
+    """With no label a file has no kind, so no rules and no mode to go by:
+    every write to it is refused, even live in watch (design § 5, 2026-11-02)."""
+    fake, _, _, _ = env
+    door = CheckedDoorway(fake, mode=mode)
+    drive_doorway.set_doorway(door)
     scratch = fake.create_spreadsheet("scratch")      # made by hand: no label
+    loose = fake.create_file("loose.pdf", [])
     with drive_door.running("update-sheets", APPLY):
         ss = door.open_spreadsheet(scratch.id)
-        ws = ss.sheet1
-        ws.update([["a", "b"], ["1", "2"]], "A1")
-        ws.clear()
-    assert ss.identity is None
+        assert ss.identity is None
+        with pytest.raises(DoorViolation, match="has no label"):
+            ss.sheet1.update([["a", "b"], ["1", "2"]], "A1")
+        with pytest.raises(DoorViolation, match="has no label"):
+            door.create_permission(loose, type="anyone", role="reader")
+        with pytest.raises(DoorViolation, match="has no label"):
+            door.update_file(loose, content=b"%PDF-1.4")
+    assert fake.spreadsheet(scratch.id).sheet1.get_all_values() in ([], [[]])
+    assert not any(p["type"] == "anyone" for p in fake.list_permissions(loose))
 
 
 # -- replacing(): snapshot, answered rows, mid-run edits (unit 5c) -----------------

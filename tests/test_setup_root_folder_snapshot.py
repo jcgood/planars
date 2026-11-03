@@ -25,7 +25,7 @@ from pathlib import Path
 
 import pytest
 
-from coding import drive_doorway, setup_root_folder
+from coding import drive_door, drive_doorway, setup_root_folder
 from command_runner import run_command
 from fake_drive import FakeDriveDoorway, api_error
 
@@ -50,9 +50,12 @@ def env(monkeypatch):
     for lang, entry in sorted(ids.items()):
         if lang.startswith("_") or not entry.get("folder_id"):
             continue
-        doorway.seed_file(f"planars — {lang}", FOLDER_MIME, [], file_id=entry["folder_id"])
+        # Labelled, as every live file is (the door refuses an unlabelled one).
+        doorway.seed_file(f"planars — {lang}", FOLDER_MIME, [], file_id=entry["folder_id"],
+                          identity=drive_door.folder("language", lang))
         config[lang] = {"folder_id": entry["folder_id"]}
-    doorway.seed_file("all_languages.ipynb", "application/json", [], file_id=NOTEBOOK_ID)
+    doorway.seed_file("all_languages.ipynb", "application/json", [], file_id=NOTEBOOK_ID,
+                      identity=drive_door.notebook("all_languages"))
     config["_all_languages_notebook_file_id"] = NOTEBOOK_ID
 
     saved: dict = {}

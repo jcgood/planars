@@ -34,7 +34,7 @@ from typing import Dict, List
 
 import pytest
 
-from coding import check_notes, drive_doorway, file_door, state_files
+from coding import check_notes, drive_door, drive_doorway, file_door, state_files
 from coding import drive as drive_module
 from coding.drive import _ACK_PREFIX, _strip_acknowledgment_lines
 from command_runner import run_command
@@ -65,8 +65,10 @@ def env(monkeypatch, tmp_path, github):
     config = FakeDriveDoorway.drive_config()
 
     def seed_doc(text: str = NOTES) -> None:
+        # Labelled, as every live notes Doc is (the door refuses an unlabelled one).
         doorway.seed_doc("Araona [arao1248] — Annotation Notes", text,
-                         parent_id=config[LANG]["folder_id"], file_id=DOC_ID)
+                         parent_id=config[LANG]["folder_id"], file_id=DOC_ID,
+                         identity=drive_door.lang_file("notes_doc", LANG))
         config[LANG]["notes_doc_id"] = DOC_ID
 
     def seed_no_doc() -> None:

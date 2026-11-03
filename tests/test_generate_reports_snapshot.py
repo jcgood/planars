@@ -32,7 +32,7 @@ from pathlib import Path
 
 import pytest
 
-from coding import drive_doorway, generate_reports
+from coding import drive_door, drive_doorway, generate_reports
 from command_runner import run_command
 from fake_drive import FakeDriveDoorway
 from render_mutations import render
@@ -240,8 +240,10 @@ def test_legacy_report_html_file_id_is_migrated_in_place(env, monkeypatch):
                      "report_html_file_id": f"legacy_{lang}"}
               for lang, cfg in config.items()}
     for lang in config:
+        # Labelled, as every live report is (the door refuses an unlabelled file).
         doorway.seed_file(f"report_{lang}.pdf", "application/pdf",
-                          [config[lang]["folder_id"]], file_id=f"legacy_{lang}")
+                          [config[lang]["folder_id"]], file_id=f"legacy_{lang}",
+                          identity=drive_door.lang_file("report", lang))
     monkeypatch.setattr(generate_reports, "_load_drive_config",
                         lambda: json.loads(json.dumps(legacy)))
 

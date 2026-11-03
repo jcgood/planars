@@ -1,9 +1,9 @@
 # The Drive door: design (Phase 10 unit 5)
 
 **Status: accepted by Jeff 2026-10-13 (§ 7 records his answers). 5a–5d
-built; 5e done; 5f under way: class sheets enforced live since 2026-10-19,
-and every other kind specified and in watch since the same day (§ 8);
-what is left is moving each to enforce, then refusing unlabelled targets.** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
+built; 5e done; 5f nearly done: every kind is enforced live except notes
+Docs and reports, which wait on their first real write, and writes to
+unlabelled targets are refused (2026-11-02; § 8).** Unit 5 of Phase 10 ([implementation plan](data-layer-implementation-plan.md),
 Phase 10 table) was a design pause; this file is the design record. Progress
 is tracked in [data-layer-progress.md](data-layer-progress.md), and the
 decisions are logged there too.
@@ -717,3 +717,16 @@ notes Docs, notebooks, reports, the manifest and folders.
 with `laminar-charts`, laminar plan 4b) met Q7: the 2026-10-26 run
 uploaded six chart PDFs, three languages × two groupings, through the door
 with no violation. It is added to `LIVE_ENFORCED_KINDS`.
+
+**Analysis PDFs, proposal sheets, planar Sheets, notebooks and folders
+enforced; unlabelled targets refused (2026-11-02).** Each met Q7 in the
+provenance log: sixteen analysis PDFs (laminar-analysis, that day), 24
+writes to proposal sheets (proposal-sheets, 10-22 to 10-28), 5 to planar
+Sheets (locking them, 10-24), 38 to notebooks (generate-notebooks and a
+migration) and 3 to folders, none breaking a rule; the one `door-violation`
+issue ever filed (#324, two chart uploads) was the door misreading a
+folder's label, fixed. The same log holds no write, ever, to a file the door
+could not place, so the last step of § 5 is taken now rather than at the
+last kind: `_check` refuses any write whose target has no label, in every
+mode, since without a kind there is no rule or mode to go by. Still in
+watch, never yet written through the door: notes Docs and reports.
