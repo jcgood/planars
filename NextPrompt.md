@@ -3,362 +3,65 @@
 Standing prompt for resuming work in a fresh Claude session. Open a new session
 and say: **"Read NextPrompt.md and carry on."**
 
-**This file holds no state.** What is done, what is next, and why lives in the
-progress doc for whichever work is live — `NonCollaborative/docs/PLANARSVIZ_LIBRARY_PROGRESS.md`
-for the chart package, `docs/data-layer-progress.md` for the data layer,
-`docs/laminar-analysis-progress.md` for the analysis on English — and
-in the issue tracker, which own those facts. The
-one thing here that needs editing between sessions is the *Now* section below.
-Everything else is standing instruction and should change rarely. If you find
-yourself copying a paragraph of status into this file, it belongs in the
-progress doc instead — a second description of the same fact is the exact defect
-this project is trying to remove.
+**This file holds no state.** What is done, what is next, and why lives in
+each plan's progress doc and in the issue tracker, which own those facts. The
+table below is a map to them: one line per plan, kept to what fits on a
+screen. The one thing here that needs editing between sessions is the *Now*
+section. Everything else is standing instruction and should change rarely. If
+you find yourself writing a paragraph of status here, it belongs in the
+progress doc or issue instead: a second description of the same fact is the
+exact defect this project is trying to remove.
+
+**Before telling Jeff where something stands, open the owner the table
+names.** The data layer's plan has Phases 0–11 and Phase 10 has its own
+units 1–20; don't answer from this table alone.
 
 ---
 
 ## Now
 
-**Next (2026-11-02):** laminar Phase 4 is done (4e, documentation,
-2026-11-02; progress doc "4e as built"). Next in that thread: Phase 5
-(moving the analysis docs and tests to where the code is; the plan), or
-the "To fix" finding in the progress doc (English's by-class pooled
-chart cuts off its legend). **Check** the first scheduled weekly run
+**Next (2026-11-02):** laminar Phase 5 (moving the analysis docs and tests
+to where the code is). **Check** the first scheduled weekly analysis
 (Sunday 2026-11-08): with no span change it should analyse nothing.
-Checked 2026-11-02: the refresh and Sheet validation were green, and all
-15 pink cells with a value on English's sheets carry an "Automatic
-check:" note. Phase 11 waits for #321 — don't propose starting it.
-Phase 10 has no unit left to build, only the daily-refresh checks in its
-thread.
 
-Eight live threads. Read whichever matches what you're picking up.
+| Plan | Owner of its state | Where it stands | Next | Waiting on |
+|---|---|---|---|---|
+| Laminar analysis on English | `docs/laminar-analysis-plan.md`, `docs/laminar-analysis-progress.md` | Phases 1–4 done (4e 2026-11-02) | Phase 5; the legend "To fix" in Findings | — |
+| Data layer (#271) | `docs/data-layer-implementation-plan.md`, `docs/data-layer-progress.md` | Phases 0–9 done; Phase 10's units 1–20 all built | enforce each Drive kind still in watch after its first clean real write (enforced ones: `drive_door.LIVE_ENFORCED_KINDS`), then refuse unlabelled targets; Q4 (notebooks shared by name only) untested live | Adam: #332 (decision backfill; then `--apply` it and move `decisions.CHECK_FROM` back) |
+| Data layer Phase 11 (research logic as a spec) | implementation plan § Phase 11 | not started; worked examples in `tests/span_examples/` | design pause with Jeff | #321 finished (0 of 7 classes) — don't propose starting it |
+| Span-rule review with Adam | #321; coordinator guide § "Reviewing a span rule with the domain expert" | 0 of 7 classes | review each `Span rule: {class}` pull request as it arrives | Adam |
+| Chapters from the annotation | `docs/chapter-generation-plan.md` | Phases 1–6 built; synced with Overleaf | Phase 7 (Word); one Overleaf project per chapter when a second contributor comes | the plan's "Open with Jeff" |
+| Adam's English requests | #318 (and #322, #319, #314) | (a)–(d), (f), item 6 done | build the impossible-pairs plan (point 8) once he agrees | Adam: point 8, the (b) questions, (e) construction descriptions |
+| Biuniqueness deviations | #254 (body checklist, 2026-10-11 design comment) | built, on English | — | Adam: span/type review, morphs tab, #298 |
+| CCDB charts across languages | `NonCollaborative/docs/CROSS_LANGUAGE_PROGRESS.md` (plan `PLAN_cross_language_charts.md`) | built 2026-09-23 | freeze references for the charts kept; write "what they show" | Jeff's cuts |
+| Bundle storage | #333 | full bundles in planars-data for now | move before a third language gets weekly runs | — |
 
-**2026-10-27, English phrasal_accent:** Adam's Claude filled the
-2,268-row pair tab (1,415 answers) and left the sheet reshaped; repaired
-the same day with Jeff's go-ahead (`migrations/repair_phrasal_accent_stan1293.py`
-says what was done) and imported. Jeff's decisions the same day (don't
-re-ask): answers marked "Claude draft (Adam, 2026-10-27)" in Source, Adam
-asked to replace it as he checks; one Example column ("shared: … |
-independent: …", in the class's instructions); `untestable` allowed for
-English joint_accent (#232); the three coreference pair tabs rebuilt (38
-pairs each at v:obj-R). **Waiting on Adam (#318):** his OK on the
-impossible-pairs plan (point 8: a "can host" prescreening column for
-coreference; for phrasal accent, whether the 704 blank both×y pairs are
-impossible and whether v:npsubj1 is the only always-filled position),
-then build it; and how his Claude opens the Sheets (three link shares so
-far), then point it at signing in as him.
+Daily: check the refresh and Sheet validation are green, and any open
+`door-violation` issue first (each line is a command bug or a spec gap).
 
-### Thread: tabs marked ready-for-review (2026-10-26)
+### Settled, don't re-ask
 
-Jeff's rule: a tab with every cell answered and no errors is ready for
-review. The daily check marks it (`validate_coding.looks_finished`), the
-Status tab's Marked by column records who marked each ready tab
-(annotator, coordinator, check), and a comment on the language's
-`needs-fixing` issue @-mentions the coordinators and the owner
-(`people.yaml`). `set-tab-status` is for any other case. **Next action:**
-check the next Sheet validation run (09:00 UTC) and refresh are green and
-that the coordinators' comment appears when a tab is marked. Adam's
-request (ii), relayed by Jeff, was the biuniqueness morphs tab: built
-2026-10-26, done.
-
-### Thread: generating the chapters' data-driven parts (2026-10-25)
-
-Jeff wants chapters written from the annotation (an introduction, one
-chapter per language, results), with what can be generated generated and
-kept current as the annotation changes; LaTeX now, Word authors later.
-**Plan: `docs/chapter-generation-plan.md`** (nothing built). Jeff answered
-its five decisions (2026-10-25; the plan's "Decisions" — don't re-ask): De
-Gruyter, class-neutral fragments; a private GitHub repo; a sentence per
-test plus tables; structured examples for every language but English (a
-per-language field, not a coded exception); mixed authorship.
-Phases 1–6 are built (2026-10-25; the plan's "as built" sections):
-`python -m coding build-chapters` writes the volume into
-`coded_data/.papers/` through the local-file door (outline, fragments,
-values, prose stubs the door never overwrites), pins each language
-chapter (`data.lock`; `--update` moves it and reports) and checks
-`\claim`s; `--check` runs in the daily refresh and files a
-`chapter-behind` issue per chapter (Phase 5); examples are structured per
-language (`examples: glossed|unglossed` in languages.yaml; Araona's sheets
-got Gloss and Translation live 2026-10-25, Adam told on #326) and printed
-through the venue file `chapters/venues/book.sty` (Phase 6). `.papers/`
-is built and pushed, and synced both ways with Jeff's Overleaf project
-by `sync-overleaf` (the plan's "Overleaf" section; first sync
-2026-10-25; the `OVERLEAF_TOKEN` secret is set). One shared project is a
-stopgap while it is only Adam and English: one project per chapter is
-planned (the plan's "Overleaf" section). **Next action:** Phase 7 (Word),
-or the per-chapter projects when a second contributor comes. Open
-with Jeff: where annotators' drafts live, and @-mentioning a chapter's
-annotator on `chapter-behind`. (The 2026-10-26 refresh's `chapters` and
-`overleaf` steps were clean.) Still waiting on
-#318 (e) (construction descriptions), laminar plan 4d (the permutation
-tests) and #321 (span rules).
-
-### Thread: the laminar analysis on English, for a paper (2026-10-24)
-
-The Chichewa/CCDB analysis and charts move out of `NonCollaborative/` into
-the main repo and run on any planars language, English first. **Plan and
-Jeff's decisions: `docs/laminar-analysis-plan.md`** (don't re-ask them);
-**state: `docs/laminar-analysis-progress.md`**. Phases 1–3 done
-(2026-10-24): the analysis is `laminar/` at the repo root
-(`python -m laminar charts <dataset>`), with `planarsviz/` and renv beside
-it; `laminar/planars_language.py` builds English's eight datasets
-(`stan1293_<types|classes>_<all|complete|partial|distinct>`) with *k of n*
-weights. Phase 4 was revised (2026-10-24, Jeff): charts reach contributors
-through Drive by workflows (daily reality checks without permutation
-tests, by class and by domain type; weekly full analysis with them; R on
-the runner) — plan decision 6. 4a (local) is built; English is drawn
-locally in `coded_data/.analysis/stan1293/charts/` (not committed).
-4b, `python -m coding laminar-charts`, is built (2026-10-24; progress doc
-"4b as built"). 4c, the workflow `laminar-charts.yml`, is built and
-live (2026-10-25; "4c as built"): the first run drew all three languages,
-put the PDFs on Drive and linked them on each status sheet. The `charts`
-Drive kind is enforced since 2026-10-27 (clean writes on 2026-10-26).
-A daily run draws nothing when no span changed (checked 2026-10-27: all
-three "up to date"). 4d, the weekly full analysis, is live (first run clean
-2026-11-02, Sunday schedule on; "4d as built"); 4e done 2026-11-02.
-**Next action:** Phase 5. Don't re-ask decision 6's choices. Jeff's cuts to the cross-language
-charts (CCDB thread below) come after Phase 2 (his call, 2026-10-24), so
-they can go in now or between later phases, not in the middle of one.
-
-### Thread: reviewing the span rules with Adam (Jeff told Adam, 2026-10-22)
-
-Adam and his Claude agree each class's span rule. His Claude writes it into
-the YAML on a branch and opens a pull request. Our side then makes the code
-match, stamps the hash and merges. The procedure is coordinator guide
-§ "Reviewing a span rule with the domain expert". The order, the checkboxes
-and the known questions for each class are in the tracking issue #321. Jeff sent Adam the
-prompt for his Claude (2026-10-22). **Next action:** review each `Span rule: {class}`
-pull request as it arrives, following the 7-step workflow on its branch.
-Unblocking the later classes: #318 (b), (c) and (d) are done (2026-10-23).
-
-### Thread: Adam's English coding requests (#318)
-
-**State lives in #318** (his 13 points, and the comment with Jeff's
-decisions, 2026-10-22). Approved, in order:
-(a) shorten the text the tooling writes for annotators — done
-2026-10-22 (needs-fixing issue and sheet comment, proposal issue, Last
-review, sheet-updates issue and comment; the live proposal_stan1293's
-Last review tab keeps the old text until its next review or a rewrite);
-(b) dependent-on-left/right take a `|`-separated list meaning "any one of
-these" — done 2026-10-23 (a comma is refused with "write 3|4", per his
-§ 5; `planars/position_cells.position_numbers`). Adam told on #318
-(2026-10-23), with three questions: 31 vs 30 in his pronoun rows, the
-object pronouns' free value (noninterruption n, free_occurrence y), and
-whether "any one" is per side or across both columns (left for the
-free_occurrence span-rule review, #321);
-(c) pre-fill referential=y for `NP{…}` rows in coreference prescreening
-(not pronouns) — done 2026-10-23 (`prefill_by_label` in
-diagnostic_classes.yaml; English's five NP rows were already y, so
-nothing changed live);
-(d) rename the coreference constructions to `reflexive_coreference`,
-`pronoun_coreference`, `np_coreference` — done live 2026-10-23 by the new
-`rename-construction` command (tabs renamed in place, so the links did
-not change); Adam told on #318. The 2026-10-24 refresh should refresh
-each coreference sheet's Instructions tab (its text names the
-constructions): check it did, and that no empty tab appeared;
-(e) a description per construction, shown on its sheet (none exist; Adam's
-point 10 is that `vp_ellipsis` doesn't say its proform is Ø). The text
-for `vp_ellipsis` is Jeff's call; what the ellipsis tests should be
-(point 11, frames A/B, renaming; generic ellipsis; an English V-bar
-deletion test) is #319;
-(f) Comments cells reach nobody: the collaborator guide invites
-questions there, import-sheets copies them, nothing reports them (and the
-guide never mentions the notes Doc, the channel check-notes watches).
-Done 2026-10-22 (Jeff's decisions: column `Example`, before Source; no
-confirmation from Adam): every class sheet has an `Example` column
-(`schemas/planar.yaml` `trailing_columns`); the tooling never writes in
-Comments (restructure-sheets quotes a split element's old answers in a
-cell note); `check-comments` runs in the daily refresh and files one
-`collaborator-comments` issue per language with a Claude prompt; and
-`migrations/sort_comments_into_example.py` cleared the 284 tooling notes
-and moved 86 examples, leaving Adam's 32 questions and notes. The first
-`collaborator-comments` issue is #322 (2026-10-23). Sorted that day:
-several comments came from the sheets' dropdowns still offering the y/n
-list removed 2026-10-12 (no both/na/unclear; a typed position number
-shown as invalid). Fixed in code the same day: `refresh-dropdowns` now
-compares each sheet's real dropdowns with the codebook and runs daily.
-Applied live the same day (every language's sheets now match). **Next:**
-(2) Adam's answers on #318 to the (b) questions, and his retyped rows;
-(3) reply posted on #322, 2026-10-23 (asks which elements QWORDS
-splits into); (4) definitions to
-tighten: vp_ellipsis's test (#319), flapping and `multiple` (#321);
-(5) QWORDS split, his OK on the new elements;
-(6) a pink cell says what is wrong — done 2026-11-01
-(`validate_coding.write_notes`; Adam told on #318 the same day).
-Asked of Adam on #319 (2026-10-24): what the four `vp_ellipsis` cells
-with two values (`y/unclear`, `both/unclear`) mean.
-Also open, linguistic: displacement, the one standard constituency test
-with no class (#56; English is its data, Adam to write the frames).
-Not now: 8 (drop impossible pairs), 10–12 (proform frames, the
-host-only inflection); 13 is Jeff's to answer. (Audit
-#313 and #315, sync-params editing the YAML, are closed, 2026-10-18.)
-
-### Thread: data layer Phase 10 — ownership and chokepoints (`coding/`, `schemas/`, #271)
-
-**State lives in `docs/data-layer-progress.md`** (Status by unit, Phase 10
-row); the spec, ground rules, units and order are the Phase 10 section of
-`docs/data-layer-implementation-plan.md`. Approved to run unattended
-**except at the pauses and live steps the spec names.** Designs: unit 5 in `docs/drive-door-design.md`, units 6 + 15 + 11 in
-`docs/ownership-design.md` (both answered by Jeff in their § 7 — don't
-re-ask).
-
-**2026-10-24 (Jeff): 11b's first part is done and live** (progress doc,
-Phase 10 row; ownership-design § 6 step 6): the planar and diagnostics
-Sheets are read-only, protected copies; `import-planar` is now
-`sync-planar`; apply-pending, `--from-tsv` and their issues are retired.
-Jeff dropped the wait for Adam to use a proposal sheet and the issue to
-him — don't re-ask. Check the 2026-10-25 refresh: green, its `planar`
-step says "up to date" for all three languages, and no step protects a
-Sheet again. **11b's second part is done (2026-10-27):** the diagnostics
-TSV is deleted and every reader reads the YAML; `sync-diagnostics-yaml`
-pushes to the Sheet only (`--to-sheet` retired). Check the 2026-10-28
-refresh: green, its "diagnostics sheet" step clean, and no
-`diagnostics_*.tsv` back in planars-data (check-codebook check 7). Adam's
-clone must be pulled before his Claude runs the tooling, or it writes the
-TSV again (the 2026-10-28 refresh was green and no TSV came back).
-**11d is done (2026-10-28):** the Instructions sentences are in planar.yaml's
-`sheet_text`. **11c is done (2026-10-29;** as-built in
-`docs/ownership-design.md` § 6 item 7): Jeff's two live tests passed, the
-notebooks find their sheets by label, the manifest is gone. The 2026-10-30
-refresh was green, its `notebooks` step clean, no `door-violation`; its
-#331 (the test share on synth0001) was fixed after it ran and closes at
-the next refresh. The "manifest" names are renamed (2026-10-30;
-progress doc, Phase 10 row). **Next:** check the 2026-10-31 refresh
-(its `labels` step creates `stale-class-sheets`; its `stale sheets` step
-clean; no `label-drift`). **Unit 16 is designed** (2026-10-30,
-`docs/plain-record-design.md`; Jeff answered its § 7 the same day, don't
-re-ask). 16a, 16b (2026-10-30), 16c and 16d (2026-10-31: the change
-log's *edited by* column; check-comments reads Drive comment threads into
-`records/drive_comments.tsv`) are built; the 2026-10-31 refresh made the
-records files. **Next:** check the 2026-11-01 refresh is green, its
-change-log lines for imported files fill *edited by* (Adam's name when he
-edited; empty when only the tooling did), and its `comments` step is
-clean (no thread existed on 2026-10-31, so no record yet). 16d's naming
-of comment authors through the sharing list is untested live until
-someone comments. **16e is built (2026-10-31):** decision logs,
-`record-decision`, the refresh's `decisions` step (reopens a
-diagnostics/linguistics issue closed with no line; from
-`decisions.CHECK_FROM` = 2026-11-01). Check the 2026-11-01 refresh's
-`decisions` step reopened nothing. **The backfill is drafted and Jeff
-approved it (2026-10-31):** `migrations/backfill_decisions.py` (38 lines
-in `migrations/decision_backfill.tsv`, 8 relabels). **Waiting on Adam
-(#332)** for the lines naming him or about English; then correct the TSV,
-run it with `--apply`, move `CHECK_FROM` back. Where it stands is the
-progress doc's Phase 10 row. **Unit 17 is built** (2026-10-31;
-`docs/change-log-design.md` § 10 "As built"): every hand edit to a source
-is logged with `log-change`; the hooks, CI and the refresh's `changes`
-step check it. **Next:** check the 2026-11-01 refresh is green and its
-`changes` step clean (no `source-unlogged`); install the planars-data
-hook in Adam's clone with his next pull (`../.venv/bin/pre-commit install`
-inside `coded_data/`; Jeff's is installed). **Unit 18 is built**
-(2026-11-01; `docs/result-stamp-design.md` § 9; Jeff's § 7 answers, don't
-re-ask): every result carries `versions.stamp`, chapters pin a change-log
-position. **Next:** check the 2026-11-02 refresh is green, files no
-`chapter-behind`, and the contributor charts it draws show the stamp.
-**Unit 19 was already done (2026-10-17) and was re-swept 2026-11-01**
-(progress doc, Phase 10 row): every Phase 10 unit is now built; what is
-left is the waits below and the backfill on #332. The live tests' share to Jeff's
-second account came off the synth0001 folder and synth0001 was recaptured
-(2026-10-30, `migrations/remove_synth0001_test_share.py`). Q4 (notebooks shared
-by name only) is still open: test 1 ran with the link share on. Adam's
-clone must be pulled before his Claude runs the tooling.
-
-**Where it stands:** class sheets are enforced live (2026-10-19, Jeff;
-`drive_door.LIVE_ENFORCED_KINDS`); every other kind now has its spec and is
-in watch (5f's last two steps, notes Docs and files, done 2026-10-19;
-design doc § 8). The 2026-10-19 refresh (11:59 UTC) ran before all of
-that, so the **2026-10-20 refresh is the first to check**: green, and a
-write the door now refuses shows as a failed step and its issue, not a
-`door-violation`. A `door-violation` from it on a watched kind (the new
-rule 8 especially) is a command bug or a spec gap to fix.
-
-**Next action:** check each day's refresh (green, no `door-violation`,
-the `overwrite` step now says how many changes it checked) and enforce
-each kind in watch once it has had a clean real write (below). The
-2026-10-23 refresh was the first with the proposal step and the local-file
-door enforcing: both clean. Unit 9 is done (2026-10-23). 11c is done
-(2026-10-29), the "manifest" renames (2026-10-30), 16–18 (by 2026-11-01),
-19's re-sweep (2026-11-01). No unit is left; only the waits.
-
-**Waits on watching:** enforce for each kind still in watch (planar
-Sheet, notes Docs, notebooks, reports, folders: its own first
-clean real write, then added to `LIVE_ENFORCED_KINDS`; class sheets,
-status sheets, the diagnostics Sheet and charts are enforced), and refusing
-unlabelled targets (last). Notebooks now get a real write every day (the
-refresh's `notebooks` step), so they can be enforced after a clean week.
-**11a is live** (2026-10-22); 11b done (2026-10-24, 2026-10-27); 11d done
-(2026-10-28); 11c done (2026-10-29).
-
-Check for an open `door-violation` issue first: each line is a command bug
-or a spec gap to fix.
-
-**Don't re-litigate (decided 2026-10-12):** light maintenance beats speed; a
-registry only if the code runs from it; no `[y, n]` default; close the
-hidden-facts inventory rather than track it; sharing by name only;
-planar/diagnostics = reviewed source + locked copies + one proposal sheet per
-language, reviewed by issue + `accept-proposal` (not git pull requests —
-versioning must not depend on git); the daily refresh becomes one command.
-
-### Thread: biuniqueness deviations (`coding/`, `planars/`, issue #254)
-
-**State lives in issue #254** — read its body checklist and the 2026-10-11
-design comment first. On 2026-10-11 allomorphy became part of one class,
-`biuniqueness_deviations` (extended exponence, allomorphy, cumulative
-exponence, zero morphs; type derived, never annotated), run through the
-ordinary pipeline. Built and live: `planars/biuniqueness_deviations.py`,
-`coding/biuniqueness_rows.py` (the three-tab chain and `keyed_rows`). On
-2026-10-13 the class moved to English (Phase 10 unit 1): the class sheet is
-https://docs.google.com/spreadsheets/d/1Xz8_4aMFr4xfkNrlomiURODtbUuFFEmkMTr9WO6_5aI
-with Adam's 18 answers, its first tab is `elements` (was `prescreening`),
-and synth0001's copy is archived read-only.
-
-**Next action:** waiting on Adam — (1) review of the span definition and type
-rules (#254 design comment; the class stays `[AUTO-DERIVED]` until he does);
-(2) filling the morphs tab (built 2026-10-26, 132 rows, after morphemes
-was marked ready-for-review for him with `set-tab-status`). Adam was told
-on #318 (2026-10-22). Positions may be typed as numbers since 2026-10-22
-(`planars/position_cells.py`; sync-planar renumbers them when the
-planar's numbers shift); (3) #298 (what `-n` at
-`v:frontedauxiliaryinflection` is — fronted *won't* waits on it).
-
-**Don't re-litigate (settled 2026-10-11, see #254):** contractions count as
-allomorphs; `members` on a filled `y` row lists its variant forms; open
-categories list known/suspected members only; the Sheet owns these facts
-(not coordinator-edited tables); no separate import command; `Morpheme` not
-`Element`; one row per (form, position).
-
-**Don't re-litigate:** Araona (arao1248) is a trial only, not a priority —
-this thread stays scoped to English (stan1293). Don't propose expanding
-arao1248's coverage as part of this work.
-
-### Thread: CCDB charts across languages (`NonCollaborative/`)
-
-**Current work: `NonCollaborative/`, putting the CCDB languages through the
-planarsviz charts.** State lives in
-`NonCollaborative/docs/CCDB_PLANARSVIZ_PROGRESS.md` — read it first; the plan
-it follows is `NonCollaborative/docs/PLAN_ccdb_planarsviz.md` (§6 holds Jeff's
-decisions, §7 which parts go to Sonnet subagents). The chart package itself
-is finished; its record is `PLANARSVIZ_LIBRARY_PROGRESS.md`, and how to use
-it is `planarsviz_guide.md` and `planarsviz_charts.md`.
-
-**The analysis and charts now run from anywhere** (`python -m laminar ...`;
-the renderer from the repo root). A bundle records its inputs relative to
-the repo root, so where you run it no longer changes the bundle. The porting
-checks still run from `NonCollaborative/`.
-
-### Next action: charts and summaries across languages
-
-The CCDB plan's steps 1–5 are done (see "Step 5 as built" in
-`CCDB_PLANARSVIZ_PROGRESS.md`). Jeff has asked for charts and summaries that
-set all 22 structures side by side (2026-09-23). The plan is
-`NonCollaborative/docs/PLAN_cross_language_charts.md` (six proposed charts
-and a summary table, each tied to one of the three hypotheses); state is
-`NonCollaborative/docs/CROSS_LANGUAGE_PROGRESS.md`. Jeff has answered the
-plan's four questions, and the bundle, charts and summary table are built
-(2026-09-23). **Next: Jeff's cuts to the charts in
-`results/cross_language/`**, then freeze reference images for the ones he
-keeps and write the "what they show" page. The progress file has the first
-reading of results and the decisions made while building.
-A bug with one obviously right fix is not a question: fix it and report it.
+- **Data layer (2026-10-12):** light maintenance beats speed; a registry
+  only if the code runs from it; no `[y, n]` default; sharing by name
+  only; planar/diagnostics = reviewed source + locked copies + one
+  proposal sheet per language, reviewed by issue + `accept-proposal` (not
+  git pull requests); the daily refresh is one command. Unit designs'
+  § 7 answers (drive-door, ownership, plain-record, change-log,
+  result-stamp design docs) are settled too.
+- **English phrasal_accent (2026-10-27):** answers Adam's Claude filled are
+  marked "Claude draft (Adam, 2026-10-27)" in Source, for Adam to replace as
+  he checks; one Example column ("shared: … | independent: …"); `untestable`
+  allowed for joint_accent (#232); the three coreference pair tabs have 38
+  pairs each at v:obj-R. The repair is `migrations/repair_phrasal_accent_stan1293.py`.
+- **Biuniqueness (2026-10-11, #254):** contractions count as allomorphs;
+  `members` on a filled `y` row lists its variant forms; open categories
+  list known/suspected members only; the Sheet owns these facts; no
+  separate import command; `Morpheme` not `Element`; one row per (form,
+  position).
+- **Laminar:** plan decision 6 (charts to contributors by workflows on
+  Drive); Jeff's cross-language cuts go between phases, not during one.
+- **Chapters:** the plan's "Decisions" (2026-10-25).
+- **Araona (arao1248) is a trial only:** don't propose expanding it.
 
 ### Things that will bite
 
@@ -385,6 +88,10 @@ A bug with one obviously right fix is not a question: fix it and report it.
 - **Run the *full* suite before pushing, not one test file.** Saved command
   outputs and the warning-print check catch changes far from the file you
   edited.
+- **Adam's clone must be pulled before his Claude runs the tooling**, or it
+  writes retired files back (the diagnostics TSV). Install the planars-data
+  hook in his clone with his next pull (`../.venv/bin/pre-commit install`
+  inside `coded_data/`).
 - **The tooling's state files are in `coded_data/.state/`** and every
   command commits and pushes them itself. A machine that ran the tooling
   before 2026-10-20 has old copies at the repo root (untracked in

@@ -169,9 +169,12 @@ follows from it).
    writing; before the second language's chapter.
 
 Prerequisites from other threads: construction descriptions (#318 (e));
-the weekly full analysis (laminar plan 4d), whose results the results
-sections cite; the span rules settled with Adam (#321), since a chapter
-states them.
+the weekly full analysis (laminar plan 4d, live 2026-11-02), whose results
+the results sections cite; the span rules settled with Adam (#321), since
+a chapter states them.
+
+Open with Jeff: where annotators' chapter drafts live, and whether
+`chapter-behind` @-mentions the chapter's annotator.
 
 ## Decisions (Jeff, 2026-10-25; don't re-ask)
 
