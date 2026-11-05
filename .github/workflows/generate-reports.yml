@@ -10,12 +10,15 @@ name: Generate reports
 # PDFs render natively in the Drive viewer (no download needed).
 #
 # Required secrets (Settings → Secrets and variables → Actions):
-#   PLANARS_DATA_TOKEN       — PAT with read access to jcgood/planars-data
+#   PLANARS_DATA_TOKEN        — PAT with read/write access to jcgood/planars-data
+#                               (the local-file door commits drive_config.json
+#                               and the Drive door's provenance log there)
 #   PLANARS_OAUTH_CREDENTIALS — contents of ~/.config/planars/oauth_credentials.json
-#   GOOGLE_OAUTH_TOKEN       — contents of ~/.config/gspread/authorized_user.json
+#   GOOGLE_OAUTH_TOKEN        — contents of ~/.config/gspread/authorized_user.json
 #
-# drive_config.json (only Drive IDs, no credentials) lives in planars-data at
-# coded_data/drive_config.json, checked out below — no secret needed.
+# planars-data is checked out as a clone in coded_data/, not copied in: a copy
+# has no git, so what the command records would be lost (it was until
+# 2026-11-04; the local-file door now refuses that).
 
 on:
   workflow_run:
@@ -23,11 +26,16 @@ on:
     types: [completed]    # triggers after data-refresh finishes, so reports always use fresh data
   workflow_dispatch:        # allow manual trigger from the Actions tab
 
+concurrency:
+  group: generate-reports   # never two at once: both would push the same state files
+  cancel-in-progress: false
+
 jobs:
   generate:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      issues: write         # the Drive door files door-violation issues in watch mode
 
     steps:
       - uses: actions/checkout@v5
@@ -37,10 +45,13 @@ jobs:
         with:
           repository: jcgood/planars-data
           token: ${{ secrets.PLANARS_DATA_TOKEN }}
-          path: _planars_data
+          path: coded_data
 
-      - name: Merge annotation data into coded_data
-        run: rsync -r --exclude='.git' _planars_data/ coded_data/
+      - name: Configure git identity
+        # The local-file door commits what the command records to planars-data.
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -63,6 +74,8 @@ jobs:
           printf '%s' "$OAUTH_TOKEN" > ~/.config/gspread/authorized_user.json
 
       - name: Generate and upload reports
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python -m coding generate-reports --apply
 
       - name: Write job summary

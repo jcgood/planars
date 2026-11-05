@@ -581,6 +581,22 @@ def test_a_failed_commit_raises_and_leaves_the_files_written(coded):
     assert _git(coded, "status", "--porcelain") != ""
 
 
+def test_the_real_coded_data_without_git_is_refused(coded, monkeypatch):
+    """A workflow that copied planars-data in (no git) would lose every write
+    the run recorded; generate-reports.yml and sheet-validation.yml did until
+    2026-11-04. Here the test's copy stands in for the real folder."""
+    real = coded.parent / "coded_data"
+    if coded != real:
+        coded.rename(real)
+        monkeypatch.setattr(file_door, "CODED_DATA", real)
+    monkeypatch.setattr(file_door, "ROOT", real.parent)
+    rows = _rows(file_door.read(_target()))
+    rows[1][3] = "y"
+    with pytest.raises(RuntimeError, match="not a git clone"):
+        with drive_door.running("t", may_write=True):
+            file_door.write(_target(), _text(rows), why="answered")
+
+
 def test_a_failed_push_does_not_raise(coded):
     """No remote: the commit is made, the push fails, the command succeeds."""
     _make_repo(coded)

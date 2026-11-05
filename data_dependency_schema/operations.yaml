@@ -197,6 +197,13 @@
     - >-
       create-or-update uploads report_{lang_id}.pdf per language, shared
       "anyone with the link, reader" on every run
+    - >-
+      records the reports' file IDs in drive_config.json, through the
+      local-file door
+    - >-
+      files (rewriting the open one) or closes the reports-error issue,
+      naming each language that failed and the stage, never the reason (it
+      can quote the annotation)
   idempotent: true
   idempotency_note: >-
     Same ensure_anyone_permission-based idempotency as generate-notebooks,

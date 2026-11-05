@@ -168,8 +168,10 @@ WATCH = "watch"
 # proposal sheets (24 writes by proposal-sheets, 2026-10-22 to -28), the
 # planar Sheets (5, locking them, 2026-10-24), notebooks (38 by
 # generate-notebooks and a migration, 2026-10-24 to 11-02) and folders (3,
-# 2026-10-30 to 11-02). Notes Docs and reports, never yet written through
-# the door, stay in LIVE_MODE, watch.
+# 2026-10-30 to 11-02). Notes Docs and reports stay in LIVE_MODE, watch:
+# notes Docs have never been written through the door, and reports' daily
+# writes went unlogged until 2026-11-04 (their workflow had no git clone of
+# planars-data, so the provenance log was never committed).
 LIVE_MODE = WATCH
 CLASS_SHEET = drive_labels.CLASS_SHEET
 PLANAR_SHEET = drive_labels.PLANAR_SHEET

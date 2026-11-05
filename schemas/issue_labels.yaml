@@ -313,6 +313,20 @@ labels:
       libraries) fails before the command runs.
     filed_by: laminar-charts --apply (laminar-charts.yml)
 
+  - name: reports-error
+    color: "d73a4a"
+    description: "PDF reports could not be made or put on Drive after the daily refresh."
+    meaning: >-
+      `generate-reports --apply`, run after each daily refresh
+      (generate-reports.yml), could not make or upload some languages'
+      reports, so their Drive folders still hold the previous ones. The issue
+      names each language and the stage; the reason is left out (it can
+      quote the annotation, and the repository is public), and the issue
+      gives the command that shows it. Resolve: fix the cause, then run
+      `python -m coding generate-reports --apply`. Auto-closed when a run
+      updates every language's report.
+    filed_by: generate-reports --apply (generate-reports.yml)
+
   - name: laminar-analysis-error
     color: "d73a4a"
     description: "The weekly analysis did not bring some datasets up to date."

@@ -29,7 +29,11 @@ table can't be named.
   files it wrote (with their archive copies and change-log lines), with a
   message made from the change-log lines (``finish``, called by
   ``drive_door.running``). Nothing else in planars-data is staged. Skipped
-  when ``coded_data/`` is not a git repository (tests). This is the only
+  when the folder the door writes to is a test's temporary one with no git;
+  refused when it is the real ``coded_data/`` and that is not a clone (a
+  workflow that copied planars-data in would otherwise lose every write,
+  as generate-reports.yml and sheet-validation.yml did until 2026-11-04,
+  their Drive writes never in the provenance log). This is the only
   place the tooling commits to planars-data (the daily refresh's own commit
   steps went in unit 6b).
 
@@ -1414,6 +1418,16 @@ def _commit(run: _Run) -> None:
     dirty, #248); a failed push is printed: the commit is safe locally."""
     repo = CODED_DATA
     if not (repo / ".git").exists():
+        # The real coded_data/ that is not a clone (a workflow that copied
+        # planars-data in) would lose everything the run wrote, the Drive
+        # door's provenance log and drive_config.json included, without a
+        # word: refuse. Tests point the door at temporary folders instead.
+        if repo.resolve() == (ROOT / "coded_data").resolve():
+            raise RuntimeError(
+                f"{run.command} wrote files in coded_data/, but coded_data/ is not a git "
+                f"clone of planars-data, so they can't be committed and would be lost. "
+                f"Check planars-data out into coded_data/ (a workflow: actions/checkout "
+                f"with path: coded_data), then run the command again.")
         return
     rel = []
     for p in dict.fromkeys(run.written):

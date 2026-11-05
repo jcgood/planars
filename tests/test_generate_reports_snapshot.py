@@ -267,10 +267,15 @@ def test_a_language_without_a_folder_id_is_skipped_not_fatal(env, monkeypatch):
     partial["arao1248"] = {}
     monkeypatch.setattr(generate_reports, "_load_drive_config",
                         lambda: json.loads(json.dumps(partial)))
-    out = run(["generate-reports", "--apply"], monkeypatch)
-    assert "No folder_id in drive_config — skipping" in out
+    filed = []
+    monkeypatch.setattr("coding.issues.file_issue",
+                        lambda label, title, body, replace: filed.append((label, body)) or (1, True))
+    with pytest.raises(SystemExit, match="Failed for arao1248"):
+        run(["generate-reports", "--apply"], monkeypatch)
     assert [c["name"] for c in doorway.mutations_of("create_file")] == [
         "report_stan1293.pdf", "report_synth0001.pdf"]
+    assert filed and filed[0][0] == "reports-error"
+    assert "Araona [arao1248]: failed while finding its Drive folder" in filed[0][1]
 
 
 def test_an_upload_failure_skips_that_language_and_continues(env, monkeypatch):
@@ -283,8 +288,13 @@ def test_an_upload_failure_skips_that_language_and_continues(env, monkeypatch):
         return real_create(name, *a, **kw)
 
     monkeypatch.setattr(doorway, "create_file", flaky)
-    out = run(["generate-reports", "--apply"], monkeypatch)
-    assert "upload ERROR: boom" in out
+    filed = []
+    monkeypatch.setattr("coding.issues.file_issue",
+                        lambda label, title, body, replace: filed.append(body) or (1, True))
+    with pytest.raises(SystemExit, match="Failed for stan1293"):
+        run(["generate-reports", "--apply"], monkeypatch)
+    # The reason ("boom") stays out of the public issue; the stage is named.
+    assert "uploading to Drive" in filed[0] and "boom" not in filed[0]
     # The failed language records no file ID (nothing was uploaded to point at),
     # and the run carries on to the next one rather than aborting.
     assert "report_file_id" not in saved["stan1293"]
