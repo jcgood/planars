@@ -21,7 +21,11 @@ units 1–20; don't answer from this table alone.
 ## Now
 
 **Next (2026-11-04):** the laminar plan is done, legend fix included
-(2026-11-04); nothing is queued there. **Check** the first scheduled weekly analysis (Sunday 2026-11-08): it will
+(2026-11-04); nothing is queued there. **Check (2026-11-05):** the Generate
+reports and Sheet validation runs now clone planars-data and commit what
+they record (2026-11-04): both should be green, and the provenance log
+should gain `generate-reports` lines; if so, add reports to
+`drive_door.LIVE_ENFORCED_KINDS`. **Check** the first scheduled weekly analysis (Sunday 2026-11-08): it will
 re-analyse each language once, because the chart-code fingerprint changed
 form on 2026-11-03 (docs no longer count as code); the Sunday after, with no
 span change, it should analyse nothing. Tomorrow's contributor charts
