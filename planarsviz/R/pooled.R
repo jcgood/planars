@@ -71,7 +71,9 @@ df.domain.plot <- function(d, type_levels) {
 # nyan1308's five-type legend, which nearly fills the width, so the overshoot
 # is small. ggplot scales that overshoot by the room left beside the legend,
 # so a shorter legend (CCDB's three types) is pushed off the right edge; with
-# fewer than five entries the legend sits flush right instead.
+# fewer than five entries the legend sits flush right instead. A legend of
+# more than five entries (English's nine classes) does not fit on one row:
+# it wraps into rows of five and sits flush right.
 finish.constituency.plot <- function(p, c, n_legend_entries = 5L) {
   domain_types <- unique(na.omit(as.character(c$Domain_Type)))
 
@@ -83,12 +85,16 @@ finish.constituency.plot <- function(p, c, n_legend_entries = 5L) {
       # panel itself, not over the (variable-width) row-label column to its left.
       theme(legend.position = "none", plot.title = element_text(hjust = 0.5))
   } else {
-    p +
+    p <- p +
       theme(
         legend.direction = "horizontal",
         legend.position = "top",
-        legend.justification = c(if (n_legend_entries >= 5L) 1.25 else 1, 0)
+        legend.justification = c(if (n_legend_entries == 5L) 1.25 else 1, 0)
       )
+    if (n_legend_entries > 5L) {
+      p <- p + guides(color = guide_legend(nrow = ceiling(n_legend_entries / 5), byrow = TRUE))
+    }
+    p
   }
 }
 

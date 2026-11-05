@@ -402,11 +402,14 @@ by workflows. Plan decision 6 and Phase 4a–e have the design.
 
 ## Findings
 
-- **To fix (found 2026-10-24, drawing 4b's PDFs):** English's by-class
-  pooled span chart (`pooled_plot`) cuts its legend off at the right edge
-  (proform, metrical lost): nine classes are more than the legend's one row
-  fits on that canvas. A planarsviz fix (wrap the legend), then the
-  renderer check; Chichewa's and CCDB's references should not change.
+- **Fixed 2026-11-04 (found 2026-10-24, drawing 4b's PDFs):** English's
+  by-class pooled span chart (`pooled_plot`) cut its legend off at the
+  right edge (proform, metrical lost): nine classes are more than one row
+  fits on that canvas. A legend of more than five entries now wraps into
+  rows of five, filled row by row, flush right
+  (`finish.constituency.plot` in `planarsviz/R/pooled.R`); legends of five
+  or fewer are drawn as before, so Chichewa's and CCDB's references are
+  unchanged.
 
 - `check_forestspans.R` had failed since 2026-09-23 without anyone seeing it
   (the R checks run only locally): `expand_limits(x = 1)`, added then so the
