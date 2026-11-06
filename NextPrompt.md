@@ -21,11 +21,7 @@ units 1–20; don't answer from this table alone.
 ## Now
 
 **Next (2026-11-04):** the laminar plan is done, legend fix included
-(2026-11-04); nothing is queued there. **Check (2026-11-05):** the Generate
-reports and Sheet validation runs now clone planars-data and commit what
-they record (2026-11-04): both should be green, and the provenance log
-should gain `generate-reports` lines; if so, add reports to
-`drive_door.LIVE_ENFORCED_KINDS`. **Check** the first scheduled weekly analysis (Sunday 2026-11-08): it will
+(2026-11-04); nothing is queued there. **Check** the first scheduled weekly analysis (Sunday 2026-11-08): it will
 re-analyse each language once, because the chart-code fingerprint changed
 form on 2026-11-03 (docs no longer count as code); the Sunday after, with no
 span change, it should analyse nothing. Tomorrow's contributor charts
@@ -34,7 +30,7 @@ likewise redraw once.
 | Plan | Owner of its state | Where it stands | Next | Waiting on |
 |---|---|---|---|---|
 | Laminar analysis on English | `docs/laminar-analysis-plan.md`, `docs/laminar-analysis-progress.md` | Phases 1–5 done (5 on 2026-11-03); legend fix 2026-11-04 | — | — |
-| Data layer (#271) | `docs/data-layer-implementation-plan.md`, `docs/data-layer-progress.md` | Phases 0–9 done; Phase 10's units 1–20 all built; unlabelled Drive targets refused (2026-11-02) | enforce notes Docs and reports after their first clean real write (the rest are in `drive_door.LIVE_ENFORCED_KINDS`); Q4 (notebooks shared by name only) untested live | Adam: #332 (decision backfill; then `--apply` it and move `decisions.CHECK_FROM` back) |
+| Data layer (#271) | `docs/data-layer-implementation-plan.md`, `docs/data-layer-progress.md` | Phases 0–9 done; Phase 10's units 1–20 all built; unlabelled Drive targets refused (2026-11-02) | enforce notes Docs after their first clean real write (every other kind is in `drive_door.LIVE_ENFORCED_KINDS`, reports since 2026-11-06); Q4 (notebooks shared by name only) untested live | Adam: #332 (decision backfill; then `--apply` it and move `decisions.CHECK_FROM` back) |
 | Data layer Phase 11 (research logic as a spec) | implementation plan § Phase 11 | not started; worked examples in `tests/span_examples/` | design pause with Jeff | #321 finished (0 of 7 classes) — don't propose starting it |
 | Span-rule review with Adam | #321; coordinator guide § "Reviewing a span rule with the domain expert" | 0 of 7 classes | review each `Span rule: {class}` pull request as it arrives | Adam |
 | Chapters from the annotation | `docs/chapter-generation-plan.md` | Phases 1–6 built; synced with Overleaf | Phase 7 (Word); one Overleaf project per chapter when a second contributor comes | the plan's "Open with Jeff" |

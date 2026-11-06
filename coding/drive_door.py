@@ -123,7 +123,7 @@ terminal reaches no one). Tests use enforce for everything. Live runs use
 ``LIVE_ENFORCED_KINDS`` (class sheets since 2026-10-19; status sheets and
 the diagnostics Sheet since 2026-10-21; contributor charts since 2026-10-27;
 the weekly analysis PDFs, proposal sheets, planar Sheets, notebooks and
-folders since 2026-11-02; notes Docs and reports still watched)
+folders since 2026-11-02; reports since 2026-11-06; notes Docs still watched)
 raises: each check
 is told which file it is for, and its kind decides.
 
@@ -168,10 +168,10 @@ WATCH = "watch"
 # proposal sheets (24 writes by proposal-sheets, 2026-10-22 to -28), the
 # planar Sheets (5, locking them, 2026-10-24), notebooks (38 by
 # generate-notebooks and a migration, 2026-10-24 to 11-02) and folders (3,
-# 2026-10-30 to 11-02). Notes Docs and reports stay in LIVE_MODE, watch:
-# notes Docs have never been written through the door, and reports' daily
-# writes went unlogged until 2026-11-04 (their workflow had no git clone of
-# planars-data, so the provenance log was never committed).
+# 2026-10-30 to 11-02); reports since 2026-11-06 (their daily writes went
+# unlogged until their workflow got a git clone of planars-data on
+# 2026-11-04; six clean logged uploads 2026-11-05 and -06). Notes Docs,
+# never yet written through the door, stay in LIVE_MODE, watch.
 LIVE_MODE = WATCH
 CLASS_SHEET = drive_labels.CLASS_SHEET
 PLANAR_SHEET = drive_labels.PLANAR_SHEET
@@ -182,7 +182,8 @@ STATUS_SHEET = "status_sheet"
 PROPOSAL_SHEET = "proposal_sheet"
 LIVE_ENFORCED_KINDS: FrozenSet[str] = frozenset({CLASS_SHEET, STATUS_SHEET, DIAGNOSTICS_SHEET,
                                                  PROPOSAL_SHEET, PLANAR_SHEET, "charts",
-                                                 "analysis_charts", "notebook", "folder"})
+                                                 "analysis_charts", "notebook", "folder",
+                                                 "report"})
 # The Sheets that are a one-tab copy of one file, and what the door calls
 # that file and the Sheet in what it reports (sheet_spec.copy_sheet_spec).
 COPY_SHEETS: Dict[str, Tuple[str, str]] = {
