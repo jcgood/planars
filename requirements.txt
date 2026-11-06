@@ -94,7 +94,7 @@ numpy==2.4.3
     #   -r requirements.in
     #   pandas
     #   scipy
-oauthlib==4.0.0
+oauthlib==4.0.1
     # via requests-oauthlib
 orjson==3.11.8
     # via kaleido
