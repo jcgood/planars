@@ -43,8 +43,10 @@ change classes; migration tooling; compatibility policy).
 **Languages.** English (stan1293) is the active focus. Araona (arao1248) is a
 trial, not a priority (Jeff, 2026-09-24): don't propose expanding or
 unblocking it (e.g. #279's missing `proform`) unless Jeff raises it. Chichewa
-(nyan1308) is planned and waits on the `tonosegmental` and `intonational`
-modules (#72). Per-language metadata is `schemas/languages.yaml`; progress per
+(nyan1308) is planned (#72): its modules exist (`tonosegmental` and
+`intonational` since 2026-03-29, as `[AUTO-DERIVED]` stubs), and it waits on
+an element-level planar and on #70's design questions about the
+tonosegmental annotation. Per-language metadata is `schemas/languages.yaml`; progress per
 tab is each language's status sheet.
 
 ## Where things live
