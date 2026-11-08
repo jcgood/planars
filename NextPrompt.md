@@ -41,6 +41,10 @@ likewise redraw once.
 
 Daily: check the refresh and Sheet validation are green, and any open
 `door-violation` issue first (each line is a command bug or a spec gap).
+A green Sheet validation run can still have found errors (they go into a
+`sheet-validation` issue), so list open issues by label too, one label per
+`gh issue list --label` call: several labels in one call match only issues
+carrying all of them.
 
 ### Settled, don't re-ask
 
