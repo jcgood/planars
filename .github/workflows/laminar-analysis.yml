@@ -122,9 +122,12 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Install system libraries (PDF pages, R graphics)
+        # Retry dropped downloads, and give up after 15 minutes rather than
+        # hang when the package server can't be reached (2026-11-11, #334).
+        timeout-minutes: 15
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libpango-1.0-0 libpangocairo-1.0-0 libcairo2 \
+          sudo apt-get -o Acquire::Retries=5 update
+          sudo apt-get -o Acquire::Retries=5 install -y libpango-1.0-0 libpangocairo-1.0-0 libcairo2 \
             libcairo2-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libfontconfig1-dev \
             libpng-dev libjpeg-dev libtiff5-dev libcurl4-openssl-dev libxml2-dev fonts-dejavu
 

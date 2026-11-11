@@ -59,7 +59,10 @@ jobs:
           python-version: "3.13"
 
       - name: Install WeasyPrint system dependencies
-        run: sudo apt-get install -y libpango-1.0-0 libpangocairo-1.0-0 libcairo2
+        # Retry dropped downloads, and give up after 15 minutes rather than
+        # hang when the package server can't be reached (2026-11-11, #334).
+        timeout-minutes: 15
+        run: sudo apt-get -o Acquire::Retries=5 install -y libpango-1.0-0 libpangocairo-1.0-0 libcairo2
 
       - name: Install dependencies
         run: pip install -r requirements.txt

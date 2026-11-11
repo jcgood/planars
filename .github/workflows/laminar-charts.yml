@@ -62,10 +62,13 @@ jobs:
 
       - name: Install system libraries (PDF pages, R graphics)
         # The runner's package list can be stale (two 404s, 2026-10-25), so
-        # refresh it first.
+        # refresh it first. Retry dropped downloads, and give up after 15
+        # minutes: on 2026-11-11 the package server could not be reached and
+        # the step hung for 42 minutes (#334).
+        timeout-minutes: 15
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libpango-1.0-0 libpangocairo-1.0-0 libcairo2 \
+          sudo apt-get -o Acquire::Retries=5 update
+          sudo apt-get -o Acquire::Retries=5 install -y libpango-1.0-0 libpangocairo-1.0-0 libcairo2 \
             libcairo2-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libfontconfig1-dev \
             libpng-dev libjpeg-dev libtiff5-dev libcurl4-openssl-dev libxml2-dev fonts-dejavu
 
