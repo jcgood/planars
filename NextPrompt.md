@@ -20,12 +20,11 @@ units 1–20; don't answer from this table alone.
 
 ## Now
 
-**Next (2026-11-04):** the laminar plan is done, legend fix included
-(2026-11-04); nothing is queued there. **Check** the first scheduled weekly analysis (Sunday 2026-11-08): it will
-re-analyse each language once, because the chart-code fingerprint changed
-form on 2026-11-03 (docs no longer count as code); the Sunday after, with no
-span change, it should analyse nothing. Tomorrow's contributor charts
-likewise redraw once.
+**Next (2026-11-12):** the laminar plan is done; nothing is queued there.
+The weekly analysis of 2026-11-08 re-analysed each language once (4.5 h), as
+expected. **Check** Sunday 2026-11-15's run: with no span change it should
+analyse nothing. Chichewa: Jeff to confirm the proposed answers to #70's four
+questions before they are posted there.
 
 | Plan | Owner of its state | Where it stands | Next | Waiting on |
 |---|---|---|---|---|
