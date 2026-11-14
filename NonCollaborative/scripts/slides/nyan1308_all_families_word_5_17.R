@@ -17,6 +17,8 @@
 #     not already blue: the lines from the 5-19 and 5-18 nodes down, i.e.
 #     what the orthographic word adds.
 # Labels: 5-17 blue on slides 2 and 3; 18-19 dark red on slide 3.
+# Legend, top left: "Linguist's word" (blue) on slide 2, plus "Orthographic
+# word" (dark red) below it on slide 3, in a box sized for both on each.
 # The colour is settled per line before drawing (the innermost domain is
 # assigned last and replaces the outer one), so the colours never blend.
 #
@@ -43,17 +45,24 @@ out_stem <- "nyan1308_all_families_word_5_17_slide"
 inner <- "#0072B2"
 shield <- "#A50F15"
 
+linguists_word <- list(range = c(5L, 17L), colour = inner, legend = "Linguist's word")
+orthographic_word <- list(range = c(5L, 19L), colour = shield, legend = "Orthographic word")
+
 # Each slide: its domains, innermost first (an edge takes the colour of the
-# first domain it lies in), and its label colours by position.
+# first domain it lies in; the legend lists them in this order), and its
+# label colours by position.
 slides <- list(
   list(name = "1_plain", domains = list(), labels = list()),
   list(name = "2_annotated",
-       domains = list(list(range = c(5L, 17L), colour = inner)),
+       domains = list(linguists_word),
        labels = list(list(positions = 5:17, colour = inner))),
   list(name = "3_shield",
-       domains = list(list(range = c(5L, 17L), colour = inner), list(range = c(5L, 19L), colour = shield)),
+       domains = list(linguists_word, orthographic_word),
        labels = list(list(positions = 5:17, colour = inner), list(positions = 18:19, colour = shield)))
 )
+# Legend rows the box is sized for, on every slide, so a row added on a later
+# slide doesn't move the ones before it in a dissolve.
+legend_rows <- max(vapply(slides, function(s) length(s$domains), integer(1)))
 if (!dir.exists(bundle_dir)) stop("Run this from the repository root.", call. = FALSE)
 
 lib <- file.path(tempdir(), "planarsviz_lib")
@@ -122,8 +131,30 @@ slide_forest <- function(slide) {
     alpha = 1, lineheight = 1
   ) + scale_colour_identity()
   layout <- do.call(c, rep(list(patchwork::area(t = 1, l = 1, b = 5, r = 1)), n))
-  (Reduce(`+`, plots) + patchwork::plot_layout(design = layout)) &
+  forest <- (Reduce(`+`, plots) + patchwork::plot_layout(design = layout)) &
     theme(plot.background = element_rect(fill = "white", color = NA))
+  if (!length(slide$domains)) return(forest)
+  # Top left, in the empty corner beside the tree, where the package puts
+  # its own legends.
+  forest + patchwork::inset_element(legend_box(slide$domains),
+                                    left = 0.01, bottom = 0.97 - 0.07 * legend_rows,
+                                    right = 0.25, top = 0.97, align_to = "full", on_top = TRUE)
+}
+
+legend_box <- function(domains) {
+  rows <- data.frame(
+    y = -seq_along(domains),
+    colour = vapply(domains, `[[`, character(1), "colour"),
+    text = vapply(domains, `[[`, character(1), "legend")
+  )
+  ggplot(rows) +
+    geom_segment(aes(x = 0, xend = 0.6, y = y, yend = y, colour = colour),
+                 linewidth = 3, lineend = "round") +
+    geom_text(aes(x = 0.8, y = y, label = text, colour = colour), hjust = 0, size = 9) +
+    scale_colour_identity() +
+    coord_cartesian(xlim = c(-0.2, 4), ylim = c(-legend_rows - 0.5, -0.5), expand = FALSE) +
+    theme_void() +
+    theme(plot.background = element_rect(fill = "white", colour = NA))
 }
 
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
