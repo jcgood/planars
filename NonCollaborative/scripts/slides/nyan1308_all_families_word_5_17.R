@@ -45,7 +45,8 @@ out_stem <- "nyan1308_all_families_word_5_17_slide"
 inner <- "#0072B2"
 shield <- "#A50F15"
 
-linguists_word <- list(range = c(5L, 17L), colour = inner, legend = "Linguist's word")
+# ’ is the typographic apostrophe (escaped so the file stays plain ASCII).
+linguists_word <- list(range = c(5L, 17L), colour = inner, legend = "Linguist’s word")
 orthographic_word <- list(range = c(5L, 19L), colour = shield, legend = "Orthographic word")
 
 # Each slide: its domains, innermost first (an edge takes the colour of the
@@ -152,17 +153,23 @@ legend_box <- function(domains) {
                  linewidth = 3, lineend = "round") +
     geom_text(aes(x = 0.8, y = y, label = text, colour = colour), hjust = 0, size = 9) +
     scale_colour_identity() +
-    coord_cartesian(xlim = c(-0.2, 4), ylim = c(-legend_rows - 0.5, -0.5), expand = FALSE) +
+    coord_cartesian(xlim = c(-0.2, 3.6), ylim = c(-legend_rows - 0.5, -0.5), expand = FALSE) +
     theme_void() +
-    theme(plot.background = element_rect(fill = "white", colour = NA))
+    # Boxed like the package's own legends (plot_laminar_overlay).
+    theme(plot.background = element_rect(fill = "white", colour = "black", linewidth = 1.2),
+          plot.margin = margin(10, 12, 10, 12))
 }
 
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 for (slide in slides) {
   out_name <- paste0(out_stem, "_", slide$name)
   pdf_path <- file.path(out_dir, paste0(out_name, ".pdf"))
+  # Quartz, not the default pdf device, which can't draw the typographic
+  # apostrophe and swaps in a straight one. (Cairo needs XQuartz on a Mac;
+  # laminar/render_planarsviz.R makes the same choice for IPA labels.)
   suppressMessages(ggsave(pdf_path, slide_forest(slide),
-                          width = size[["width"]], height = size[["height"]], units = "in"))
+                          width = size[["width"]], height = size[["height"]], units = "in",
+                          device = function(filename, ...) grDevices::quartz(file = filename, type = "pdf", ...)))
   system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(pdf_path),
                         shQuote(file.path(out_dir, out_name))))
   cat("Wrote", pdf_path, "and .png\n")

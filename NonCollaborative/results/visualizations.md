@@ -1286,8 +1286,8 @@ inside 5–17, so the grey lines that remain inside the domain are those
 families'. Labels 5–17 blue. `_3_shield` adds the orthographic word's
 extension to 19 in dark red (`#A50F15`): edges inside 5–19 not already blue
 (the lines from the 5–19 and 5–18 nodes down, and so also the 32 families'
-inner structure that was grey), labels 18–19 dark red. A legend top left
-names the colours: "Linguist's word" (slides 2–3), "Orthographic word"
+inner structure that was grey), labels 18–19 dark red. A boxed legend top left
+names the colours (drawn with Quartz for the typographic apostrophe): "Linguist's word" (slides 2–3), "Orthographic word"
 (slide 3). The pair stays
 distinct under simulated protan-, deutan- and tritanopia. Same canvas as the package
 chart (20 × 14 in); the plain one matches it except for hairline differences
