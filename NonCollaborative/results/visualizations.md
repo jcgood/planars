@@ -1255,6 +1255,23 @@ Rscript laminar/render_planarsviz.R --bundle NonCollaborative/results/chart_data
 Re-run both whenever any language's bundle is re-exported;
 `tests/test_planarsviz_cross_language_bundle.py` fails until you do.
 
+## Slide figures (nyan1308/slides/)
+
+One-off annotated charts for talks, each drawn by one script in
+`scripts/slides/` (indexed in `scripts/INDEX.md` § Slides) on top of a
+package chart. Run from the repo root.
+
+### nyan1308_most_binary_orthographic_word_slide.pdf / .png
+
+**What it shows:** `nyan1308_most_binary_tree_orthographic_word` (the most
+binary family, family_031, with the edges out to positions 5 and 19 traced
+thick), plus the labels of positions 5–19 in dark red, without a title, at
+16 × 9 in. The word's extent comes from the bundle's `highlights.tsv`. Note
+that family_031 is "most binary" only on the tie-breaks: several families
+share its 7 two-way nodes, and family_032 also ties on test support.
+
+**Regenerate:** `Rscript NonCollaborative/scripts/slides/nyan1308_most_binary_orthographic_word.R`
+
 ## Other files in results/
 
 - `nyan1308_laminar_analysis.md` — a one-off written summary of the analysis

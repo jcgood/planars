@@ -98,7 +98,21 @@ against the chart that chart's own R script drew, frozen as a reference.
 - **Purpose**: Earlier version of Catalan enumeration
 - **Status**: Archive
 - **Note**: Superseded by `laminar/catalan.py`
+## Slides
 
+One-off figures for talks: a package chart with annotation added on top
+(colours, emphasis) that the package itself doesn't need. Each is one R
+script, run from the repo root, writing to `results/<dataset>/slides/`. It
+builds on the package's exported chart functions rather than copying them,
+so the tree always matches the bundle. Add a new slide figure here as a new
+script; if the same annotation is wanted a third time, make it a package
+option instead.
+
+**`slides/nyan1308_most_binary_orthographic_word.R`**
+- **Purpose**: the most binary tree with the orthographic word (5–19)
+  emphasised: thick edges out to 5 and 19 (the package's `emphasis`), and
+  the labels of positions 5–19 in dark red. 16:9, no title.
+- **Run**: `Rscript NonCollaborative/scripts/slides/nyan1308_most_binary_orthographic_word.R`
 
 ---
 
@@ -108,6 +122,7 @@ against the chart that chart's own R script drew, frozen as a reference.
 - **verification/** — Verification scripts (`verify_*.py`)
 - **exploratory/** — Prototype and archive work (`treeTraversal.py`)
 - **planarsviz_checks/** — Checks that the R package draws what the old scripts drew
+- **slides/** — One-off annotated figures for talks, built on the package's charts
 - The hand-written R and LaTeX utilities at the top of `scripts/` are in `CLAUDE.md`, not here
 
 See `docs/VERIFICATION.md` for methodology, results, and theoretical framework,
