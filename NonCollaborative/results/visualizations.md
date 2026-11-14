@@ -1275,6 +1275,21 @@ share its 7 two-way nodes, and family_032 also ties on test support.
 
 **Regenerate:** `Rscript NonCollaborative/scripts/slides/nyan1308_most_binary_orthographic_word.R`
 
+### nyan1308_all_families_word_5_17_slide_1_plain / _2_annotated (.pdf / .png)
+
+**What it shows:** a dissolve pair on `nyan1308_all_families_labeled` (every
+family stacked). `_2_annotated` marks a possible word domain from Neg1 (5)
+to FV (17): in each family, an edge is dark red when both its node and that
+node's parent lie within 5–17 — every line below the 5–17 node, in the 37 of
+69 families that have it; in the other 32, only their structure wholly
+inside 5–17, so the grey lines that remain inside the domain are those
+families'. Labels 5–16 dark red, FV dark blue. Same canvas as the package
+chart (20 × 14 in); the plain one matches it except for hairline differences
+on the label boxes, so dissolve between this pair rather than from the
+package chart.
+
+**Regenerate:** `Rscript NonCollaborative/scripts/slides/nyan1308_all_families_word_5_17.R`
+
 ## Other files in results/
 
 - `nyan1308_laminar_analysis.md` — a one-off written summary of the analysis
