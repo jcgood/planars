@@ -119,8 +119,10 @@ option instead.
 - **Purpose**: the combined constituency forest (`all_families_labeled`),
   plain and annotated with a possible word domain 5–17: in each stacked
   family, edges lying inside 5–17 in dark red (below the 5–17 node, where
-  the family has one: 37 of 69), labels 5–16 dark red, FV (17) dark blue.
-  A pixel-aligned pair for a dissolve. The package chart's own 20 × 14 in canvas.
+  the family has one: 37 of 69), labels 5–16 dark red, FV (17) dark blue;
+  then a third slide adding the orthographic word's extension as a blue
+  "shield": edges inside 5–19 not already red, labels 18–19 blue (FV red).
+  Pixel-aligned slides for dissolves. The package chart's own 20 × 14 in canvas.
 - **Run**: `Rscript NonCollaborative/scripts/slides/nyan1308_all_families_word_5_17.R`
 
 ---
