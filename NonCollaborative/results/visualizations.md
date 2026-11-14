@@ -1279,15 +1279,15 @@ share its 7 two-way nodes, and family_032 also ties on test support.
 
 **What it shows:** a dissolve sequence on `nyan1308_all_families_labeled` (every
 family stacked). `_2_annotated` marks a possible word domain from Neg1 (5)
-to FV (17): in each family, an edge is dark red when both its node and that
+to FV (17): in each family, an edge is blue (`#0072B2`) when both its node and that
 node's parent lie within 5–17 — every line below the 5–17 node, in the 37 of
 69 families that have it; in the other 32, only their structure wholly
 inside 5–17, so the grey lines that remain inside the domain are those
-families'. Labels 5–16 dark red, FV dark blue. `_3_shield` adds the
-orthographic word's extension to 19 in blue: edges inside 5–19 not already
-red (the lines from the 5–19 and 5–18 nodes down, and so also the 32
-families' inner structure that was grey), labels 5–17 dark red and 18–19
-blue. Same canvas as the package
+families'. Labels 5–17 blue. `_3_shield` adds the orthographic word's
+extension to 19 in dark red (`#A50F15`): edges inside 5–19 not already blue
+(the lines from the 5–19 and 5–18 nodes down, and so also the 32 families'
+inner structure that was grey), labels 18–19 dark red. The pair stays
+distinct under simulated protan-, deutan- and tritanopia. Same canvas as the package
 chart (20 × 14 in); the plain one matches it except for hairline differences
 on the label boxes, so dissolve between this pair rather than from the
 package chart.

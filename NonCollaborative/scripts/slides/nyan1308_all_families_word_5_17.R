@@ -9,14 +9,16 @@
 # Annotation, in each of the stacked family trees: an edge is coloured for a
 # domain when both the node it leads to and that node's parent lie within
 # the domain.
-#   - 5-17 in dark red. Where a family has the 5-17 node, that is exactly
+#   - 5-17 in blue. Where a family has the 5-17 node, that is exactly
 #     every line below it. 5-17 is in only 37 of the 69 families; in the
 #     others no node joins 5 and 17 alone, and only their structure lying
 #     wholly inside 5-17 is coloured.
-#   - slide 3 adds 5-19 in blue, for edges not already red: the lines from
-#     the 5-19 and 5-18 nodes down, i.e. what the orthographic word adds.
-# Labels: slide 2, 5-16 dark red and FV (17) dark blue; slide 3, 5-17 dark
-# red and 18-19 blue (FV red there, so blue means only the extension).
+#   - slide 3 adds 5-19 in dark red, a "shield" around the blue, for edges
+#     not already blue: the lines from the 5-19 and 5-18 nodes down, i.e.
+#     what the orthographic word adds.
+# Labels: 5-17 blue on slides 2 and 3; 18-19 dark red on slide 3.
+# The colour is settled per line before drawing (the innermost domain is
+# assigned last and replaces the outer one), so the colours never blend.
 #
 # The slides are for dissolves: all come from the same code on the package
 # chart's own canvas (20 x 14 in), so they differ only in the annotation. The
@@ -34,20 +36,23 @@
 bundle_dir <- "NonCollaborative/results/chart_data/nyan1308"
 out_dir <- "NonCollaborative/results/nyan1308/slides"
 out_stem <- "nyan1308_all_families_word_5_17_slide"
-red <- "darkred"
-blue <- "#1F4FA0"
-dark_blue <- "darkblue"
+# Chosen to stay apart under simulated protan-, deutan- and tritanopia
+# (Machado et al. 2009) and to read on white: the blue is Okabe-Ito's; the
+# dark red is a little lighter than R's "darkred" so protanopes can still
+# tell it from the black lines.
+inner <- "#0072B2"
+shield <- "#A50F15"
 
 # Each slide: its domains, innermost first (an edge takes the colour of the
 # first domain it lies in), and its label colours by position.
 slides <- list(
   list(name = "1_plain", domains = list(), labels = list()),
   list(name = "2_annotated",
-       domains = list(list(range = c(5L, 17L), colour = red)),
-       labels = list(list(positions = 5:16, colour = red), list(positions = 17L, colour = dark_blue))),
+       domains = list(list(range = c(5L, 17L), colour = inner)),
+       labels = list(list(positions = 5:17, colour = inner))),
   list(name = "3_shield",
-       domains = list(list(range = c(5L, 17L), colour = red), list(range = c(5L, 19L), colour = blue)),
-       labels = list(list(positions = 5:17, colour = red), list(positions = 18:19, colour = blue)))
+       domains = list(list(range = c(5L, 17L), colour = inner), list(range = c(5L, 19L), colour = shield)),
+       labels = list(list(positions = 5:17, colour = inner), list(positions = 18:19, colour = shield)))
 )
 if (!dir.exists(bundle_dir)) stop("Run this from the repository root.", call. = FALSE)
 
