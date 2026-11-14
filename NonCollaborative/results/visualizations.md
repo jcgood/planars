@@ -1261,12 +1261,15 @@ One-off annotated charts for talks, each drawn by one script in
 `scripts/slides/` (indexed in `scripts/INDEX.md` § Slides) on top of a
 package chart. Run from the repo root.
 
-### nyan1308_most_binary_orthographic_word_slide.pdf / .png
+### nyan1308_most_binary_orthographic_word_slide_1_plain / _2_highlighted (.pdf / .png)
 
-**What it shows:** `nyan1308_most_binary_tree_orthographic_word` (the most
-binary family, family_031, with the edges out to positions 5 and 19 traced
-thick), plus the labels of positions 5–19 in dark red, without a title, at
-16 × 9 in. The word's extent comes from the bundle's `highlights.tsv`. Note
+**What it shows:** a pair for a dissolve between two slides. `_1_plain` is
+the most binary family (family_031) with nothing emphasised; `_2_highlighted`
+adds the edges out to positions 5 and 19 traced thick and the labels of
+positions 5–19 in dark red. Both are drawn by the same code on the same
+16 × 9 in canvas, without a title, so they differ in those pixels only (the
+package's `nyan1308_most_binary_tree` has a different canvas and title and
+does not line up with the highlighted one). The word's extent comes from the bundle's `highlights.tsv`. Note
 that family_031 is "most binary" only on the tie-breaks: several families
 share its 7 two-way nodes, and family_032 also ties on test support.
 

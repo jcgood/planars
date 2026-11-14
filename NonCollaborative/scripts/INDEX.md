@@ -109,9 +109,10 @@ script; if the same annotation is wanted a third time, make it a package
 option instead.
 
 **`slides/nyan1308_most_binary_orthographic_word.R`**
-- **Purpose**: the most binary tree with the orthographic word (5–19)
-  emphasised: thick edges out to 5 and 19 (the package's `emphasis`), and
-  the labels of positions 5–19 in dark red. 16:9, no title.
+- **Purpose**: the most binary tree, plain and with the orthographic word
+  (5–19) emphasised: thick edges out to 5 and 19 (the package's `emphasis`),
+  and the labels of positions 5–19 in dark red. A pixel-aligned pair for a
+  dissolve between slides. 16:9, no title.
 - **Run**: `Rscript NonCollaborative/scripts/slides/nyan1308_most_binary_orthographic_word.R`
 
 ---
