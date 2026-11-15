@@ -111,7 +111,8 @@ option instead.
 **`slides/nyan1308_most_binary_orthographic_word.R`**
 - **Purpose**: the most binary tree, plain and with the orthographic word
   (5–19) emphasised: thick edges out to 5 and 19 (the package's `emphasis`),
-  and the labels of positions 5–19 in dark red. A pixel-aligned pair for a
+  and those edges, every edge inside the word and the labels of positions
+  5–19 in dark red. A pixel-aligned pair for a
   dissolve between slides. 16:9, no title.
 - **Run**: `Rscript NonCollaborative/scripts/slides/nyan1308_most_binary_orthographic_word.R`
 
@@ -125,6 +126,15 @@ option instead.
   colour-blind readers (see the script's header).
   Pixel-aligned slides for dissolves. The package chart's own 20 × 14 in canvas.
 - **Run**: `Rscript NonCollaborative/scripts/slides/nyan1308_all_families_word_5_17.R`
+
+**`slides/nyan1308_consensus_vs_depth.R`**
+- **Purpose**: every tree (maximal laminar family) placed by its consensus
+  score (the sum, over its domains, of how many trees contain each) against
+  its depth and its number of binary nodes, in two panels with the same
+  vertical scale; the consensus tree and the most binary tree labelled.
+  Stops if its top score isn't `selections.tsv`'s `consensus_all`. Also
+  writes the numbers as a `.tsv`. 16:9 slide, not a package chart.
+- **Run**: `Rscript NonCollaborative/scripts/slides/nyan1308_consensus_vs_depth.R`
 
 ---
 
