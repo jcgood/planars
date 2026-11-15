@@ -94,6 +94,17 @@ draft, started while Adam is still annotating. **Current state:
     for and against each domain, a shuffle test and a bootstrap, after the
     phylogenetic methods cited in `NonCollaborative/REFERENCES.md`
     ("Support for a domain"). Cite them in any work built on these.
+11. **Hypothesis: syntax is more tree-like than morphology** (Jeff,
+    2026-11-15). Tree-likeness is agreement among the trees, not resolution
+    (decision 9 measures how full each tree is, and a per-tree average
+    cannot see trees disagreeing). For a region: the share of pairs of its
+    domains that conflict, and the number of distinct arrangements the trees
+    give it, inside the word against outside. Chance is a within-side
+    shuffle: each side keeps its number of domains and their lengths, so the
+    tests' concentration on the verb does not decide the result. Chichewa
+    can carry only one side (6 domains outside the word, all but one
+    nested); English and the CCDB verbal structures are the real test, once
+    each has its word's edges chosen (a linguistic call).
 
 ## Phases
 
