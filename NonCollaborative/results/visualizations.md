@@ -1355,6 +1355,19 @@ the numbers, one row per family. Binarity is the secondary measure here
 
 **Regenerate:** `Rscript NonCollaborative/scripts/slides/nyan1308_consensus_vs_depth.R`
 
+### nyan1308_resolution_profile (.pdf / .png)
+
+**What it shows:** every stretch of the 22 positions as a tile (left edge
+down, right edge across). Left: resolution less the average of 5000 random
+placements (blue more resolved, red flatter; dots p < 0.05, uncorrected).
+Right: domains crossing the stretch. Real domains outlined in black, 5–17
+and 5–19 in dark red. Stretches starting at 1–5 and ending at 16–22 are
+more resolved than chance; stretches lying after the verb are flatter and
+heavily crossed; row 5 and columns 17–19 are where crossing falls to
+nearly nothing. Data: `nyan1308_resolution_profile.tsv` (above).
+
+**Regenerate:** `Rscript NonCollaborative/scripts/slides/nyan1308_resolution_profile.R`
+
 ## Other files in results/
 
 - `nyan1308_laminar_analysis.md` — a one-off written summary of the analysis

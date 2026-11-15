@@ -136,6 +136,14 @@ option instead.
   writes the numbers as a `.tsv`. 16:9 slide, not a package chart.
 - **Run**: `Rscript NonCollaborative/scripts/slides/nyan1308_consensus_vs_depth.R`
 
+**`slides/nyan1308_resolution_profile.R`**
+- **Purpose**: every stretch [left, right] as a tile, in two panels on the
+  same grid: resolution less chance (diverging, dots for p < 0.05) and
+  domains crossing. Real domains outlined in black, 5–17 and 5–19 in dark
+  red. Reads `laminar/resolution_profile.py`'s profile TSV. 16:9 slide, not
+  a package chart.
+- **Run**: `Rscript NonCollaborative/scripts/slides/nyan1308_resolution_profile.R`
+
 ---
 
 ## Organization Guide
