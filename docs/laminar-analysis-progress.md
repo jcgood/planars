@@ -418,7 +418,13 @@ On 2026-11-15 the resolution test's outputs were named by region (5–19
 and 5–17 saved), and `laminar/resolution_profile.py` was added: resolution
 and crossing for every stretch, real or not, and the one-position steps
 between them, to look for boundaries without choosing a region first. It
-needs no region, so it runs on any dataset as is.
+needs no region, so it runs on any dataset as is. A one-off slide of the
+profile (`NonCollaborative/scripts/slides/nyan1308_resolution_profile.R`:
+two tile grids, resolution less chance and crossing) is the draft for the
+package chart in step 2 below. Reading so far (Jeff to weigh in): the word's
+edges at 5 and 17–19 show in crossing more than in resolution; resolution
+mostly tracks size, and the 5–17 split (inside flatter, 0.48 against 0.64)
+is no more than chance gives (p = 0.39).
 
 **Not yet done, in order:**
 1. Export all three into the bundle behind permutation flags, like the four

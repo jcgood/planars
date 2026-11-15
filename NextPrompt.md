@@ -20,18 +20,20 @@ units 1–20; don't answer from this table alone.
 
 ## Now
 
-**Next (2026-11-14):** domain support and resolution
+**Next (2026-11-15):** domain support and resolution
 (`docs/laminar-analysis-progress.md`, "Domain support and resolution"): the
 modules (support, resolution test, resolution profile) are built and run on
-Chichewa; next is exporting them into the
-bundle and the weekly run, then charts. Resolution, not binarity, is the
+Chichewa, findings in `laminar/INDEX.md`, and the profile has a draft slide
+(`results/nyan1308/slides/nyan1308_resolution_profile.pdf`). Next is
+exporting the three into the bundle and the weekly run, then package charts
+(the slide is the draft for the profile's). Resolution, not binarity, is the
 measure of structure (plan decision 9). **Check** Sunday 2026-11-15's weekly
 run: with no span change it should analyse nothing. Chichewa: Jeff to confirm
 the proposed answers to #70's four questions before they are posted there.
 
 | Plan | Owner of its state | Where it stands | Next | Waiting on |
 |---|---|---|---|---|
-| Laminar analysis on English | `docs/laminar-analysis-plan.md`, `docs/laminar-analysis-progress.md` | Phases 1–5 done (5 on 2026-11-03); domain support and resolution built standalone 2026-11-14 | put them in the bundle, weekly run, charts | — |
+| Laminar analysis on English | `docs/laminar-analysis-plan.md`, `docs/laminar-analysis-progress.md` | Phases 1–5 done (5 on 2026-11-03); domain support, resolution test and profile built standalone 2026-11-14/15 | put them in the bundle, weekly run, charts | — |
 | Data layer (#271) | `docs/data-layer-implementation-plan.md`, `docs/data-layer-progress.md` | Phases 0–9 done; Phase 10's units 1–20 all built; unlabelled Drive targets refused (2026-11-02) | enforce notes Docs after their first clean real write (every other kind is in `drive_door.LIVE_ENFORCED_KINDS`, reports since 2026-11-06); Q4 (notebooks shared by name only) untested live | Adam: #332 (decision backfill; then `--apply` it and move `decisions.CHECK_FROM` back) |
 | Data layer Phase 11 (research logic as a spec) | implementation plan § Phase 11 | not started; worked examples in `tests/span_examples/` | design pause with Jeff | #321 finished (0 of 7 classes) — don't propose starting it |
 | Span-rule review with Adam | #321; coordinator guide § "Reviewing a span rule with the domain expert" | 0 of 7 classes | review each `Span rule: {class}` pull request as it arrives | Adam |
