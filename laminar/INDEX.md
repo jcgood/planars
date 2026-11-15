@@ -192,9 +192,16 @@ whole dataset, use `python -m laminar charts <dataset> --apply`.
   marginal conflict of the pairs it adds, against the same null; and a
   quantal test (Gini of |excess marginal conflict| over the steps).
 - **Finding (nyan1308, 5000 draws)**:
-  - **Quantal, not gradual**: Gini 0.517 against chance 0.434 (90%
-    0.377–0.488), p = 0.005. The departures from chance are carried by
-    a few steps.
+  - **Quantal test: Gini 0.517 against chance 0.434 (90% 0.377–0.488),
+    p = 0.005, but not to be relied on** (found 2026-11-15): 22 steps that
+    add a single pair (marginal conflict 0 or 1) carry 40% of the
+    unevenness, and the largest steps are one conflict (5–6 against 6–8)
+    counted again in every stretch that first takes it in (1–7→1–8,
+    2–7→2–8, …). The quanta show more directly in where each conflict
+    first appears: all 65 conflicting pairs lie within 5–19 (no pair's
+    smallest common stretch starts before 5 or ends after 19), and 57 of
+    them end at 16–19. A per-juncture measure that counts each pair once
+    replaces the Gini (progress doc).
   - **Where**: steps adding positions inside the verb add conflict beyond
     chance (adding 8 on the right: mean excess +0.63; 13 on the right
     +0.25; 9 on the left +0.13). Steps reaching the phrase add only

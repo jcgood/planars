@@ -427,6 +427,12 @@ mostly tracks size, and the 5–17 split (inside flatter, 0.48 against 0.64)
 is no more than chance gives (p = 0.39).
 
 **Not yet done, in order:**
+0. Replace the profile's quantal test (Gini over one-position steps; it
+   is driven by single-pair steps and counts one conflict many times,
+   `laminar/INDEX.md`) with a per-juncture measure: for each boundary
+   between two positions, the conflicting pairs whose smallest common
+   stretch spans it, each pair counted once, against the null; quanta are
+   junctures where it falls sharply. Redraw the conflict slide from it.
 1. Export all three into the bundle behind permutation flags, like the four
    existing tests, and add them to the weekly run (`laminar-analysis.yml`;
    the bootstrap enumerates families 1000 times, minutes per dataset).
