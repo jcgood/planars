@@ -1373,6 +1373,21 @@ nearly nothing. Data: `nyan1308_resolution_profile.tsv` (above).
 
 **Regenerate:** `Rscript NonCollaborative/scripts/slides/nyan1308_resolution_profile.R`
 
+### nyan1308_conflict_profile (.pdf / .png)
+
+**What it shows:** left, every stretch as a tile (left edge down, right
+edge across) coloured by conflict density less the average of 5000 random
+placements (orange more conflict, green less; grey under two domains); no
+single stretch reaches p < 0.05. Right, for each position, the conflict a
+one-position step adding it brings in, less chance: mean over the steps,
+with their range, for stretches growing rightward and leftward. Positions
+inside the verb (8 TAM, 13 CAUS) bring in more conflict than chance;
+reaching 1–3 or 21–22 brings in only nesting. Caption: the quantal test
+(Gini 0.52 against 0.43, p = 0.005). Data: `nyan1308_resolution_profile.tsv`,
+`_resolution_positions.tsv`, `nyan1308_conflict_quantal.tsv` (above).
+
+**Regenerate:** `Rscript NonCollaborative/scripts/slides/nyan1308_conflict_profile.R`
+
 ## Other files in results/
 
 - `nyan1308_laminar_analysis.md` — a one-off written summary of the analysis
