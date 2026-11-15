@@ -1,4 +1,5 @@
-"""laminar.domain_support and laminar.resolution_test on small made-up
+"""laminar.domain_support, laminar.resolution_test and
+laminar.resolution_profile on small made-up
 structures whose answers can be worked out by hand."""
 from __future__ import annotations
 
@@ -7,6 +8,7 @@ import itertools
 import numpy as np
 
 from laminar import domain_support as ds
+from laminar import resolution_profile as rp
 from laminar import resolution_test as rt
 from laminar.laminar_analysis import Span, classify_pair
 
@@ -77,3 +79,16 @@ def test_resolution_test_runs(tmp_path):
     assert summary["resolution_out"] == 0.5         # 1-6: 1 of 2
     assert sum(tally.values()) == 100
     assert 0.0 <= summary["p_le_observed"] <= 1.0
+
+
+def test_resolution_profile_grids_by_hand():
+    """Two trees over six positions; every stretch's inside count, crossing
+    count and presence, averaged over the trees."""
+    trees = [[Span(1, 6), Span(2, 5), Span(2, 3)], [Span(1, 6), Span(3, 5)]]
+    inside, crossing, present = rp.family_grids(trees, 6)
+    assert inside[0, 5] == 1.5          # 1-6 holds 2-5 and 2-3 / 3-5
+    assert inside[1, 4] == 1.0          # 2-5 holds 2-3 in tree 1 and 3-5 in tree 2
+    assert crossing[0, 2] == 1.0        # 1-3 is crossed by 2-5 in tree 1 (2-3 nests), by 3-5 in tree 2
+    assert present[1, 4] == 0.5 and present[0, 5] == 1.0
+    res = rp.resolution_grid(inside, 6)
+    assert res[0, 5] == 1.5 / 4 and np.isnan(res[1, 2])

@@ -144,10 +144,53 @@ whole dataset, use `python -m laminar charts <dataset> --apply`.
   trees), so the real word is if anything more resolved than chance, but
   not significantly (p = 0.09). The tests were chosen to probe the verb,
   which favours structure inside the word; no shuffle can correct that.
-- **Output**: `results/nyan1308/counts-and-chance/nyan1308_resolution_test.tsv`,
-  `_resolution_trees.tsv` (one row per observed tree), `_resolution_null_tally.tsv`
+- **Finding (nyan1308, region 5–17, 5000 draws)**: inside 5–17 is flatter
+  than outside in every one of the 69 trees (0.48 against 0.64, difference
+  −0.16), but chance gives about the same (null mean −0.13, 90% range −0.30
+  to 0.04; p = 0.39). Inside, 13 positions can hold 12 domains; outside, 10
+  units can hold 9, and both hold about 5.7 on average. Some real domains
+  cross 5–17 (0.52 per tree: 9–18, 10–18, 17–19), against 2.6 for random
+  ones.
+- **Output**: `results/nyan1308/counts-and-chance/nyan1308_resolution_<L>-<R>_test.tsv`,
+  `_<L>-<R>_trees.tsv` (one row per observed tree), `_<L>-<R>_null_tally.tsv`;
+  saved for 5–19 and 5–17
 - **Example**: `python -m laminar.resolution_test`; `--region 5-17`
 - **Not yet in the bundle** or the weekly run.
+
+**`laminar/resolution_profile.py`** (2026-11-15)
+- **Purpose**: resolution across every stretch [a, b] (the 26 real domains
+  and the ~200 stretches no test picks out), and where it jumps as a
+  stretch grows by one position, to look for boundaries without choosing a
+  region first.
+- **Method**: per stretch, averaged over the trees: domains strictly inside
+  over the k − 2 possible, domains crossing it, and its share of the trees;
+  each against `span_placement_test.py`'s null (5000 draws). Steps of one
+  position are compared with the null's average step (`excess_change`).
+- **Finding (nyan1308, 5000 draws)**:
+  - **Resolution mostly tracks size**: a stretch holds more of the nested
+    verb domains the larger it is. At the same size, real domains are more
+    resolved than other stretches (size 13: 0.47 against 0.29).
+  - **The sharp edge is in crossing, not resolution.** Growing 5–x to the
+    right, resolution sits near 0.23–0.27 from 5–9 to 5–15, rises at 5–16
+    (0.40) and 5–17 (0.47), then levels at 0.50–0.57; crossing falls from
+    3.0 (5–15) to 1.4, 0.5, 0.26 and 0 at 5–19. Growing x–17 to the left,
+    resolution rises gradually but crossing drops from 3.3 at 4–17 to 0.5
+    at 5–17. So position 5 and positions 16–19 behave as edges.
+  - **Everything from 5 rightward to 16–22 is more resolved than chance**
+    (p ≤ 0.035 each); stretches confined to the right of the verb (11–22,
+    12–22, 14–22, 15–22) and 1–14 are flatter than chance (p 0.008–0.05)
+    and crossed ~8 times per tree. Fewer tests look there.
+  - **Uncrossed stretches no test found**: 5–20, 4–21, 2–21, 3–22.
+  - Single-step jumps are largest for small stretches, where the
+    denominator k − 2 is 1 or 2, so they are noisy. Averaged by position
+    added, no single position stands out.
+  - The per-stretch p-values are uncorrected and far from independent
+    (nested stretches share domains): read them as a map, not as tests.
+- **Output**: `results/nyan1308/counts-and-chance/nyan1308_resolution_profile.tsv`
+  (one row per stretch), `_resolution_jumps.tsv` (one per one-position
+  step), `_resolution_positions.tsv` (steps averaged by position added)
+- **Example**: `python -m laminar.resolution_profile`
+- **Not yet in the bundle**, the weekly run or a chart.
 
 *(The R that drew this test, `analysis/span_placement_test_plot.r`, was
 archived to `NonCollaborative/OlderFiles/planarsviz_superseded/scripts/analysis/` on

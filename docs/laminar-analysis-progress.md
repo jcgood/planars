@@ -414,14 +414,20 @@ inside and outside a fixed region, against span_placement's null), with
 `tests/test_laminar_support.py` (worked by hand on six-position
 structures). Both run standalone and write to
 `results/<dataset>/counts-and-chance/`; findings in `laminar/INDEX.md`.
+On 2026-11-15 the resolution test's outputs were named by region (5–19
+and 5–17 saved), and `laminar/resolution_profile.py` was added: resolution
+and crossing for every stretch, real or not, and the one-position steps
+between them, to look for boundaries without choosing a region first. It
+needs no region, so it runs on any dataset as is.
 
 **Not yet done, in order:**
-1. Export both into the bundle behind permutation flags, like the four
+1. Export all three into the bundle behind permutation flags, like the four
    existing tests, and add them to the weekly run (`laminar-analysis.yml`;
    the bootstrap enumerates families 1000 times, minutes per dataset).
 2. Charts in planarsviz: per-domain support beside the span chart (tests
    for/against, bootstrap interval); the resolution null as a histogram
-   with the observed difference.
+   with the observed difference; the profile as a left-by-right grid of
+   stretches (resolution against chance, crossing), real domains marked.
 3. Run on the CCDB structures and English. The resolution test needs a
    region: only nyan1308 has a highlights file, so the others need one
    chosen (a linguistic call) or are skipped.

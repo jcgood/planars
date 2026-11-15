@@ -49,16 +49,21 @@ region (Chichewa's are mostly verb-internal, wordhood diagnostics), that
 region gets more domains because more tests looked there. The shuffle
 spreads the same spans evenly, so it removes exactly this imbalance.
 
-Outputs (under results/<dataset>/counts-and-chance/ by default):
-  <dataset>_resolution_test.tsv        -- one row: the region, observed
-                                          means (resolution in and out,
-                                          difference, whole-tree
-                                          resolution, crossing), the null's
-                                          summary, p-values, n_permutations,
-                                          seed
-  <dataset>_resolution_trees.tsv       -- the observed trees, one row each
-  <dataset>_resolution_null_tally.tsv  -- (difference, n) tally of the null
-                                          (rounded to 4 places)
+Outputs (under results/<dataset>/counts-and-chance/ by default), named by
+the region's positions so that runs on different regions sit side by side
+(e.g. nyan1308_resolution_5-19_test.tsv):
+  <dataset>_resolution_<L>-<R>_test.tsv        -- one row: the region,
+                                                  observed means (resolution
+                                                  in and out, difference,
+                                                  whole-tree resolution,
+                                                  crossing), the null's
+                                                  summary, p-values,
+                                                  n_permutations, seed
+  <dataset>_resolution_<L>-<R>_trees.tsv       -- the observed trees, one
+                                                  row each
+  <dataset>_resolution_<L>-<R>_null_tally.tsv  -- (difference, n) tally of
+                                                  the null (rounded to 4
+                                                  places)
 
 Usage (from anywhere):
   python -m laminar.resolution_test
@@ -190,12 +195,12 @@ def main():
     summary, trees, tally = run_test(args.domain_file, args.domains_dir, region,
                                      n_permutations=args.n_permutations, seed=args.seed,
                                      n_positions=run.n_positions)
-    stem = run.output_dir / run.dataset
-    write_tsv(Path(f"{stem}_resolution_test.tsv"), [summary])
-    write_tsv(Path(f"{stem}_resolution_trees.tsv"),
+    stem = run.output_dir / f"{run.dataset}_resolution_{region[0]}-{region[1]}"
+    write_tsv(Path(f"{stem}_test.tsv"), [summary])
+    write_tsv(Path(f"{stem}_trees.tsv"),
               [{"tree": i + 1, **{k: (round(v, 4) if isinstance(v, float) else v) for k, v in t.items()}}
                for i, t in enumerate(trees)])
-    write_tsv(Path(f"{stem}_resolution_null_tally.tsv"),
+    write_tsv(Path(f"{stem}_null_tally.tsv"),
               [{"difference": d, "n": n} for d, n in sorted(tally.items())])
     for key, value in summary.items():
         print(f"{key:24} {value}")
