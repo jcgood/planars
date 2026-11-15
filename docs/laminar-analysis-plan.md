@@ -97,9 +97,13 @@ draft, started while Adam is still annotating. **Current state:
 11. **Hypothesis: syntax is more tree-like than morphology** (Jeff,
     2026-11-15). Tree-likeness is agreement among the trees, not resolution
     (decision 9 measures how full each tree is, and a per-tree average
-    cannot see trees disagreeing). For a region: the share of pairs of its
-    domains that conflict, and the number of distinct arrangements the trees
-    give it, inside the word against outside. Chance is a within-side
+    cannot see trees disagreeing). For a region: its **conflict density**,
+    the share of pairs of its domains that conflict (the density of the
+    conflict graph on those domains; lower is more tree-like), and its
+    **arrangements**, the number of distinct trees the region takes across
+    the maximal families, inside the word against outside. "Conflict" is
+    always between two domains; "crossing" is a domain against a stretch or
+    region (as in `resolution_profile.py`). Chance is a within-side
     shuffle: each side keeps its number of domains and their lengths, so the
     tests' concentration on the verb does not decide the result. Chichewa
     can carry only one side (6 domains outside the word, all but one
