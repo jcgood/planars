@@ -22,7 +22,8 @@ units 1–20; don't answer from this table alone.
 
 **Next (2026-11-14):** domain support and resolution
 (`docs/laminar-analysis-progress.md`, "Domain support and resolution"): the
-two modules are built and run on Chichewa; next is exporting them into the
+modules (support, resolution test, resolution profile) are built and run on
+Chichewa; next is exporting them into the
 bundle and the weekly run, then charts. Resolution, not binarity, is the
 measure of structure (plan decision 9). **Check** Sunday 2026-11-15's weekly
 run: with no span change it should analyse nothing. Chichewa: Jeff to confirm
