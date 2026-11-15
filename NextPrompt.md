@@ -20,18 +20,26 @@ units 1–20; don't answer from this table alone.
 
 ## Now
 
-**Next (2026-11-15):** domain support, resolution and conflict density
-(`docs/laminar-analysis-progress.md`, "Domain support and resolution"; plan
-decisions 9–11). The profile now also measures conflict density over every
-stretch and tests whether it changes in jumps (decision 11: syntax more
-tree-like than morphology, with no word assumed); Chichewa's result is in
-`laminar/INDEX.md`, for Jeff to read. Next is exporting the three modules
-into the bundle and the weekly run, with the weekly fingerprint narrowed to
-the code the bundle imports (progress doc, Findings: any `laminar/` change
-now reruns every dataset); then package charts. The profile needs no word, so it can
-run on English as is; only the resolution test waits on English's word
-(#335, Jeff and Adam). Chichewa: Jeff to confirm the proposed answers to
-#70's four questions before they are posted there.
+**First (2026-11-15): find the quanta in conflict density.** Plan decision
+11 (syntax more tree-like than morphology; conflict density is the
+measure; no word assumed; the prediction is quantal change, not gradual).
+`laminar/resolution_profile.py` measures it, but its quantal test (a Gini
+over one-position steps) is unsound, and `laminar/INDEX.md` says why.
+Replace it with step 0 in `docs/laminar-analysis-progress.md` ("Domain
+support and resolution"): a per-boundary count of conflicting pairs, each
+pair counted once, against the null. Then redraw
+`NonCollaborative/scripts/slides/nyan1308_conflict_profile.R` from it.
+That slide's caption still quotes the unsound p = 0.005. What Jeff expects
+to see: in Chichewa all 65 conflicts lie within 5–19, so the walls at 5
+and 19 should show as cliffs.
+
+**Then:** export the three modules into the bundle and the weekly run, with
+the weekly fingerprint narrowed to the code the bundle imports (progress
+doc, Findings: any `laminar/` change now reruns every dataset); then
+package charts. The profile needs no word, so it can run on English as is;
+only the resolution test waits on English's word (#335, Jeff and Adam).
+Chichewa: Jeff to confirm the proposed answers to #70's four questions
+before they are posted there.
 
 | Plan | Owner of its state | Where it stands | Next | Waiting on |
 |---|---|---|---|---|
