@@ -80,6 +80,21 @@ draft, started while Adam is still annotating. **Current state:
    paths and filenames; only the commands change. Fix anything else as it
    comes up (Jeff: "we can fix as needed later").
 
+9. **Resolution, not binarity, is the measure of internal structure**
+   (Jeff, 2026-11-14). Resolution is the share of the domains a stretch
+   could hold that it holds (`laminar/resolution_test.py`). Binarity
+   (domains that split in exactly two; the `most_binary` selection) stays
+   but is secondary: it is not a measure of flatness, since a stretch can
+   gain domains that split three ways and become more resolved while its
+   binary share falls. New work reports resolution; where binarity appears,
+   say it is the secondary measure.
+10. **A domain's strength is measured in tests, not trees** (Jeff,
+    2026-11-14). A family share (e.g. 5-17 in 37 of 69 trees) is set by the
+    combinatorics of conflicts. `laminar/domain_support.py` reports tests
+    for and against each domain, a shuffle test and a bootstrap, after the
+    phylogenetic methods cited in `NonCollaborative/REFERENCES.md`
+    ("Support for a domain"). Cite them in any work built on these.
+
 ## Phases
 
 **Phase 1: take out the Chichewa assumptions, in place.** The standalone

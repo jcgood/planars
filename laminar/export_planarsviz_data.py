@@ -690,7 +690,9 @@ def export_selections(dataset: str, families, data_dir: Path,
       seen, go to the lower family number.
     - most_binary, rank 1: the family that branches most binarily -- for
       illustrating the structure with as much branching as the evidence
-      allows. See most_binary_order().
+      allows. See most_binary_order(). Binarity is the secondary measure of
+      structure; resolution is the main one (docs/laminar-analysis-plan.md
+      decision 9, laminar/resolution_test.py).
     - exemplary, ranks 1..: select_representative_families(k=exemplary_k),
       then (include_sparsest) one more beyond those -- the family drawing on
       the fewest individual tests, ties broken by fewest distinct domain

@@ -57,6 +57,32 @@ Mapping to planars: diagnostic classes ≈ characters, positions ≈ taxa, in-sp
 **Huson, D.H. & Bryant, D. (2006).** Application of phylogenetic networks in evolutionary studies. *Molecular Biology and Evolution*, 23(2), 254–267.
 > Describes the SplitsTree software and the general "network when not laminar" strategy in biology. Good overview of how the phylogenetics community handles non-tree-compatible data in practice. The circular split systems and neighbor-net algorithm described here have potential structural analogs for the planars conflict visualization problem. *[Fairly confident; verify DOI.]*
 
+### Support for a domain, and resolution (2026-11-14)
+
+The methods phylogenetics uses to say how well a clade is supported, and how resolved a tree is, carried over to domains. Used by `laminar/domain_support.py` and `laminar/resolution_test.py`, whose docstrings say exactly how each is applied. The analogy is the one above: tests ≈ characters, positions ≈ taxa, a domain ≈ a clade. Entries marked *[verify]* were cited from memory and not checked against the publication.
+
+**Efron, B. (1979).** Bootstrap methods: another look at the jackknife. *Annals of Statistics*, 7(1), 1–26.
+> The bootstrap itself: resample the observations with replacement to see how much a statistic would vary under a fresh sample.
+
+**Felsenstein, J. (1985).** Confidence limits on phylogenies: an approach using the bootstrap. *Evolution*, 39(4), 783–791.
+> Brought the bootstrap to trees: resample the characters, rebuild the tree, and count how often each clade comes back. `domain_support.py` resamples the tests and counts how often each domain comes back.
+
+**Margush, T. & McMorris, F. R. (1981).** Consensus n-trees. *Bulletin of Mathematical Biology*, 43(2), 239–244.
+> The majority-rule consensus tree: the clades found in more than half of a set of trees. A domain's `boot_majority` is the share of bootstrap replicates in whose majority-rule consensus it appears, which is how a clade's bootstrap support is usually read.
+
+**Minh, B. Q., Hahn, M. W. & Lanfear, R. (2020).** New methods to calculate concordance factors for phylogenomic datasets. *Molecular Biology and Evolution*, 37(9), 2727–2733.
+> Site concordance factors: the share of informative sites that agree with a branch. The model for a domain's `concordance`, the share of the tests bearing on it (supporting it or crossing it) that support it.
+
+**Le Quesne, W. J. (1969).** A method of selection of characters in numerical taxonomy. *Systematic Zoology*, 18(2), 201–205. *[verify]*
+**Estabrook, G. F., Johnson, C. S. & McMorris, F. R. (1976).** A mathematical foundation for the analysis of cladistic character compatibility. *Mathematical Biosciences*, 29, 181–187. *[verify]*
+> Character compatibility: two characters are incompatible when no single tree can accommodate both. A test that crosses a domain is incompatible with it in exactly this sense; `tests_against` counts them.
+
+**Colless, D. H. (1980).** Congruence between morphometric and allozyme data for *Menidia* species: a reappraisal. *Systematic Zoology*, 29(3), 288–299. *[verify]*
+> The consensus index: a tree's clades as a share of the most a fully resolved tree has. The model for resolution (domains present over the most a stretch could hold), the project's measure of how much internal structure a stretch has.
+
+**Holm, S. (1979).** A simple sequentially rejective multiple test procedure. *Scandinavian Journal of Statistics*, 6(2), 65–70.
+> Not phylogenetics: the adjustment `domain_support.py` applies because it tests every domain at once (`p_holm`).
+
 ---
 
 ## Matroids

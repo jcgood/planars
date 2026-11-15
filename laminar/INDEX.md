@@ -97,6 +97,58 @@ whole dataset, use `python -m laminar charts <dataset> --apply`.
   `run_test()` behind `--span-placement-permutations`, so the package's
   charts and the committed TSVs above carry the same numbers.
 
+**`laminar/domain_support.py`** (2026-11-14)
+- **Purpose**: how strong each domain is, counted in tests rather than
+  trees. A family share (5–17 in 37 of 69 trees) is set by the
+  combinatorics of conflicts: the 32 trees without 5–17 all rest on three
+  crossing domains with 5 tests between them.
+- **Method**, three measures per observed span, after phylogenetics (cited
+  in the docstring and in `NonCollaborative/REFERENCES.md`, "Support for a
+  domain"): tests for and against (against = tests whose domain crosses
+  it) and their concordance; a shuffle test (every other test gets a
+  random position for its own length; is the span crossed less than
+  chance?), with Holm's adjustment across spans; a bootstrap over the tests
+  (Felsenstein 1985), giving how often the span returns, how often it is
+  in the majority of the replicate's trees, and its family share's 95%
+  interval. Every span is tested at its own size and position, so no size
+  threshold is chosen after the fact; the whole structure can't be crossed
+  and is reported untestable.
+- **Finding (nyan1308, 5000 shuffles, 1000 replicates)**: 5–17 has 10 tests
+  for and 5 against (concordance 0.67), is crossed far less than chance
+  (p < 0.0002), and is in the majority of trees in 94% of bootstrap
+  replicates (family share 0.50–0.90). 6–17 has the most tests (19) but 7
+  against, and is in the majority only 30% of the time. The domains the
+  shuffle does *not* separate from chance are small or weak ones: 9–18,
+  10–18, 5–13, 17–19, 5–6, 6–8, 6–10, 8–10, 9–10. Domains resting on one
+  test (e.g. 5–19) can't pass about 0.63 in the bootstrap; read
+  `boot_present` beside them.
+- **Output**: `results/nyan1308/counts-and-chance/nyan1308_domain_support.tsv`
+- **Example**: `python -m laminar.domain_support`
+- **Not yet in the bundle** or the weekly run (docs/laminar-analysis-progress.md).
+
+**`laminar/resolution_test.py`** (2026-11-14)
+- **Purpose**: are words flatter (less resolved) than phrases? Resolution
+  is the project's main measure of internal structure (plan decision 9):
+  domains present over the most a stretch could hold, after Colless's
+  (1980) consensus index.
+- **Method**: for a fixed region (the dataset's `orthographic_word`
+  highlight, 5–19 for nyan1308, or `--region`), each tree's resolution
+  inside and outside (the region counted as one unit), and their
+  difference averaged over the trees; null: `span_placement_test.py`'s
+  (same span lengths, random positions), 5000 draws.
+- **Finding (nyan1308, region 5–19, 5000 draws)**: no sign that the word
+  is flatter. Resolution is 0.57 inside and outside (difference 0; the word
+  flatter in 23 trees, equal in 14, less flat in 32). Random placement
+  makes the region flatter (null mean −0.13, 90% range −0.31 to 0.03),
+  largely because random spans cross it (2.3 per tree; none do in the real
+  trees), so the real word is if anything more resolved than chance, but
+  not significantly (p = 0.09). The tests were chosen to probe the verb,
+  which favours structure inside the word; no shuffle can correct that.
+- **Output**: `results/nyan1308/counts-and-chance/nyan1308_resolution_test.tsv`,
+  `_resolution_trees.tsv` (one row per observed tree), `_resolution_null_tally.tsv`
+- **Example**: `python -m laminar.resolution_test`; `--region 5-17`
+- **Not yet in the bundle** or the weekly run.
+
 *(The R that drew this test, `analysis/span_placement_test_plot.r`, was
 archived to `NonCollaborative/OlderFiles/planarsviz_superseded/scripts/analysis/` on
 2026-09-21. The package draws all three of its charts now —

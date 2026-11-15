@@ -400,6 +400,35 @@ by workflows. Plan decision 6 and Phase 4a–e have the design.
   unqualified and named a domains file that doesn't exist; now one call, on
   `domains_arao1248_verbal.tsv`, checked to run.
 
+## Domain support and resolution (2026-11-14)
+
+Asked by Jeff while preparing the Mainz talk: is 5–17's share of the trees
+(37 of 69) a lot, and are words flatter than phrases? Decisions 9 and 10 in
+the plan came out of it (resolution over binarity; strength in tests, not
+trees). Methods follow phylogenetics, cited in the modules' docstrings and
+`NonCollaborative/REFERENCES.md` ("Support for a domain").
+
+**Built:** `laminar/domain_support.py` (tests for and against each domain,
+a shuffle test, a bootstrap) and `laminar/resolution_test.py` (resolution
+inside and outside a fixed region, against span_placement's null), with
+`tests/test_laminar_support.py` (worked by hand on six-position
+structures). Both run standalone and write to
+`results/<dataset>/counts-and-chance/`; findings in `laminar/INDEX.md`.
+
+**Not yet done, in order:**
+1. Export both into the bundle behind permutation flags, like the four
+   existing tests, and add them to the weekly run (`laminar-analysis.yml`;
+   the bootstrap enumerates families 1000 times, minutes per dataset).
+2. Charts in planarsviz: per-domain support beside the span chart (tests
+   for/against, bootstrap interval); the resolution null as a histogram
+   with the observed difference.
+3. Run on the CCDB structures and English. The resolution test needs a
+   region: only nyan1308 has a highlights file, so the others need one
+   chosen (a linguistic call) or are skipped.
+4. Whether the bootstrap's single-test ceiling (about 0.63) calls for a
+   different resampling unit (by class or construction rather than by test)
+   is open.
+
 ## Findings
 
 - **Fixed 2026-11-04 (found 2026-10-24, drawing 4b's PDFs):** English's

@@ -244,7 +244,10 @@ plot_frequency_tree(bundle, selection = "most_binary", weight = "none",
 Renderer name `most_binary_tree`; no old file — this chart is new. The
 exporter picks the family (`most_binary` in `selections.tsv`): most strictly
 binary nodes, then most tests behind the tree, then the narrowest widest
-node.
+node. Binarity is the secondary measure of structure: the main one is
+resolution, the share of possible domains a stretch holds
+(`laminar/resolution_test.py`; docs/laminar-analysis-plan.md decision 9).
+32 of nyan1308's 69 families tie on binary nodes, so the tie-break decides.
 
 A second version traces a highlight's extent — for nyan1308, the
 orthographic word — with thicker edges running down to its first and last
