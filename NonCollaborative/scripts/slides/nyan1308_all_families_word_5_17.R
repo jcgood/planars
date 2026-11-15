@@ -170,7 +170,9 @@ for (slide in slides) {
   suppressMessages(ggsave(pdf_path, slide_forest(slide),
                           width = size[["width"]], height = size[["height"]], units = "in",
                           device = function(filename, ...) grDevices::quartz(file = filename, type = "pdf", ...)))
-  system2("pdftoppm", c("-png", "-r", "100", "-singlefile", shQuote(pdf_path),
+  # pdftocairo, not pdftoppm, whose renderer leaves thin diagonal lines
+  # jagged; 150 dpi (3000 x 2100) so they stay smooth when scaled on a slide.
+  system2("pdftocairo", c("-png", "-r", "150", "-singlefile", shQuote(pdf_path),
                         shQuote(file.path(out_dir, out_name))))
   cat("Wrote", pdf_path, "and .png\n")
 }

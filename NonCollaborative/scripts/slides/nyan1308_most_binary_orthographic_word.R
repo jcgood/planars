@@ -21,7 +21,7 @@
 # Writes NonCollaborative/results/nyan1308/slides/
 #   nyan1308_most_binary_orthographic_word_slide_1_plain.pdf / .png
 #   nyan1308_most_binary_orthographic_word_slide_2_highlighted.pdf / .png
-# (16:9, 16 x 9 in, no title; png 1920 x 1080).
+# (16:9, 16 x 9 in, no title; png 3840 x 2160).
 
 bundle_dir <- "NonCollaborative/results/chart_data/nyan1308"
 out_dir <- "NonCollaborative/results/nyan1308/slides"
@@ -86,7 +86,9 @@ for (version in list(list(name = "1_plain", emphasised = FALSE),
   # 16:9 at the package chart's own 16in width: at the usual 13.333in slide
   # width the tip labels collide (PostSbj, Obj2 clipped). It scales on a slide.
   ggsave(pdf_path, slide_tree(version$emphasised), width = 16, height = 9, units = "in")
-  system2("pdftoppm", c("-png", "-r", "120", "-singlefile", shQuote(pdf_path),
+  # pdftocairo, not pdftoppm, whose renderer leaves thin diagonal lines
+  # jagged; 240 dpi gives 3840 x 2160, sharp on a 4K screen.
+  system2("pdftocairo", c("-png", "-r", "240", "-singlefile", shQuote(pdf_path),
                         shQuote(file.path(out_dir, out_name))))
   cat("Wrote", pdf_path, "and .png\n")
 }
