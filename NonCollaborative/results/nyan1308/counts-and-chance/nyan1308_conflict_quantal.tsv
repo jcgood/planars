@@ -1,0 +1,2 @@
+n_steps	n_steps_scored	gini_observed	null_gini_mean	null_gini_lo	null_gini_hi	p_gini_ge	n_permutations	seed
+380	147	0.5171	0.4338	0.3771	0.4877	0.0054	5000	0

@@ -97,18 +97,20 @@ draft, started while Adam is still annotating. **Current state:
 11. **Hypothesis: syntax is more tree-like than morphology** (Jeff,
     2026-11-15). Tree-likeness is agreement among the trees, not resolution
     (decision 9 measures how full each tree is, and a per-tree average
-    cannot see trees disagreeing). For a region: its **conflict density**,
-    the share of pairs of its domains that conflict (the density of the
-    conflict graph on those domains; lower is more tree-like), and its
-    **arrangements**, the number of distinct trees the region takes across
-    the maximal families, inside the word against outside. "Conflict" is
-    always between two domains; "crossing" is a domain against a stretch or
-    region (as in `resolution_profile.py`). Chance is a within-side
-    shuffle: each side keeps its number of domains and their lengths, so the
-    tests' concentration on the verb does not decide the result. Chichewa
-    can carry only one side (6 domains outside the word, all but one
-    nested); English and the CCDB verbal structures are the real test, once
-    each has its word's edges chosen (a linguistic call).
+    cannot see trees disagreeing). Its measure is **conflict density**: of
+    the pairs of domains within a stretch, the share that conflict (the
+    density of the conflict graph on them; lower is more tree-like).
+    "Conflict" is always between two domains; "crossing" is a domain
+    against a stretch.
+    **We do not assume where words are**, so the measure is not compared
+    inside and outside a chosen word. It is taken over every stretch of the
+    planar structure (`resolution_profile.py`), and the prediction is that
+    it is **quantal, not gradual**: it changes in jumps at some edges.
+    Steps are measured by the marginal conflict of the pairs a one-position
+    step adds, against span_placement's null, and the quantal statistic is
+    how unevenly the departures from chance are spread over the steps
+    (the module's docstring has the definitions). Whether a stretch the
+    jumps pick out is word-like is a later question.
 
 ## Phases
 

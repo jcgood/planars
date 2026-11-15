@@ -92,3 +92,49 @@ def test_resolution_profile_grids_by_hand():
     assert present[1, 4] == 0.5 and present[0, 5] == 1.0
     res = rp.resolution_grid(inside, 6)
     assert res[0, 5] == 1.5 / 4 and np.isnan(res[1, 2])
+
+
+def test_conflict_matrix_matches_classify_pair():
+    spans = [Span(a, b) for a, b in itertools.combinations(range(1, 7), 2)]
+    matrix = rp.conflict_matrix(spans)
+    for (i, s), (j, t) in itertools.product(enumerate(spans), repeat=2):
+        assert matrix[i, j] == (classify_pair(s, t) == "conflict")
+
+
+def test_conflict_density_by_hand():
+    """1-6, 2-3, 2-4, 3-5: 3-5 crosses both 2-3 and 2-4; nothing else
+    crosses."""
+    spans = [Span(1, 6), Span(2, 3), Span(2, 4), Span(3, 5)]
+    n_dom, n_conf = rp.conflict_grids(spans, 6)
+    dens = rp.density_grid(n_dom, n_conf)
+    assert (n_dom[1, 4], n_conf[1, 4]) == (3, 2) and dens[1, 4] == 2 / 3   # 2-5
+    assert dens[1, 3] == 0.0                                              # 2-4: 2-3 in 2-4
+    assert np.isnan(dens[1, 2])                                           # 2-3: one domain
+    assert dens[0, 5] == 2 / 6                                            # whole structure
+    # 2-4 -> 2-5 brings in 3-5: two new pairs, both conflicts.
+    assert rp.marginal_conflict(n_dom, n_conf, (1, 3), (1, 4)) == 1.0
+    # 1-5 -> 1-6 brings in 1-6, which encloses all three: three pairs, none conflict.
+    assert rp.marginal_conflict(n_dom, n_conf, (0, 4), (0, 5)) == 0.0
+    # 2-3 -> 2-4 brings in 2-4 beside 2-3: one pair, nested.
+    assert rp.marginal_conflict(n_dom, n_conf, (1, 2), (1, 3)) == 0.0
+    # A stack of grids (the null's replicates) gives one value per replicate.
+    stacked = rp.marginal_conflict(np.stack([n_dom, n_dom]), np.stack([n_conf, n_conf]), (1, 3), (1, 4))
+    assert list(stacked) == [1.0, 1.0]
+
+
+def test_gini():
+    assert rp.gini(np.array([1.0, 1.0, 1.0, 1.0])) == 0.0
+    assert rp.gini(np.array([0.0, 0.0, 0.0, 4.0])) == 0.75
+    assert rp.gini(np.zeros(3)) == 0.0 and np.isnan(rp.gini(np.array([])))
+
+
+def test_resolution_profile_runs(tmp_path):
+    name = write_domains(tmp_path, [("root", 1, 6), ("x", 2, 3), ("y", 2, 4), ("z", 3, 5)])
+    profile, jumps, positions, quantal = rp.run_profile(name, tmp_path, n_permutations=50, seed=1, n_positions=6)
+    row = next(r for r in profile if (r["left"], r["right"]) == (2, 5))
+    assert row["n_domains"] == 3 and row["conflict_density"] == round(2 / 3, 4)
+    step = next(r for r in jumps if (r["from"], r["to"]) == ("2-4", "2-5"))
+    assert step["marginal_conflict"] == 1.0 and step["added_pairs"] == 2
+    assert 0.0 <= quantal["p_gini_ge"] <= 1.0 and quantal["n_steps"] == len(jumps)
+    again = rp.run_profile(name, tmp_path, n_permutations=50, seed=1, n_positions=6)
+    assert again == (profile, jumps, positions, quantal)

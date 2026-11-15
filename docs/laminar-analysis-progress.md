@@ -437,14 +437,23 @@ is no more than chance gives (p = 0.39).
 3. Run on the CCDB structures and English. The resolution test needs a
    region: only nyan1308 has a highlights file, so the others need one
    chosen (a linguistic call) or are skipped. English's word is #335 (Jeff
-   and Adam; set aside until then). The same region serves decision 11's
-   inside/outside comparison of tree-likeness, to be added to the
-   resolution test and profile before step 1's export.
+   and Adam; set aside until then). The profile needs no region and runs
+   on all of them as is.
 4. Whether the bootstrap's single-test ceiling (about 0.63) calls for a
    different resampling unit (by class or construction rather than by test)
    is open.
 
 ## Findings
+
+- **Found 2026-11-15, to fix:** the weekly run re-analyses every dataset
+  whenever any code file in `laminar/` or `planarsviz/` changes, because
+  its fingerprint hashes them all (`contributor_charts.code_version`).
+  On 2026-11-15 all 16 English and Araona datasets reran (about four
+  hours) for modules the bundle never runs (`domain_support`,
+  `resolution_test`, `resolution_profile`). Results are right, just
+  redone. Fix: hash only the modules the exporter and renderer import
+  (read from the imports, so nothing has to be listed by hand); do it with
+  step 1 above, which brings those modules into the bundle anyway.
 
 - **Fixed 2026-11-04 (found 2026-10-24, drawing 4b's PDFs):** English's
   by-class pooled span chart (`pooled_plot`) cut its legend off at the

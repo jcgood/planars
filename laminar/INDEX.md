@@ -186,9 +186,29 @@ whole dataset, use `python -m laminar charts <dataset> --apply`.
     added, no single position stands out.
   - The per-stretch p-values are uncorrected and far from independent
     (nested stretches share domains): read them as a map, not as tests.
+- **Conflict density** (added 2026-11-15, plan decision 11: is syntax more
+  tree-like than morphology, without assuming where words are): per
+  stretch, the share of pairs of its domains that conflict; per step, the
+  marginal conflict of the pairs it adds, against the same null; and a
+  quantal test (Gini of |excess marginal conflict| over the steps).
+- **Finding (nyan1308, 5000 draws)**:
+  - **Quantal, not gradual**: Gini 0.517 against chance 0.434 (90%
+    0.377–0.488), p = 0.005. The departures from chance are carried by
+    a few steps.
+  - **Where**: steps adding positions inside the verb add conflict beyond
+    chance (adding 8 on the right: mean excess +0.63; 13 on the right
+    +0.25; 9 on the left +0.13). Steps reaching the phrase add only
+    nesting where chance gives about a third conflicts (adding 21 or 22 on
+    the right: −0.34, −0.24; 1, 2, 3 on the left: −0.20 to −0.35, each
+    over 22–45 added pairs). Positions 16–19 sit between, mildly negative.
+  - **Caution**: the large positive steps add one or two pairs each, where
+    marginal conflict can only be 0 or 1; the negative ones at 1–3 and
+    21–22 rest on many pairs but on the 4 domains that reach the phrase.
+    Fewer tests look outside the verb.
 - **Output**: `results/nyan1308/counts-and-chance/nyan1308_resolution_profile.tsv`
   (one row per stretch), `_resolution_jumps.tsv` (one per one-position
-  step), `_resolution_positions.tsv` (steps averaged by position added)
+  step), `_resolution_positions.tsv` (steps averaged by position added),
+  `_conflict_quantal.tsv` (the quantal test)
 - **Example**: `python -m laminar.resolution_profile`
 - **Not yet in the bundle**, the weekly run or a chart.
 
