@@ -12,32 +12,32 @@
  9 3–21           3         21     4
 10 6–10           6         10     3
 # ℹ 16 more rows
-exemplar 1: numbers identical
-  page (76 x 41.3 cm): size_match=True ref=(2992, 1625) new=(2992, 1625) differing_pixels=0.0000%
-  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+exemplar 1: NUMBERS DIFFER: ex_tp1 layer 2: Component “label”: 1 string mismatch | ex_slide_tp1 layer 2: Component “label”: 1 string mismatch
+  page (76 x 41.3 cm): size_match=True ref=(2992, 1625) new=(2992, 1625) differing_pixels=0.0157%
+  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0603%
   slide_evidence (25 x 41.3 cm): size_match=True ref=(984, 1625) new=(984, 1625) differing_pixels=0.0000%
-exemplar 2: numbers identical
-  page (76 x 30.1 cm): size_match=True ref=(2992, 1185) new=(2992, 1185) differing_pixels=0.0000%
-  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+exemplar 2: NUMBERS DIFFER: ex_tp2 layer 2: Component “label”: 1 string mismatch | ex_slide_tp2 layer 2: Component “label”: 1 string mismatch
+  page (76 x 30.1 cm): size_match=True ref=(2992, 1185) new=(2992, 1185) differing_pixels=0.0220%
+  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0603%
   slide_evidence (25 x 30.1 cm): size_match=True ref=(984, 1185) new=(984, 1185) differing_pixels=0.0000%
-exemplar 3: numbers identical
-  page (76 x 22.4 cm): size_match=True ref=(2992, 881) new=(2992, 881) differing_pixels=0.0000%
-  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+exemplar 3: NUMBERS DIFFER: ex_tp3 layer 2: Component “label”: 1 string mismatch | ex_slide_tp3 layer 2: Component “label”: 1 string mismatch
+  page (76 x 22.4 cm): size_match=True ref=(2992, 881) new=(2992, 881) differing_pixels=0.0294%
+  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0603%
   slide_evidence (25 x 22.4 cm): size_match=True ref=(984, 881) new=(984, 881) differing_pixels=0.0000%
-exemplar 4: numbers identical
-  page (76 x 23.1 cm): size_match=True ref=(2992, 909) new=(2992, 909) differing_pixels=0.0000%
-  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+exemplar 4: NUMBERS DIFFER: ex_tp4 layer 2: Component “label”: 1 string mismatch | ex_slide_tp4 layer 2: Component “label”: 1 string mismatch
+  page (76 x 23.1 cm): size_match=True ref=(2992, 909) new=(2992, 909) differing_pixels=0.0281%
+  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0603%
   slide_evidence (25 x 23.1 cm): size_match=True ref=(984, 909) new=(984, 909) differing_pixels=0.0000%
-exemplar 5: numbers identical
-  page (76 x 23.1 cm): size_match=True ref=(2992, 909) new=(2992, 909) differing_pixels=0.0000%
-  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+exemplar 5: NUMBERS DIFFER: ex_tp5 layer 2: Component “label”: 1 string mismatch | ex_slide_tp5 layer 2: Component “label”: 1 string mismatch
+  page (76 x 23.1 cm): size_match=True ref=(2992, 909) new=(2992, 909) differing_pixels=0.0281%
+  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0603%
   slide_evidence (25 x 23.1 cm): size_match=True ref=(984, 909) new=(984, 909) differing_pixels=0.0000%
-exemplar 6: numbers identical
-  page (76 x 32.2 cm): size_match=True ref=(2992, 1267) new=(2992, 1267) differing_pixels=0.0000%
-  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+exemplar 6: NUMBERS DIFFER: ex_tp6 layer 2: Component “label”: 1 string mismatch | ex_slide_tp6 layer 2: Component “label”: 1 string mismatch
+  page (76 x 32.2 cm): size_match=True ref=(2992, 1267) new=(2992, 1267) differing_pixels=0.0202%
+  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0603%
   slide_evidence (25 x 32.2 cm): size_match=True ref=(984, 1267) new=(984, 1267) differing_pixels=0.0000%
-exemplar 7: numbers identical
-  page (76 x 14.7 cm): size_match=True ref=(2992, 578) new=(2992, 578) differing_pixels=0.0000%
-  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0000%
+exemplar 7: NUMBERS DIFFER: ex_tp7 layer 2: Component “label”: 1 string mismatch | ex_slide_tp7 layer 2: Component “label”: 1 string mismatch
+  page (76 x 14.7 cm): size_match=True ref=(2992, 578) new=(2992, 578) differing_pixels=0.0448%
+  slide_tree (13.333 x 7.5 in): size_match=True ref=(1332, 750) new=(1332, 750) differing_pixels=0.0603%
   slide_evidence (25 x 14.7 cm): size_match=True ref=(984, 578) new=(984, 578) differing_pixels=0.0000%
-ALL NUMBER CHECKS PASSED
+SOME NUMBER CHECKS FAILED

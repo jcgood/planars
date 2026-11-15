@@ -6,6 +6,7 @@
       "morphosyntactic"
     ],
     "forest_id": "morsyn",
+    "label": "Morphosyntactic",
     "n_positions": 22,
     "n_trees": 3
   },
@@ -16,6 +17,7 @@
       "tonosegmental"
     ],
     "forest_id": "tono",
+    "label": "Tonosegmental",
     "n_positions": 17,
     "n_trees": 9
   },
@@ -26,6 +28,7 @@
       "length"
     ],
     "forest_id": "length",
+    "label": "Length",
     "n_positions": 18,
     "n_trees": 3
   },
@@ -36,6 +39,7 @@
       "phonological"
     ],
     "forest_id": "phon",
+    "label": "Phonological",
     "n_positions": 21,
     "n_trees": 6
   },
@@ -46,6 +50,7 @@
       "intonational"
     ],
     "forest_id": "inton",
+    "label": "Intonational",
     "n_positions": 22,
     "n_trees": 1
   },
@@ -57,6 +62,7 @@
       "intonational"
     ],
     "forest_id": "phonologylike",
+    "label": "Phonology-like",
     "n_positions": 22,
     "n_trees": 6
   },
@@ -69,6 +75,7 @@
       "length"
     ],
     "forest_id": "syntaxlike",
+    "label": "Syntax-like",
     "n_positions": 22,
     "n_trees": 16
   },
@@ -80,6 +87,7 @@
       "length"
     ],
     "forest_id": "syntaxlike_notono",
+    "label": "Syntax-like (no Tono)",
     "n_positions": 22,
     "n_trees": 4
   }

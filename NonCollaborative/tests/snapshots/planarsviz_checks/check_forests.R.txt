@@ -1,9 +1,9 @@
-nyan1308_morsyn_laminar_forest: numbers identical; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
-nyan1308_tono_laminar_forest: numbers identical; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
-nyan1308_length_laminar_forest: numbers identical; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
-nyan1308_phon_laminar_forest: numbers identical; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
-nyan1308_inton_laminar_forest: numbers identical; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
-nyan1308_phonologylike_laminar_forest: numbers identical; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
-nyan1308_syntaxlike_laminar_forest: numbers identical; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
-nyan1308_syntaxlike_notono_laminar_forest: numbers identical; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0000%
-ALL NUMBER CHECKS PASSED
+nyan1308_morsyn_laminar_forest: NUMBERS DIFFER: tree 3 layer 3: Component “label”: 1 string mismatch; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0335%
+nyan1308_tono_laminar_forest: NUMBERS DIFFER: tree 9 layer 3: Component “label”: 1 string mismatch; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0339%
+nyan1308_length_laminar_forest: NUMBERS DIFFER: tree 3 layer 3: Component “label”: 1 string mismatch; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0341%
+nyan1308_phon_laminar_forest: NUMBERS DIFFER: tree 6 layer 3: Component “label”: 1 string mismatch; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0372%
+nyan1308_inton_laminar_forest: NUMBERS DIFFER: tree 1 layer 3: Component “label”: 1 string mismatch; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0335%
+nyan1308_phonologylike_laminar_forest: NUMBERS DIFFER: tree 6 layer 3: Component “label”: 1 string mismatch; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0335%
+nyan1308_syntaxlike_laminar_forest: NUMBERS DIFFER: tree 16 layer 3: Component “label”: 1 string mismatch; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0335%
+nyan1308_syntaxlike_notono_laminar_forest: NUMBERS DIFFER: tree 4 layer 3: Component “label”: 1 string mismatch; pixels: size_match=True ref=(2000, 1400) new=(2000, 1400) differing_pixels=0.0335%
+SOME NUMBER CHECKS FAILED

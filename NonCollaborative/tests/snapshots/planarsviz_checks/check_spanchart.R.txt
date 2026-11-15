@@ -1,1 +1,1 @@
-nyan1308_spanchart: numbers identical; pixels: size_match=True ref=(1400, 800) new=(1400, 800) differing_pixels=2.4041%
+nyan1308_spanchart: NUMBERS DIFFER: x labels differ; pixels: size_match=True ref=(1400, 800) new=(1400, 800) differing_pixels=2.4072%

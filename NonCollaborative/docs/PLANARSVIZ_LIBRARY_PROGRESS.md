@@ -2386,3 +2386,17 @@ planarsviz_superseded/README.md` gained a "Phase E" section for the three newly-
   (matched digits inside span labels, not just leaves) and caught by the check itself failing
   before being trusted. **Seen by Jeff: yes, 2026-09-22 — the new
   `illustrations_random_tree_overlay.pdf` (the freshly-seeded sample) is fine.**
+
+---
+
+## Position 15 relabelled REC to RECP (2026-11-14)
+
+Jeff standardised the reciprocal on the Leipzig Glossing Rules abbreviation, RECP, for the
+Mainz talk. The one change is `planar_tables/display_labels_nyan1308.tsv`; every nyan1308 chart
+and the slide figures were redrawn from it.
+
+The archived scripts the porting checks compare against still draw REC, so eight checks now
+report one label string differing (with 0.003-0.08% of pixels, the label itself) where they
+reported identical numbers before. Every new difference in the re-recorded snapshots was read and
+is that one string; no canvas, count or other value moved. These differences are expected and
+permanent: they record a deliberate change made after the port, not a drift in the package.
