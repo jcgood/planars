@@ -1,7 +1,8 @@
 #!/usr/bin/env Rscript
 # Slide figures: nyan1308's most binary tree, plain and then with the
 # orthographic word (5-19) picked out -- the edges out to positions 5 and 19
-# drawn thick, and the labels of positions 5 to 19 in dark red. A one-off for
+# drawn thick, and those edges, every edge inside the word and the labels of
+# positions 5 to 19 in dark red. A one-off for
 # a talk, not one of the package's charts.
 #
 # The two are a pair for a dissolve between slides: both are drawn by the
@@ -26,7 +27,9 @@ bundle_dir <- "NonCollaborative/results/chart_data/nyan1308"
 out_dir <- "NonCollaborative/results/nyan1308/slides"
 out_stem <- "nyan1308_most_binary_orthographic_word_slide"
 highlight <- "orthographic_word"
-label_colour <- "darkred"
+# The orthographic word's dark red on the combined-forest slides too
+# (nyan1308_all_families_word_5_17.R), so it means the same thing throughout.
+label_colour <- "#A50F15"
 if (!dir.exists(bundle_dir)) stop("Run this from the repository root.", call. = FALSE)
 
 lib <- file.path(tempdir(), "planarsviz_lib")
@@ -47,8 +50,22 @@ names_by_position <- planarsviz_position_labels(bundle$position_labels)
 # the overlay labels' colour (black in the plain one, so even the layer stack
 # matches).
 slide_tree <- function(emphasised) {
-  plot_frequency_tree(bundle, selection = "most_binary", weight = "none",
-                      emphasis = if (emphasised) highlight else NULL, title = NULL) +
+  p <- plot_frequency_tree(bundle, selection = "most_binary", weight = "none",
+                           emphasis = if (emphasised) highlight else NULL, title = NULL)
+  # Every edge belonging to the word is red in the highlighted version: the
+  # thick traced edges, and the ordinary ones inside it (a node whose span
+  # lies within the word, other than the word's own node, whose incoming
+  # edge is above the word). The plain version gets the same layer, all
+  # black, so the two stacks stay identical.
+  extent <- lapply(strsplit(p$data$label, "-", fixed = TRUE), as.integer)
+  inside <- vapply(extent, function(r) {
+    if (length(r) == 0 || anyNA(r)) return(FALSE)
+    lo <- r[[1]]; hi <- r[[length(r)]]
+    lo >= min(word) && hi <= max(word) && !(lo == min(word) && hi == max(word))
+  }, logical(1))
+  traced <- p$data$edge_size > 0.5
+  p$data$edge_colour <- if (emphasised) ifelse(inside | traced, label_colour, "black") else "black"
+  p + aes(colour = edge_colour) + scale_colour_identity() +
     ggtitle(NULL) +
     # Same label geometry as the package's tip labels, drawn over them for
     # the positions inside the word.
