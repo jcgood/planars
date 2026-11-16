@@ -147,11 +147,11 @@ option instead.
 **`slides/nyan1308_conflict_profile.R`**
 - **Purpose**: conflict density (plan decision 11) in two panels: every
   stretch as a tile, conflict density less chance (green less, orange
-  more), real domains outlined; and, by the position added, the conflict a
-  one-position step brings in less chance (mean, with the range of steps),
-  for stretches growing rightward and leftward. The caption gives the
-  quantal test. Reads `laminar/resolution_profile.py`'s profile, positions
-  and quantal TSVs. 16:9 slide, not a package chart.
+  more), real domains outlined; and, at each juncture, the share of
+  conflicting pairs spanning it against chance (mean, 90% band), with the
+  walls marked. The caption gives the quantal test. Reads
+  `laminar/resolution_profile.py`'s profile, junctures and quantal TSVs.
+  16:9 slide, not a package chart.
 - **Run**: `Rscript NonCollaborative/scripts/slides/nyan1308_conflict_profile.R`
 
 ---

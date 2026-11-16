@@ -426,13 +426,18 @@ edges at 5 and 17–19 show in crossing more than in resolution; resolution
 mostly tracks size, and the 5–17 split (inside flatter, 0.48 against 0.64)
 is no more than chance gives (p = 0.39).
 
+**Done 2026-11-15:** the profile's Gini quantal test was replaced by a
+per-juncture measure (each conflicting pair counted once, at the junctures
+its smallest common stretch spans; the quantal test is the largest change
+beyond chance against each replicate's largest), and the conflict slide
+was redrawn from it. Result on nyan1308: conflict is confined to 5–19 but
+its edges are ramps over 5–9 and 16–19, not single-position cliffs
+(largest change p = 0.074); details in `laminar/INDEX.md`. **Open with
+Jeff:** whether a ramp counts as a quantum for decision 11, and whether
+to test an edge as a run of steps (decided after seeing this result, so
+it would have to be said).
+
 **Not yet done, in order:**
-0. Replace the profile's quantal test (Gini over one-position steps; it
-   is driven by single-pair steps and counts one conflict many times,
-   `laminar/INDEX.md`) with a per-juncture measure: for each boundary
-   between two positions, the conflicting pairs whose smallest common
-   stretch spans it, each pair counted once, against the null; quanta are
-   junctures where it falls sharply. Redraw the conflict slide from it.
 1. Export all three into the bundle behind permutation flags, like the four
    existing tests, and add them to the weekly run (`laminar-analysis.yml`;
    the bootstrap enumerates families 1000 times, minutes per dataset).

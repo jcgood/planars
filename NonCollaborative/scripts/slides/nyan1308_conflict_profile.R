@@ -13,12 +13,13 @@
 #   conflict than chance, green less; a dot marks p < 0.05 for more
 #   (uncorrected; nested stretches share domains, so a map, not tests). Grey:
 #   fewer than two domains, no density.
-# - Conflict each position brings in: for every one-position step that adds
-#   a position, the marginal conflict (of the pairs the step adds, the share
-#   that conflict) less chance's for the same step, averaged by the position
-#   added; the bar runs from the lowest to the highest step. Separately for
-#   a stretch growing rightward (position added at its right edge) and
-#   leftward. Positions whose steps add no pair are left out.
+# - Where conflict lies: at each juncture between two positions, the share
+#   of the conflicting pairs that span it (a pair spans the junctures inside
+#   its smallest common stretch; each pair counted once), against the same
+#   share in 5000 random placements (mean and 90% band). A wall is a
+#   position where the share changes beyond what chance's largest change
+#   reaches in 95% of placements (dashed line); a position whose change is
+#   beyond chance there alone (uncorrected p < 0.05) is shaded orange.
 # The caption gives the quantal test (nyan1308_conflict_quantal.tsv).
 #
 # Run from the repository root (where .Rprofile sets up the pinned packages),
@@ -29,12 +30,12 @@
 
 results <- "NonCollaborative/results/nyan1308/counts-and-chance"
 profile_path <- file.path(results, "nyan1308_resolution_profile.tsv")
-positions_path <- file.path(results, "nyan1308_resolution_positions.tsv")
+junctures_path <- file.path(results, "nyan1308_conflict_junctures.tsv")
 quantal_path <- file.path(results, "nyan1308_conflict_quantal.tsv")
 labels_path <- "NonCollaborative/planar_tables/display_labels_nyan1308.tsv"
 out_dir <- "NonCollaborative/results/nyan1308/slides"
 out_stem <- "nyan1308_conflict_profile"
-if (!file.exists(quantal_path)) {
+if (!file.exists(junctures_path)) {
   stop("Run this from the repository root, after python -m laminar.resolution_profile.", call. = FALSE)
 }
 
@@ -49,12 +50,15 @@ d$excess <- d$conflict_density - d$null_conflict_density_mean
 d$significant <- !is.na(d$p_conflict_density_ge) & d$p_conflict_density_ge < 0.05
 domains <- d[d$is_domain, ]
 
-pos <- utils::read.delim(positions_path)
-pos <- pos[pos$n_steps_scored > 0, ]
-pos$side <- factor(ifelse(pos$side == "right", "growing rightward", "growing leftward"),
-                   levels = c("growing rightward", "growing leftward"))
+jn <- utils::read.delim(junctures_path)
+jn$x <- jn$left_position + 0.5
 labels <- utils::read.delim(labels_path)
 q <- utils::read.delim(quantal_path)
+# Walls: positions whose change in share is beyond chance's 95th-percentile
+# largest change (corrected for looking at every position). Steep: the
+# change is beyond chance at that position alone (uncorrected p < 0.05).
+walls <- jn[!is.na(jn$excess_change) & abs(jn$excess_change) > q$null_largest_hi, ]
+steep <- jn[!is.na(jn$p_abs_excess_ge) & jn$p_abs_excess_ge < 0.05, ]
 
 n <- max(d$right)
 font <- "Gill Sans"
@@ -78,31 +82,30 @@ p_grid <- ggplot(d, aes(x = right, y = left)) +
   grid_theme +
   ggtitle("Conflict density against chance")
 
-side_colours <- c("growing rightward" = "#E66101", "growing leftward" = "#5E3C99")
-dodge <- position_dodge(width = 0.6)
-p_steps <- ggplot(pos, aes(x = added, y = mean_excess_marginal, colour = side)) +
-  annotate("rect", xmin = -Inf, xmax = Inf, ymin = 0, ymax = Inf, fill = "#E66101", alpha = 0.06) +
-  annotate("rect", xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = 0, fill = "#1B7837", alpha = 0.06) +
-  geom_hline(yintercept = 0, colour = "grey40") +
-  geom_linerange(aes(ymin = min_excess_marginal, ymax = max_excess_marginal),
-                 position = dodge, linewidth = 1.1, alpha = 0.6) +
-  geom_point(position = dodge, size = 4) +
-  scale_colour_manual(NULL, values = side_colours) +
-  scale_x_continuous("Position added", breaks = labels$position,
+p_steps <- ggplot(jn, aes(x = x)) +
+  geom_rect(data = steep, aes(xmin = position_passed - 0.5, xmax = position_passed + 0.5),
+            ymin = -Inf, ymax = Inf, fill = "#E66101", alpha = 0.13, inherit.aes = FALSE) +
+  geom_vline(data = walls, aes(xintercept = position_passed), colour = "#E66101",
+             linewidth = 1, linetype = "dashed") +
+  geom_ribbon(aes(ymin = null_share_lo, ymax = null_share_hi), fill = "grey80", alpha = 0.7) +
+  geom_line(aes(y = null_share_mean), colour = "grey45", linewidth = 0.9) +
+  geom_line(aes(y = share), colour = "black", linewidth = 1.2) +
+  geom_point(aes(y = share), colour = "black", size = 3) +
+  geom_text(data = walls, aes(x = position_passed, y = 1.04, label = paste("wall at", position_passed)),
+            family = font, size = 5.5, colour = "#B04A00") +
+  scale_x_continuous("Position", breaks = labels$position,
                      labels = paste(labels$position, labels$label),
                      limits = c(0.5, n + 0.5), expand = c(0, 0)) +
-  scale_y_continuous("Conflict it brings in, less chance", limits = c(-0.7, 0.85)) +
-  annotate("text", x = 0.8, y = 0.82, label = "more conflict than chance", hjust = 0,
-           family = font, size = 5, colour = "#B04A00") +
-  annotate("text", x = 0.8, y = -0.67, label = "less conflict than chance: new domains nest", hjust = 0,
-           family = font, size = 5, colour = "#1B7837") +
+  scale_y_continuous("Share of conflicting pairs spanning the juncture",
+                     limits = c(0, 1.07), breaks = seq(0, 1, 0.25)) +
   theme_minimal(base_size = 18, base_family = font) +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major.x = element_blank(),
         axis.text.x = element_text(size = 12, angle = 90, hjust = 1, vjust = 0.5),
         plot.title = element_text(size = 22),
-        legend.position = "bottom") +
-  ggtitle("Conflict each position brings in")
+        plot.subtitle = element_text(size = 15, colour = "grey30")) +
+  ggtitle("Where conflict lies",
+          subtitle = "Grey: 5000 random placements (mean, 90%).\nOrange: steeper than chance at that position (uncorrected).")
 
 caption <- paste(
   "Left: each tile is a stretch of positions; black outlines are the 26 domains the tests found; grey holds fewer than two domains.",
@@ -111,8 +114,10 @@ caption <- paste(
   } else {
     "No single stretch has more conflict than 5000 random placements of the same domain lengths at p < 0.05 (uncorrected)."
   },
-  sprintf("Right: points are means over the steps that add the position; bars run from lowest to highest. Quantal test: conflict changes in jumps more than chance (Gini %.2f against %.2f, p = %.3f).",
-          q$gini_observed, q$null_gini_mean, q$p_gini_ge),
+  sprintf(paste0("Right: each point is a juncture between two positions; a conflicting pair spans the junctures inside the smallest stretch holding both (%d pairs, each counted once).\n",
+                 "Largest change beyond chance: %+.2f at position %d; chance's largest is under %.2f in 95%% of placements (p = %.3f)%s."),
+          q$n_conflicting_pairs, q$largest_excess_change, q$at_position, q$null_largest_hi, q$p_largest_ge,
+          if (nrow(walls) == 0) ", so no single position is a wall once every position is looked at" else ""),
   sep = "\n")
 p <- p_grid + p_steps + plot_layout(widths = c(1, 1.15)) +
   plot_annotation(caption = caption,

@@ -31,19 +31,28 @@ what a stretch of that size and place gets by chance; edge stretches hold
 fewer random domains than middle ones.
 
 Quantal or gradual (Jeff, 2026-11-15; we do not assume where words are):
-the hypothesis is that conflict density changes in jumps at some edges, not
-gradually. Density over a whole stretch is an average and flattens as the
-stretch grows, so the steps are measured by what they add instead. The
-`marginal_conflict` of a one-position step is, of the pairs it adds (each
-with at least one newly included domain), the share that conflict; a word
-edge on the hypothesis is where it falls to near zero (new domains only
-enclose or sit beside). Its excess over the null's mean for the same step
-removes what small numbers and geometry give. The quantal statistic is the
-Gini coefficient of |excess marginal conflict| over the scored steps (0:
-every step departs from chance equally; near 1: a few steps carry it all),
-and each null replicate is scored the same way; p_gini_ge is the share of
-replicates at least as uneven as observed. Steps that add no pair are not
-scored.
+the hypothesis is that conflict changes in jumps at some edges, not
+gradually. It is measured at the junctures, counting each conflict once. A
+conflicting pair lies over its smallest common stretch (leftmost left edge
+to rightmost right edge), and spans every juncture inside it; a juncture's
+`share` is the conflicting pairs spanning it over all conflicting pairs, so
+the null (whose random spans conflict more often) is compared on the same
+scale. A wall is a position where the share changes sharply from the
+juncture before it to the one after: `change` at a position, less the
+null's mean change there (`excess_change`), which removes what geometry
+gives (edge junctures are spanned less by chance). The quantal statistic is
+the largest |excess_change| over the positions, against the largest in each
+null replicate scored the same way (a maximum, so it is corrected for
+looking at every position); p_largest_ge is the share of replicates whose
+largest is at least as large. Per-position p_abs_excess_ge values are
+uncorrected.
+
+The per-step `marginal_conflict` in the jumps file (of the pairs a
+one-position step adds, the share that conflict) is descriptive only: a
+conflict is counted again in every stretch that first takes it in, and most
+steps add one or two pairs, so it is not a test. (A Gini over those steps
+was the first quantal test, 2026-11-15, and was dropped for that reason;
+laminar/INDEX.md.)
 
 Discontinuities: a stretch grown by one position (right edge out, or left
 edge out) is compared with the one it grew from. `excess_change` is the
@@ -57,8 +66,11 @@ Outputs (under results/<dataset>/counts-and-chance/ by default):
   <dataset>_resolution_profile.tsv    -- one row per stretch
   <dataset>_resolution_jumps.tsv      -- one row per one-position step
   <dataset>_resolution_positions.tsv  -- steps averaged by position added
-  <dataset>_conflict_quantal.tsv      -- one row: the quantal statistic
-                                         against the null
+  <dataset>_conflict_junctures.tsv    -- one row per juncture: conflicting
+                                         pairs spanning it, and the change
+                                         passing the position to its left
+  <dataset>_conflict_quantal.tsv      -- one row: the largest change
+                                         against the null's largest
 The profile's conflict columns are n_domains, conflict_density,
 null_conflict_density_mean, p_conflict_density_ge; the jumps file's are
 added_pairs, marginal_conflict, null_marginal_mean, excess_marginal; the
@@ -149,17 +161,77 @@ def marginal_conflict(n_domains: np.ndarray, n_conflicts: np.ndarray, old: tuple
         return np.where(added_pairs > 0, added_conflicts / np.where(added_pairs > 0, added_pairs, 1), np.nan)
 
 
-def gini(values: np.ndarray) -> float:
-    """Gini coefficient of non-negative values: 0 when all are equal, near 1
-    when one carries everything. NaN for an empty input."""
-    values = np.sort(np.asarray(values, dtype=float))
-    n = len(values)
-    if n == 0:
-        return float("nan")
-    if values.sum() == 0:
-        return 0.0
-    ranks = np.arange(1, n + 1)
-    return float((2 * ranks - n - 1) @ values / (n * values.sum()))
+def juncture_counts(spans, n_positions: int) -> tuple[np.ndarray, int]:
+    """For each juncture j|j+1 (index j-1, j = 1 .. N-1): the conflicting
+    pairs whose smallest common stretch -- from the leftmost of the two left
+    edges to the rightmost of the two right edges -- spans it. Each pair is
+    counted once per juncture, however many stretches hold it. Also returns
+    the number of conflicting pairs."""
+    i, j = np.nonzero(np.triu(conflict_matrix(spans), k=1))
+    left = np.array([s.left for s in spans])
+    right = np.array([s.right for s in spans])
+    hull_left = np.minimum(left[i], left[j])
+    hull_right = np.maximum(right[i], right[j])
+    junctures = np.arange(1, n_positions)[:, None]
+    counts = ((hull_left[None, :] <= junctures) & (hull_right[None, :] > junctures)).sum(axis=1)
+    return counts, len(i)
+
+
+def juncture_shares(counts: np.ndarray, n_pairs) -> np.ndarray:
+    """Counts over the number of conflicting pairs (last axis = junctures);
+    NaN where there are none. Works on a stack (leading axis = replicates,
+    `n_pairs` one per replicate)."""
+    counts = np.asarray(counts, dtype=float)
+    total = np.asarray(n_pairs, dtype=float)[..., None]
+    return np.where(total > 0, counts / np.where(total > 0, total, 1), np.nan)
+
+
+def juncture_test(spans, n_positions: int, null_junct: np.ndarray, null_pairs: np.ndarray,
+                  n_permutations: int, seed: int) -> tuple[list[dict], dict]:
+    """Where conflict starts and stops: the share of conflicting pairs
+    spanning each juncture, its change from one juncture to the next, and
+    the largest such change against the null's largest (the quantal test).
+    Replicates with no conflict have no shares and are left out."""
+    counts, n_pairs = juncture_counts(spans, n_positions)
+    share = juncture_shares(counts, n_pairs)
+    null_share = juncture_shares(null_junct, null_pairs)
+    null_share = null_share[~np.isnan(null_share[:, 0])]
+    change = np.diff(share)
+    null_change = np.diff(null_share, axis=1)
+    null_change_mean = null_change.mean(axis=0)
+    excess = change - null_change_mean
+    null_excess = np.abs(null_change - null_change_mean)
+
+    rows = []
+    for k in range(n_positions - 1):
+        ns = null_share[:, k]
+        row = {"juncture": f"{k + 1}|{k + 2}", "left_position": k + 1,
+               "conflicts": int(counts[k]), "share": round(float(share[k]), 4),
+               "null_share_mean": round(float(ns.mean()), 4),
+               "null_share_lo": round(float(np.percentile(ns, 5)), 4),
+               "null_share_hi": round(float(np.percentile(ns, 95)), 4),
+               "p_share_ge": round(float(np.mean(ns >= share[k] - 1e-12)), 4),
+               "p_share_le": round(float(np.mean(ns <= share[k] + 1e-12)), 4)}
+        if k == 0:
+            row.update(position_passed="", change="", null_change_mean="", excess_change="", p_abs_excess_ge="")
+        else:
+            c = k - 1
+            row.update(position_passed=k + 1, change=round(float(change[c]), 4),
+                       null_change_mean=round(float(null_change_mean[c]), 4),
+                       excess_change=round(float(excess[c]), 4),
+                       p_abs_excess_ge=round(float(np.mean(null_excess[:, c] >= abs(excess[c]) - 1e-12)), 4))
+        rows.append(row)
+
+    largest = int(np.argmax(np.abs(excess)))
+    null_max = null_excess.max(axis=1)
+    observed = float(abs(excess[largest]))
+    quantal = {"n_conflicting_pairs": n_pairs, "largest_excess_change": round(float(excess[largest]), 4),
+               "at_position": largest + 2, "null_largest_mean": round(float(null_max.mean()), 4),
+               "null_largest_hi": round(float(np.percentile(null_max, 95)), 4),
+               "p_largest_ge": round(float(np.mean(null_max >= observed - 1e-12)), 4),
+               "n_cliffs_beyond_null_largest_hi": int(np.sum(np.abs(excess) > np.percentile(null_max, 95))),
+               "n_replicates_scored": len(null_share), "n_permutations": n_permutations, "seed": seed}
+    return rows, quantal
 
 
 def resolution_grid(inside: np.ndarray, n_positions: int) -> np.ndarray:
@@ -177,7 +249,7 @@ def stretches(n_positions: int):
 
 
 def run_profile(domain_file: str, domains_dir: Path, n_permutations: int = 5000, seed: int = 0,
-                n_positions: int | None = None) -> tuple[list[dict], list[dict], list[dict], dict]:
+                n_positions: int | None = None) -> tuple[list[dict], list[dict], list[dict], list[dict], dict]:
     spans, n_positions = load_spans(domain_file, str(domains_dir), n_positions=n_positions)
     families, truncated = enumerate_maximal_laminar_families(spans, find_conflicts(spans), n_positions)
     if truncated:
@@ -194,6 +266,8 @@ def run_profile(domain_file: str, domains_dir: Path, n_permutations: int = 5000,
     null_cross = np.empty((n_permutations, n_positions, n_positions))
     null_dom = np.empty((n_permutations, n_positions, n_positions), dtype=np.int64)
     null_conf = np.empty((n_permutations, n_positions, n_positions), dtype=np.int64)
+    null_junct = np.empty((n_permutations, n_positions - 1), dtype=np.int64)
+    null_pairs = np.empty(n_permutations, dtype=np.int64)
     n_truncated = 0
     for i in range(n_permutations):
         replicate = random_replicate(sizes, n_positions, rng)
@@ -203,6 +277,7 @@ def run_profile(domain_file: str, domains_dir: Path, n_permutations: int = 5000,
         null_res[i] = resolution_grid(r_inside, n_positions)
         null_cross[i] = r_cross
         null_dom[i], null_conf[i] = conflict_grids(replicate, n_positions)
+        null_junct[i], null_pairs[i] = juncture_counts(replicate, n_positions)
     null_dens = density_grid(null_dom, null_conf)
 
     profile = []
@@ -239,7 +314,6 @@ def run_profile(domain_file: str, domains_dir: Path, n_permutations: int = 5000,
         profile.append(row)
 
     jumps = []
-    obs_excess, null_marginals, step_null_means = [], [], []
     for a, b in stretches(n_positions):
         for side, (a2, b2), added in (("right", (a, b + 1), b + 1), ("left", (a - 1, b), a - 1)):
             if not (1 <= a2 and b2 <= n_positions) or b - a + 1 < 3:
@@ -256,8 +330,6 @@ def run_profile(domain_file: str, domains_dir: Path, n_permutations: int = 5000,
             null_marg = marginal_conflict(null_dom, null_conf, (i, j), (i2, j2))
             defined = null_marg[~np.isnan(null_marg)]
             null_mean = float(defined.mean()) if len(defined) else float("nan")
-            null_marginals.append(null_marg)
-            step_null_means.append(null_mean)
             row["added_pairs"] = int(pairs(n_dom[i2, j2]) - pairs(n_dom[i, j]))
             if np.isnan(marg) or np.isnan(null_mean):
                 row.update(marginal_conflict="", null_marginal_mean="", excess_marginal="")
@@ -265,25 +337,9 @@ def run_profile(domain_file: str, domains_dir: Path, n_permutations: int = 5000,
                 row.update(marginal_conflict=round(marg, 4),
                            null_marginal_mean=round(null_mean, 4),
                            excess_marginal=round(marg - null_mean, 4))
-                obs_excess.append(marg - null_mean)
             jumps.append(row)
 
-    # Quantal or gradual: how unevenly the departures from chance are spread
-    # over the steps, as a Gini coefficient of |excess marginal conflict|.
-    # Each replicate is scored the same way against the same null means.
-    step_null_means = np.array(step_null_means)
-    null_marginals = np.array(null_marginals)              # steps x replicates
-    null_excess = null_marginals - step_null_means[:, None]
-    null_gini = np.array([gini(np.abs(col[~np.isnan(col)])) for col in null_excess.T])
-    null_gini = null_gini[~np.isnan(null_gini)]
-    observed_gini = gini(np.abs(np.array(obs_excess)))
-    quantal = {"n_steps": len(jumps), "n_steps_scored": len(obs_excess),
-               "gini_observed": round(observed_gini, 4),
-               "null_gini_mean": round(float(null_gini.mean()), 4),
-               "null_gini_lo": round(float(np.percentile(null_gini, 5)), 4),
-               "null_gini_hi": round(float(np.percentile(null_gini, 95)), 4),
-               "p_gini_ge": round(float(np.mean(null_gini >= observed_gini - 1e-12)), 4),
-               "n_permutations": n_permutations, "seed": seed}
+    junctures, quantal = juncture_test(spans, n_positions, null_junct, null_pairs, n_permutations, seed)
 
     positions = []
     for side in ("right", "left"):
@@ -302,7 +358,7 @@ def run_profile(domain_file: str, domains_dir: Path, n_permutations: int = 5000,
                 mean_excess_marginal=round(float(np.mean(scored)), 4) if scored else "",
                 min_excess_marginal=round(float(np.min(scored)), 4) if scored else "",
                 max_excess_marginal=round(float(np.max(scored)), 4) if scored else "")
-    return profile, jumps, positions, quantal
+    return profile, jumps, positions, junctures, quantal
 
 
 def write_tsv(path: Path, rows: list[dict]) -> None:
@@ -319,17 +375,20 @@ def main():
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
     run = resolve_dataset_arguments(args, "counts-and-chance")
-    profile, jumps, positions, quantal = run_profile(args.domain_file, args.domains_dir,
-                                                     n_permutations=args.n_permutations, seed=args.seed,
-                                                     n_positions=run.n_positions)
+    profile, jumps, positions, junctures, quantal = run_profile(
+        args.domain_file, args.domains_dir, n_permutations=args.n_permutations, seed=args.seed,
+        n_positions=run.n_positions)
     stem = run.output_dir / run.dataset
     write_tsv(Path(f"{stem}_resolution_profile.tsv"), profile)
     write_tsv(Path(f"{stem}_resolution_jumps.tsv"), jumps)
     write_tsv(Path(f"{stem}_resolution_positions.tsv"), positions)
+    write_tsv(Path(f"{stem}_conflict_junctures.tsv"), junctures)
     write_tsv(Path(f"{stem}_conflict_quantal.tsv"), [quantal])
     print(f"{len(profile)} stretches, {len(jumps)} steps, written to {run.output_dir}")
-    print(f"Quantal test: Gini {quantal['gini_observed']} against chance {quantal['null_gini_mean']} "
-          f"(90% {quantal['null_gini_lo']}-{quantal['null_gini_hi']}), p = {quantal['p_gini_ge']}")
+    print(f"Quantal test: largest change in conflict share {quantal['largest_excess_change']} beyond chance, "
+          f"passing position {quantal['at_position']}; chance's largest averages {quantal['null_largest_mean']} "
+          f"(95th percentile {quantal['null_largest_hi']}), p = {quantal['p_largest_ge']}; "
+          f"{quantal['n_cliffs_beyond_null_largest_hi']} changes beyond that percentile")
 
 
 if __name__ == "__main__":

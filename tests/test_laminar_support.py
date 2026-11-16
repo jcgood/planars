@@ -122,19 +122,31 @@ def test_conflict_density_by_hand():
     assert list(stacked) == [1.0, 1.0]
 
 
-def test_gini():
-    assert rp.gini(np.array([1.0, 1.0, 1.0, 1.0])) == 0.0
-    assert rp.gini(np.array([0.0, 0.0, 0.0, 4.0])) == 0.75
-    assert rp.gini(np.zeros(3)) == 0.0 and np.isnan(rp.gini(np.array([])))
+def test_juncture_counts_by_hand():
+    """1-6, 2-3, 2-4, 3-5: the conflicts are 2-3 x 3-5 and 2-4 x 3-5, both
+    lying over 2-5, so each spans junctures 2|3, 3|4 and 4|5 once."""
+    spans = [Span(1, 6), Span(2, 3), Span(2, 4), Span(3, 5)]
+    counts, n_pairs = rp.juncture_counts(spans, 6)
+    assert list(counts) == [0, 2, 2, 2, 0] and n_pairs == 2
+    assert list(rp.juncture_shares(counts, n_pairs)) == [0.0, 1.0, 1.0, 1.0, 0.0]
+    # A stack of replicates, one with no conflict.
+    stacked = rp.juncture_shares(np.stack([counts, np.zeros(5)]), np.array([2, 0]))
+    assert list(stacked[0]) == [0.0, 1.0, 1.0, 1.0, 0.0] and np.isnan(stacked[1]).all()
+    # 1-4 x 3-6 lies over the whole structure.
+    assert list(rp.juncture_counts([Span(1, 4), Span(3, 6)], 6)[0]) == [1, 1, 1, 1, 1]
 
 
 def test_resolution_profile_runs(tmp_path):
     name = write_domains(tmp_path, [("root", 1, 6), ("x", 2, 3), ("y", 2, 4), ("z", 3, 5)])
-    profile, jumps, positions, quantal = rp.run_profile(name, tmp_path, n_permutations=50, seed=1, n_positions=6)
+    profile, jumps, positions, junctures, quantal = rp.run_profile(name, tmp_path, n_permutations=50,
+                                                                   seed=1, n_positions=6)
     row = next(r for r in profile if (r["left"], r["right"]) == (2, 5))
     assert row["n_domains"] == 3 and row["conflict_density"] == round(2 / 3, 4)
     step = next(r for r in jumps if (r["from"], r["to"]) == ("2-4", "2-5"))
     assert step["marginal_conflict"] == 1.0 and step["added_pairs"] == 2
-    assert 0.0 <= quantal["p_gini_ge"] <= 1.0 and quantal["n_steps"] == len(jumps)
+    assert [r["share"] for r in junctures] == [0.0, 1.0, 1.0, 1.0, 0.0]
+    assert junctures[1]["position_passed"] == 2 and junctures[1]["change"] == 1.0
+    assert junctures[4]["change"] == -1.0 and junctures[0]["change"] == ""
+    assert quantal["n_conflicting_pairs"] == 2 and 0.0 <= quantal["p_largest_ge"] <= 1.0
     again = rp.run_profile(name, tmp_path, n_permutations=50, seed=1, n_positions=6)
-    assert again == (profile, jumps, positions, quantal)
+    assert again == (profile, jumps, positions, junctures, quantal)

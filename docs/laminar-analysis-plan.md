@@ -106,11 +106,13 @@ draft, started while Adam is still annotating. **Current state:
     inside and outside a chosen word. It is taken over every stretch of the
     planar structure (`resolution_profile.py`), and the prediction is that
     it is **quantal, not gradual**: it changes in jumps at some edges.
-    Steps are measured by the marginal conflict of the pairs a one-position
-    step adds, against span_placement's null, and the quantal statistic is
-    how unevenly the departures from chance are spread over the steps
-    (the module's docstring has the definitions). Whether a stretch the
-    jumps pick out is word-like is a later question.
+    It is measured at each juncture, counting each conflicting pair once
+    (at the junctures its smallest common stretch spans), against
+    span_placement's null; a wall is a position where that changes more
+    than chance's largest change (the module's docstring has the
+    definitions; a first version over one-position steps counted one
+    conflict many times and was dropped, 2026-11-15). Whether a stretch the
+    walls pick out is word-like is a later question.
 
 ## Phases
 

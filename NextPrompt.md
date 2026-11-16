@@ -20,18 +20,14 @@ units 1–20; don't answer from this table alone.
 
 ## Now
 
-**First (2026-11-15): find the quanta in conflict density.** Plan decision
-11 (syntax more tree-like than morphology; conflict density is the
-measure; no word assumed; the prediction is quantal change, not gradual).
-`laminar/resolution_profile.py` measures it, but its quantal test (a Gini
-over one-position steps) is unsound, and `laminar/INDEX.md` says why.
-Replace it with step 0 in `docs/laminar-analysis-progress.md` ("Domain
-support and resolution"): a per-boundary count of conflicting pairs, each
-pair counted once, against the null. Then redraw
-`NonCollaborative/scripts/slides/nyan1308_conflict_profile.R` from it.
-That slide's caption still quotes the unsound p = 0.005. What Jeff expects
-to see: in Chichewa all 65 conflicts lie within 5–19, so the walls at 5
-and 19 should show as cliffs.
+**First (2026-11-15): Jeff reads the per-juncture result.** The Gini was
+replaced and the conflict slide redrawn
+(`NonCollaborative/results/nyan1308/slides/nyan1308_conflict_profile.png`).
+Chichewa's conflict is confined to 5–19, but its edges are ramps, not
+single cliffs (largest step p = 0.074). The open question for Jeff (ramp
+as quantum? test an edge as a run of steps?) is in
+`docs/laminar-analysis-progress.md` ("Domain support and resolution").
+Don't add a new test before he answers.
 
 **Then:** export the three modules into the bundle and the weekly run, with
 the weekly fingerprint narrowed to the code the bundle imports (progress

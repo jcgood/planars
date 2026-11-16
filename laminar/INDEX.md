@@ -189,20 +189,31 @@ whole dataset, use `python -m laminar charts <dataset> --apply`.
 - **Conflict density** (added 2026-11-15, plan decision 11: is syntax more
   tree-like than morphology, without assuming where words are): per
   stretch, the share of pairs of its domains that conflict; per step, the
-  marginal conflict of the pairs it adds, against the same null; and a
-  quantal test (Gini of |excess marginal conflict| over the steps).
-- **Finding (nyan1308, 5000 draws)**:
-  - **Quantal test: Gini 0.517 against chance 0.434 (90% 0.377–0.488),
-    p = 0.005, but not to be relied on** (found 2026-11-15): 22 steps that
-    add a single pair (marginal conflict 0 or 1) carry 40% of the
-    unevenness, and the largest steps are one conflict (5–6 against 6–8)
-    counted again in every stretch that first takes it in (1–7→1–8,
-    2–7→2–8, …). The quanta show more directly in where each conflict
-    first appears: all 65 conflicting pairs lie within 5–19 (no pair's
-    smallest common stretch starts before 5 or ends after 19), and 57 of
-    them end at 16–19. A per-juncture measure that counts each pair once
-    replaces the Gini (progress doc).
-  - **Where**: steps adding positions inside the verb add conflict beyond
+  marginal conflict of the pairs it adds (descriptive); and, per juncture,
+  the share of conflicting pairs spanning it (each pair counted once, over
+  its smallest common stretch), with the quantal test on its changes: the
+  largest change beyond chance against each replicate's largest.
+- **Finding (nyan1308, 5000 draws), the juncture measure**:
+  - **Conflict is confined to 5–19**: the share is 0 at every juncture
+    outside (1|2 to 4|5 and 19|20 to 21|22), where chance puts 0.18–0.56
+    (p ≤ 0.005 at 2|3–4|5 and 19|20–20|21). Inside it is at or above
+    chance (0.94–0.95 at 9|10–12|13).
+  - **But the edges are ramps, not cliffs.** Rising: 0 at 4|5, 0.29, 0.60,
+    0.60, 0.80, 0.94 at 9|10; falling: 0.88 at 15|16, 0.69, 0.42, 0.12, 0
+    at 19|20. Steps steeper than chance at that position alone (uncorrected
+    p < 0.05): 5, 6, 8, 9 on the left and 16, 17, 18 on the right. **The
+    largest, +0.23 at position 6, does not beat chance's largest (95th
+    percentile 0.25, p = 0.074)**, so no single position is a wall once
+    every position is looked at. Read: conflict starts and stops over
+    three to four positions at each side, each steeper than chance, rather
+    than at one position. Whether a ramp counts as a quantum, and whether
+    to test the edge as a stretch of steps (a choice made after seeing
+    this, so it would need saying), is Jeff's call.
+  - **The Gini it replaced** (0.517 against 0.434, p = 0.005, retired
+    2026-11-15): 22 steps that add a single pair carried 40% of its
+    unevenness, and its largest steps were one conflict (5–6 against 6–8)
+    counted again in every stretch that first takes it in. Don't quote it.
+  - **Where (marginal conflict, descriptive)**: steps adding positions inside the verb add conflict beyond
     chance (adding 8 on the right: mean excess +0.63; 13 on the right
     +0.25; 9 on the left +0.13). Steps reaching the phrase add only
     nesting where chance gives about a third conflicts (adding 21 or 22 on
@@ -215,7 +226,8 @@ whole dataset, use `python -m laminar charts <dataset> --apply`.
 - **Output**: `results/nyan1308/counts-and-chance/nyan1308_resolution_profile.tsv`
   (one row per stretch), `_resolution_jumps.tsv` (one per one-position
   step), `_resolution_positions.tsv` (steps averaged by position added),
-  `_conflict_quantal.tsv` (the quantal test)
+  `_conflict_junctures.tsv` (one per juncture), `_conflict_quantal.tsv`
+  (the quantal test)
 - **Example**: `python -m laminar.resolution_profile`
 - **Not yet in the bundle**, the weekly run or a chart.
 
