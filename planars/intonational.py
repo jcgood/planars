@@ -19,7 +19,7 @@ def derive_intonational_domains(
 ) -> Dict[str, object]:
     """Derive intonational domains from a filled intonational TSV.
 
-    [AUTO-DERIVED] Intonational domains cover the span of verbal positions
+    (Status: schemas/diagnostic_classes_status.yaml.) Intonational domains cover the span of verbal positions
     governed by an intonational phonological pattern — i.e., the span over
     which an intonation contour (boundary tone, pitch reset, declination, etc.)
     applies within the verbal planar structure.

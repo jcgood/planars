@@ -24,8 +24,9 @@ It also keeps each language's tab-status record,
 coded_data/{lang_id}/records/tab_status.tsv (file_door.tab_status; Phase 10
 unit 16): every class sheet's Status tab as read (each tab's status and its
 Marked by cell), so the record holds them as well as Google. A sheet that
-could not be read keeps its previous rows. Nothing reads the record back;
-the Status tab stays the source.
+could not be read keeps its previous rows. Only this command reads the
+record back (for those kept rows, and the dry run's comparison); the Status
+tab stays the source.
 
 Exits non-zero only when the import itself broke: a class's spreadsheet
 could not be opened, or a tab is missing from it. Invalid values are not an

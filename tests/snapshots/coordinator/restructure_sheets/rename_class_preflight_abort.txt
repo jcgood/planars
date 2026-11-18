@@ -7,4 +7,5 @@ Pre-flight checks failed:
     Replace it with 'proform_renamed' there, run `python -m coding sync-diagnostics-yaml --apply`, then re-run --rename-class.
   stan1293: 'proform_renamed' is not in diagnostics_stan1293.yaml.
     Add it there, run `python -m coding sync-diagnostics-yaml --apply`, then re-run --rename-class.
+Drive door (enforce): checked 0 write(s) to 0 tab(s) or file(s); 0 broke a rule.
 [SystemExit: 1]

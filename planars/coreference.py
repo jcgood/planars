@@ -8,9 +8,9 @@ which elements those pair tabs get; it produces no spans itself.
 
 Column presence for the planar and pair TSVs, and the planar's
 ``Position``-is-an-integer and keystone-exists checks, are enforced
-(``planars/contracts.py`` section 2). Per-row leniency is deliberate: an
-unrecognised element or an unreadable ``Position_B`` is collected into the
-result's ``missing_data`` rather than failing the run.
+(``planars/contracts.py`` section 2). Per row, an unrecognised element or an
+unreadable ``Position_B`` raises by default (``strict=True``); with
+``strict=False`` it is collected into the result's ``missing_data`` instead.
 """
 from __future__ import annotations
 
@@ -150,13 +150,14 @@ def derive_coreference_domains(
 ) -> Dict[str, object]:
     """Derive binding domain spans from a filled coreference pair TSV.
 
-    [AUTO-DERIVED: NEEDS REVIEW] Span rules proposed in issue #163 (Apr 2026).
-    Coordinator linguistic sign-off required before promoting to stable.
+    Span rules proposed in issue #163 (Apr 2026); their status is in
+    schemas/diagnostic_classes_status.yaml.
 
-    Data model: pair rows (Element_A, Position_A, Position_B, Direction,
-    reflexive_allowed) where Element_A is the antecedent (binder) at Position_A, and
-    Position_B is the structural position of the anaphor (bindee). Only pairs with
-    reflexive_allowed=y contribute to span computation. Rows with referential=n in the
+    Data model: pair rows (Element_A, Position_A, Position_B, Direction, and the
+    construction's criterion: reflexive_allowed, pronoun_allowed or np_allowed)
+    where Element_A is the antecedent (binder) at Position_A, and
+    Position_B is the structural position of the anaphor (bindee). Only pairs whose
+    criterion is y contribute to span computation. Rows with referential=n in the
     upstream prescreening sheet are excluded before pair rows are generated.
 
     Span rule (mirrors diagnostic_classes.yaml)
@@ -185,8 +186,9 @@ def derive_coreference_domains(
     without presupposing tree structure (see issue #163).
 
     Args:
-        tsv_path:    Path to pair TSV (Element_A, ..., reflexive_allowed, ...).
-        strict:      If True, raise on unknown elements.
+        tsv_path:    Path to pair TSV (Element_A, ..., the construction's criterion, ...).
+        strict:      If True (the default), raise on unknown elements; if False,
+                     collect them into missing_data.
         planar_path: Optional explicit path to planar TSV. If None, derived from tsv_path.
         construction: The construction (which criterion column to read). Taken
                      from tsv_path's filename when not given; required with _data.

@@ -15,8 +15,9 @@ it in three steps, one job each:
 1. **``--plan``**: which (language, dataset) pairs are behind their data.
    With ``--apply`` it also makes each such language's ``analysis`` folder
    on Drive (inside its language folder; ID in ``drive_config.json``), so
-   the parallel jobs never race to make it, and writes the list for the
-   workflow (``--github-output``: ``matrix=`` and ``count=`` lines). Only
+   the parallel jobs never race to make it. With ``--github-output``, with
+   or without ``--apply``, it writes the list for the workflow
+   (``matrix=`` and ``count=`` lines). Only
    language and dataset names are written: the list goes into the public log.
 2. **``--lang L --dataset D``**, one job per pair, side by side: builds the
    dataset from the annotation in a temporary folder, exports it with the
@@ -120,7 +121,8 @@ def _languages(only: str | None) -> list[str]:
     """The languages the weekly run covers: laminar-charts' list less the
     made-up ones."""
     from .laminar_charts import _languages as annotated
-    return [lang for lang in annotated(only) if not lang.startswith("synth")]
+    from planars.languages import is_synthetic
+    return [lang for lang in annotated(only) if not is_synthetic(lang)]
 
 
 # ── Behind its data ─────────────────────────────────────────────────────────

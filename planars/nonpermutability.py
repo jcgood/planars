@@ -153,8 +153,8 @@ def derive_nonpermutability_domains(
 ) -> Dict[str, object]:
     """Derive non-permutability spans from a filled nonpermutability pair TSV.
 
-    [AUTO-DERIVED: NEEDS REVIEW] Span rules designed in issue #116 (Apr 2026).
-    Verify before use for annotation or analysis.
+    Span rules designed in issue #116 (Apr 2026); their status is in
+    schemas/diagnostic_classes_status.yaml.
 
     Data model: pair rows (Element_A, Element_B, scopal) from Stage 2 of the
     two-stage annotation workflow. Stage 1 (element_prescreening) filters elements with

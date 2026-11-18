@@ -19,13 +19,13 @@ Language:    stan1293
 Planar file: planar_stan1293.tsv
 Classes:     ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent', 'biuniqueness_deviations']
   All classes already have sheets. Skipping stan1293.
-  (use --force to regenerate)
+  (to change existing sheets: python -m coding restructure-sheets)
 
 Language:    synth0001
 Planar file: planar_synth0001.tsv
 Classes:     ['ciscategorial', 'subspanrepetition', 'noninterruption', 'metrical', 'nonpermutability', 'segmental', 'free_occurrence', 'coreference', 'proform', 'phrasal_accent']
   All classes already have sheets. Skipping synth0001.
-  (use --force to regenerate)
+  (to change existing sheets: python -m coding restructure-sheets)
 drive_config.json written.
 
 Each language's folder and sheets are shared with the annotator named in people.yaml; for a language with none listed, add one there and re-run with --apply.

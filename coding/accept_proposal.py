@@ -2,7 +2,8 @@
 proposal sheet and apply what is accepted to the sources.
 
 Phase 10 unit 11a (issue #271); design: docs/ownership-design.md § 3.3. Run
-by the coordinator's Claude, from the language's ``proposal`` issue. Without
+by the coordinator's Claude, from the language's ``planars-and-diagnostics``
+issue. Without
 ``--apply`` it lists the proposal (each change, each conflict) and stops.
 With ``--apply`` it asks about each one:
 

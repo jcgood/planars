@@ -18,8 +18,8 @@ morphemes.tsv (one row per morpheme) and morphs.tsv (one row per form at a
 position) -- plus the language's planar TSV for position numbers. The
 deviation type is derived from the form rows, never annotated.
 
-[AUTO-DERIVED: NEEDS REVIEW] Span definition and type rules designed with the
-coordinator on 2026-10-11 (#254); Adam's review required before promotion.
+Span definition and type rules designed with the coordinator on 2026-10-11
+(#254). Their status is in schemas/diagnostic_classes_status.yaml.
 
 Span rule (mirrors diagnostic_classes.yaml)
 -------------------------------------------

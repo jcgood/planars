@@ -60,3 +60,4 @@ Mode:     apply
   [phrasal_accent/general] OK — no changes
 
 All sheets are up to date.
+Drive door (enforce): checked 0 write(s) to 0 tab(s) or file(s); 0 broke a rule.

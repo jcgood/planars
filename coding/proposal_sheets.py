@@ -33,14 +33,14 @@ For each language with a folder in the ID file:
   first) and into the base; rows the annotator changed are the proposal and
   are kept, with their reasons; a row both changed differently is a
   conflict, kept as the annotator left it;
-- then file or update the language's ``proposal`` issue, which lists each
+- then file or update the language's ``planars-and-diagnostics`` issue, which lists each
   change and conflict in plain words, or close it once the sheet holds no
   proposal (a change the coordinator has made in the source as well counts
   as agreed and drops off).
 
 Dry run by default; ``--apply`` writes. It is a step of the daily refresh
 (``proposal-sheets --apply``, after the diagnostics sync; it files its own
-``proposal`` issues). A sheet with no base, or a language whose sources
+``planars-and-diagnostics`` issues). A sheet with no base, or a language whose sources
 can't be read, is reported and the run exits non-zero after the other
 languages; nothing is written to a sheet that has no base. It also refuses to
 make a second sheet when the language's folder already holds one that the ID

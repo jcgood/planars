@@ -447,10 +447,9 @@
     note: >-
       A sheet created before its construction's row_type was settled keeps the
       old header indefinitely: nothing regenerates a tab on its own, because
-      doing so would discard annotations. stan1293's phrasal_accent/general is
+      doing so would discard annotations. stan1293's phrasal_accent/general was
       exactly this -- element rows, created before #237 settled the pair-row
-      design, still element rows today (#275; resolved as "the sheet is stale",
-      rebuild pending prescreening annotation).
+      design (#275), until its sheet was rebuilt as pair rows on 2026-10-27.
 
       The worse failure, and the reason this record exists, is a reader holding
       its own copy of the set. import_sheets.py decided pair-vs-element from a

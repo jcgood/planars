@@ -48,14 +48,13 @@ than from the gspread documentation, because the API's subtleties are exactly
 what gets guessed wrong. That only works if capture preserves what the API
 actually returned. So:
 
-**Nothing here normalizes, pads, trims, or rectangularizes.** In particular,
-``get_all_values()`` returns ragged rows for partially-filled annotation tabs
-and rectangular rows for fully-written ones, and different call sites in
-``coding/`` depend on each behaviour (``generate_sheets.py`` guards for ragged
-rows; ``import_sheets.py`` feeds the response straight into a DataFrame and
-would break on them). A fake built from tidied fixtures would be uniformly
-rectangular, silently fail to exercise the guarded paths, and give false
-confidence. See docs/drive-protocol-surface.md § "Subtleties most likely to be
+**Nothing here normalizes, pads, trims, or rectangularizes.** The first live
+capture found ``get_all_values()`` rectangular on every tab (``ragged_tabs: 0``
+in the index), correcting an earlier guess that partly filled tabs come back
+ragged; recording the responses raw is what would show it if Google ever
+changed that (``import_sheets.py`` feeds the response straight into a
+DataFrame and would break on ragged rows). A fake built from tidied fixtures
+could not show it. See docs/drive-protocol-surface.md § "Subtleties most likely to be
 guessed wrong". If you are tempted to clean up a fixture, don't -- the mess is
 the signal.
 

@@ -574,10 +574,9 @@ def main(args: argparse.Namespace | None = None) -> None:
                 # validate_coding.py/import_sheets.py use). This command is about to
                 # WRITE to the tab, and the header is what's actually there right now;
                 # the schema is what a construction is eventually supposed to look
-                # like, and the two can disagree (stan1293's phrasal_accent/general is
-                # a live example -- row_type: pair_rows in the schema, still
-                # element-row-shaped on the live Sheet, per facts.yaml's
-                # pair_row_construction_set drift_risk). Trusting the header keeps
+                # like, and the two can disagree (stan1293's phrasal_accent/general
+                # did, until its sheet was rebuilt on 2026-10-27: row_type: pair_rows
+                # in the schema, element rows on the live Sheet). Trusting the header keeps
                 # this command from corrupting a tab that hasn't been rebuilt yet.
                 #
                 # "Any of element_pairs' columns anywhere in the header" (not

@@ -16,12 +16,13 @@ refresh failing: its step files (or updates) the step's issue, and the next
 step runs. The refresh itself has failed only when something it must do
 breaks — committing the snapshots, or filing an issue. Then the remaining
 steps are skipped, except the ones marked ``always`` (snapshots, the
-overwrite check, committing the snapshots), as the workflow's
-``if: always()`` steps were.
+overwrite check, committing the snapshots, the scope count), as the
+workflow's ``if: always()`` steps were.
 
 Exit status: 1 if the refresh itself failed, or if a step with no issue of
-its own failed (label sync, collaborator notes, criterion columns,
-chapters, Overleaf, dropdowns, snapshots), so the workflow run shows red; 0 otherwise. On GitHub Actions
+its own failed (label sync, collaborator notes, collaborator comments,
+proposal sheets, criterion columns, chapters, Overleaf, snapshots,
+dropdowns, notebooks), so the workflow run shows red; 0 otherwise. On GitHub Actions
 each command's output also goes to the run's summary page
 (``GITHUB_STEP_SUMMARY``).
 
@@ -744,7 +745,7 @@ STEPS: List[Step] = [
          check_comments),
     Step("diagnostics sheet", "sync-diagnostics-yaml --apply → diagnostics-yaml-error",
          diagnostics_to_sheet),
-    Step("proposal sheets", "proposal-sheets --apply (files its own proposal issues)",
+    Step("proposal sheets", "proposal-sheets --apply (files its own planars-and-diagnostics issues)",
          proposal_sheets),
     Step("criterion columns", "sync-params --apply", sync_params),
     Step("regen dependents", "generate-sheets --regen-dependents → regen-dependents-error",

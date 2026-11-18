@@ -691,14 +691,16 @@ class CheckedDoorway:
                 if found:
                     shape_problems.append((found, ss.id))
             self._before_sheets, self._before_tabs, self._replacements = {}, {}, {}
-        if self._written:
-            # One line in the command's output, so a run log shows the door
-            # was at work: a silent door looks the same as a broken one, which
-            # is how unit 20's bug (no live command checked) hid for four days.
+        if self._written or (_context is not None and _context.may_write):
+            # One line in the command's output whenever it was allowed to
+            # write, even if it wrote nothing, so a run log shows the door was
+            # at work: a silent door looks the same as a broken one, which is
+            # how unit 20's bug (no live command checked) hid for four days.
             calls = sum(e["writes"] for e in self._written.values())
             broken = len(self.violations) + sum(len(p) for p, _ in shape_problems)
             print(f"Drive door ({self._mode_label()}): checked {calls} write(s) to "
                   f"{len(self._written)} tab(s) or file(s); {broken} broke a rule.")
+        if self._written:
             from . import provenance
             arguments = vars(args) if args is not None else {}
             provenance.append_writes([

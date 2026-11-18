@@ -62,7 +62,8 @@ adds, applied to the planar TSV's rows already filtered to one language
 
 The pair TSV's per-row value leniency, an unrecognized element or an
 unparseable `Position_B`, both collected into `missing_data` rather than
-failed outright, stays exactly as it was: that leniency is deliberate, not
+failed outright when the caller passes `strict=False` (as `planars/reports.py`
+does), stays exactly as it was: that leniency is deliberate, not
 a gap.
 """
 from __future__ import annotations

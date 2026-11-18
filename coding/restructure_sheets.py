@@ -79,7 +79,8 @@ and the files are committed and pushed in planars-data when the command ends.
 
 Recoverability (Phase 7 of the data layer redesign, issue #271): each class's
 progress through steps 2-6 is journaled to restructure_journal.json (in
-planars-data, `state_files.JOURNAL_PATH`) before each Drive-mutating step, so
+planars-data, `state_files.JOURNAL_PATH`) right after each Drive-mutating step
+lands (old sheet archived; new sheet created and populated), so
 a crash partway through is detected by the next run, on any machine (the
 command refuses a copy of planars-data older than GitHub's), rather than silently re-attempted or left unexplained. Undoing is only
 offered where it's actually safe -- step 2 alone, before step 3 has created
@@ -96,15 +97,17 @@ the class's local TSVs move from coded_data/{lang}/{old}/ to
 coded_data/{lang}/{new}/ (file_door.move_class: each written under the new
 name and removed from the old, whose last versions stay in archive/{old}/).
 
-After `--apply`, for each language whose sheets actually changed:
-  - the planar Sheet is brought up to date with `planar_{lang_id}.tsv`
+After `--apply`:
+  - for every language processed (all, or the `--lang` one), the planar
+    Sheet is brought up to date with `planar_{lang_id}.tsv`
     (`sync_planar.sync_planars`), which first renumbers any position numbers
     typed in the answers. This command only reads that file, never writes it:
     the coordinator or Claude edits it first for a structural change, and the
     flags above only supply the old -> new mapping used to carry annotations
     forward.
-  - a comment goes to the language's `sheet-updates` issue (`notify.py`),
-    because terminal output reaches no annotator.
+  - for each language whose sheets actually changed, a comment goes to its
+    `sheet-updates` issue (`notify.py`), because terminal output reaches no
+    annotator.
 
 Archived sheets: `_lock_archived_sheet` sets the annotator's grant to reader
 (`drive.set_user_role`) and removes any link share; `_rollback_unit` undoes only
@@ -606,8 +609,9 @@ def _get_pair_row_constructions() -> Dict[str, Set[str]]:
 
 
 def _get_keyed_row_constructions() -> Dict[str, Dict[str, Dict[str, List[str]]]]:
-    """Return {class_name: {construction: {"columns": [...], "key": [...]}}} for
-    every keyed_rows construction in diagnostic_classes.yaml.
+    """Return {class_name: {construction: {"columns": [...], "key": [...],
+    "blank_ok_when": [...]}}} for every keyed_rows construction in
+    diagnostic_classes.yaml.
 
     Checks every construction's row shape on the way (planars.schema_values'
     row_type_of/row_columns_of/row_key_of, the one copy of those rules): every

@@ -19,10 +19,9 @@ def derive_idiom_domains(
 ) -> Dict[str, object]:
     """Derive idiom domains from a filled idiom TSV.
 
-    [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design was automatically derived from
-    the description in Tallman et al. 2024 (langsci/291), Discussion ch. 17 only —
-    no concrete language data was reviewed. Diagnostic criterion design is speculative.
-    Verify thoroughly before use.
+    Diagnostic criterion design was first derived from the description in
+    Tallman et al. 2024 (langsci/291), Discussion ch. 17. Its status, and the
+    evidence for it, are in schemas/diagnostic_classes_status.yaml.
 
     The idiom domain identifies the span of positions forming an idiomatic
     unit — a span where the combination of elements has a meaning not

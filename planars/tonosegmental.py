@@ -19,7 +19,7 @@ def derive_tonosegmental_domains(
 ) -> Dict[str, object]:
     """Derive tonosegmental domains from a filled tonosegmental TSV.
 
-    [AUTO-DERIVED] Tonosegmental domains cover patterns where a tonal melody
+    (Status: schemas/diagnostic_classes_status.yaml.) Tonosegmental domains cover patterns where a tonal melody
     is assigned to a segmental span as the surface realisation of a grammatical
     or semantic feature. The tonal pattern is not a general phonological spreading
     or sandhi rule (those belong in tonal.py) but rather a morphological exponent:

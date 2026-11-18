@@ -19,10 +19,9 @@ def derive_pausing_domains(
 ) -> Dict[str, object]:
     """Derive pausing domains from a filled pausing TSV.
 
-    [AUTO-DERIVED: NEEDS REVIEW] Diagnostic criterion design was automatically derived from
-    the description in Tallman et al. 2024 (langsci/291), Discussion ch. 17 only —
-    no concrete language data was reviewed. Diagnostic criterion design is speculative.
-    Verify thoroughly before use.
+    Diagnostic criterion design was first derived from the description in
+    Tallman et al. 2024 (langsci/291), Discussion ch. 17. Its status, and the
+    evidence for it, are in schemas/diagnostic_classes_status.yaml.
 
     The pausing domain identifies the span of positions that cannot be
     separated by prosodic pause — that is, positions that form an utterance

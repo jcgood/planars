@@ -2211,8 +2211,8 @@ def main(args: argparse.Namespace | None = None) -> None:
     - Creates the planar and diagnostics Sheets, read-only copies of
       planar_{lang_id}.tsv and diagnostics_{lang_id}.yaml, if the language has
       none yet (sync-planar and sync-diagnostics-yaml keep them current).
-    - Creates one annotation Google Sheet per analysis class (skipping existing ones unless
-      --force). Each sheet has one tab per construction with dropdown validation.
+    - Creates one annotation Google Sheet per analysis class that has none
+      (--force is refused if any exist). Each sheet has one tab per construction with dropdown validation.
       Each new sheet's ID goes into the ID file (drive_config.json) as soon as it exists.
     - Adds the tabs of constructions a class's existing sheet lacks.
     - Regenerates contributor notebooks at the end (they find a new sheet by
@@ -2398,7 +2398,7 @@ def main(args: argparse.Namespace | None = None) -> None:
             continue
         if not plan_anything:
             print(f"  All classes already have sheets. Skipping {lang_id}.\n"
-                  "  (use --force to regenerate)")
+                  "  (to change existing sheets: python -m coding restructure-sheets)")
             continue
 
         # Resolve/create Drive folder.
@@ -2479,7 +2479,7 @@ def main(args: argparse.Namespace | None = None) -> None:
                 if not added_any:
                     print(
                         f"  All classes already have sheets. Skipping {lang_id}.\n"
-                        "  (use --force to regenerate)"
+                        "  (to change existing sheets: python -m coding restructure-sheets)"
                     )
                 continue
             print(f"Existing:    {list(existing_sheets.keys())}")

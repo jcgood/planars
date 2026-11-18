@@ -19,8 +19,8 @@ def derive_proform_domains(
 ) -> Dict[str, object]:
     """Derive proform substitution domains from a filled proform TSV.
 
-    [NEEDS REVIEW] Criterion design confirmed by Adam Tallman (May 2026);
-    not yet validated against annotation data.
+    Criterion design confirmed by Adam Tallman (May 2026). Its status is in
+    schemas/diagnostic_classes_status.yaml.
 
     The proform domain identifies the span of positions that can be replaced
     by a proform (pro-verb, pro-VP, e.g. "do so"). Classified as a

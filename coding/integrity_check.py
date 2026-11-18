@@ -21,7 +21,8 @@ Runs these sections of checks and prints a structured report:
                                     ready-to-use --pos-remap flags. Keyed tabs
                                     (biuniqueness_deviations' morphemes/morphs) are
                                     compared by row key (_keyed_staleness).
-  ANNOTATION SHEETS             — checks live sheet structure and dropdown drift (requires --sheets)
+  ANNOTATION SHEETS             — checks live sheet structure: tabs present, criterion columns
+                                    match the diagnostics YAML (requires --sheets)
   SHARING                        — every labelled Drive file's own grants against its sharing
                                     rule (sheet_spec.sharing_spec): catches access changed by hand
                                     in the Drive window, which the Drive door never sees.
@@ -39,11 +40,12 @@ Runs these sections of checks and prints a structured report:
 Exit code 0 if no errors; 1 if any errors (warnings do not fail).
 
 Writes nothing. GitHub is read (DECISIONS) through coding/issues.py. Drive is
-reached through the doorway, by two independent
-read-only entry points: --sheets (open each spreadsheet, list its tabs, read
-its header, comparing the tabs and criteria columns with the diagnostics YAML)
-and --check-stale-sheets (the ID file and the YAML, no Drive calls; called
---check-manifest until 2026-10-30).
+reached through the doorway, read-only, by two paths: the SHARING section
+(every full run: lists the labelled files and their grants) and --sheets (open
+each spreadsheet, list its tabs, read its header, comparing the tabs and
+criteria columns with the diagnostics YAML). --check-stale-sheets reads only
+local files, the ID file and the YAML (called --check-manifest until
+2026-10-30).
 
 Usage:
     python -m coding integrity-check
@@ -728,6 +730,14 @@ def _section_dependent_construction_staleness(
                 # adjacency step it never had).
                 spec_tab = class_sheet_spec(lang_id, cls_name, CODED_DATA).tab(dep_name)
                 want = expected_row_keys(lang_id, cls_name, spec_tab, CODED_DATA)
+                if want is None and is_synthetic(lang_id):
+                    # A made-up language's answers are generated, not judged,
+                    # so an answer that differs by position is never a
+                    # linguistic case to settle (#288); a real language's
+                    # still warns, and generate-sheets files an issue for it.
+                    print(_ok(f"{label} — not compared: generated answers "
+                              f"differ by position (made-up language, #288)"))
+                    continue
                 if want is None:
                     print(_warn(f"{label} — not compared: an element's answer in "
                                 f"{source_name} differs by position, so the generator "

@@ -22,6 +22,8 @@ sync (the Overleaf version recorded in ``.state/overleaf_state.json``):
   added or deleted counts as a change);
 - changed on both sides, differently: ``.papers/``'s version is kept, and
   Overleaf's goes in as a copy at ``conflicts/<date>/<path>`` on both sides;
+- deleted on one side and changed on the other: the changed version is kept,
+  with no copy;
 - a file the chapter build makes (``chapters.build.is_built``) changed in
   Overleaf: the built version is kept (the next build would replace the
   edit anyway), and Overleaf's goes in as a copy the same way. Generated

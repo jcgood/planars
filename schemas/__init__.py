@@ -92,7 +92,7 @@ languages.yaml
     name, and is read only through ``coding/people.py``.
     Key machine-readable entries:
       required_meta_fields: meta fields integrity-check warns about when blank
-        (currently [source, author]).
+        (the list is in languages.yaml itself).
 
     Note: running ``lookup-lang`` uses PyYAML to rewrite this file, which
     strips YAML comments.  Keep essential documentation here rather than

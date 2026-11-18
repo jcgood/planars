@@ -4,3 +4,4 @@ ERROR: The ID file contains inaccessible spreadsheet IDs:
 The ID file may point to deleted/moved sheets.
 → Run: python -m coding integrity-check --sheets
   This will list which spreadsheet IDs are unreachable and what to do next.
+Drive door (enforce): checked 0 write(s) to 0 tab(s) or file(s); 0 broke a rule.

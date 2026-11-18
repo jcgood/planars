@@ -19,7 +19,7 @@ def derive_tonal_domains(
 ) -> Dict[str, object]:
     """Derive tonal domains from a filled tonal TSV.
 
-    [AUTO-DERIVED] Tonal domains cover general tonal phonological processes
+    (Status: schemas/diagnostic_classes_status.yaml.) Tonal domains cover general tonal phonological processes
     that are not tonosegmental overlays (tone melodies assigned to segmental
     spans as morphological exponents). Examples include tonal spreading
     rules (e.g., Cherokee H1-spreading), tonal assignment rules conditioned

@@ -406,7 +406,8 @@ def is_acknowledgment_line(line: str) -> bool:
 
 
 def _strip_acknowledgment_lines(text: str) -> str:
-    """Strip system-written acknowledgment lines before hashing.
+    """Strip system-written acknowledgment lines before check-notes compares
+    the text with what it recorded last time (and records it).
 
     Removes lines that match the system acknowledgment pattern
     (date-prefixed transfer marker) so that write-backs we append to the

@@ -1,4 +1,4 @@
-"""Check consistency between diagnostic_criteria.yaml, diagnostic_classes.yaml, analysis modules, and charts.py.
+"""Check consistency between diagnostic_criteria.yaml, diagnostic_classes.yaml, analysis modules, and the span label maps in planars/reports.py.
 
 Checks:
   1. Every class's required_criteria, and every criterion a module's _REQUIRED_CRITERIA
@@ -857,10 +857,11 @@ def build_parser() -> argparse.ArgumentParser:
 def main(args: argparse.Namespace | None = None) -> None:
     """Entry point for `python -m coding check-codebook`.
 
-    Runs eight consistency checks (exit 1 if any fail) then three informational reports:
+    Runs the consistency checks 1-7f (exit 1 if any fail), prints the list of
+    entries waiting on review, then the informational reports 8-10:
     1. Every _REQUIRED_CRITERIA criterion in each analysis module is in diagnostic_criteria.yaml.
     2. Every criterion name in the diagnostics_{lang_id}.yaml files is in diagnostic_criteria.yaml.
-    3. Every span key referenced in charts.py exists in the corresponding derive result.
+    3. Every span key in the span label maps (planars/reports.py) exists in the corresponding derive result.
     4. diagnostics_{lang_id}.yaml class names and required criteria match diagnostic_classes.yaml.
     5. Span rule drift: bidirectional module/YAML correspondence, hash sentinel,
        docstring mirror.
@@ -869,7 +870,11 @@ def main(args: argparse.Namespace | None = None) -> None:
     7. No diagnostics_{lang_id}.tsv copy has come back beside the YAML (deleted 2026-10-27).
     7b. Every construction another one depends_on says produces_spans: false.
     7c. Every construction declares its row shape (row_type, pair_shape, keyed_columns/key).
-    8. keystone_active_default "[NEEDS REVIEW]" for active classes with no language override.
+    7d. Every <placeholder> value is declared.
+    7e. Every reads_from names a real class, tab and criteria.
+    7f. Every prefill_by_label names a real criterion, value and label.
+    8. keystone_active_default "[NEEDS REVIEW]" for active classes with no language override;
+       8b, the classes with no active instance yet whose default is unresolved.
     9. Schema stubs: classes with no language coverage (ready-to-paste YAML entries).
     10. Coverage matrix: language × class grid.
     """

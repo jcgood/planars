@@ -6,4 +6,5 @@ ERROR: --force refused for arao1248.
   irreplaceable. If you need to restructure sheets, use:
     python -m coding restructure-sheets --apply
   To add new classes only (no destruction), omit --force.
+Drive door (enforce): checked 0 write(s) to 0 tab(s) or file(s); 0 broke a rule.
 [SystemExit: 1]

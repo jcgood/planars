@@ -1260,8 +1260,6 @@ def main(args: argparse.Namespace | None = None) -> None:
     lang_filter = args.lang
     verbose = args.verbose
 
-    # (The pending-changes reminder is printed by the dispatcher before every
-    # command; this used to print it a second time.)
     print("Connecting to Google APIs...")
     lang_ids = [lang_filter] if lang_filter else None
     notices: Optional[Dict[str, Optional[list]]] = {} if args.notify else None
