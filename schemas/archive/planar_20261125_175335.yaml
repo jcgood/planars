@@ -1,0 +1,411 @@
+# Planar Structure Ontology
+#
+# THIS FILE IS THE SOURCE OF TRUTH FOR:
+#   - Structural column definitions (Element, Position_Name, Position_Number)
+#   - Element conventions: Class_Type categories, ALL CAPS label standards,
+#     brace notation, reserved labels
+#   - The sheets' fixed parts: Status tab, trailing columns, locked tabs, and
+#     the fixed sentences on Instructions tabs (sheet_text)
+#
+# THIS FILE IS NOT THE SOURCE OF TRUTH FOR:
+#   - Diagnostic criterion names and values
+#     → see schemas/diagnostic_criteria.yaml
+#   - Which analysis classes exist or their span rules
+#     → see schemas/diagnostic_classes.yaml
+#   - Analytical terms (strict/loose span, partial/complete position)
+#     → see schemas/terms.yaml
+#   - Per-language planar structures
+#     → see coded_data/{lang_id}/lang_setup/planar_{lang_id}-*.tsv
+
+# ---------------------------------------------------------------------------
+# STRUCTURAL COLUMNS
+# Present in every filled TSV.
+# ---------------------------------------------------------------------------
+
+structural_columns:
+
+  - name: Element
+    description: >
+      A terminal component of a planar structure: a morph, another planar structure,
+      or a well-defined subspan of a planar structure. Elements occupy positions.
+      Elements with leading or trailing hyphens are wrapped in brackets (e.g. [-ed])
+      to prevent misinterpretation by spreadsheet software.
+
+  - name: Position_Name
+    description: >
+      The label for the position in the planar structure. Positions in the verbal
+      domain are prefixed with "v:". The special value "v:verbstem" marks the
+      keystone position (see schemas/terms.yaml).
+
+  - name: Position_Number
+    description: >
+      Integer index of the position in the planar structure. Lower numbers are
+      further left; higher numbers are further right. The keystone (v:verbstem)
+      anchors all span computations.
+
+# Which of structural_columns identify an element row (answers are carried
+# over by these when a tab is rebuilt).
+element_row_key: [Element, Position_Number]
+
+# The columns of planar_{lang_id}.tsv (one row per position), in order, and
+# the values of the two that take a fixed set (hidden-facts M0: these lived
+# only in code). `required: true` columns are the ones validate_planar refuses
+# a planar without; each other reader checks for the columns it reads.
+# planars.schema_values reads this (PLANAR_REQUIRED_COLUMNS, ZONE, SLOT,
+# CLASS_TYPES).
+planar_columns:
+  - name: Language_ID
+  - name: Planar_Type
+  - name: Position
+    required: true
+  - name: Position_Type
+    required: true
+    # Load-bearing for nonpermutability: Zones are never strictly
+    # non-permutable, and elements sharing a Zone are pair candidates.
+    values:
+      zone: Zone   # elements within it may be variably ordered
+      slot: Slot   # a fixed place in the order
+  - name: Position_Name
+    required: true
+  - name: Elements
+    required: true
+  - name: Class_Type
+    required: true
+    values:
+      open: open     # an open category, written as ALL CAPS labels
+      list: list     # an exhaustively listed closed set
+      mixed: mixed   # both in one row (#270)
+  - name: Example
+  - name: Notes
+
+# The columns before the criteria on a pair-row tab (`columns`, in order) and
+# the ones among them that identify a row (`key`). Each `row_type: pair_rows`
+# construction in diagnostic_classes.yaml names a shape with `pair_shape`.
+# Element-row tabs use structural_columns and element_row_key above; keyed-row
+# tabs declare their own `keyed_columns` and `key`. Code reads all of these
+# through planars.schema_values (row_columns, row_key) and never types them.
+#   element_pairs:  one row per pair of elements (nonpermutability,
+#                   phrasal_accent)
+#   position_pairs: one row per element and the position it is tested against
+#                   (coreference); Position_A is where Element_A sits, so it
+#                   is not part of the key
+pair_row_shapes:
+  element_pairs:
+    columns: [Element_A, Element_B]
+    key: [Element_A, Element_B]
+  position_pairs:
+    columns: [Element_A, Position_A, Position_B, Direction]
+    key: [Element_A, Position_B, Direction]
+
+# Each element's type (formative / embedded_structure / reserved) and its
+# biuniqueness scope (filled / open_category / excluded) are computed from
+# Elements by coding.make_forms.classify_element and
+# classify_biuniqueness_scope, using the label conventions below. They used to
+# be stored as Element_Types and Biuniqueness_Scope planar columns; both were
+# copies validation forced to match the computation, so they were deleted
+# 2026-10-13 (a stale copy crashed update-sheets).
+
+# The Position_Name value that identifies the keystone row. Code reads it
+# through coding.schemas.keystone_name() / planars.io.KEYSTONE_NAME and never
+# types it (tests/test_no_hidden_facts.py checks).
+keystone_position_name: "v:verbstem"
+
+# Columns appended after criterion columns on an annotation tab, all the
+# annotator's, free text, never validated. Every column any language's tabs
+# may carry, in order:
+#   Example      the forms or sentences that show the answer (*, ?, ?? marked
+#                as usual), the evidence for a speaker's own judgements.
+#                Several examples in one cell are separated by
+#                example_separator (below).
+#   Gloss        a glossed language only: the morpheme gloss of each example,
+#                word for word, in the same order and separated the same way
+#   Translation  a glossed language only: each example's free translation
+#   Source       a page or section of a published description
+#   Comments     anything the annotator wants the coordinator to see; read by
+#                the daily refresh (check-comments). The tooling never writes here.
+# Which of them a language's tabs carry is its example style (below).
+# update-sheets inserts a missing one at its place in this order.
+# Read through planars.schema_values: TRAILING_COLUMNS (all of them, for code
+# that tells criteria from what follows them) and trailing_columns_for(lang).
+trailing_columns: [Example, Gloss, Translation, Source, Comments]
+
+# How a language's examples are written (docs/chapter-generation-plan.md
+# decision 4): the `examples` field in its schemas/languages.yaml meta, one
+# of the styles below, each listing the trailing columns its tabs leave out.
+# unglossed is for a language whose examples need no gloss because the
+# metalanguage is that language (English); every other language is glossed.
+# Synthetic test languages (ids starting synth, copies of English) have no
+# languages.yaml entry and take synthetic_example_style. A language with no
+# `examples` field, or an unknown style, fails. Read through
+# planars.schema_values.example_style(lang).
+example_styles:
+  glossed: {omits: []}
+  unglossed: {omits: [Gloss, Translation]}
+synthetic_example_style: unglossed
+# What separates several examples in one Example (Gloss, Translation) cell,
+# as docs/collaborator-guide.md tells annotators. The chapters split cells
+# on it (chapters/data.py).
+example_separator: ";"
+
+# The Status tab every annotation sheet carries, its columns, and the two
+# values an annotator sets on each construction's row there. Code reads these
+# through planars.schema_values and never types the values
+# (tests/test_no_hidden_facts.py checks). One row per construction tab.
+# Each column has a role, which is how code finds it (every role below must
+# appear exactly once), and an owner:
+#   construction  the tab the row is about (tooling)
+#   status        set by the annotator: in-progress or ready-for-review
+#   problems      rewritten by validate-coding: the invalid values on a
+#                 ready-for-review tab, one per line; blank when there are
+#                 none (issue #309). Added to existing sheets by
+#                 update-sheets --apply.
+#   marked_by     who set a ready-for-review status, one of marked_by below
+#                 and the date; blank while in-progress. Written with the
+#                 status by the daily check (validate_coding.write_status)
+#                 or set-tab-status; a ready tab the tooling didn't mark was
+#                 marked by its annotator, and the daily check writes so.
+#                 Added to existing sheets by update-sheets --apply.
+status_tab:
+  title: Status
+  columns:
+    - {name: Construction, role: construction, owner: tooling}
+    - {name: Status, role: status, owner: annotator}
+    - {name: Needs fixing, role: problems, owner: tooling}
+    - {name: Marked by, role: marked_by, owner: tooling}
+  values:
+    in_progress: in-progress
+    ready: ready-for-review
+  marked_by:
+    annotator: annotator
+    coordinator: coordinator
+    check: "check: every cell answered, no errors"
+
+# Locked tabs: tabs on a class sheet that the tooling writes and nobody else
+# edits. coding/locked_tabs.py runs from this list: every create, restructure
+# and daily `update-sheets --apply` rebuilds each tab from its source (writing
+# only when the content differs) and protects it so only the sheet's owner can
+# edit it. Adding a locked tab is one entry here, plus a builder in
+# coding/locked_tabs.py if its content is new; anything it cannot place
+# (unknown builder, place or include) is an error, never a default.
+#   place:   first — before the construction tabs; last — after them (Status
+#            is always the very last tab and is not locked: annotators set it)
+#   include: always — on every class sheet; opt_in — only for classes that set
+#            opt_in_field to true in diagnostic_classes_status.yaml (a sheet
+#            whose class drops it has the tab removed)
+locked_tabs:
+  - title: Instructions
+    builder: instructions
+    place: first
+    include: always
+  - title: Planar Structure
+    builder: planar_reference
+    place: last
+    include: opt_in
+    opt_in_field: include_planar_reference_tab
+
+# The fixed sentences on Instructions tabs, kept here so the wording changes
+# without touching code (Phase 10 unit 11d). Annotators read them: keep them
+# short (CLAUDE.md, Adam #318). Read only through coding.schemas.sheet_text,
+# which fills the {names} in braces and fails on a missing entry or a name it
+# does not supply (each entry's comment lists the names it may use). A
+# literal brace is written twice: {{ }}.
+#   class_sheet     a class sheet's Instructions tab (coding/locked_tabs.py),
+#                   around the class's own text from diagnostic_classes.yaml
+#                   (applicability_conditions, sheet_instructions). Lines
+#                   under a heading are indented by the code.
+#   proposal_sheet  the "planars and diagnostics" sheet (coding/sheet_spec.py,
+#                   coding/proposal_sheets.py)
+sheet_text:
+  class_sheet:
+    title: "{class_name} — ANNOTATION INSTRUCTIONS"   # display name, upper case
+    what_heading: WHAT THIS TESTS
+    how_heading: HOW TO ANNOTATE
+    details_heading: DETAILS
+    fill_required: "Fill in each criterion column for every element row: {criteria}"
+    fill_optional: "Optional, fill in only if relevant: {criteria}"
+    if_unsure: "Leave a cell blank if unsure — mark 'na' only when the criterion genuinely does not apply."
+    step: "STEP {number} — {construction}"   # the code bolds rows starting with the text before {number}
+    element_tab: Annotate each element row in this tab.
+    generated_tab: |-   # {source}: the tab it is made from
+      This tab is generated after {source} is imported.
+      Do NOT annotate it until the coordinator confirms regeneration is complete.
+    feeds_another: |-   # {ready}: status_tab's ready value
+      When finished: mark '{construction}' as '{ready}' in the Status tab.
+      The coordinator will then regenerate the dependent tab.
+  proposal_sheet:
+    instructions: |-   # {title}: the sheet's name; {lang_id}
+      {title}
+
+      This sheet is for editing. The planar_{lang_id} and diagnostics_{lang_id} sheets in this folder are read-only: they show the current versions.
+
+      To suggest a change:
+      1. Edit the Planar or Diagnostics tab as you would like it to be: change a cell, add a row, or delete one.
+      2. Say why in that row's What changed? cell. For a deleted row, give the reason on the row just above it.
+      3. For a new position, add its row where it belongs and renumber the positions after it.
+
+      Within a day a GitHub issue lists your changes. The coordinator accepts or declines each one. The outcome goes on the Last review tab, and the Planar and Diagnostics tabs are refilled from the new versions.
+    first_review: No changes reviewed yet.   # Last review, before any review
+
+# ---------------------------------------------------------------------------
+# ELEMENT CONVENTIONS
+# ---------------------------------------------------------------------------
+# Conventions for the Elements column in planar structure TSVs.
+# The Class_Type column determines which convention applies.
+#
+#   list   — an exhaustive enumeration of morphemes or forms, of any size
+#             (including a single element -- there's no minimum count).
+#             Elements are lower-case orthographic/transcribed representations.
+#             Example: "-ed, -s, -ing"
+#
+#   open   — a position occupied by an open or semi-open class
+#             Elements are ALL CAPS category labels, optionally refined with
+#             brace notation.  Lower-case items may appear alongside ALL CAPS
+#             labels as shorthand for "additional closed-class items not listed".
+#             Example: "NP{S,A}, CONJUNCT, tso"
+#
+#   mixed  — a position that genuinely accepts, as true alternatives in the
+#             same slot, either an open/productive category (ALL CAPS label)
+#             or one or more items from an exhaustively-enumerated closed
+#             lexical paradigm (lower-case, nothing left unlisted). Distinct
+#             from open's lower-case shorthand, which implies a partial,
+#             unlisted sample -- mixed's lower-case items are the complete
+#             set. No ALL-CAPS convention is enforced on either form. Use
+#             this only when the closed set is genuinely exhaustive; if it's
+#             a representative sample with more unlisted members, use open
+#             instead. Introduced for issue #270 (stan1293/synth0001's
+#             v:npsubj1, v:obj-part: NP alongside the complete pronoun
+#             paradigm). "Quantifying" degrees of mixedness (e.g. tracking
+#             which sub-parts are open vs. closed) is deliberately deferred;
+#             this is a coarse first-pass category.
+#             Example: "NP{S,A}, I, you, he, she, it, we, they"
+#
+# ALL CAPS label notation:
+#   LABEL         — plain category label
+#   LABEL{X,Y}    — LABEL restricted to roles/subtypes X and Y
+#
+# The label KEYSTONE is reserved for the v:verbstem position.
+
+element_conventions:
+
+  standard_labels:
+    note: >
+      Canonical ALL CAPS category labels analogous to the Leipzig Glossing Rules.
+      Use these wherever applicable for cross-language consistency.
+      Language-specific labels are permitted but should be documented here when reused.
+
+    phrase_types:
+      - label: NP
+        gloss: Noun phrase (any grammatical role unless further specified in braces)
+        element_type: embedded_structure
+      - label: PP
+        gloss: Adpositional phrase (prepositional or postpositional)
+        element_type: embedded_structure
+      - label: S
+        gloss: Clause / sentence
+        element_type: embedded_structure
+      - label: AP
+        gloss: Adjective phrase
+        element_type: embedded_structure
+      - label: ADVP
+        gloss: Adverb phrase (when scope is unspecified; prefer AD-S / AD-VP / AD-V when scope is known)
+        element_type: embedded_structure
+      - label: VP
+        gloss: Verb phrase
+        element_type: embedded_structure
+
+    adverb_scope_labels:
+      note: >
+        Project-specific labels for adverb positions classified by their scope of modification.
+        Use a hyphen to separate the AD prefix from the scope domain letter.
+      items:
+        - label: AD-S
+          gloss: Sentence-scoped adverb (modifies the entire clause)
+          element_type: formative
+        - label: AD-VP
+          gloss: VP-scoped adverb (modifies the verb phrase)
+          element_type: formative
+        - label: AD-V
+          gloss: V-scoped adverb (modifies the verb stem only)
+          element_type: formative
+
+    other_labels:
+      - label: PRON
+        gloss: Pronoun
+        element_type: formative
+      - label: CONJUNCT
+        gloss: Coordinating conjunction or conjunct (use when the full list is open-ended)
+        element_type: formative
+      - label: QWORDS
+        gloss: Question words / wh-words (interrogative expressions)
+        element_type: formative
+      - label: INTERROGATIVES
+        gloss: Constituent interrogatives (arao1248-specific synonym of QWORDS; kept as its own label since it's already in committed annotation data)
+        element_type: formative
+      - label: ADVERBIALS
+        gloss: Adverbial elements, scope unspecified (arao1248-specific; see AD-S/AD-VP/AD-V for scope-marked equivalents)
+        element_type: formative
+      - label: VERBPART
+        gloss: Verbal particle
+        element_type: formative
+      - label: KEYSTONE
+        gloss: Reserved. Marks the v:verbstem position in the Elements column.
+        element_type: reserved
+
+    brace_role_labels:
+      note: >
+        Labels used inside braces to restrict a phrase-type label to specific
+        grammatical roles. Example: NP{S,A} = NPs in subject or agent role.
+        Note: S used as a role label (subject) is distinct from S as a phrase
+        type (clause) — context (braces vs. standalone) disambiguates.
+      items:
+        - label: S
+          gloss: Subject
+        - label: A
+          gloss: Agent (transitive subject)
+        - label: P
+          gloss: Patient (transitive object)
+        - label: T
+          gloss: Theme
+        - label: R
+          gloss: Recipient / Goal
+        - label: O
+          gloss: Object (when A/P distinction is not made)
+
+# ---------------------------------------------------------------------------
+# ELEMENT TYPE CLASSIFICATION (formative vs. embedded_structure)
+# ---------------------------------------------------------------------------
+# Source of truth for coding.make_forms.classify_element(). Deliberately
+# explicit rather than left as an inferrable side effect of the ALL CAPS
+# convention above: an unregistered ALL CAPS token is a validation error
+# ("unknown"), never a silent default to "formative".
+
+element_type_conventions:
+
+  typography_rule: >
+    A token (brace-enclosed role suffix stripped, e.g. the "{S,A}" in
+    "NP{S,A}") is a category-label CANDIDATE if every cased character in it
+    is uppercase, tested with Python's Unicode-aware str.isupper() — never
+    an ASCII-only [A-Z] regex/character class, since formatives annotated
+    for future languages may use non-ASCII orthographies (e.g. Cyrillic,
+    Devanagari, IPA) and must not be miscategorized because a check assumed
+    Latin letters. A category-label candidate MUST have a matching `label`
+    entry with an explicit `element_type` under standard_labels above
+    (phrase_types, adverb_scope_labels, or other_labels) — if it does not,
+    classification is "unknown", which validate_planar.py treats as an
+    error requiring the coordinator to register the label, not something
+    to guess about. A token that is not a category-label candidate (i.e.
+    not all-uppercase, in any script) is always "formative".
+
+  formative_capitalization_exceptions:
+    note: >
+      Ordinary lexical formatives that are conventionally capitalized in
+      their language's orthography despite not being category labels, so
+      they would otherwise wrongly test as ALL-CAPS category-label
+      candidates under the typography_rule above (e.g. English "I" is a
+      single uppercase letter but is the 1sg pronoun, not a code). Listed
+      here explicitly, per language, rather than handled by a length or
+      frequency heuristic.
+    items:
+      - form: "I"
+        language: stan1293
+        gloss: 1sg pronoun; capitalized by English orthographic convention only.

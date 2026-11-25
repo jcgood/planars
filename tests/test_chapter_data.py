@@ -34,6 +34,24 @@ def test_completeness_summary():
         "proform/do_so": "unreadable: bad"}}
 
 
+def test_claude_drafts_are_counted_by_their_source_mark(tmp_path):
+    from planars.schema_values import CLAUDE_DRAFT_SOURCE_PREFIX, is_claude_draft
+    assert is_claude_draft(f"{CLAUDE_DRAFT_SOURCE_PREFIX} (Adam, 2026-10-27)")
+    assert not is_claude_draft("Huddleston & Pullum 2002: 1520")
+    assert not is_claude_draft("")
+    cls = next(iter(class_domain_types()))
+    (tmp_path / cls).mkdir()
+    (tmp_path / cls / "general.tsv").write_text(
+        "Element\tSource\n"
+        f"a\t{CLAUDE_DRAFT_SOURCE_PREFIX} (Adam, 2026-10-27)\n"
+        f"b\t {CLAUDE_DRAFT_SOURCE_PREFIX}\n"
+        "c\tmy own judgement\n"
+        "d\t\n", encoding="utf-8")
+    (tmp_path / cls / "nosource.tsv").write_text("Element\na\n", encoding="utf-8")
+    drafts = cd.claude_drafts(tmp_path)
+    assert drafts.to_dict("records") == [{"Class": cls, "Construction": "general", "Rows": 2}]
+
+
 @needs_english
 def test_values_are_named_under_the_language(english):
     assert english.values and all(k.startswith("stan1293.") for k in english.values)

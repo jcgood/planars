@@ -4,3 +4,4 @@ when (UTC)	file	what changed	by	why	previous version	edited by	change	layer	answ
 2026-11-01T00:32:26Z	planar.yaml	baseline	migration start_source_logs	the record of changes to this file starts here (unit 17)			baseline				123a34666815
 2026-11-01T00:32:26Z	terms.yaml	baseline	migration start_source_logs	the record of changes to this file starts here (unit 17)			baseline				27f3a396aa66
 2026-11-01T00:32:26Z	languages.yaml	baseline	migration start_source_logs	the record of changes to this file starts here (unit 17)			baseline				0c6522fe6da4
+2026-11-25T17:53:35Z	planar.yaml	7 line(s) changed	log-change	Name the marker for answers drafted with Claude (Source starts 'Claude draft'), so the chapters can count them and a data release can refuse them (docs/zenodo-report-plan.md)	archive/planar_20261125_175335.yaml		add	convention	0		abd8ecada317

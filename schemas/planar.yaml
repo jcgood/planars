@@ -146,6 +146,13 @@ synthetic_example_style: unglossed
 # as docs/collaborator-guide.md tells annotators. The chapters split cells
 # on it (chapters/data.py).
 example_separator: ";"
+# How an answer drafted with Claude, not yet checked by the annotator, is
+# marked: its Source cell starts with this (first used for English's
+# phrasal_accent, 2026-10-27: "Claude draft (Adam, 2026-10-27)"). The
+# annotator replaces the note with their own source once they have checked
+# the answer. The chapters count such answers (chapters/data.py) and a data
+# release refuses them. Read through planars.schema_values.is_claude_draft.
+claude_draft_source_prefix: "Claude draft"
 
 # The Status tab every annotation sheet carries, its columns, and the two
 # values an annotator sets on each construction's row there. Code reads these

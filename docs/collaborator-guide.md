@@ -106,7 +106,7 @@ All are free text and are never checked.
 
 The chapters written from the annotation print these as glossed examples. A cell whose number of entries doesn't match Example's is printed without its gloss and translation.
 
-**Source** — Page or section references for a published description (`§4.3`, `p. 217`, `Table 6.2`), so anyone can check a decision later without re-reading the whole grammar.
+**Source** — Page or section references for a published description (`§4.3`, `p. 217`, `Table 6.2`), so anyone can check a decision later without re-reading the whole grammar. If an AI assistant (such as Claude) drafted an answer for you, start its Source with `Claude draft`, e.g. `Claude draft (your name, date)`, and replace that with your own source once you have checked the answer. Answers still marked this way are counted in the chapters and kept out of a published data release.
 
 **Comments** — Only for things the coordinator should see:
 - a question

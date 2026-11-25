@@ -113,8 +113,16 @@ for _style, _omits in EXAMPLE_STYLES.items():
                        f"trailing columns ({TRAILING_COLUMNS})")
 SYNTHETIC_EXAMPLE_STYLE: str = _require("synthetic_example_style")
 EXAMPLE_SEPARATOR: str = _require("example_separator")
+CLAUDE_DRAFT_SOURCE_PREFIX: str = _require("claude_draft_source_prefix")
 if SYNTHETIC_EXAMPLE_STYLE not in EXAMPLE_STYLES:
     raise KeyError(f"schemas/planar.yaml synthetic_example_style must be one of {list(EXAMPLE_STYLES)}")
+
+
+def is_claude_draft(source) -> bool:
+    """Whether an annotation row's Source cell marks its answer as drafted
+    with Claude and not yet checked by the annotator (planar.yaml
+    claude_draft_source_prefix)."""
+    return str(source or "").strip().startswith(CLAUDE_DRAFT_SOURCE_PREFIX)
 
 
 def example_style(lang_id: str) -> str:

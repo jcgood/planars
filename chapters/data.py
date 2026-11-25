@@ -37,7 +37,9 @@ chapter citing several languages has one namespace. The groups:
   number), type (the planar file);
 - ``<L>.diagnostics.*``: classes, constructions (diagnostics_<L>.yaml);
 - ``<L>.annotation.*``: filled, total, percent (language_completeness,
-  through planars.reports.completeness_summary);
+  through planars.reports.completeness_summary); claude_drafts (rows whose
+  Source marks the answer as drafted with Claude and not yet checked,
+  ``schema_values.is_claude_draft``);
 - ``<L>.spans.*``: total (span rows), distinct (distinct left/right pairs);
 - ``<L>.span.<class>.<construction>.<span_key>.*``: left, right, size,
   left_name, right_name, and range (``9--20``, what a ``\\claim`` about a
@@ -51,7 +53,8 @@ chapter citing several languages has one namespace. The groups:
 **Tables** (pandas DataFrames): ``planar`` (the planar file), ``diagnostics``
 (one row per class and construction, in the schema's class order, with its
 domain type and criteria as ``{criterion: [values]}``), ``completeness`` (one row per construction),
-``spans`` (language_spans' rows), ``examples`` (every annotation row with
+``spans`` (language_spans' rows), ``claude_drafts`` (one row per construction
+that has any, with its count), ``examples`` (every annotation row with
 an Example, its row identified by the schema's row columns, with its Gloss,
 Translation and Source; ``split_examples`` splits a row into its examples,
 and ``missing`` lists a glossed row whose cells don't pair up).
@@ -91,7 +94,7 @@ from laminar.datasets import bundle_root
 from planars.languages import get_display_name, get_entry
 from planars.reports import completeness_summary, language_completeness, language_spans
 from planars.schema_values import (EXAMPLE_SEPARATOR, SLOT, ZONE, class_domain_types,
-                                   example_style, is_keystone, row_columns,
+                                   example_style, is_claude_draft, is_keystone, row_columns,
                                    trailing_columns_for)
 
 # The permutation tests whose per-group results become values: bundle file
@@ -301,6 +304,25 @@ def _examples(lang_dir: Path) -> pd.DataFrame:
                                        TRANSLATION_COLUMN, "Source"])
 
 
+def claude_drafts(lang_dir: Path) -> pd.DataFrame:
+    """One row per construction whose annotation has answers drafted with
+    Claude and not yet checked (Source marked, schema_values.is_claude_draft),
+    with how many. Shared with the data release (coding/export_release.py)."""
+    rows = []
+    for cls in class_domain_types():
+        class_dir = lang_dir / cls
+        if not class_dir.is_dir():
+            continue
+        for tsv in sorted(class_dir.glob("*.tsv")):
+            data = pd.read_csv(tsv, sep="\t", dtype=str, keep_default_na=False)
+            if SOURCE_COLUMN not in data.columns:
+                continue
+            count = int(data[SOURCE_COLUMN].map(is_claude_draft).sum())
+            if count:
+                rows.append({"Class": cls, "Construction": tsv.stem, "Rows": count})
+    return pd.DataFrame(rows, columns=["Class", "Construction", "Rows"])
+
+
 def _span_values(spans: pd.DataFrame, pos_to_name: dict) -> dict:
     values = {"spans.total": len(spans),
               "spans.distinct": len(spans[["Left_Edge", "Right_Edge"]].drop_duplicates())
@@ -401,6 +423,8 @@ def chapter_data(lang_id: str, position: Optional[int] = None) -> ChapterData:
         values["diagnostics.constructions"] = len(diagnostics)
         completeness, annotation = _completeness(lang_id, root)
         values.update({f"annotation.{k}": v for k, v in annotation.items()})
+        drafts = claude_drafts(lang_dir)
+        values["annotation.claude_drafts"] = int(drafts["Rows"].sum()) if len(drafts) else 0
         spans, meta = language_spans(lang_id, root)
         pos_to_name = (meta.get(lang_id) or {}).get("pos_to_name", {})
         values.update(_span_values(spans, pos_to_name))
@@ -411,7 +435,7 @@ def chapter_data(lang_id: str, position: Optional[int] = None) -> ChapterData:
         chapter.values.update({f"{lang_id}.{k}": v for k, v in values.items()})
         examples = _examples(lang_dir)
         chapter.tables = {"planar": planar, "diagnostics": diagnostics, "completeness": completeness,
-                          "spans": spans, "examples": examples}
+                          "spans": spans, "claude_drafts": drafts, "examples": examples}
         glossed = is_glossed(lang_id)
         unpaired = [f"{r['Class']}/{r['Construction']} {r['Row']}" for _i, r in examples.iterrows()
                     if not split_examples(r, glossed)[1]]
