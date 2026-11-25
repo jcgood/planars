@@ -12,7 +12,7 @@ results.
 | Record | Contents | Licence | Versions |
 |---|---|---|---|
 | **Report** (Zenodo type: Publication / Report) | the PDF, its LaTeX source and `values.tex` | CC BY 4.0 | one, final |
-| **English dataset** (type: Dataset) | the annotation at one pinned change-log position: `planar_stan1293.tsv`, `diagnostics_stan1293.yaml`, every class's TSVs; the codebook (`render_codebook.py`); the spans and the analysis bundle, in a folder marked *derived*; a README and `CITATION.cff` | CC BY 4.0 (recommended; Adam's own annotation) | one per data freeze |
+| **English dataset** (type: Dataset) | the annotation at one pinned change-log position: `planar_stan1293.tsv`, `diagnostics_stan1293.yaml`, every class's TSVs; the codebook (`render_codebook.py`); the spans and the analysis bundle, in a folder marked *derived*; a README and `CITATION.cff` | CC BY 4.0 or CC0 (open question 3) | one per data freeze |
 | **Software** (type: Software) | `planars` at a tagged release, through Zenodo's GitHub link (one DOI for all versions, one per release); includes `planarsviz/` | MIT (as now) | one per release |
 
 Three, not one, because they change at different rates, carry different
@@ -176,8 +176,11 @@ build.
    the project's own): sets the funder field, the period covered and the
    schedule.
 2. **Three records or one?** Recommended: three (above).
-3. **Data licence.** Recommended: CC BY 4.0 for English; the CCDB samples
-   must stay CC BY-SA.
+3. **Data licence.** CC BY 4.0 (the typology norm: WALS, Glottolog,
+   Grambank) or CC0. Jeff leans to CC0 (2026-11-25); Adam to agree, as the
+   annotator. Under CC0 the README and `CITATION.cff` ask for a citation
+   rather than require one. The CCDB samples must stay CC BY-SA whatever
+   is chosen; the report's own text stays CC BY.
 4. **The Claude-drafted phrasal_accent answers:** wait for Adam to replace
    them (recommended), or release them marked.
 5. **Unreviewed span rules:** review some with Adam before release, or
