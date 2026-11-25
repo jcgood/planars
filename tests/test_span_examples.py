@@ -5,7 +5,9 @@ The examples are written when a span rule is agreed with the domain expert
 (coordinator guide § "Reviewing a span rule with the domain expert"), so they
 record what the rule means, not what the code happens to do. Their layout is
 in tests/span_examples/README.md. Unlike the snapshots they need no
-coded_data/, so these tests never skip.
+coded_data/, so they never skip for want of it. Until the first rule is
+agreed (#321) the folder holds none, and test_span_example shows as one
+skip ("got empty parameter set"); that skip is expected, not a gap.
 """
 from __future__ import annotations
 
