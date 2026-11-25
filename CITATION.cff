@@ -6,6 +6,7 @@ authors:
   - family-names: Good
     given-names: Jeff
     orcid: "https://orcid.org/0000-0001-8679-4654"
+    affiliation: "University at Buffalo"
   - family-names: Tallman
     given-names: Adam J. R.
     orcid: "https://orcid.org/0000-0003-3524-9300"
@@ -37,6 +38,7 @@ preferred-citation:
     - family-names: Good
       given-names: Jeff
       orcid: "https://orcid.org/0000-0001-8679-4654"
+      affiliation: "University at Buffalo"
     - family-names: Tallman
       given-names: Adam J. R.
       orcid: "https://orcid.org/0000-0003-3524-9300"
