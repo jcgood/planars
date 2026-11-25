@@ -141,8 +141,14 @@ The draft is an unpublished manuscript, so it lives in planars-data's
 - **Each span rule's status is printed** in the report beside its spans;
   none has been reviewed with Adam yet (#321, 0 of 7).
 - **English's word chosen** (#335) if the report tests the word hypothesis.
-- **Zenodo metadata**: ORCIDs, affiliations, funder and grant number,
-  keywords, related identifiers (the 2024 volume's DOI, the CCDB).
+- **Zenodo metadata**: funder and grant number, keywords, related
+  identifiers (the 2024 volume's DOI, the CCDB). Authors' ORCIDs and
+  affiliations are in `CITATION.cff` (2026-11-25), which the dataset's
+  citation file should read rather than copy.
+- **Zenodo's GitHub link is on for `jcgood/planars`** (2026-11-25; the
+  repository's webhook sends release events to Zenodo), so the next GitHub
+  release gets a DOI: make it only when the software record is meant to
+  exist.
 - **A trial run on Zenodo's sandbox** (sandbox.zenodo.org) for all three
   records before the real ones.
 
