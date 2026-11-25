@@ -140,10 +140,13 @@ The draft is an unpublished manuscript, so it lives in planars-data's
    history and GitHub, which the software record (files at one tag) does
    not hold, so the rebuild check (item 6) can't rebuild them from the
    Zenodo records alone; the report says where they are read from.
-9. **The dataset's `CITATION.cff`, written by `export-release`** (it
-   writes none yet): authors, ORCIDs and affiliations read from this
-   repository's `CITATION.cff`, never copied; the licence a setting until
-   open question 3 is answered.
+9. **Built 2026-11-25: the dataset's `CITATION.cff`, written by
+   `export-release`**: authors, ORCIDs and affiliations read from this
+   repository's `CITATION.cff` at each export, never copied; the licence
+   is `--licence` (CC-BY-4.0 or CC0-1.0), and a release that names none is
+   refused, so open question 3 is settled by whoever runs it, not by a
+   default. The authors are in the repository file's order (Jeff, then
+   Adam) until open question 7 is answered.
 
 Order of building (Jeff, 2026-11-25): 8, then 9, then 1 (dry run shown to
 Jeff before planars-data's `.papers/` is moved), then 2 and 3.

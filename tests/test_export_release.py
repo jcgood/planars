@@ -3,9 +3,11 @@ leaves out, what stops it, and that the spans can be derived again from
 the folder it writes (docs/zenodo-report-plan.md, items 5 and 6)."""
 
 import json
+import re
 
 import pandas as pd
 import pytest
+import yaml
 
 from chapters import data as cd
 from coding import export_release as er
@@ -29,6 +31,19 @@ def test_it_writes_only_outside_both_repositories(tmp_path):
     assert any("not an empty folder" in p for p in er.out_problems(empty))
 
 
+def test_the_citation_reads_its_authors_from_the_repository(tmp_path):
+    record = {"date": "2026-11-25", "stamp": {"code": {"version": "0.1.0a71"},
+                                              "languages": {"synth0001": {"version": "1.2", "position": 9}}}}
+    repo_cff = tmp_path / "CITATION.cff"
+    repo_cff.write_text("authors:\n  - family-names: A\n    given-names: B\n", encoding="utf-8")
+    cff = yaml.safe_load(er.citation("synth0001", record, "CC-BY-4.0", repo_cff))
+    assert cff["authors"] == [{"family-names": "A", "given-names": "B"}]
+    assert cff["references"][0]["version"] == "0.1.0a71" and "requires attribution" in cff["message"]
+    repo_cff.write_text("title: x\n", encoding="utf-8")
+    with pytest.raises(er.ReleaseRefused, match="no authors"):
+        er.citation("synth0001", record, "CC-BY-4.0", repo_cff)
+
+
 def test_the_comments_column_is_left_out():
     text = f"Element\ty\t{COMMENTS}\tSource\na\ty\tnote to Adam\tp. 4\n"
     assert er.without_comments(text) == "Element\ty\tSource\na\ty\tp. 4\n"
@@ -41,6 +56,7 @@ def test_claude_drafts_stop_a_release(reads_english, tmp_path, monkeypatch):
         [{"Class": "phrasal_accent", "Construction": "general", "Rows": 3}]))
     summary = er.build("stan1293", None, tmp_path / "out", apply=False, check_release=False)
     assert any("3 answer(s) still marked as Claude drafts" in r for r in summary["refusals"])
+    assert any("No licence named" in r for r in summary["refusals"])
     with pytest.raises(er.ReleaseRefused, match="Claude drafts"):
         er.build("stan1293", None, tmp_path / "out", apply=True, check_release=False)
     assert not (tmp_path / "out").exists()
@@ -52,8 +68,14 @@ def test_the_spans_derive_again_from_the_release(reads_english, tmp_path, monkey
         columns=["Class", "Construction", "Rows"]))
     monkeypatch.setattr(versions, "stamp_problems", lambda stamp: [])  # this checkout may be mid-edit
     out = tmp_path / "out"
-    summary = er.build("stan1293", None, out, apply=True, check_release=False)
+    summary = er.build("stan1293", None, out, apply=True, check_release=False, licence="CC0-1.0")
     assert summary["refusals"] == []
+    # The dataset's CITATION.cff: authors as this repository's file has them.
+    cff = yaml.safe_load((out / er.CITATION).read_text(encoding="utf-8"))
+    repo = yaml.safe_load((er.ROOT / er.CITATION).read_text(encoding="utf-8"))
+    assert cff["authors"] == repo["authors"] and cff["license"] == "CC0-1.0"
+    assert cff["type"] == "dataset" and "no citation is required" in cff["message"]
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(cff["date-released"]))
     lang_dir = out / "coded_data" / "stan1293"
     # Only what the release holds: no records, no proposal base, no archive.
     assert not (lang_dir / "records").exists() and not (lang_dir / "archive").exists()

@@ -376,10 +376,11 @@
     dataset to publish (coding/export_release.py;
     docs/zenodo-report-plan.md): its planar, diagnostics and annotation
     files without the Comments column, its change log, the schemas and
-    codebook, the derived spans and analysis, a README and a record of
-    every file's sha256. Refuses while the release check fails, the data
-    can't be rebuilt from what it names, or an answer is still a Claude
-    draft.
+    codebook, the derived spans and analysis, a README, a CITATION.cff
+    (authors read from this repository's, licence from --licence) and a
+    record of every file's sha256. Refuses while no licence is named, the
+    release check fails, the data can't be rebuilt from what it names, or
+    an answer is still a Claude draft.
   side_effects:
     - >-
       with --apply, writes the folder given as --out (new or empty, outside

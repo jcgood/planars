@@ -1,7 +1,7 @@
 """``python -m coding export-release``: one language's annotation as a
 dataset to publish (docs/zenodo-report-plan.md, item 5).
 
-    python -m coding export-release --lang stan1293 --out DIR [--position N] [--apply]
+    python -m coding export-release --lang stan1293 --out DIR --licence {CC-BY-4.0,CC0-1.0} [--position N] [--apply]
 
 Dry run by default: says what the folder would hold and whatever stops a
 release; ``--apply`` writes it. ``DIR`` must not exist yet (or be empty)
@@ -28,13 +28,19 @@ version it names:
   version's spans (``chapters.data``'s rule);
 - ``release.json``: the stamp (code version, schemas' and language's
   positions and versions), and every file's sha256;
-- ``README.md``: what each folder is and how to rebuild the spans.
+- ``README.md``: what each folder is and how to rebuild the spans;
+- ``CITATION.cff``: how to cite the dataset. Its authors (names, ORCIDs,
+  affiliations, in that file's order) are read from this repository's
+  ``CITATION.cff`` at each export, never copied here; its licence is
+  ``--licence`` (``LICENCES``), which a release must name: the choice is
+  open (docs/zenodo-report-plan.md, open question 3). Under CC0 the file
+  asks for a citation rather than requiring one.
 
 Everything else in the language's folder (``records/``, ``decisions.tsv``,
 the archive, state the tooling keeps) is left out; the dry run lists it,
 so nothing is dropped unseen.
 
-**It refuses,** listing every case, when the release can't be rebuilt from
+**It refuses,** listing every case, when no licence is named, when the release can't be rebuilt from
 what it names (``versions.stamp_problems``: uncommitted result code, a
 source changed outside the tooling), when the release check fails
 (``versions.release_problems``: a breaking change with annotation still
@@ -70,6 +76,15 @@ DERIVED = "derived"
 RELEASE_RECORD = "release.json"
 README = "README.md"
 CODEBOOK = "codebook.md"
+CITATION = "CITATION.cff"
+
+# The licences a dataset may carry (SPDX identifiers), and what each
+# CITATION.cff says to its reader. One of them is chosen per release.
+LICENCES = {
+    "CC-BY-4.0": "If you use this dataset, please cite it as below (CC BY 4.0 requires attribution).",
+    "CC0-1.0": ("This dataset is in the public domain (CC0 1.0); no citation is required, "
+                "but if you use it, please cite it as below."),
+}
 
 
 class ReleaseRefused(Exception):
@@ -153,7 +168,8 @@ def readme(lang_id: str, record: dict, counts: dict, datasets: list) -> str:
 
 The annotation of {name} for the planars project: which positions of its
 planar structure each constituency diagnostic picks out, as judged by its
-annotator. Authors, licence and how to cite are on the Zenodo record.
+annotator. Authors, licence and how to cite are in `CITATION.cff` and on
+the Zenodo record.
 
 - Language version {lang['version']}, its change log cut at line {lang['position']}
 - Schemas version {stamp['schemas']['version']} (their log at line {stamp['schemas']['position']})
@@ -187,18 +203,58 @@ The result is `derived/spans.tsv`.
 """
 
 
+def citation(lang_id: str, record: dict, licence: str, repo_cff: Path | None = None) -> str:
+    """The dataset's CITATION.cff text. Authors come from this repository's
+    CITATION.cff (`repo_cff`), read now; ReleaseRefused if it names none."""
+    import yaml
+    repo_cff = repo_cff or ROOT / CITATION
+    authors = (yaml.safe_load(repo_cff.read_text(encoding="utf-8")) or {}).get("authors") or []
+    if not authors:
+        raise ReleaseRefused(f"{repo_cff} lists no authors, so the dataset's {CITATION} can't name any.")
+    stamp = record["stamp"]
+    lang = stamp["languages"][lang_id]
+    name = get_display_name(lang_id)
+    cff = {
+        "cff-version": "1.2.0",
+        "message": LICENCES[licence],
+        "type": "dataset",
+        "title": f"{name}: planars constituency annotation",
+        "authors": authors,
+        "version": f"{lang['version']} (change-log line {lang['position']})",
+        "date-released": record["date"],
+        "license": licence,
+        "abstract": (f"The annotation of {name} for the planars project: which positions of its "
+                     f"planar structure each constituency diagnostic picks out, with the schemas "
+                     f"it is read with and the spans derived from it."),
+        "keywords": ["linguistics", "morphosyntax", "constituency", "typology", "planar structure"],
+        "references": [{
+            "type": "software",
+            "title": "planars",
+            "version": stamp["code"]["version"],
+            "url": "https://github.com/jcgood/planars",
+            "authors": authors,
+        }],
+    }
+    return yaml.safe_dump(cff, sort_keys=False, allow_unicode=True)
+
+
 def _table_text(df: pd.DataFrame) -> str:
     return df.to_csv(sep="\t", index=False)
 
 
 def build(lang_id: str, position: int | None, out: Path, apply: bool,
-          check_release: bool = True) -> dict:
+          check_release: bool = True, licence: str | None = None) -> dict:
     """Make the release (or, without `apply`, say what it would hold).
     Returns a summary: files, left_out, missing, refusals. Raises
     ReleaseRefused listing every reason a release can't be made."""
     from chapters.data import ChapterDataError, chapter_data, claude_drafts
 
     refusals = out_problems(out)
+    if licence is None:
+        refusals.append(f"No licence named: give --licence ({' or '.join(LICENCES)}); the choice "
+                        f"is open question 3 in docs/zenodo-report-plan.md.")
+    elif licence not in LICENCES:
+        raise ReleaseRefused(f"{licence} is not a licence a dataset may carry ({', '.join(LICENCES)}).")
     try:
         chapter = chapter_data(lang_id, position=position)
     except ChapterDataError as e:
@@ -249,6 +305,8 @@ def build(lang_id: str, position: int | None, out: Path, apply: bool,
         record = {"language": lang_id, "date": chapter.version["date"], "stamp": record_stamp}
         (stage / README).write_text(readme(lang_id, record, counts, sorted(chapter.bundles)),
                                     encoding="utf-8")
+        if licence is not None:
+            (stage / CITATION).write_text(citation(lang_id, record, licence), encoding="utf-8")
         files = sorted(str(p.relative_to(stage)) for p in stage.rglob("*") if p.is_file())
         record["files"] = {f: _sha256(stage / f) for f in files}
         (stage / RELEASE_RECORD).write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n",
@@ -279,6 +337,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="the folder to write (new or empty, outside both repositories)")
     p.add_argument("--position", type=int, metavar="N",
                    help="the language's change-log position (default: the files as they are)")
+    p.add_argument("--licence", choices=sorted(LICENCES),
+                   help="the dataset's licence, written into its CITATION.cff (required to release)")
     p.add_argument("--apply", action="store_true", help="write the folder")
     return p
 
@@ -288,7 +348,8 @@ def main(args: argparse.Namespace | None = None) -> None:
         args = build_parser().parse_args()
     name = get_display_name(args.lang)
     try:
-        summary = build(args.lang, args.position, Path(args.out), args.apply)
+        summary = build(args.lang, args.position, Path(args.out), args.apply,
+                        licence=args.licence)
     except ReleaseRefused as e:
         sys.exit(f"NO RELEASE of {name}:\n  " + str(e).replace("\n", "\n  "))
     print(f"{name} at change-log line {summary['position']}: {len(summary['files'])} file(s)"
