@@ -40,7 +40,8 @@ What lives here:
 - **The operations callers use**: `find_open`, `file_issue` (comment on the
   open issue, or replace its title and body, or create one), `create`,
   `comment`, `edit`, `replace_body`, `close`, `close_open`, `remind_stale`,
-  `reopen`, `relabel`, `list_closed`, `last_closed`, `is_open`, `body_of`;
+  `reopen`, `relabel`, `list_closed`, `last_closed`, `is_open`, `body_of`,
+  `list_comments` (every comment, read only: chapters/contributions.py);
   and `decision_labels`, the labels marked `needs_decision` (unit 16e: an
   issue closed under one is reopened until its decision is in a log,
   coding/decisions.py). Each one that writes text removes any
@@ -177,6 +178,7 @@ class GitHub(Protocol):
     def create_label(self, name: str, color: str, description: str) -> None: ...
     def edit_label(self, name: str, color: str, description: str) -> None: ...
     def delete_label(self, name: str) -> None: ...
+    def list_comments(self) -> List[Dict]: ...
 
 
 class GhCli:
@@ -266,6 +268,18 @@ class GhCli:
     def delete_label(self, name: str) -> None:
         self._run(["label", "delete", name, "--yes"])
 
+    def list_comments(self) -> List[Dict]:
+        """Every comment on every issue and pull request, oldest first, as
+        {created_at, login, body}. (`gh api` takes no --repo, so not `_run`.)"""
+        result = subprocess.run(
+            ["gh", "api", "--paginate", f"repos/{REPO}/issues/comments?per_page=100",
+             "--jq", ".[] | {created_at, login: .user.login, body}"],
+            capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError(f"`gh api .../issues/comments` failed: "
+                               f"{(result.stderr or result.stdout).strip()}")
+        return [json.loads(line) for line in result.stdout.splitlines() if line.strip()]
+
 
 _github: Optional[GitHub] = None
 
@@ -323,6 +337,16 @@ def is_open(number: int) -> Optional[bool]:
 def body_of(number: int) -> str:
     issue = get_github().get_issue(number)
     return (issue or {}).get("body") or ""
+
+
+def list_comments() -> List[Dict]:
+    """Every comment on the repository's issues and pull requests, oldest
+    first ({created_at, login, body}). Raises RuntimeError when GitHub can't
+    be reached: no comments read is not the same as none posted."""
+    if not available():
+        raise RuntimeError("GitHub can't be reached, so its comments can't be read. "
+                           "Sign in with `gh auth login`.")
+    return get_github().list_comments()
 
 
 def ensure_label(label: str) -> None:

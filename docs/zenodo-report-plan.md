@@ -1,6 +1,6 @@
 # Plan: the annual report as a citable Zenodo output (English)
 
-Jeff, 2026-11-25. Not started. A final annual report by Jeff and Adam,
+Jeff, 2026-11-25. Being built (see "What has to be built"). A final annual report by Jeff and Adam,
 published on Zenodo with a DOI: what the project's method is, what data it
 has, and what the analysis shows. **English [stan1293] only.** The code
 released with it includes the libraries first built on Chichewa (`laminar/`,
@@ -73,8 +73,8 @@ data position, not from recollection:
 
 | What | Record | Starting point (2026-11-25) |
 |---|---|---|
-| Code and docs written in Claude sessions | `Co-Authored-By: Claude` lines in this repository's commits | 1,104 of 1,327 commits, all since 2026-03-15; before that, everything is Jeff's (tag `pre-claude-noncollaborative`) |
-| Comments Claude posted | issue comments signed `klᴐd` (Jeff's Claude) or `klod` (Adam's) | to count |
+| Code and docs written in Claude sessions | `Co-Authored-By: Claude` lines in this repository's commits | 1,117 of 1,324 commits (merges left out; 32 more by the pipeline), all since 2026-03-15; before that, everything is Jeff's (tag `pre-claude-noncollaborative`) |
+| Comments Claude posted | issue comments signed `klᴐd` (Jeff's Claude) or `klod` (Adam's), whose Claude read from the account | 85 of 506 (Jeff's 80, Adam's 5); 254 by Jeff and Adam themselves, 167 by the pipeline |
 | Annotation Claude drafted | Source cells marked "Claude draft"; the language's change log (which command wrote each change) | phrasal_accent only, to be replaced by Adam |
 | Decisions | `schemas/decisions.tsv`, `coded_data/stan1293/decisions.tsv`; `diagnostics`/`linguistics` issues | every one made by Jeff or Adam |
 | Limits on Claude | CLAUDE.md: only a coordinator promotes a class's status; ask before live writes and linguistic calls; sign every comment | CLAUDE.md |
@@ -84,8 +84,8 @@ annotation, every decision, every promotion of a span rule) are Jeff's and
 Adam's; Claude wrote most of the tooling, under written rules, with Jeff
 directing it and reviewing what it did. A commit line means "made in a
 Claude session", not a share of authorship, and the report says so.
-Needed: a small script (in `chapters/`) that counts these into named
-values, so the section is rebuilt like every other.
+The counts are named values from `chapters/contributions.py` (item 8; its
+docstring lists them and the rules for each).
 
 The draft is an unpublished manuscript, so it lives in planars-data's
 `.papers/`, not in this repository, until it is released.
@@ -130,9 +130,16 @@ The draft is an unpublished manuscript, so it lives in planars-data's
    records both from the release tag (coordinator guide § "Making a
    release").
 
-8. **The contribution counts as values**: the script under "Human and
-   Claude contributions", read at the report's data position. It also
-   lists the models named in the commit lines, for the method section.
+8. **Built 2026-11-25: the contribution counts as values**
+   (`chapters/contributions.py`, `python -m chapters contributions
+   [--until TIME]`): commits, signed comments, decisions and the models
+   named in the commit lines, up to the time of the report's data
+   position. Found while building: 14 commits from a cloud session end in
+   a `Claude-Session:` line that stops git reading their co-author line, so
+   the count reads every line of the message. These counts come from git
+   history and GitHub, which the software record (files at one tag) does
+   not hold, so the rebuild check (item 6) can't rebuild them from the
+   Zenodo records alone; the report says where they are read from.
 9. **The dataset's `CITATION.cff`, written by `export-release`** (it
    writes none yet): authors, ORCIDs and affiliations read from this
    repository's `CITATION.cff`, never copied; the licence a setting until

@@ -15,6 +15,9 @@ class FakeGitHub:
         self.issues: List[Dict] = []        # every issue ever filed; numbers never reused
         self.comments: Dict[int, List[str]] = {}
         self.labels: List[Dict] = []
+        # Comments as list_comments returns them ({created_at, login, body});
+        # seeded by a test, apart from `comments`, which records what was posted.
+        self.posted_comments: List[Dict] = []
         self.calls: List[tuple] = []
         self._next = first_number
 
@@ -103,3 +106,7 @@ class FakeGitHub:
     def delete_label(self, name: str) -> None:
         self.calls.append(("delete_label", name))
         self.labels = [l for l in self.labels if l["name"] != name]
+
+    def list_comments(self) -> List[Dict]:
+        self.calls.append(("list_comments",))
+        return [dict(c) for c in self.posted_comments]
