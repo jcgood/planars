@@ -20,7 +20,14 @@ units 1–20; don't answer from this table alone.
 
 ## Now
 
-**First (2026-11-15): Jeff reads the per-juncture result.** The Gini was
+**First (2026-11-25): build the Zenodo annual report's pieces** in the
+order `docs/zenodo-report-plan.md` gives under "What has to be built"
+(item 8, the contribution counts, first). They wait on no open question.
+Zenodo's GitHub link is now on for this repository: **do not make a GitHub
+release**, since each one publishes a permanent DOI. Don't settle the
+plan's "Open" list (the licence is with Adam).
+
+**Laminar, waiting on Jeff (2026-11-15): he reads the per-juncture result.** The Gini was
 replaced and the conflict slide redrawn
 (`NonCollaborative/results/nyan1308/slides/nyan1308_conflict_profile.png`).
 Chichewa's conflict is confined to 5–19, but its edges are ramps, not
@@ -47,7 +54,7 @@ before they are posted there.
 | Adam's English requests | #318 (and #322, #319, #314) | (a)–(d), (f), item 6 done | build the impossible-pairs plan (point 8) once he agrees | Adam: point 8, the (b) questions, (e) construction descriptions |
 | Biuniqueness deviations | #254 (body checklist, 2026-10-11 design comment) | built, on English | — | Adam: span/type review, morphs tab, #298 |
 | CCDB charts across languages | `NonCollaborative/docs/CROSS_LANGUAGE_PROGRESS.md` (plan `PLAN_cross_language_charts.md`) | built 2026-09-23 | freeze references for the charts kept; write "what they show" | Jeff's cuts |
-| Annual report on Zenodo (English) | `docs/zenodo-report-plan.md` | items 5, 6 (spans), 7 built 2026-11-25; Claude drafts counted | items 1–3 (report volume, results chapter, venue), then 8 (contribution counts) | Jeff and Adam: the plan's "Open" list; Adam: 1,415 Claude drafts |
+| Annual report on Zenodo (English) | `docs/zenodo-report-plan.md` | items 5, 6 (spans), 7 built 2026-11-25; Claude drafts counted; Zenodo's GitHub link on | items 8, 9, 1, 2, 3 in that order | Jeff and Adam: the plan's "Open" list; Adam: 1,415 Claude drafts |
 | Bundle storage | #333 | full bundles in planars-data for now | move before a third language gets weekly runs | — |
 
 Daily: check the refresh and Sheet validation are green, and any open

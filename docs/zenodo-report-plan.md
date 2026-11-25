@@ -131,7 +131,15 @@ The draft is an unpublished manuscript, so it lives in planars-data's
    release").
 
 8. **The contribution counts as values**: the script under "Human and
-   Claude contributions", read at the report's data position.
+   Claude contributions", read at the report's data position. It also
+   lists the models named in the commit lines, for the method section.
+9. **The dataset's `CITATION.cff`, written by `export-release`** (it
+   writes none yet): authors, ORCIDs and affiliations read from this
+   repository's `CITATION.cff`, never copied; the licence a setting until
+   open question 3 is answered.
+
+Order of building (Jeff, 2026-11-25): 8, then 9, then 1 (dry run shown to
+Jeff before planars-data's `.papers/` is moved), then 2 and 3.
 
 ## Before release: what has to be true
 
