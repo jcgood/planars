@@ -596,7 +596,7 @@ Releases are archived on Zenodo, with the DOI in `CITATION.cff`. The first step 
 python -m coding integrity-check --check-release
 ```
 
-When it passes, run `pytest`, record the versions it printed in the release notes, tag the release on GitHub, and update `CITATION.cff` with the DOI Zenodo gives it.
+When it passes, run `pytest`, record the versions it printed in the release notes, tag the release on GitHub (the tag is the code version in `pyproject.toml`, e.g. `v0.1.0a71`; Zenodo records the version and date from the release, so `CITATION.cff` carries neither), and add the DOI Zenodo gives it to `CITATION.cff` (`doi:`) and the README.
 
 ---
 

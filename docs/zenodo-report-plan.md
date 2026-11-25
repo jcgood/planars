@@ -121,9 +121,10 @@ The draft is an unpublished manuscript, so it lives in planars-data's
    its tag, rebuild `values.tex` and compare with the released one. A test,
    so the claim "rebuildable from the records" is checked, not hoped.
 7. **`CITATION.cff` kept in step with the version.** Found while planning:
-   it says `0.1.0a19`, `pyproject.toml` says `0.1.0a71`. The version hook
-   (`bump_version_hook.py`) should write both, so nothing has to be
-   remembered.
+   it said `0.1.0a19`, `pyproject.toml` `0.1.0a71`. Done 2026-11-25 by
+   deleting the copy (and the stale `date-released`): Zenodo's GitHub link
+   records both from the release tag (coordinator guide § "Making a
+   release").
 
 8. **The contribution counts as values**: the script under "Human and
    Claude contributions", read at the report's data position.
