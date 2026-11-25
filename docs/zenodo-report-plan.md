@@ -108,8 +108,9 @@ The draft is an unpublished manuscript, so it lives in planars-data's
    test and the profile exported behind permutation flags and run weekly,
    so the report's numbers come from the pinned bundle, not from
    standalone runs.
-5. **A new `coding` command, `export-release`** (planned; taking a language
-   and a change-log position), which writes
+5. **Built 2026-11-25: `export-release`** (`coding/export_release.py`, whose
+   docstring says what the folder holds; English's dry run: 783 files,
+   stopped only by the Claude drafts). As planned, it writes
    the dataset folder from one change-log position (reusing the past-version
    copy `chapter_data` already makes), through the local-file door, with a
    record in `operations.yaml`. It refuses, listing each case, when a source
@@ -120,6 +121,9 @@ The draft is an unpublished manuscript, so it lives in planars-data's
 6. **A rebuild check**: from an unpacked dataset folder and the software at
    its tag, rebuild `values.tex` and compare with the released one. A test,
    so the claim "rebuildable from the records" is checked, not hoped.
+   Built for the spans 2026-11-25 (`tests/test_export_release.py`: the
+   spans derived from the released folder are its `derived/spans.tsv`);
+   `values.tex` waits for the report volume (item 1).
 7. **`CITATION.cff` kept in step with the version.** Found while planning:
    it said `0.1.0a19`, `pyproject.toml` `0.1.0a71`. Done 2026-11-25 by
    deleting the copy (and the stale `date-released`): Zenodo's GitHub link

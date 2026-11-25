@@ -1,0 +1,308 @@
+"""``python -m coding export-release``: one language's annotation as a
+dataset to publish (docs/zenodo-report-plan.md, item 5).
+
+    python -m coding export-release --lang stan1293 --out DIR [--position N] [--apply]
+
+Dry run by default: says what the folder would hold and whatever stops a
+release; ``--apply`` writes it. ``DIR`` must not exist yet (or be empty)
+and must lie outside this repository and planars-data: the annotation is
+unpublished until the release is, and this repository is public.
+
+**What it holds,** read at one change-log position (``--position``; default
+the files as they are, which must all match their log), laid out like the
+project so the spans can be derived from it again with the code at the
+version it names:
+
+- ``coded_data/<L>/lang_setup/``: the planar file and the diagnostics file;
+- ``coded_data/<L>/<class>/<construction>.tsv``: every class's annotation
+  (every class ``schemas/diagnostic_classes.yaml`` lists that the language
+  has), without the Comments column (``check_comments.COMMENTS``: notes
+  between annotator and coordinator, not data);
+- ``coded_data/<L>/changes.tsv``: the language's change log, cut at the
+  position (what changed when, and by which command);
+- ``schemas/``: the schema files at the schemas' position
+  (``versions.rebuild``), and ``codebook.md`` rendered from them;
+- ``derived/``: what the code computes from the above, never typed:
+  ``spans.tsv`` (``planars.reports.language_spans``), ``completeness.tsv``,
+  and ``analysis/<dataset>/`` for each laminar bundle drawn from this
+  version's spans (``chapters.data``'s rule);
+- ``release.json``: the stamp (code version, schemas' and language's
+  positions and versions), and every file's sha256;
+- ``README.md``: what each folder is and how to rebuild the spans.
+
+Everything else in the language's folder (``records/``, ``decisions.tsv``,
+the archive, state the tooling keeps) is left out; the dry run lists it,
+so nothing is dropped unseen.
+
+**It refuses,** listing every case, when the release can't be rebuilt from
+what it names (``versions.stamp_problems``: uncommitted result code, a
+source changed outside the tooling), when the release check fails
+(``versions.release_problems``: a breaking change with annotation still
+waiting on it; reads GitHub), or when an answer is still marked as drafted
+with Claude (``chapters.data.claude_drafts``; ``schemas/planar.yaml``
+claude_draft_source_prefix). A release states the annotator's judgements;
+an unchecked draft is not one.
+
+The folder is written straight to ``DIR``, not through the local-file
+door: it writes nothing in planars-data.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import shutil
+import sys
+import tempfile
+from pathlib import Path
+
+import pandas as pd
+
+from coding import file_door, source_log, versions
+from coding.check_comments import COMMENTS
+from planars.languages import get_display_name
+from planars.schema_values import class_domain_types
+
+ROOT = file_door.ROOT
+LANG_SETUP = "lang_setup"
+DERIVED = "derived"
+RELEASE_RECORD = "release.json"
+README = "README.md"
+CODEBOOK = "codebook.md"
+
+
+class ReleaseRefused(Exception):
+    """A release can't be made; the message lists every reason."""
+
+
+# ── Where it may write ──────────────────────────────────────────────────────
+
+def out_problems(out: Path) -> list:
+    """Why `out` can't take a release ([] if it can)."""
+    out = out.resolve()
+    problems = []
+    for name, repo in [("this public repository", ROOT), ("planars-data", file_door.CODED_DATA)]:
+        repo = repo.resolve()
+        if out == repo or repo in out.parents:
+            problems.append(f"{out} is inside {name}; choose a folder outside both repositories "
+                            f"(the annotation is unpublished until the release is).")
+    if out.exists() and (not out.is_dir() or any(out.iterdir())):
+        problems.append(f"{out} already exists and is not an empty folder.")
+    return problems
+
+
+# ── What goes in ────────────────────────────────────────────────────────────
+
+def chosen_files(lang_id: str, lang_dir: Path) -> tuple[list, list]:
+    """The language files a release holds (paths within `lang_dir`), and
+    those it leaves out, from a folder holding the language's files at one
+    position (module docstring)."""
+    keep = {Path(LANG_SETUP) / f"planar_{lang_id}.tsv",
+            Path(LANG_SETUP) / f"diagnostics_{lang_id}.yaml",
+            Path(source_log.log_path(lang_id).name)}
+    classes = set(class_domain_types())
+    kept, left_out = [], []
+    for path in sorted(p for p in lang_dir.rglob("*") if p.is_file()):
+        rel = path.relative_to(lang_dir)
+        if rel in keep or (len(rel.parts) == 2 and rel.parts[0] in classes and rel.suffix == ".tsv"):
+            kept.append(rel)
+        else:
+            left_out.append(rel)
+    missing = sorted(str(k) for k in keep if k not in kept)
+    if missing:
+        raise ReleaseRefused(f"{get_display_name(lang_id)} has no {', '.join(missing)} at this position.")
+    return kept, left_out
+
+
+def without_comments(text: str) -> str:
+    """An annotation TSV's text without its Comments column."""
+    header = text.split("\n", 1)[0].split("\t")
+    if COMMENTS not in header:
+        return text
+    i = header.index(COMMENTS)
+    lines = text.split("\n")
+    return "\n".join("\t".join(c for j, c in enumerate(line.split("\t")) if j != i) if line else line
+                     for line in lines)
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _codebook(schemas_dir: Path) -> str:
+    """codebook.md rendered from the release's own schema files."""
+    import yaml
+    sys.path.insert(0, str(ROOT))
+    try:
+        import render_codebook
+    finally:
+        sys.path.remove(str(ROOT))
+    load = lambda name: yaml.safe_load((schemas_dir / name).read_text(encoding="utf-8")) or {}
+    return render_codebook.render(load("diagnostic_criteria.yaml"), load("diagnostic_classes.yaml"),
+                                  load("terms.yaml"), load("planar.yaml"))
+
+
+def readme(lang_id: str, record: dict, counts: dict, datasets: list) -> str:
+    stamp = record["stamp"]
+    lang = stamp["languages"][lang_id]
+    name = get_display_name(lang_id)
+    analysis = ("\n".join(f"  - `{d}`" for d in datasets) if datasets
+                else "  (none drawn from this version's spans)")
+    return f"""# {name}: planars annotation, change-log position {lang['position']} ({record['date']})
+
+The annotation of {name} for the planars project: which positions of its
+planar structure each constituency diagnostic picks out, as judged by its
+annotator. Authors, licence and how to cite are on the Zenodo record.
+
+- Language version {lang['version']}, its change log cut at line {lang['position']}
+- Schemas version {stamp['schemas']['version']} (their log at line {stamp['schemas']['position']})
+- Code: planars {stamp['code']['version']} (https://github.com/jcgood/planars, the release tagged `v{stamp['code']['version']}`)
+- {counts['classes']} diagnostic classes, {counts['constructions']} constructions; {counts['percent']}% of cells answered
+
+## What is here
+
+- `coded_data/{lang_id}/lang_setup/`: the planar structure (`planar_{lang_id}.tsv`) and which
+  diagnostics apply, with their constructions and criteria (`diagnostics_{lang_id}.yaml`).
+- `coded_data/{lang_id}/<class>/<construction>.tsv`: the annotation, one file per construction.
+  Criterion columns hold `y`, `n`, `na` or `?`; `Example` and `Source` are the annotator's.
+  The annotator's notes to the coordinator (the Comments column) are left out.
+- `coded_data/{lang_id}/changes.tsv`: every change to these files, when, and by which command.
+- `schemas/`: the definitions the annotation is read with; `codebook.md` is them in prose.
+- `derived/`: computed by the code from the files above, never typed:
+  `spans.tsv` (each test's strict and loose, complete and partial spans),
+  `completeness.tsv`, and the laminar analysis:
+{analysis}
+- `release.json`: the versions above and every file's sha256.
+
+## Deriving the spans again
+
+Install planars at the tagged version (its schemas are the ones in
+`schemas/`) and, from this folder, read the annotation with it:
+
+    pip install "git+https://github.com/jcgood/planars@v{stamp['code']['version']}"
+    python -c "from planars.reports import language_spans; print(language_spans('{lang_id}', '.')[0].to_csv(sep='\\t', index=False))"
+
+The result is `derived/spans.tsv`.
+"""
+
+
+def _table_text(df: pd.DataFrame) -> str:
+    return df.to_csv(sep="\t", index=False)
+
+
+def build(lang_id: str, position: int | None, out: Path, apply: bool,
+          check_release: bool = True) -> dict:
+    """Make the release (or, without `apply`, say what it would hold).
+    Returns a summary: files, left_out, missing, refusals. Raises
+    ReleaseRefused listing every reason a release can't be made."""
+    from chapters.data import ChapterDataError, chapter_data, claude_drafts
+
+    refusals = out_problems(out)
+    try:
+        chapter = chapter_data(lang_id, position=position)
+    except ChapterDataError as e:
+        raise ReleaseRefused(str(e))
+    record_stamp = chapter.version["stamp"]
+    refusals += versions.stamp_problems(record_stamp)
+    if check_release:
+        try:
+            refusals += [f"Release check: {p}" for p in versions.release_problems()]
+        except RuntimeError as e:
+            refusals.append(f"Release check not run: {e}")
+
+    with tempfile.TemporaryDirectory(prefix="release_") as tmp:
+        stage = Path(tmp) / "release"
+        lang_dir = stage / "coded_data" / lang_id
+        at = chapter.version["position"]
+        try:
+            source_log.files_at(lang_id, at, lang_dir)
+            versions.rebuild({"schemas": record_stamp["schemas"], "languages": {}}, stage)
+        except source_log.RebuildError as e:
+            raise ReleaseRefused(f"{get_display_name(lang_id)} can't be rebuilt at line {at}: {e}")
+        drafts = claude_drafts(lang_dir)
+        for _i, row in drafts.iterrows():
+            refusals.append(f"{row['Class']}/{row['Construction']}: {row['Rows']} answer(s) still "
+                            f"marked as Claude drafts in Source; the annotator checks them and "
+                            f"replaces the mark with their own source.")
+        kept, left_out = chosen_files(lang_id, lang_dir)
+        for rel in left_out:
+            (lang_dir / rel).unlink()
+        for folder in sorted((p for p in lang_dir.rglob("*") if p.is_dir()), reverse=True):
+            if not any(folder.iterdir()):
+                folder.rmdir()
+        for rel in kept:
+            path = lang_dir / rel
+            if rel.parts[0] in class_domain_types():
+                path.write_text(without_comments(path.read_text(encoding="utf-8")), encoding="utf-8")
+        (stage / CODEBOOK).write_text(_codebook(stage / "schemas"), encoding="utf-8")
+        derived = stage / DERIVED
+        derived.mkdir()
+        (derived / "spans.tsv").write_text(_table_text(chapter.tables["spans"]), encoding="utf-8")
+        (derived / "completeness.tsv").write_text(_table_text(chapter.tables["completeness"]),
+                                                  encoding="utf-8")
+        for dataset, folder in sorted(chapter.bundles.items()):
+            shutil.copytree(folder, derived / "analysis" / dataset)
+        counts = {"classes": chapter.values[f"{lang_id}.diagnostics.classes"],
+                  "constructions": chapter.values[f"{lang_id}.diagnostics.constructions"],
+                  "percent": chapter.values[f"{lang_id}.annotation.percent"]}
+        record = {"language": lang_id, "date": chapter.version["date"], "stamp": record_stamp}
+        (stage / README).write_text(readme(lang_id, record, counts, sorted(chapter.bundles)),
+                                    encoding="utf-8")
+        files = sorted(str(p.relative_to(stage)) for p in stage.rglob("*") if p.is_file())
+        record["files"] = {f: _sha256(stage / f) for f in files}
+        (stage / RELEASE_RECORD).write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n",
+                                            encoding="utf-8")
+        summary = {"files": files + [RELEASE_RECORD],
+                   "left_out": [str(r) for r in left_out], "missing": chapter.missing,
+                   "refusals": refusals, "position": at}
+        if refusals:
+            if apply:
+                raise ReleaseRefused("\n".join(refusals))
+            return summary
+        if apply:
+            out.mkdir(parents=True, exist_ok=True)
+            shutil.copytree(stage, out, dirs_exist_ok=True)
+        return summary
+
+
+# ── Command line ────────────────────────────────────────────────────────────
+
+def build_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(
+        prog="python -m coding export-release",
+        description="Write one language's annotation, at one change-log position, as a "
+                    "dataset to publish (with its schemas, codebook and derived spans); "
+                    "refuses while anything stops a release.")
+    p.add_argument("--lang", required=True, metavar="LANG_ID", help="the language to release")
+    p.add_argument("--out", required=True, metavar="DIR",
+                   help="the folder to write (new or empty, outside both repositories)")
+    p.add_argument("--position", type=int, metavar="N",
+                   help="the language's change-log position (default: the files as they are)")
+    p.add_argument("--apply", action="store_true", help="write the folder")
+    return p
+
+
+def main(args: argparse.Namespace | None = None) -> None:
+    if args is None:
+        args = build_parser().parse_args()
+    name = get_display_name(args.lang)
+    try:
+        summary = build(args.lang, args.position, Path(args.out), args.apply)
+    except ReleaseRefused as e:
+        sys.exit(f"NO RELEASE of {name}:\n  " + str(e).replace("\n", "\n  "))
+    print(f"{name} at change-log line {summary['position']}: {len(summary['files'])} file(s)"
+          f"{' written to ' + args.out if args.apply else ''}.")
+    if summary["left_out"]:
+        print(f"Left out of the language's folder ({len(summary['left_out'])}): "
+              + ", ".join(summary["left_out"][:12])
+              + (" …" if len(summary["left_out"]) > 12 else ""))
+    for m in summary["missing"]:
+        print(f"Note: {m}")
+    if summary["refusals"]:
+        print(f"NO RELEASE YET ({len(summary['refusals'])}):")
+        for r in summary["refusals"]:
+            print(f"  {r}")
+        sys.exit(1)
+    if not args.apply:
+        print("Run again with --apply to write it.")

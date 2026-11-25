@@ -367,6 +367,38 @@
         - {fact: diagnostics_scope, role: reads}
         - {fact: span_rule_semantics, role: reads}
 
+- id: export_release
+  cli_command: export-release
+  writes_to_drive: false
+  writes_locally: false
+  description: >-
+    Writes one language's annotation at one change-log position as a
+    dataset to publish (coding/export_release.py;
+    docs/zenodo-report-plan.md): its planar, diagnostics and annotation
+    files without the Comments column, its change log, the schemas and
+    codebook, the derived spans and analysis, a README and a record of
+    every file's sha256. Refuses while the release check fails, the data
+    can't be rebuilt from what it names, or an answer is still a Claude
+    draft.
+  side_effects:
+    - >-
+      with --apply, writes the folder given as --out (new or empty, outside
+      this repository and planars-data); writes nothing in planars-data
+    - "reads GitHub for the release check (versions.release_problems)"
+  idempotent: true
+  idempotency_note: >-
+    The same position and code give the same files; a second --apply into
+    the same folder is refused because the folder is no longer empty.
+  apply_gate: "--apply"
+  preconditions: [coded_data_up_to_date]
+  facts_touched:
+    - {fact: planar_sheet_structure, role: reads}
+    - {fact: diagnostics_scope, role: reads}
+    - {fact: languages_metadata, role: reads}
+    - {fact: span_rule_semantics, role: reads}
+  cascades_triggered: []
+  modes: []
+
 - id: sync_overleaf
   cli_command: sync-overleaf
   writes_to_drive: false
