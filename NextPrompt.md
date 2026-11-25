@@ -47,7 +47,7 @@ before they are posted there.
 | Adam's English requests | #318 (and #322, #319, #314) | (a)–(d), (f), item 6 done | build the impossible-pairs plan (point 8) once he agrees | Adam: point 8, the (b) questions, (e) construction descriptions |
 | Biuniqueness deviations | #254 (body checklist, 2026-10-11 design comment) | built, on English | — | Adam: span/type review, morphs tab, #298 |
 | CCDB charts across languages | `NonCollaborative/docs/CROSS_LANGUAGE_PROGRESS.md` (plan `PLAN_cross_language_charts.md`) | built 2026-09-23 | freeze references for the charts kept; write "what they show" | Jeff's cuts |
-| Annual report on Zenodo (English) | `docs/zenodo-report-plan.md` | planned 2026-11-25 | Jeff and Adam answer its "Open" list | Jeff, Adam |
+| Annual report on Zenodo (English) | `docs/zenodo-report-plan.md` | items 5, 6 (spans), 7 built 2026-11-25; Claude drafts counted | items 1–3 (report volume, results chapter, venue), then 8 (contribution counts) | Jeff and Adam: the plan's "Open" list; Adam: 1,415 Claude drafts |
 | Bundle storage | #333 | full bundles in planars-data for now | move before a third language gets weekly runs | — |
 
 Daily: check the refresh and Sheet validation are green, and any open
