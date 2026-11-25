@@ -10,6 +10,7 @@ authors:
   - family-names: Tallman
     given-names: Adam J. R.
     orcid: "https://orcid.org/0000-0003-3524-9300"
+    affiliation: "Centre National de la Recherche Scientifique"
 # No version or date-released here: they were hand-kept copies of
 # pyproject.toml's version and went stale (0.1.0a19 against 0.1.0a71,
 # 2026-11-25). Zenodo's GitHub link records both from the release tag.
@@ -42,6 +43,7 @@ preferred-citation:
     - family-names: Tallman
       given-names: Adam J. R.
       orcid: "https://orcid.org/0000-0003-3524-9300"
+      affiliation: "Centre National de la Recherche Scientifique"
   year: 2026
   url: "https://github.com/jcgood/planars"
   notes: >
