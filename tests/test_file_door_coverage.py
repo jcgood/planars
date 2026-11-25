@@ -85,6 +85,16 @@ NOT_THROUGH_THE_DOOR: Dict[Site, str] = {
         "not in planars-data: sync-overleaf's temporary clone of the Overleaf project",
     ("validation_report.py", "main", "write_text"):
         "not in planars-data: the issue body file the workflow asked for (--out)",
+    # export-release stages the release in a temporary folder and copies it
+    # to --out, which out_problems refuses inside planars-data or this repo.
+    ("export_release.py", "build", "write_text"):
+        "not in planars-data: the release, staged in a temporary folder",
+    ("export_release.py", "build", "unlink"):
+        "not in planars-data: files left out of the staged release",
+    ("export_release.py", "build", "rmdir"):
+        "not in planars-data: empty folders in the staged release",
+    ("export_release.py", "build", "shutil.copytree"):
+        "not in planars-data: the staged release copied to --out (refused inside planars-data)",
 }
 
 
