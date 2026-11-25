@@ -5,6 +5,7 @@ title: "planars: A Python toolkit for deriving morphosyntactic constituency span
 authors:
   - family-names: Good
     given-names: Jeff
+    orcid: "https://orcid.org/0000-0001-8679-4654"
   - family-names: Tallman
     given-names: Adam J. R.
 # No version or date-released here: they were hand-kept copies of
@@ -34,6 +35,7 @@ preferred-citation:
   authors:
     - family-names: Good
       given-names: Jeff
+      orcid: "https://orcid.org/0000-0001-8679-4654"
     - family-names: Tallman
       given-names: Adam J. R.
   year: 2026
