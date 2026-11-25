@@ -34,16 +34,58 @@ so the report can be rebuilt from the dataset and software records alone.
 | Section | Source |
 |---|---|
 | Summary of the year | prose (Jeff, Adam) |
-| Framework and the three hypotheses (tree, divide, word) | `schemas/terms.yaml`, the introduction chapter's generated parts; prose |
-| Method: diagnostics, criteria, span rules | the codebook; `schemas/diagnostic_classes.yaml` |
-| Method: annotation workflow (Sheets, the daily pipeline, change logs, version stamps) | prose, drawing on `docs/data-management.md`, `docs/data-layer-design.md`, `docs/change-log-design.md` |
-| Method: the laminar analysis (families and forests, the four permutation tests, domain support, the resolution profile) | `laminar/INDEX.md`, the modules' docstrings, `NonCollaborative/REFERENCES.md`; prose |
+| Method (seven parts) | see "The method section" below |
+| Who did what: people and Claude | see "Human and Claude contributions" below |
 | The English data: planar structure (38 positions, 33 slots, 5 zones as of 2026-11-08), 11 classes, 23 constructions, how complete (77.9%) | `chapter_data` values; the English chapter's planar and diagnostics fragments |
 | Sample datasets | English; `synth0001` as a small worked example of every class; the 21 CCDB structures run through the same analysis (CC BY-SA, cited) to show the method on other languages |
 | Results: English spans, strict and loose, complete and partial | the English chapter's span tables |
 | Results: the hypotheses tested on English | the weekly analysis bundle at the pin; the word hypothesis needs #335 |
 | Status and limits | each class's analysis status (`diagnostic_classes_status.yaml`), span rules not yet reviewed (#321), open data questions (#314, #298) |
 | Next year | prose |
+
+## The method section
+
+The method covers the software design as well as the linguistics (Jeff,
+2026-11-25): the principles are part of why the data can be trusted, and
+they are already written down, so the report draws on them rather than
+restating them from memory.
+
+| Part | What it says | Drawn from |
+|---|---|---|
+| 1. Framework and diagnostics | the hypotheses, the terms, each class's criteria and span rule; what extends Tallman, Auderset & Uchihara 2024 (strict/loose spans, partial/complete positions, the named `*-combines` criteria), marked as such | `schemas/terms.yaml`, `schemas/diagnostic_classes.yaml`, the codebook, `docs/analyses.md` |
+| 2. Annotation for language experts who don't program | design for "John" (a browser and a Sheet, no terminal); the GitHub issue as the instruction; the daily pipeline, so nobody remembers a sequence of steps; annotators' proposals reviewed by issue | CLAUDE.md "Who the tooling is for", `docs/collaborator-guide.md`, `docs/tooling-design.md`, `docs/coordinator-guide.md` |
+| 3. Principles of the research software | one owner for every fact (and the failures that taught it); aggregate late, never store derived values in the annotation; definition files apart from data files; explicit, not implicit (refuse what can't be placed); light maintenance (regenerate, never keep a copy by hand); checkers don't multiply | `docs/data-layer-design.md`, `docs/data-management.md`, `docs/hidden-facts-inventory.md`, CLAUDE.md "Working rules" and "Design rules" |
+| 4. Provenance as the schemas change | the schemas are outputs of the research; change logs with typed change classes; version stamps on every result; chapters pinned to a data position; checked claims; links to the schema- and ontology-evolution literature | `docs/change-log-design.md`, `docs/result-stamp-design.md`, `docs/plain-record-design.md`, `schemas/changes.tsv`, `docs/references.md` |
+| 5. Safeguards on the data | the Drive door and local-file door; unlogged-source, integrity and codebook checks; issues filed by the pipeline itself; the frozen test copy of Drive | `docs/drive-door-design.md`, `docs/ownership-design.md`, `data_dependency_schema/SCHEMA.md`, `docs/testing.md` |
+| 6. Analysis methods | laminar families and forests; the four permutation tests; domain support and the resolution profile, with the phylogenetics methods they borrow | `laminar/INDEX.md`, the modules' docstrings, `NonCollaborative/REFERENCES.md`, `docs/laminar-analysis-plan.md` |
+| 7. Reproducibility | rebuilding every number from the dataset and software records; the rebuild check | item 6 under "What has to be built" |
+
+Each part is a prose slot with written instructions in the report's
+outline, and cites values (the number of classes, change-log lines, tests)
+rather than typing them.
+
+## Human and Claude contributions
+
+The report says what people did and what Claude did, and how Claude's
+work was kept under control (Jeff, 2026-11-25). Everything it says comes
+from records the project already keeps, counted by a script at the report's
+data position, not from recollection:
+
+| What | Record | Starting point (2026-11-25) |
+|---|---|---|
+| Code and docs written in Claude sessions | `Co-Authored-By: Claude` lines in this repository's commits | 1,104 of 1,327 commits, all since 2026-03-15; before that, everything is Jeff's (tag `pre-claude-noncollaborative`) |
+| Comments Claude posted | issue comments signed `klᴐd` (Jeff's Claude) or `klod` (Adam's) | to count |
+| Annotation Claude drafted | Source cells marked "Claude draft"; the language's change log (which command wrote each change) | phrasal_accent only, to be replaced by Adam |
+| Decisions | `schemas/decisions.tsv`, `coded_data/stan1293/decisions.tsv`; `diagnostics`/`linguistics` issues | every one made by Jeff or Adam |
+| Limits on Claude | CLAUDE.md: only a coordinator promotes a class's status; ask before live writes and linguistic calls; sign every comment | CLAUDE.md |
+
+The point to make plainly: the linguistic judgements (the diagnostics, the
+annotation, every decision, every promotion of a span rule) are Jeff's and
+Adam's; Claude wrote most of the tooling, under written rules, with Jeff
+directing it and reviewing what it did. A commit line means "made in a
+Claude session", not a share of authorship, and the report says so.
+Needed: a small script (in `chapters/`) that counts these into named
+values, so the section is rebuilt like every other.
 
 The draft is an unpublished manuscript, so it lives in planars-data's
 `.papers/`, not in this repository, until it is released.
@@ -82,6 +124,9 @@ The draft is an unpublished manuscript, so it lives in planars-data's
    it says `0.1.0a19`, `pyproject.toml` says `0.1.0a71`. The version hook
    (`bump_version_hook.py`) should write both, so nothing has to be
    remembered.
+
+8. **The contribution counts as values**: the script under "Human and
+   Claude contributions", read at the report's data position.
 
 ## Before release: what has to be true
 
@@ -135,3 +180,10 @@ build.
    (`laminar.datasets.NC`), so those tests would skip in the archived copy.
    Recommended: leave it out and say so in the README.
 7. **Authors and order** on each record (the data: Adam first?).
+
+## Decided (don't re-ask)
+
+- **The method covers the software design**, in the seven parts above
+  (Jeff, 2026-11-25).
+- **The report states human and Claude contributions**, from the records
+  above (Jeff, 2026-11-25).
