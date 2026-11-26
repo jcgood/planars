@@ -1,5 +1,7 @@
 # Testing
 
+`pytest` runs the suite on every processor core at once (`addopts = "-n auto"` in `pyproject.toml`, through `pytest-xdist`): about 3.5 minutes rather than 11.5. That is safe because every test keeps its files in its own temporary folder (`tests/conftest.py`). Two things follow for a new test: it must not write into the repository or `coded_data/` itself, and a list of test cases built from a set must be sorted (each process collects the tests and they must agree; a `set` comes out in a different order each time). Run with `-n 0` to debug one test in a single process.
+
 ## Regression testing
 
 Snapshot tests verify that analysis output does not change unexpectedly. Snapshots live in `tests/snapshots/` and cover every analysis with a filled TSV in `coded_data/`: `generate_snapshots.py` builds its list of analyses from `_CLASS_HANDLERS` in `planars/reports.py`, so a newly registered analysis is covered without editing this page.

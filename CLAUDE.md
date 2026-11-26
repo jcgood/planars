@@ -271,7 +271,7 @@ detail) and `docs/coordinator-guide.md`; `make help` for short aliases.
 ```bash
 python -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt   # includes `-e .`
-pytest                                  # full suite; run it before pushing
+pytest                                  # full suite, on every core (~3.5 min); run it before pushing
 python generate_snapshots.py            # regenerate span snapshots; review with git diff tests/snapshots/
 ```
 

@@ -28,6 +28,7 @@ kaleido          # plotly image/PDF export backend
 
 # Dev / CI
 pytest
+pytest-xdist      # runs the suite on several processor cores at once (`pytest -n auto`)
 pre-commit
 jsonschema        # validates data_dependency_schema/*.yaml against their JSON Schemas
 

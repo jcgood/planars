@@ -39,6 +39,11 @@ chapters = ["templates/*.j2", "templates/*.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Run on every processor core at once (pytest-xdist): the full suite takes
+# about 3.5 minutes instead of 11.5. Each test keeps its files in its own
+# temporary folder (tests/conftest.py), which is what makes this safe. To
+# debug one test (print, breakpoint), run it alone with -n 0.
+addopts = "-n auto"
 markers = [
     # Tests that need R installed, and usually the pinned R packages that
     # renv.lock records. They are all in NonCollaborative/tests/; CI has no

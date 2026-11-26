@@ -130,7 +130,7 @@ class TestProjectSpans:
 # ---------------------------------------------------------------------------
 
 class TestLanguageSpans:
-    @pytest.fixture(params=list(_REQUIRED_LANGS))
+    @pytest.fixture(params=sorted(_REQUIRED_LANGS))
     def lang_id(self, request):
         lang = request.param
         if not (CODED_DATA / lang).exists():

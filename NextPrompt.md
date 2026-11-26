@@ -111,7 +111,8 @@ carrying all of them.
   the renderer test alone ~2.5. The renderer test compares all 137 charts in
   one pass, so it is usually the one worth running.
 - **If the Python suite slows down sharply, profile one slow test first**
-  (`python -m cProfile -o out.prof -m pytest <one test>`). On 2026-10-17 it
+  (`python -m cProfile -o out.prof -m pytest -n 0 <one test>`; without
+  `-n 0` the test runs in a worker process the profile never sees). On 2026-10-17 it
   had gone from ten minutes to an hour because one schema file was parsed a
   thousand times per test; one cache fixed it (unit 20).
 - **Run the *full* suite before pushing, not one test file.** Saved command

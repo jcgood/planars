@@ -981,7 +981,8 @@ python generate_diagram.py out.pdf    # same, PDF output
 ### Regression testing and hooks
 
 ```bash
-pytest                          # run all tests (I/O, restructure, snapshots)
+pytest                          # run all tests (I/O, restructure, snapshots), on every core at once
+pytest -n 0 tests/test_x.py     # one test file in a single process, e.g. to see its print output
 python check_snapshots.py       # quick CLI alternative for snapshot-only checks
 ```
 
