@@ -92,12 +92,14 @@ The draft is an unpublished manuscript, so it lives in planars-data's
 
 ## What has to be built
 
-1. **More than one volume in `.papers/`.** Today there is one `volume.yaml`
-   (the De Gruyter book). The report is a second volume and won't be the
-   last, so each volume gets its own folder with its own `volume.yaml`,
-   built by `build-chapters`, and the daily check covers each. A change to
-   `state_files.PAPERS_DIR` and `chapters/build.py`, with a one-time
-   migration of the existing book into its folder.
+1. **Built 2026-11-25: more than one volume in `.papers/`.** Each volume
+   is its own folder (`.papers/<volume>/`) with its own `volume.yaml`,
+   pins and Overleaf project; `build-chapters`, its daily check and
+   `sync-overleaf` cover each (`--volume NAME`; a new name starts a
+   volume). The book moved to `.papers/book/`
+   (`migrations/papers_into_volume_folders.py`). The report's volume is
+   started once items 2 and 3 give it a chapter kind and a venue. Details:
+   `docs/chapter-generation-plan.md` § "More than one volume".
 2. **A results chapter kind** in `chapters/templates/outline.yaml` (the
    chapter plan names it; only `language` and `intro` exist): the
    hypotheses' tests and the laminar figures, citing values.

@@ -21,7 +21,13 @@ needs_english = pytest.mark.skipif(not pl.planar_file("stan1293").exists(),
 needs_latex = pytest.mark.skipif(shutil.which("pdflatex") is None, reason="no pdflatex")
 
 PV = re.compile(r"\\pv\{([^}]*)\}")
+VOL = "book"
 VOLUME = "title: A test volume\nvenue: book\nparts: [intro, stan1293]\n"
+
+
+def _vol():
+    """The test volume's folder."""
+    return state_files.PAPERS_DIR / VOL
 
 
 @pytest.fixture(scope="module")
@@ -93,7 +99,7 @@ def test_intro_has_every_class_and_no_bare_math_symbols():
 
 
 def test_the_intro_outline_places_every_fragment_and_has_a_stub_per_slot():
-    built, stubs, _said, _values = build.part_files(build.INTRO)
+    built, stubs, _said, _values = build.part_files(VOL, build.INTRO)
     outline = built["intro/chapter.tex"]
     for rel in built:
         if rel.startswith("intro/fragments/"):
@@ -156,51 +162,85 @@ def test_every_venue_file_defines_both_example_macros():
         tex.venue_sty("nosuchvenue")
 
 
-def test_the_volume_must_name_a_venue():
+def _volume_yaml(text, vol=VOL):
     with drive_door.running("t", may_write=True):
-        file_door.write_paper(file_door.paper_stub(build.VOLUME),
-                              "title: T\nvenue: nosuchvenue\nparts: [intro]\n")
+        file_door.write_paper(file_door.paper_stub(f"{vol}/{build.VOLUME}"), text)
+
+
+def test_the_volume_must_name_a_venue():
+    _volume_yaml("title: T\nvenue: nosuchvenue\nparts: [intro]\n")
     with pytest.raises(ChapterDataError, match="venue"):
-        build.read_volume()
+        build.read_volume(VOL)
 
 
 def test_the_volume_must_name_parts_the_build_knows():
-    with drive_door.running("t", may_write=True):
-        file_door.write_paper(file_door.paper_stub(build.VOLUME),
-                              "title: T\nvenue: book\nparts: [intro, nosuchlang]\n")
+    _volume_yaml("title: T\nvenue: book\nparts: [intro, nosuchlang]\n")
     with pytest.raises(ChapterDataError, match="nosuchlang"):
-        build.read_volume()
+        build.read_volume(VOL)
+
+
+def test_a_volume_s_name_is_a_plain_folder_name_and_no_part_s():
+    for bad in ("Book", "my book", "../x", "intro", "stan1293"):
+        with pytest.raises(ChapterDataError):
+            build.check_volume_name(bad)
+    build.check_volume_name("annual-report-2026")
+
+
+def test_with_no_volume_the_build_says_how_to_start_one():
+    with pytest.raises(SystemExit, match="--volume NAME"):
+        _run("--intro")
+
+
+def test_a_volume_yaml_at_the_top_of_papers_points_to_the_migration():
+    with drive_door.running("t", may_write=True):
+        file_door.write_paper(file_door.paper_stub(build.VOLUME), VOLUME)
+    with pytest.raises(SystemExit, match="papers_into_volume_folders"):
+        _run("--intro")
 
 
 def test_the_intro_builds_once_and_a_rebuild_changes_nothing(capsys):
-    _run("--intro", "--apply")
-    papers = state_files.PAPERS_DIR
-    assert (papers / "volume.yaml").exists() and (papers / "intro" / "chapter.tex").exists()
+    _run("--volume", VOL, "--intro", "--apply")
+    assert (_vol() / "volume.yaml").exists() and (_vol() / "intro" / "chapter.tex").exists()
+    assert build.volumes() == [VOL]
     capsys.readouterr()
     _run("--intro", "--apply")
     out = capsys.readouterr().out
     assert "Nothing to change." in out and "slots written" in out
 
 
+def test_each_volume_is_built_in_its_own_folder(capsys):
+    _volume_yaml("title: A book\nvenue: book\nparts: [intro]\n")
+    _volume_yaml("title: A report\nvenue: book\nparts: [intro]\n", "report")
+    _run("--apply")
+    for vol, title in ((VOL, "A book"), ("report", "A report")):
+        assert f"\\title{{{title}}}" in (state_files.PAPERS_DIR / vol / "main.tex").read_text(
+            encoding="utf-8")
+        assert (state_files.PAPERS_DIR / vol / "intro" / "chapter.tex").exists()
+    assert not (state_files.PAPERS_DIR / "intro").exists()
+    capsys.readouterr()
+    _run("--volume", "report", "--apply")
+    out = capsys.readouterr().out
+    assert "Volume report" in out and f"Volume {VOL}" not in out
+
+
 def test_written_prose_is_kept_and_a_retired_slot_or_fragment_is_handled(capsys):
-    _run("--intro", "--apply")
-    papers = state_files.PAPERS_DIR
-    written = papers / "intro" / "prose" / "argument.tex"
+    _run("--volume", VOL, "--intro", "--apply")
+    written = _vol() / "intro" / "prose" / "argument.tex"
     written.write_text("My argument.\n", encoding="utf-8")
-    (papers / "intro" / "prose" / "retired.tex").write_text("Old text.\n", encoding="utf-8")
-    (papers / "intro" / "fragments" / "class_retired.tex").write_text("x", encoding="utf-8")
+    (_vol() / "intro" / "prose" / "retired.tex").write_text("Old text.\n", encoding="utf-8")
+    (_vol() / "intro" / "fragments" / "class_retired.tex").write_text("x", encoding="utf-8")
     capsys.readouterr()
     _run("--intro", "--apply")
     out = capsys.readouterr().out
     assert written.read_text(encoding="utf-8") == "My argument.\n"
-    assert "deleted intro/fragments/class_retired.tex (no longer made)" in out
-    assert "intro/prose/retired.tex: its section is no longer in the outline" in out
-    assert (papers / "intro" / "prose" / "retired.tex").exists()
-    assert "Prose: 1 of" in out
+    assert f"deleted {VOL}/intro/fragments/class_retired.tex (no longer made)" in out
+    assert f"{VOL}/intro/prose/retired.tex: its section is no longer in the outline" in out
+    assert (_vol() / "intro" / "prose" / "retired.tex").exists()
+    assert f"Prose in volume {VOL}: 1 of" in out
 
 
 def test_a_dry_run_writes_nothing(capsys):
-    _run("--intro")
+    _run("--volume", VOL, "--intro")
     assert not state_files.PAPERS_DIR.exists()
     assert "Dry run" in capsys.readouterr().out
 
@@ -208,6 +248,13 @@ def test_a_dry_run_writes_nothing(capsys):
 def test_position_needs_a_language():
     with pytest.raises(SystemExit, match="--lang"):
         _run("--position", "3")
+
+
+def test_position_in_more_than_one_volume_needs_the_volume():
+    _volume_yaml("title: A\nvenue: book\nparts: [stan1293]\n")
+    _volume_yaml("title: B\nvenue: book\nparts: [stan1293]\n", "report")
+    with pytest.raises(SystemExit, match="--volume"):
+        _run("--lang", "stan1293", "--position", "3")
 
 
 def test_value_changes_says_each_span_once_and_counts_the_analysis():
@@ -224,15 +271,15 @@ def test_value_changes_says_each_span_once_and_counts_the_analysis():
 
 
 def test_a_lock_naming_a_commit_points_to_the_migration():
-    target = file_door.paper_built(f"L/{build.LOCK}")
+    target = file_door.paper_built(f"{VOL}/L/{build.LOCK}")
     target.path.parent.mkdir(parents=True)
     target.path.write_text("planars_data: abc\ndate: '2026-10-25'\nplanars: def\n", encoding="utf-8")
     with pytest.raises(ChapterDataError, match="pin_chapters_to_positions"):
-        build.read_lock("L")
+        build.read_lock(VOL, "L")
 
 
 def _prose(part, name, text):
-    folder = state_files.PAPERS_DIR / part / "prose"
+    folder = _vol() / part / "prose"
     folder.mkdir(parents=True, exist_ok=True)
     (folder / name).write_text(text, encoding="utf-8")
 
@@ -242,17 +289,18 @@ def test_claims_that_no_longer_hold_are_listed_with_file_and_line():
            "% \\claim{L.x}{1} in a comment is not a claim\n"
            "It holds: \\claim{L.x}{1}.\n"
            "It fails: \\claim{L.y}{NP\\{S\\}}, \\claim{L.gone}{2} and \\claim{M.z}{3}.\n")
-    lines = build.broken_claims({"L.x": 1, "L.y": "v:x"}, ["L"], ["intro"])
+    lines = build.broken_claims(VOL, {"L.x": 1, "L.y": "v:x"}, ["L"], ["intro"])
+    where = f".papers/{VOL}/intro/prose/argument.tex:3"
     assert lines == ["Claims that no longer hold:",
-                     "  .papers/intro/prose/argument.tex:3: \\claim{L.y} says NP\\{S\\}, the data now say v:x",
-                     "  .papers/intro/prose/argument.tex:3: \\claim{L.gone} names no value"]
+                     f"  {where}: \\claim{{L.y}} says NP\\{{S\\}}, the data now say v:x",
+                     f"  {where}: \\claim{{L.gone}} names no value"]
 
 
 @needs_english
 def test_a_chapter_is_pinned_and_moving_the_pin_reports_by_cause(capsys, own_english):
     old = source_log.position("stan1293")
-    _run("--lang", "stan1293", "--position", str(old), "--apply")
-    lock = build.read_lock("stan1293")
+    _run("--volume", VOL, "--lang", "stan1293", "--position", str(old), "--apply")
+    lock = build.read_lock(VOL, "stan1293")
     assert lock["position"] == old and lock["code"] and isinstance(lock["schemas"], int)
     # New annotation moves the log on; the chapter stays at its pin.
     with drive_door.running("t", may_write=True):
@@ -268,9 +316,22 @@ def test_a_chapter_is_pinned_and_moving_the_pin_reports_by_cause(capsys, own_eng
     out = capsys.readouterr().out
     assert "Changes from the code" in out and "Changes from the annotation" in out
     assert f"change-log line {old} " in out and f"change-log line {old + 1} " in out
-    assert build.read_lock("stan1293")["position"] == old, "a dry run moved the pin"
+    assert build.read_lock(VOL, "stan1293")["position"] == old, "a dry run moved the pin"
     _run("--lang", "stan1293", "--update", "--apply")
-    assert build.read_lock("stan1293")["position"] == old + 1
+    assert build.read_lock(VOL, "stan1293")["position"] == old + 1
+
+
+@needs_english
+def test_two_volumes_pin_the_same_language_apart(own_english):
+    old = source_log.position("stan1293")
+    for vol in (VOL, "report"):
+        _volume_yaml("title: T\nvenue: book\nparts: [stan1293]\n", vol)
+    _run("--volume", VOL, "--lang", "stan1293", "--position", str(old), "--apply")
+    with drive_door.running("t", may_write=True):
+        file_door.write(file_door.notes_text("stan1293"), "a new note\n", why="t")
+    _run("--volume", "report", "--lang", "stan1293", "--apply")
+    assert build.read_lock(VOL, "stan1293")["position"] == old
+    assert build.read_lock("report", "stan1293")["position"] == old + 1
 
 
 def test_the_check_with_no_volume_says_so(capsys):
@@ -279,8 +340,8 @@ def test_the_check_with_no_volume_says_so(capsys):
     assert not state_files.PAPERS_DIR.exists()
 
 
-def test_the_check_takes_only_lang_and_apply():
-    with pytest.raises(SystemExit, match="only --lang"):
+def test_the_check_takes_only_volume_lang_and_apply():
+    with pytest.raises(SystemExit, match="only --volume, --lang"):
         _run("--check", "--update")
 
 
@@ -303,10 +364,9 @@ def test_the_check_leaves_out_an_analysis_not_drawn_on_both_sides():
 
 @needs_english
 def test_the_check_files_a_chapter_behind_and_closes_it_when_caught_up(capsys, github, reads_english):
-    _run("--lang", "stan1293", "--apply")
-    volume = state_files.PAPERS_DIR / "volume.yaml"
-    volume.write_text(VOLUME, encoding="utf-8")
-    values = state_files.PAPERS_DIR / "stan1293" / "values.tex"
+    _run("--volume", VOL, "--lang", "stan1293", "--apply")
+    (_vol() / "volume.yaml").write_text(VOLUME, encoding="utf-8")
+    values = _vol() / "stan1293" / "values.tex"
     text = values.read_text(encoding="utf-8")
     name = next(m for m in re.findall(r"\\pvset\{([^}]*\.left)\}", text))
     stale = re.sub(r"(\\pvset\{" + re.escape(name) + r"\}\{)[^}]*", r"\g<1>1--99", text)
@@ -316,9 +376,10 @@ def test_the_check_files_a_chapter_behind_and_closes_it_when_caught_up(capsys, g
     assert "Dry run" in capsys.readouterr().out and not github.issues
     _run("--check", "--apply")
     [issue] = github.issues
-    assert issue["title"] == build.check_title("stan1293") and issue["labels"] == [build.CHECK_LABEL]
-    assert "1 span" in issue["body"] and "--lang stan1293 --update" in issue["body"]
-    assert re.search(r"- `\.papers/stan1293/prose/class_\w+\.tex`\n", issue["body"])
+    assert issue["title"] == build.check_title(VOL, "stan1293")
+    assert issue["labels"] == [build.CHECK_LABEL]
+    assert "1 span" in issue["body"] and f"--volume {VOL} --lang stan1293 --update" in issue["body"]
+    assert re.search(rf"- `\.papers/{VOL}/stan1293/prose/class_\w+\.tex`\n", issue["body"])
     assert "1--99" not in issue["body"] and name not in issue["body"], "annotation in a public issue"
     _run("--check", "--apply")
     assert len(github.issues) == 1 and github.calls_of("edit"), "a second run filed again"
@@ -332,9 +393,9 @@ def test_an_annotation_change_to_a_fragments_text_alone_puts_the_chapter_behind(
     """An example's wording changes no value, but changes what the chapter prints."""
     import csv
     import io
-    _run("--lang", "stan1293", "--apply")
-    (state_files.PAPERS_DIR / "volume.yaml").write_text(VOLUME, encoding="utf-8")
-    assert not build.check_chapter("stan1293", ["intro", "stan1293"])["behind"]
+    _run("--volume", VOL, "--lang", "stan1293", "--apply")
+    (_vol() / "volume.yaml").write_text(VOLUME, encoding="utf-8")
+    assert not build.check_chapter(VOL, "stan1293", ["intro", "stan1293"])["behind"]
     for path in sorted((own_english / "stan1293").glob("*/*.tsv")):
         rows = list(csv.reader(io.StringIO(path.read_text(encoding="utf-8"), newline=""), delimiter="\t"))
         if "Example" in rows[0] and any(r[rows[0].index("Example")] for r in rows[1:]):
@@ -347,7 +408,7 @@ def test_an_annotation_change_to_a_fragments_text_alone_puts_the_chapter_behind(
     target = file_door.annotation("stan1293", path.parent.name, path.stem)
     with drive_door.running("t", may_write=True):
         file_door.write(target, buf.getvalue(), why="t")
-    found = build.check_chapter("stan1293", ["intro", "stan1293"])
+    found = build.check_chapter(VOL, "stan1293", ["intro", "stan1293"])
     assert found["behind"] and found["data_files"] == [f"examples_{path.parent.name}.tex"]
 
 
@@ -366,9 +427,8 @@ def _compile(folder, file="main.tex"):
 @needs_latex
 @needs_english
 def test_the_volume_compiles(english, reads_english):
-    _run("--intro", "--apply")
-    volume = state_files.PAPERS_DIR / "volume.yaml"
-    volume.write_text(VOLUME, encoding="utf-8")
+    _run("--volume", VOL, "--intro", "--apply")
+    (_vol() / "volume.yaml").write_text(VOLUME, encoding="utf-8")
     _run("--apply")
     total = english.values["stan1293.planar.positions"]
     _prose("intro", "argument.tex", f"English has \\claim{{stan1293.planar.positions}}{{{total}}} "
@@ -376,7 +436,7 @@ def test_the_volume_compiles(english, reads_english):
                                     + tex.example("ema=ja kweti", "1SG=ERG go.PST", "I went", "p. 3",
                                                   True) + "\n")
     for chapter in ("intro", "stan1293"):
-        _compile(state_files.PAPERS_DIR, f"{chapter}.tex")
-    log = _compile(state_files.PAPERS_DIR)
+        _compile(_vol(), f"{chapter}.tex")
+    log = _compile(_vol())
     # TeX breaks log lines at 79 characters.
     assert log.replace("\n", "").count("Claim stan1293.planar.positions no longer holds") == 1

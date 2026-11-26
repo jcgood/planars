@@ -1,12 +1,15 @@
-"""``python -m coding sync-overleaf``: keep the chapters' Overleaf project and
-planars-data's ``.papers/`` the same, both ways.
+"""``python -m coding sync-overleaf``: keep each volume's Overleaf project and
+its folder in planars-data's ``.papers/`` the same, both ways.
 
-    python -m coding sync-overleaf            # dry run: what would move which way
-    python -m coding sync-overleaf --apply
+    python -m coding sync-overleaf [--volume V]           # dry run: what would move which way
+    python -m coding sync-overleaf [--volume V] --apply
 
-The Overleaf project is named in ``.papers/volume.yaml`` (``overleaf:`` and
-the project's ID, the last part of its address); with none, there is
-nothing to sync. Each Overleaf project is a git repository
+Each volume (``.papers/<volume>/``, ``chapters.build.volumes()``) names its
+own Overleaf project in its ``volume.yaml`` (``overleaf:`` and the project's
+ID, the last part of its address), whose top level is the volume's folder;
+a volume naming none has nothing to sync. Every volume is synced in turn
+(``--volume``: only that one), and one volume failing does not stop the
+others. Each Overleaf project is a git repository
 (``https://git.overleaf.com/<ID>``), which this command clones into a
 temporary folder each run. On the machine of whoever runs it, git's own
 stored login is used; elsewhere (the daily refresh) an Overleaf git token in
@@ -14,14 +17,16 @@ stored login is used; elsewhere (the daily refresh) an Overleaf git token in
 command line.
 
 **How each file is settled.** The command compares three versions of every
-file: what Overleaf has, what ``.papers/`` has (files compiling leaves are
-left out, as planars-data's .gitignore says), and what both had at the last
-sync (the Overleaf version recorded in ``.state/overleaf_state.json``):
+file: what Overleaf has, what the volume's folder has (files compiling
+leaves are left out, as planars-data's .gitignore says), and what both had
+at the last sync (the Overleaf version recorded, per volume, in
+``.state/overleaf_state.json``: ``{volume: {project, commit}}``):
 
 - changed on one side only: that side's version goes to the other (a file
   added or deleted counts as a change);
-- changed on both sides, differently: ``.papers/``'s version is kept, and
-  Overleaf's goes in as a copy at ``conflicts/<date>/<path>`` on both sides;
+- changed on both sides, differently: planars-data's version is kept, and
+  Overleaf's goes in as a copy at ``conflicts/<date>/<path>`` on both sides
+  (in the volume's folder: ``.papers/<volume>/conflicts/``);
 - deleted on one side and changed on the other: the changed version is kept,
   with no copy;
 - a file the chapter build makes (``chapters.build.is_built``) changed in
@@ -33,19 +38,20 @@ So nothing anyone wrote is lost; a copy is a question for a person. Files
 taken from Overleaf are written through the local-file door, which writes
 over a person's file only when told exactly what it replaces (the version
 here, which the sync has just seen unchanged since the last sync), and
-commits and pushes them when the command ends. Then ``.papers/`` as it now
-stands is pushed to Overleaf, and the Overleaf version recorded.
+commits and pushes them when the command ends. Then the volume's folder as
+it now stands is pushed to Overleaf, and the Overleaf version recorded.
 
-**The first sync** with a project (none recorded, or a different one)
-treats Overleaf's content as unchanged since a sync, so ``.papers/`` replaces
-it: start from a new, empty project.
+**The first sync** with a project (none recorded for the volume, or a
+different one) treats Overleaf's content as unchanged since a sync, so the
+volume's folder replaces it: start from a new, empty project.
 
-**Its issue** (``overleaf-sync``, one, rewritten in place): with
-``--apply``, filed while ``conflicts/`` holds any copy or when the sync
-failed (Overleaf unreachable, a push refused because someone edited in the
-meantime: the next run picks that up). It names files, never their text
-(the repository is public). Closed when ``conflicts/`` is empty and the
-sync succeeded.
+**Its issue** (``overleaf-sync``, one per volume, "Overleaf sync — volume
+<name>", rewritten in place): with ``--apply``, filed while the volume's
+``conflicts/`` holds any copy or when its sync failed (Overleaf
+unreachable, a push refused because someone edited in the meantime: the
+next run picks that up). It names files, never their text (the repository
+is public). Closed when ``conflicts/`` is empty and the sync succeeded, or
+when the volume no longer names a project.
 """
 from __future__ import annotations
 
@@ -71,7 +77,6 @@ TOKEN_ENV = "OVERLEAF_TOKEN"
 VOLUME_KEY = "overleaf"
 CONFLICTS = "conflicts"
 LABEL = "overleaf-sync"
-TITLE = "Overleaf sync — chapters"
 _PROJECT_ID = re.compile(r"^[0-9a-z]+$")
 
 
@@ -116,39 +121,50 @@ def _has_commit(repo: Path, commit: str) -> bool:
 
 # ── planars-data's side ────────────────────────────────────────────────────
 
-def project_id() -> Optional[str]:
-    """The Overleaf project volume.yaml names, or None."""
-    text = file_door.read_paper(file_door.paper_stub("volume.yaml"))
+def title(vol: str) -> str:
+    return f"Overleaf sync — volume {vol}"
+
+
+def project_id(vol: str) -> Optional[str]:
+    """The Overleaf project the volume's volume.yaml names, or None."""
+    text = file_door.read_paper(file_door.paper_stub(f"{vol}/volume.yaml"))
     found = (yaml.safe_load(text) or {}).get(VOLUME_KEY) if text else None
     if found is None:
         return None
     found = str(found).strip().rstrip("/").rsplit("/", 1)[-1]
     if not _PROJECT_ID.match(found):
-        raise SyncError(f".papers/volume.yaml: `{VOLUME_KEY}` should be the Overleaf project's "
-                        f"ID (the end of its address), not {found!r}.")
+        raise SyncError(f".papers/{vol}/volume.yaml: `{VOLUME_KEY}` should be the Overleaf "
+                        f"project's ID (the end of its address), not {found!r}.")
     return found
 
 
-def local_files() -> Dict[str, bytes]:
-    """Every file in .papers/ but what planars-data's .gitignore leaves out
-    (what compiling leaves behind)."""
-    papers = state_files.PAPERS_DIR
-    if not papers.is_dir():
+def local_files(vol: str) -> Dict[str, bytes]:
+    """Every file in the volume's folder, by its path there, but what
+    planars-data's .gitignore leaves out (what compiling leaves behind)."""
+    folder = state_files.PAPERS_DIR / vol
+    if not folder.is_dir():
         return {}
-    names = [str(p.relative_to(papers)) for p in sorted(papers.rglob("*")) if p.is_file()]
-    repo = papers.parent
+    names = [p.relative_to(folder).as_posix() for p in sorted(folder.rglob("*")) if p.is_file()]
+    repo = state_files.PAPERS_DIR.parent
+    prefix = f"{state_files.PAPERS_DIR.name}/{vol}/"
     if names and (repo / ".git").exists():
         ask = subprocess.run(["git", "-C", str(repo), "check-ignore", "--stdin", "-z"],
-                             input="\0".join(f"{papers.name}/{n}" for n in names).encode(),
+                             input="\0".join(prefix + n for n in names).encode(),
                              capture_output=True)
-        ignored = {n.split("/", 1)[1] for n in ask.stdout.decode().split("\0") if n}
+        ignored = {n.removeprefix(prefix) for n in ask.stdout.decode().split("\0") if n}
         names = [n for n in names if n not in ignored]
-    return {n: (papers / n).read_bytes() for n in names}
+    return {n: (folder / n).read_bytes() for n in names}
 
 
 def read_state() -> dict:
+    """{volume: {"project": ID, "commit": the Overleaf version last synced}}."""
     path = file_door.overleaf_state().path
-    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    state = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    if "project" in state:
+        raise SyncError(f"{path.name} records one Overleaf project, as before .papers/ held "
+                        f"more than one volume. Run `python migrations/papers_into_volume_folders.py "
+                        f"--apply` once, which records it under its volume.")
+    return state
 
 
 # ── Settling each file ─────────────────────────────────────────────────────
@@ -205,14 +221,14 @@ def settle(base: Dict[str, bytes], theirs: Dict[str, bytes], ours: Dict[str, byt
     return writes, said, copies
 
 
-def _write_local(writes: Dict[str, Optional[bytes]], ours: Dict[str, bytes]) -> None:
+def _write_local(vol: str, writes: Dict[str, Optional[bytes]], ours: Dict[str, bytes]) -> None:
     from chapters.build import is_built
     for rel, content in writes.items():
         kind = file_door.paper_built if is_built(rel) else file_door.paper_stub
         if content is None:
-            file_door.remove_paper(kind(rel), replaces=ours.get(rel))
+            file_door.remove_paper(kind(f"{vol}/{rel}"), replaces=ours.get(rel))
         else:
-            file_door.write_paper(kind(rel), content, replaces=ours.get(rel))
+            file_door.write_paper(kind(f"{vol}/{rel}"), content, replaces=ours.get(rel))
 
 
 def _push(clone: Path, files: Dict[str, bytes]) -> Optional[str]:
@@ -236,10 +252,11 @@ def _push(clone: Path, files: Dict[str, bytes]) -> Optional[str]:
 
 # ── The issue ──────────────────────────────────────────────────────────────
 
-def issue_body(copies: List[str], failure: Optional[str], today: str) -> str:
-    lines = [f"## The chapters' Overleaf project needs a person — {today}", ""]
+def issue_body(vol: str, copies: List[str], failure: Optional[str], today: str) -> str:
+    lines = [f"## Volume {vol}'s Overleaf project needs a person — {today}", ""]
     if failure:
-        lines += ["The sync between planars-data's `.papers/` and the Overleaf project failed:", "",
+        lines += [f"The sync between planars-data's `.papers/{vol}/` and the Overleaf project "
+                  f"failed:", "",
                   f"```\n{failure}\n```", "",
                   "The next daily refresh tries again; fix the cause if it says one (an expired "
                   f"Overleaf token: make a new one and store it as the `{TOKEN_ENV}` secret).", ""]
@@ -247,7 +264,7 @@ def issue_body(copies: List[str], failure: Optional[str], today: str) -> str:
         lines += ["A file changed both in Overleaf and in planars-data since the last sync, or a "
                   "file the chapter build makes was edited in Overleaf. The planars-data version "
                   "was kept, and Overleaf's saved as a copy (in both places):", ""]
-        lines += [f"- `{c}`" for c in copies]
+        lines += [f"- `.papers/{vol}/{c}`" for c in copies]
         lines += ["", "## What to do", "",
                   "For each copy: merge what it adds into the file it copies (the path after "
                   f"`{CONFLICTS}/<date>/`), in Overleaf or locally, then delete the copy. A "
@@ -256,27 +273,33 @@ def issue_body(copies: List[str], failure: Optional[str], today: str) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _report(copies: List[str], failure: Optional[str], today: str) -> None:
+def _report(vol: str, copies: List[str], failure: Optional[str], today: str) -> None:
     if copies or failure:
-        number, created = issues.file_issue(LABEL, TITLE, issue_body(copies, failure, today),
+        number, created = issues.file_issue(LABEL, title(vol),
+                                            issue_body(vol, copies, failure, today),
                                             replace=True, match_title=True)
         print(f"{'Filed' if created else 'Rewrote'} issue #{number} ({LABEL}).")
         return
-    for number in issues.close_open(LABEL, f"Synced with nothing left to settle on {today} — "
-                                           f"closing."):
-        print(f"Closed issue #{number} ({LABEL}).")
+    for issue in issues.list_open(LABEL):
+        if issue["title"] == title(vol):
+            issues.close(issue["number"], f"Synced with nothing left to settle on {today} — "
+                                          f"closing.")
+            print(f"Closed issue #{issue['number']} ({LABEL}).")
 
 
 # ── The command ────────────────────────────────────────────────────────────
 
-def sync(apply: bool, today: str) -> List[str]:
-    """Sync once; the conflict copies standing afterwards. Raises SyncError."""
-    project = project_id()
+def sync(vol: str, apply: bool, today: str) -> List[str]:
+    """Sync volume `vol` once; the conflict copies standing afterwards.
+    Raises SyncError."""
+    print(f"Volume {vol}:")
+    project = project_id(vol)
     if project is None:
-        print(f"No Overleaf project named in .papers/volume.yaml (`{VOLUME_KEY}: <project ID>`); "
-              f"nothing to sync.")
+        print(f"No Overleaf project named in .papers/{vol}/volume.yaml "
+              f"(`{VOLUME_KEY}: <project ID>`); nothing to sync.")
         return []
     state = read_state()
+    mine = state.get(vol) or {}
     with tempfile.TemporaryDirectory() as folder:
         clone = Path(folder) / "overleaf"
         try:
@@ -288,14 +311,14 @@ def sync(apply: bool, today: str) -> List[str]:
             raise SyncError(f"Could not reach Overleaf project {project}: {e}{hint}") from None
         head = _git(clone, "rev-parse", "HEAD").decode().strip()
         theirs = _tree(clone, head)
-        last = state.get("commit") if state.get("project") == project else None
+        last = mine.get("commit") if mine.get("project") == project else None
         if last and not _has_commit(clone, last):
             raise SyncError(f"Overleaf's history no longer has the version last synced "
                             f"({last[:12]}); the project's history was rewritten.")
         base = _tree(clone, last) if last else theirs
         if not last:
-            print("First sync with this project: .papers/ replaces what it holds.")
-        ours = local_files()
+            print(f"First sync with this project: .papers/{vol}/ replaces what it holds.")
+        ours = local_files(vol)
         writes, said, copies = settle(base, theirs, ours, today)
         print("\n".join(said) if said else "Nothing changed in Overleaf since the last sync.")
         after = {**ours, **{k: v for k, v in writes.items() if v is not None}}
@@ -308,10 +331,11 @@ def sync(apply: bool, today: str) -> List[str]:
             if writes or sent or gone:
                 print("Dry run: add --apply to sync.")
             return sorted(r for r in after if r.startswith(f"{CONFLICTS}/"))
-        _write_local(writes, ours)
+        _write_local(vol, writes, ours)
         pushed = _push(clone, after)
-        file_door.write_state(file_door.overleaf_state(), json.dumps(
-            {"project": project, "commit": pushed or head}, indent=2) + "\n")
+        state[vol] = {"project": project, "commit": pushed or head}
+        file_door.write_state(file_door.overleaf_state(),
+                              json.dumps(dict(sorted(state.items())), indent=2) + "\n")
         print(f"Overleaf is at {(pushed or head)[:12]}" + ("" if pushed else " (unchanged)") + ".")
     return sorted(r for r in after if r.startswith(f"{CONFLICTS}/"))
 
@@ -319,29 +343,47 @@ def sync(apply: bool, today: str) -> List[str]:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python -m coding sync-overleaf",
-        description="Sync planars-data's .papers/ with the Overleaf project volume.yaml names, "
-                    "both ways; an edit made on both sides keeps each as a copy.")
+        description="Sync each volume's folder in planars-data's .papers/ with the Overleaf "
+                    "project its volume.yaml names, both ways; an edit made on both sides keeps "
+                    "each as a copy.")
+    parser.add_argument("--volume", default=None, metavar="NAME",
+                        help="Only this volume (default: every volume in .papers/).")
     parser.add_argument("--apply", action="store_true",
-                        help="Sync, and file or close the overleaf-sync issue (default: dry run).")
+                        help="Sync, and file or close each volume's overleaf-sync issue "
+                             "(default: dry run).")
     return parser
 
 
 def main(args: argparse.Namespace | None = None) -> None:
+    from chapters.build import volumes
+    from chapters.data import ChapterDataError
     args = args if args is not None else build_parser().parse_args()
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    failure, copies = None, []
     try:
-        copies = sync(args.apply, today)
-    except SyncError as e:
-        failure = str(e)
-        print(failure)
-    if copies:
-        print(f"{len(copies)} conflict cop{'y' if len(copies) == 1 else 'ies'} under "
-              f"{CONFLICTS}/ to merge by hand.")
-    if args.apply:
-        _report(copies, failure, today)
-    if failure:
-        sys.exit(1)
+        known = volumes()
+    except ChapterDataError as e:
+        sys.exit(str(e))
+    if args.volume is not None and args.volume not in known:
+        sys.exit(f"There is no volume {args.volume!r} in .papers/ (volumes: "
+                 f"{', '.join(known) or 'none'}).")
+    if not known:
+        print("No volume in .papers/; nothing to sync.")
+    failed = []
+    for vol in [args.volume] if args.volume else known:
+        failure, copies = None, []
+        try:
+            copies = sync(vol, args.apply, today)
+        except SyncError as e:
+            failure = str(e)
+            failed.append(vol)
+            print(failure)
+        if copies:
+            print(f"{len(copies)} conflict cop{'y' if len(copies) == 1 else 'ies'} under "
+                  f".papers/{vol}/{CONFLICTS}/ to merge by hand.")
+        if args.apply:
+            _report(vol, copies, failure, today)
+    if failed:
+        sys.exit(f"The sync failed for volume(s) {', '.join(failed)}.")
 
 
 if __name__ == "__main__":

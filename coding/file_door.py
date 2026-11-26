@@ -107,7 +107,8 @@ not research data, so they get no archive copy or change-log line: git
 keeps their history.
 
 **The chapters** (``PAPER_KINDS``; docs/chapter-generation-plan.md
-Phase 3): files under ``.papers/`` (``state_files.PAPERS_DIR``), written
+Phase 3): files under ``.papers/`` (``state_files.PAPERS_DIR``, one
+folder per volume, so a path is ``<volume>/<path in it>``), written
 by build-chapters with ``write_paper`` and ``remove_paper``. Two kinds: a
 *built* file (fragments, values, outlines), rewritten by every build, and
 a *stub* (a prose slot, ``volume.yaml``, or any file a writer adds), made
@@ -507,7 +508,7 @@ PAPER_KINDS: Dict[str, str] = {
 @dataclass(frozen=True)
 class PaperFile:
     """One file under ``.papers/``, by kind and its path there
-    (``stan1293/prose/background.tex``). Manuscripts, not a language's
+    (``book/stan1293/prose/background.tex``). Manuscripts, not a language's
     research data: no archive copy or change-log line (git keeps their
     history); the door checks, writes only what differs, and commits."""
     kind: str

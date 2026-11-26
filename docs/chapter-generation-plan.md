@@ -297,7 +297,9 @@ Open with Jeff: where annotators' chapter drafts live, and whether
   ends. With no `--lang`/`--intro` it builds every part `volume.yaml`
   names. `python -m chapters` keeps only `values` (read-only).
 - **Layout in `coded_data/.papers/`** (`state_files.PAPERS_DIR`, the one
-  statement of where; moving the manuscripts means changing it):
+  statement of where; moving the manuscripts means changing it; since
+  2026-11-25 all of this sits in one folder per volume, `.papers/<volume>/`:
+  "More than one volume" below):
   `volume.yaml` (title and parts: `intro` or a Glottocode), `main.tex`
   built from it, `planarschapter.sty`, and per part `chapter.tex` (the
   outline), `fragments/`, `prose/`, and `values.tex` for a language.
@@ -440,3 +442,25 @@ Open with Jeff: where annotators' chapter drafts live, and whether
   part's values (today every chapter file loads every language's, so a
   writer would see other languages' unpublished values). Sync settles each
   project against its own subset, with its own record in the state file.
+
+## More than one volume (2026-11-25)
+
+- **Each volume is a folder, `.papers/<volume>/`,** holding its own
+  `volume.yaml` and everything the layout above puts at the top of
+  `.papers/`: parts, pins, `main.tex`, its Overleaf project and its
+  `conflicts/`. Needed for the Zenodo annual report, a second volume
+  beside the book (`docs/zenodo-report-plan.md`, item 1). A volume is
+  complete in itself, so the report can pin English at the release's
+  position while the book's English chapter moves on.
+- **`--volume NAME`** on `build-chapters` and `sync-overleaf`; without it
+  both work on every volume (`build-chapters --lang`/`--intro`: every
+  volume listing that part). A name not yet used starts a volume.
+  `chapter-behind` and `overleaf-sync` issues are one per volume (the
+  volume is in the title). How each behaves: the two modules' docstrings.
+- **The book moved to `.papers/book/`** with
+  `migrations/papers_into_volume_folders.py`, which also keyed
+  `.state/overleaf_state.json` by volume, so its Overleaf project, whose
+  top level is now the volume's folder, saw no change. Both commands refuse
+  the old layout and name the migration.
+- The one-project-per-chapter plan above now sits inside a volume: the
+  map of projects would be per volume.

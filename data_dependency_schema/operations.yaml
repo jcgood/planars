@@ -311,19 +311,20 @@
   writes_to_drive: false
   writes_locally: true
   description: >-
-    Builds the volume's chapters in planars-data's .papers/ (chapters/build.py;
-    docs/chapter-generation-plan.md): each chapter's outline, generated
-    fragments and values, the volume's main.tex, and a stub for each prose
-    slot and for volume.yaml.
+    Builds the volumes' chapters in planars-data's .papers/, one folder per
+    volume (chapters/build.py; docs/chapter-generation-plan.md): each
+    chapter's outline, generated fragments and values, each volume's
+    main.tex, and a stub for each prose slot and for a new volume's
+    volume.yaml (--volume NAME starts one).
   side_effects:
     - >-
-      writes, through the local-file door, every built file under .papers/
-      whose text changed (main.tex, planarschapter.sty, each part's
-      chapter.tex, values.tex, data.lock and fragments) and deletes
-      fragments no longer made
+      writes, through the local-file door, every built file under
+      .papers/<volume>/ whose text changed (main.tex, planarschapter.sty,
+      each part's chapter.tex, values.tex, data.lock and fragments) and
+      deletes fragments no longer made
     - >-
-      makes each missing prose stub and volume.yaml once; the door refuses
-      to write over or remove an existing one
+      makes each missing prose stub and a new volume's volume.yaml once;
+      the door refuses to write over or remove an existing one
     - >-
       pins each language chapter to a data version, its language's
       change-log position (data.lock), on its first build; --update moves
@@ -348,13 +349,13 @@
       writes_to_drive: false
       writes_locally: false
       description: >-
-        The daily check (Phase 5): compares each built language chapter at
-        its pin with what is written and with today's data, writing nothing
-        in .papers/.
+        The daily check (Phase 5): compares each built language chapter of
+        each volume at its pin with what is written and with today's data,
+        writing nothing in .papers/.
       side_effects:
         - >-
           with --apply, files or rewrites one chapter-behind issue per
-          chapter that is behind (counts and file names only), and closes
+          volume's chapter that is behind (counts and file names only), and closes
           the issue of a chapter that is not
       idempotent: true
       idempotency_note: >-
@@ -405,20 +406,20 @@
   writes_to_drive: false
   writes_locally: true
   description: >-
-    Syncs planars-data's .papers/ with the Overleaf project volume.yaml
-    names, both ways (coding/sync_overleaf.py): a file changed on one side
-    goes to the other; one changed on both, or a built file edited in
-    Overleaf, keeps the planars-data version and saves Overleaf's as a copy
-    under conflicts/.
+    Syncs each volume's folder in planars-data's .papers/ with the Overleaf
+    project its volume.yaml names, both ways (coding/sync_overleaf.py): a
+    file changed on one side goes to the other; one changed on both, or a
+    built file edited in Overleaf, keeps the planars-data version and saves
+    Overleaf's as a copy under the volume's conflicts/.
   side_effects:
     - >-
-      writes, through the local-file door, each file under .papers/ taken
-      from Overleaf and each conflict copy (a person's file only in place of
-      the exact version it replaces), and .state/overleaf_state.json
-    - "pushes .papers/ as it then stands to the Overleaf project's git repository"
+      writes, through the local-file door, each file under .papers/<volume>/
+      taken from Overleaf and each conflict copy (a person's file only in
+      place of the exact version it replaces), and .state/overleaf_state.json
+    - "pushes each volume's folder as it then stands to its Overleaf project's git repository"
     - >-
-      files or rewrites the overleaf-sync issue while a conflict copy stands
-      or the sync failed; closes it otherwise
+      files or rewrites a volume's overleaf-sync issue while a conflict copy
+      stands or its sync failed; closes it otherwise
     - "commits and pushes what it wrote in planars-data (the door, when it ends)"
   idempotent: true
   idempotency_note: >-

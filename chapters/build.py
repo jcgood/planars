@@ -1,10 +1,11 @@
-"""``python -m coding build-chapters``: build the volume's chapters.
+"""``python -m coding build-chapters``: build the volumes' chapters.
 
-    python -m coding build-chapters [--apply]                  # every part in volume.yaml
-    python -m coding build-chapters --lang stan1293 [--position N] [--apply]
-    python -m coding build-chapters [--lang stan1293] --update [--position N] [--apply]
-    python -m coding build-chapters --intro [--apply]
-    python -m coding build-chapters --check [--lang stan1293] [--apply]
+    python -m coding build-chapters [--volume V] [--apply]     # every part of every volume (or V)
+    python -m coding build-chapters [--volume V] --lang stan1293 [--position N] [--apply]
+    python -m coding build-chapters [--volume V] [--lang stan1293] --update [--position N] [--apply]
+    python -m coding build-chapters [--volume V] --intro [--apply]
+    python -m coding build-chapters --check [--volume V] [--lang stan1293] [--apply]
+    python -m coding build-chapters --volume NEW [--lang L] --apply   # start a volume
 
 Phases 2–5 of docs/chapter-generation-plan.md. Dry run by default:
 says what it would write; ``--apply`` writes. Only files whose text
@@ -14,13 +15,23 @@ commits and pushes what the command wrote when it ends.
 
 **Where:** planars-data's ``.papers/`` (``state_files.PAPERS_DIR``,
 decision 2; a language chapter holds unpublished annotation, so it never
-goes in this public repository):
+goes in this public repository), one folder per volume
+(``.papers/<volume>/``: the book, the annual report), each complete in
+itself: its own parts, pins and Overleaf project, so two volumes can carry
+the same language's chapter at different data versions. A volume is a
+folder holding ``volume.yaml`` (``volumes()``); its name is the folder's,
+lower-case letters, digits and hyphens. Without ``--volume`` the command
+works on every volume (``--lang`` and ``--intro``: every volume that
+lists that part); ``--position`` names one volume's chapter, so with more
+than one volume it needs ``--volume``. ``--volume`` with a name not yet
+used starts that volume. In each volume's folder:
 
 - ``volume.yaml``: the volume's title, its venue (a file in
   ``chapters/venues/``) and its parts in order (``intro``, or a language's
-  Glottocode); optionally the Overleaf project ``.papers/`` is synced with
-  (``overleaf``, coding/sync_overleaf.py). Hand-edited; the build makes a
-  starting one if there is none, and checks every part is one it can build.
+  Glottocode); optionally the Overleaf project the volume's folder is
+  synced with (``overleaf``, coding/sync_overleaf.py). Hand-edited; the
+  build makes a starting one for a new volume, and checks every part is
+  one it can build.
 - ``main.tex`` (from volume.yaml), ``planarschapter.sty`` (``\\pv``,
   ``\\proseslot``) and ``planarsvenue.sty`` (the venue's example macros,
   chapters.tex): compile ``main.tex`` there for the volume. Each part
@@ -82,15 +93,15 @@ order). **The introduction** (``--intro``) comes from the schemas alone:
 class (what it tests, its criteria, its span rule).
 
 **The daily check** (``--check``, run by the daily refresh) writes nothing
-in ``.papers/``. For each language chapter in volume.yaml that has been
-built, it builds the chapter again at its pin and compares that with what
+in ``.papers/``. For each language chapter in each volume's volume.yaml
+that has been built, it builds the chapter again at its pin and compares that with what
 is written (the code's changes: values and fragments), and today's data
 with the pin (the annotation's: values and fragments, since a fragment's
 text can change with no value changing), and finds the ``\\claim``s that fail now
 or would fail after a move. When any of that touches the chapter (see
 ``VALUE_GROUPS``: how complete the annotation is, on its own, does not),
-``--apply`` files or rewrites that chapter's ``chapter-behind`` issue,
-counts and file names only (the repository is public); when nothing does,
+``--apply`` files or rewrites that chapter's ``chapter-behind`` issue (one
+per volume and language), counts and file names only (the repository is public); when nothing does,
 it closes it. The analysis is compared only for datasets with a bundle on
 the machine running it, which on GitHub is none (bundles are never
 committed) until the weekly analysis (laminar plan 4d) keeps them.
@@ -303,18 +314,19 @@ LOCK_HEADER = ("# data.lock: the data version this chapter is built from (the la
 LOCK_FIELDS = {"position": int, "date": str, "code": str, "schemas": int}
 
 
-def read_lock(lang: str) -> dict | None:
-    text = file_door.read_paper(file_door.paper_built(f"{lang}/{LOCK}"))
+def read_lock(vol: str, lang: str) -> dict | None:
+    text = file_door.read_paper(file_door.paper_built(f"{vol}/{lang}/{LOCK}"))
     if text is None:
         return None
     lock = yaml.safe_load(text) or {}
     if "planars_data" in lock:
         raise ChapterDataError(
-            f".papers/{lang}/{LOCK} pins a planars-data commit, as before unit 18. Run "
-            f"`python migrations/pin_chapters_to_positions.py --apply` once, which pins it to "
-            f"its language's change-log position.")
+            f".papers/{vol}/{lang}/{LOCK} pins a planars-data commit, as before unit 18. Pin it "
+            f"to its language's change-log position (migrations/pin_chapters_to_positions.py "
+            f"did this once, when .papers/ held one volume).")
     if not all(isinstance(lock.get(k), t) for k, t in LOCK_FIELDS.items()):
-        raise ChapterDataError(f".papers/{lang}/{LOCK} needs {', '.join(f'`{k}`' for k in LOCK_FIELDS)}. "
+        raise ChapterDataError(f".papers/{vol}/{lang}/{LOCK} needs "
+                               f"{', '.join(f'`{k}`' for k in LOCK_FIELDS)}. "
                                f"It is written only by build-chapters: restore it from planars-data.")
     return lock
 
@@ -328,7 +340,8 @@ def lock_text(chapter: ChapterData) -> str:
                                         sort_keys=False)
 
 
-def pinned_position(lang: str, lock: dict | None, position: int | None, update: bool) -> int | None:
+def pinned_position(vol: str, lang: str, lock: dict | None, position: int | None,
+                    update: bool) -> int | None:
     """The change-log position to build `lang` from: its pin, unless there is
     none yet or the pin is being moved (None: the files as they are)."""
     if update or lock is None:
@@ -336,7 +349,7 @@ def pinned_position(lang: str, lock: dict | None, position: int | None, update: 
     if position is not None and position != lock["position"]:
         raise ChapterDataError(
             f"The {get_display_name(lang)} chapter is pinned to change-log line "
-            f"{lock['position']} ({lock['date']}) by .papers/{lang}/{LOCK}. To move it, "
+            f"{lock['position']} ({lock['date']}) by .papers/{vol}/{lang}/{LOCK}. To move it, "
             f"add --update: the dry run reports what the move changes.")
     return lock["position"]
 
@@ -356,16 +369,17 @@ _SPAN = re.compile(r"^(?P<L>[^.]+)\.span\.(?P<cls>[^.]+)\.(?P<con>[^.]+)\.(?P<ke
 _ANALYSIS = re.compile(r"^[^.]+\.analysis\.[^.]+\.[^.]+")
 
 
-def citations(parts: list) -> list:
-    """Every \\pv and \\claim in the prose of `parts` (comments skipped):
-    [(path in .papers, line number, "pv" or "claim", name, claimed text or None)]."""
+def citations(vol: str, parts: list) -> list:
+    """Every \\pv and \\claim in the prose of `vol`'s `parts` (comments
+    skipped): [(path in .papers, line number, "pv" or "claim", name, claimed
+    text or None)]."""
     out = []
     for part in parts:
-        for path in file_door.paper_files(f"{part}/prose", "*.tex"):
+        for path in file_door.paper_files(f"{vol}/{part}/prose", "*.tex"):
             text = path.read_text(encoding="utf-8")
             for number, line in enumerate(text.splitlines(), 1):
                 for m in _CITE.finditer(_COMMENT.sub("", line)):
-                    out.append((f"{part}/prose/{path.name}", number, m.group(1), m.group(2),
+                    out.append((f"{vol}/{part}/prose/{path.name}", number, m.group(1), m.group(2),
                                 m.group(3) if m.group(1) == "claim" else None))
     return out
 
@@ -426,32 +440,34 @@ def change_report(lang: str, lock: dict | None, old: dict | None, middle: dict |
     return lines, changed
 
 
-def near_changes(lang: str, changed: set, fragments: dict, items: list, parts: list) -> list:
+def near_changes(vol: str, lang: str, changed: set, fragments: dict, items: list,
+                 parts: list) -> list:
     """The prose next to a change: each slot whose section's fragments
-    changed or cite a changed value, and each line of prose anywhere that
-    cites a changed value. Nothing for a chapter never built before."""
-    if file_door.read_paper(file_door.paper_built(f"{lang}/values.tex")) is None:
+    changed or cite a changed value, and each line of prose anywhere in the
+    volume that cites a changed value. Nothing for a chapter never built
+    before."""
+    if file_door.read_paper(file_door.paper_built(f"{vol}/{lang}/values.tex")) is None:
         return []
     lines = []
     for item in items:
         texts = [fragments.get(f"{f}.tex", "") for f in item["fragments"]]
         cited = {m.group(2) for text in texts for m in _CITE.finditer(text)}
-        rewritten = any(file_door.read_paper(file_door.paper_built(f"{lang}/fragments/{f}.tex")) != text
-                        for f, text in zip(item["fragments"], texts))
+        rewritten = any(file_door.read_paper(file_door.paper_built(f"{vol}/{lang}/fragments/{f}.tex"))
+                        != text for f, text in zip(item["fragments"], texts))
         if item["slot"] and (cited & changed or rewritten):
-            lines.append(f"  .papers/{lang}/prose/{item['slot']}.tex sits next to a change")
+            lines.append(f"  .papers/{vol}/{lang}/prose/{item['slot']}.tex sits next to a change")
     lines += [f"  .papers/{rel}:{number} cites {name}, which changed"
-              for rel, number, _kind, name, _said in citations(parts) if name in changed]
+              for rel, number, _kind, name, _said in citations(vol, parts) if name in changed]
     return (["Prose to reread:"] + lines) if lines else []
 
 
-def broken_claims(values: dict, langs: list, parts: list) -> list:
-    """Every \\claim, in the prose of `parts`, about a language in `langs`
-    that the data no longer bear out (or that names no value), with its file
-    and line."""
+def broken_claims(vol: str, values: dict, langs: list, parts: list) -> list:
+    """Every \\claim, in the prose of `vol`'s `parts`, about a language in
+    `langs` that the data no longer bear out (or that names no value), with
+    its file and line."""
     now = {k: tex.value_text(v) for k, v in values.items()}
     lines = []
-    for rel, number, kind, name, said in citations(parts):
+    for rel, number, kind, name, said in citations(vol, parts):
         if kind != "claim" or name.split(".", 1)[0] not in langs:
             continue
         if name not in now:
@@ -463,29 +479,30 @@ def broken_claims(values: dict, langs: list, parts: list) -> list:
 
 # ── A part: its built files and its stubs ───────────────────────────────────
 
-def part_files(part: str, position: int | None = None, update: bool = False,
+def part_files(vol: str, part: str, position: int | None = None, update: bool = False,
                parts: list | None = None) -> tuple[dict, dict, list, dict]:
-    """({path in .papers: text} built, {path: text} stubs, lines to print,
-    {name: value} the part's values) for one part of the volume. A language
-    is built from its pin (``pinned_position``); `update` moves the pin to
-    `position`. `parts` are the parts whose prose the report looks through."""
+    """({path in the volume's folder: text} built, {path: text} stubs, lines
+    to print, {name: value} the part's values) for one part of volume `vol`.
+    A language is built from its pin (``pinned_position``); `update` moves
+    the pin to `position`. `parts` are the parts whose prose the report
+    looks through."""
     entries = _class_entries()
     changed, report = set(), []
     if part == INTRO:
         fragments, L, built, said, values = intro_fragments(), None, {}, [], {}
         classes = [(name, e["display_name"], e["domain_type"]) for name, e in entries.items()]
     else:
-        lock = read_lock(part)
-        chapter = chapter_data(part, position=pinned_position(part, lock, position, update))
+        lock = read_lock(vol, part)
+        chapter = chapter_data(part, position=pinned_position(vol, part, lock, position, update))
         fragments, L, values = language_fragments(chapter), part, chapter.values
         built = {f"{part}/values.tex": tex.values_tex(chapter.values, VALUES_HEADER),
                  f"{part}/{LOCK}": lock_text(chapter)}
         classes = [(c, entries[c]["display_name"], entries[c]["domain_type"])
                    for c in dict.fromkeys(chapter.tables["diagnostics"]["Class"])]
-        said = [f"{get_display_name(part)}, {_pin(chapter.version)}"
+        said = [f"{get_display_name(part)} in volume {vol}, {_pin(chapter.version)}"
                 + (" (its pin)" if lock and not update else "")]
         said += [f"  missing: {line}" for line in chapter.missing]
-        old_text = file_door.read_paper(file_door.paper_built(f"{part}/values.tex"))
+        old_text = file_door.read_paper(file_door.paper_built(f"{vol}/{part}/values.tex"))
         middle = None
         if lock and old_text is not None and lock["position"] != chapter.version["position"]:
             middle = {k: tex.value_text(v)
@@ -508,17 +525,46 @@ def part_files(part: str, position: int | None = None, update: bool = False,
                  who=item["who"], says=item["says"])
              for item in items if item["slot"]}
     if L:
-        said += report + near_changes(part, changed, fragments, items, parts or [part])
+        said += report + near_changes(vol, part, changed, fragments, items, parts or [part])
     return built, stubs, said, values
 
 
-# ── The volume ──────────────────────────────────────────────────────────────
+# ── The volumes ─────────────────────────────────────────────────────────────
 
-def read_volume(lang: str | None = None) -> tuple[dict, str | None]:
+# A volume's name is its folder's: what a path, an issue title and a shell
+# argument can all carry unquoted.
+_VOLUME_NAME = re.compile(r"^[a-z][a-z0-9-]*$")
+
+
+def volumes() -> list:
+    """The volumes in .papers/, in name order: each folder holding a
+    volume.yaml. A file left at the top of .papers/ (its layout before it
+    held more than one volume) fails, naming the migration."""
+    papers = file_door.paper_files("", "*")
+    if any(p.name == VOLUME for p in papers):
+        raise ChapterDataError(
+            f".papers/{VOLUME} is at the top of .papers/, as before it held more than one "
+            f"volume. Run `python migrations/papers_into_volume_folders.py --apply` once, "
+            f"which moves that volume into its own folder.")
+    return [p.name for p in papers if p.is_dir() and (p / VOLUME).is_file()]
+
+
+def check_volume_name(vol: str) -> None:
+    if not _VOLUME_NAME.match(vol):
+        raise ChapterDataError(f"Volume name {vol!r}: use lower-case letters, digits and hyphens, "
+                               f"starting with a letter (it is the volume's folder in .papers/).")
+    if _is_part(vol):
+        raise ChapterDataError(f"Volume name {vol!r} is also a part's name (`{INTRO}` or a "
+                               f"Glottocode); choose another.")
+
+
+def read_volume(vol: str, lang: str | None = None) -> tuple[dict, str | None]:
     """volume.yaml's title and parts, and the starting volume.yaml's text
     when there is none yet (None otherwise). Every part must be one the
     build knows: ``intro`` or a language in schemas/languages.yaml."""
-    current = file_door.read_paper(file_door.paper_stub(VOLUME))
+    check_volume_name(vol)
+    where = f".papers/{vol}/{VOLUME}"
+    current = file_door.read_paper(file_door.paper_stub(f"{vol}/{VOLUME}"))
     stub = None
     if current is None:
         stub = tex.render("volume.yaml.j2", parts=[INTRO] + ([lang] if lang else []))
@@ -526,17 +572,17 @@ def read_volume(lang: str | None = None) -> tuple[dict, str | None]:
     volume = yaml.safe_load(current) or {}
     parts = volume.get("parts")
     if not isinstance(volume.get("title"), str) or not isinstance(parts, list) or not parts:
-        raise ChapterDataError(".papers/volume.yaml needs a `title`, a `venue` and a list of `parts`.")
+        raise ChapterDataError(f"{where} needs a `title`, a `venue` and a list of `parts`.")
     unknown = [p for p in parts if p != INTRO and get_entry(str(p)) is None]
     if unknown:
         raise ChapterDataError(
-            f".papers/volume.yaml: parts {unknown} are neither `{INTRO}` nor a language in "
+            f"{where}: parts {unknown} are neither `{INTRO}` nor a language in "
             f"schemas/languages.yaml (a part is `{INTRO}` or a Glottocode).")
     repeated = sorted({p for p in parts if parts.count(p) > 1})
     if repeated:
-        raise ChapterDataError(f".papers/volume.yaml lists {repeated} more than once.")
+        raise ChapterDataError(f"{where} lists {repeated} more than once.")
     if volume.get("venue") not in tex.venues():
-        raise ChapterDataError(f".papers/volume.yaml: `venue` is {volume.get('venue')!r}; it must "
+        raise ChapterDataError(f"{where}: `venue` is {volume.get('venue')!r}; it must "
                                f"name a file in chapters/venues/ ({', '.join(tex.venues())}).")
     return volume, stub
 
@@ -551,9 +597,10 @@ def _is_part(name: str) -> bool:
 
 
 def is_built(rel: str) -> bool:
-    """Whether the build makes the file at ``rel`` (a path in .papers/):
-    the top level's main.tex, its .sty files and ``<part>.tex``, and in a
-    part's folder chapter.tex, values.tex, data.lock and fragments/.
+    """Whether the build makes the file at ``rel`` (a path in a volume's
+    folder, ``.papers/<volume>/``): the volume's main.tex, its .sty files
+    and ``<part>.tex``, and in a part's folder chapter.tex, values.tex,
+    data.lock and fragments/.
     Everything else is a person's: volume.yaml, prose/, and any file a
     writer adds (a figure, a .bib), which sync-overleaf carries both ways.
     ``write`` refuses a build that disagrees, so this can't drift."""
@@ -568,9 +615,10 @@ def is_built(rel: str) -> bool:
     return parts[1] == "fragments"
 
 
-def write(built: dict, stubs: dict, parts: list, apply: bool) -> list:
+def write(vol: str, built: dict, stubs: dict, parts: list, apply: bool) -> list:
     """Write each built file whose text differs, each stub that does not
-    exist yet, and delete fragments no longer made; one line per change."""
+    exist yet, and delete fragments no longer made, in volume `vol` (paths
+    in `built` and `stubs` are within its folder); one line per change."""
     misplaced = sorted([rel for rel in built if not is_built(rel)]
                        + [rel for rel in stubs if is_built(rel)])
     if misplaced:
@@ -578,42 +626,42 @@ def write(built: dict, stubs: dict, parts: list, apply: bool) -> list:
     did = "wrote" if apply else "would write"
     report = []
     for rel, text in sorted(built.items()):
-        target = file_door.paper_built(rel)
+        target = file_door.paper_built(f"{vol}/{rel}")
         if file_door.read_paper(target) == text:
             continue
-        report.append(f"{did} {rel}")
+        report.append(f"{did} {vol}/{rel}")
         if apply:
             file_door.write_paper(target, text)
     for rel, text in sorted(stubs.items()):
-        target = file_door.paper_stub(rel)
+        target = file_door.paper_stub(f"{vol}/{rel}")
         if target.path.exists():
             continue
-        report.append(f"{'made' if apply else 'would make'} the starting {rel}")
+        report.append(f"{'made' if apply else 'would make'} the starting {vol}/{rel}")
         if apply:
             file_door.write_paper(target, text)
     for part in parts:
-        for path in file_door.paper_files(f"{part}/fragments", "*.tex"):
+        for path in file_door.paper_files(f"{vol}/{part}/fragments", "*.tex"):
             rel = f"{part}/fragments/{path.name}"
             if rel not in built:
-                report.append(f"{'deleted' if apply else 'would delete'} {rel} (no longer made)")
+                report.append(f"{'deleted' if apply else 'would delete'} {vol}/{rel} (no longer made)")
                 if apply:
-                    file_door.remove_paper(file_door.paper_built(rel))
+                    file_door.remove_paper(file_door.paper_built(f"{vol}/{rel}"))
     return report
 
 
-def slot_report(stubs: dict, parts: list) -> list:
-    """How many prose slots are still unwritten, and every prose file whose
-    slot has left the outline (listed, never deleted)."""
+def slot_report(vol: str, stubs: dict, parts: list) -> list:
+    """How many of volume `vol`'s prose slots are still unwritten, and every
+    prose file whose slot has left the outline (listed, never deleted)."""
     slots = {rel for rel in stubs if "/prose/" in rel}
-    unwritten = sum(1 for rel in slots
-                    if SLOT_MARK in (file_door.read_paper(file_door.paper_stub(rel)) or SLOT_MARK))
-    lines = [f"Prose: {len(slots) - unwritten} of {len(slots)} slots written."]
+    unwritten = sum(1 for rel in slots if SLOT_MARK in (
+        file_door.read_paper(file_door.paper_stub(f"{vol}/{rel}")) or SLOT_MARK))
+    lines = [f"Prose in volume {vol}: {len(slots) - unwritten} of {len(slots)} slots written."]
     for part in parts:
-        for path in file_door.paper_files(f"{part}/prose", "*.tex"):
+        for path in file_door.paper_files(f"{vol}/{part}/prose", "*.tex"):
             rel = f"{part}/prose/{path.name}"
             if rel not in slots:
-                lines.append(f"  .papers/{rel}: its section is no longer in the outline, so the "
-                             f"chapter leaves it out. Move its text into a slot that is, then "
+                lines.append(f"  .papers/{vol}/{rel}: its section is no longer in the outline, so "
+                             f"the chapter leaves it out. Move its text into a slot that is, then "
                              f"delete it.")
     return lines
 
@@ -631,8 +679,8 @@ VALUE_GROUPS = {"language": True, "data": False, "planar": True, "diagnostics": 
                 "annotation": False, "spans": True, "span": True, "analysis": True}
 
 
-def check_title(lang: str) -> str:
-    return f"Chapter behind its data — {get_display_name(lang)}"
+def check_title(vol: str, lang: str) -> str:
+    return f"Chapter behind its data — {get_display_name(lang)}, volume {vol}"
 
 
 def _group(name: str) -> str:
@@ -661,13 +709,13 @@ def _counts(names: set) -> dict:
     return {"spans": len(spans), "analysis": len(analysis), "other": len(other)}
 
 
-def check_chapter(lang: str, parts: list) -> dict | None:
-    """What has moved on under `lang`'s chapter since it was built: its
-    pinned build against values.tex and the fragments as written (the
-    code), and today's data against the pin (the annotation). None if the
-    chapter has not been built. Writes nothing."""
-    lock = read_lock(lang)
-    old_text = file_door.read_paper(file_door.paper_built(f"{lang}/values.tex"))
+def check_chapter(vol: str, lang: str, parts: list) -> dict | None:
+    """What has moved on under `lang`'s chapter in volume `vol` since it was
+    built: its pinned build against values.tex and the fragments as written
+    (the code), and today's data against the pin (the annotation). None if
+    the chapter has not been built. Writes nothing."""
+    lock = read_lock(vol, lang)
+    old_text = file_door.read_paper(file_door.paper_built(f"{vol}/{lang}/values.tex"))
     if lock is None or old_text is None:
         return None
     pinned = chapter_data(lang, position=lock["position"])
@@ -679,9 +727,9 @@ def check_chapter(lang: str, parts: list) -> dict | None:
     _lines, data = value_changes(_comparable(at_pin, lang, [pinned, current]),
                                  _comparable(text(current), lang, [pinned, current]), lang)
     fragments = language_fragments(pinned)
-    written = {p.name for p in file_door.paper_files(f"{lang}/fragments", "*.tex")}
+    written = {p.name for p in file_door.paper_files(f"{vol}/{lang}/fragments", "*.tex")}
     files = sorted(name for name in set(fragments) | written
-                   if file_door.read_paper(file_door.paper_built(f"{lang}/fragments/{name}"))
+                   if file_door.read_paper(file_door.paper_built(f"{vol}/{lang}/fragments/{name}"))
                    != fragments.get(name))
     # The annotation can change a fragment's text without changing any
     # value (a table's wording, an example), so fragments are compared too.
@@ -691,11 +739,13 @@ def check_chapter(lang: str, parts: list) -> dict | None:
     entries = _class_entries()
     items = outline_items("language", [(c, entries[c]["display_name"], entries[c]["domain_type"])
                                        for c in dict.fromkeys(current.tables["diagnostics"]["Class"])])
-    claims_now = broken_claims(pinned.values, [lang], parts)[1:]
-    claims_moved = [c for c in broken_claims(current.values, [lang], parts)[1:] if c not in claims_now]
+    claims_now = broken_claims(vol, pinned.values, [lang], parts)[1:]
+    claims_moved = [c for c in broken_claims(vol, current.values, [lang], parts)[1:]
+                    if c not in claims_now]
     # The file (and line) only: the rest of the line names the value.
     reread = list(dict.fromkeys(re.match(r"\s*(\S+?)(?::? |$)", line).group(1) for line in
-                                near_changes(lang, code | data, current_fragments, items, parts)[1:]))
+                                near_changes(vol, lang, code | data, current_fragments, items,
+                                             parts)[1:]))
     return {"lock": lock, "current": current.version, "code": _counts(code),
             "data": _counts(data), "files": files, "data_files": data_files,
             "claims_now": len(claims_now), "claims_moved": len(claims_moved), "reread": reread,
@@ -711,13 +761,14 @@ def _said(counts: dict) -> str:
     return ", ".join(said) if said else "nothing"
 
 
-def check_body(lang: str, found: dict, today: str) -> str:
+def check_body(vol: str, lang: str, found: dict, today: str) -> str:
     """The issue for a chapter behind its data. Counts and file names only:
     the repository is public, and spans and claims come from unpublished
     annotation."""
     lock, current = found["lock"], found["current"]
-    lines = [f"## The {get_display_name(lang)} chapter is behind — {today}", "",
-             f"The chapter in planars-data's `.papers/{lang}/` is built from the language's "
+    command = f"python -m coding build-chapters --volume {vol} --lang {lang}"
+    lines = [f"## The {get_display_name(lang)} chapter in volume {vol} is behind — {today}", "",
+             f"The chapter in planars-data's `.papers/{vol}/{lang}/` is built from the language's "
              f"{_pin(lock)}. Today's daily refresh built it again without moving that "
              f"version and found:", "",
              f"- **Changed in the annotation** since then (to {_pin(current)}): "
@@ -739,52 +790,58 @@ def check_body(lang: str, found: dict, today: str) -> str:
         lines += ["", "Prose next to a change, to reread:", ""] + [f"- `{p}`" for p in found["reread"]]
     lines += ["", "## What to do", "",
               "In Claude Code in the planars repository, run the dry run, which lists each change:", "",
-              f"```bash\npython -m coding build-chapters --lang {lang} --update\n```", "",
+              f"```bash\n{command} --update\n```", "",
               "then the same with `--apply` to move the chapter to today's data, and reread the prose "
               "it lists. To bring in only the code's changes and keep the data version, run "
-              f"`python -m coding build-chapters --lang {lang} --apply` instead. To keep the chapter "
+              f"`{command} --apply` instead. To keep the chapter "
               "where it is for now, leave this issue open: the daily refresh rewrites it in place, "
               "notifying nobody. It closes by itself when the chapter matches its data again."]
     return "\n".join(lines) + "\n"
 
 
-def check(langs: list | None, apply: bool, today: str) -> None:
-    """Check every language chapter in volume.yaml (or `langs`), filing,
-    rewriting or closing each one's chapter-behind issue with `apply`."""
+def check(vols: list | None, langs: list | None, apply: bool, today: str) -> None:
+    """Check every language chapter in every volume (or `vols`; or only
+    `langs`), filing, rewriting or closing each one's chapter-behind issue
+    with `apply`."""
     from coding import issues
-    volume, stub = read_volume()
-    if stub is not None:
-        print("No chapters yet (.papers/volume.yaml does not exist); nothing to check.")
-        chapters = []
-    else:
-        chapters = [p for p in volume["parts"] if p != INTRO and (langs is None or p in langs)]
-    parts = list(volume["parts"]) if stub is None else []
-    behind = set()
-    for lang in chapters:
-        found = check_chapter(lang, parts)
-        if found is None:
-            print(f"{get_display_name(lang)}: not built yet.")
-            continue
-        print(f"{get_display_name(lang)}: annotation {_said(found['data'])}, "
-              f"{len(found['data_files'])} file(s); code {_said(found['code'])}, "
-              f"{len(found['files'])} file(s); claims failing {found['claims_now']}, "
-              f"failing after a move {found['claims_moved']}.")
-        if not found["behind"]:
-            continue
-        behind.add(lang)
-        if apply:
-            number, created = issues.file_issue(CHECK_LABEL, check_title(lang),
-                                                check_body(lang, found, today),
-                                                replace=True, match_title=True)
-            print(f"  {'Filed' if created else 'Rewrote'} issue #{number} ({CHECK_LABEL}).")
+    known = volumes()
+    for vol in vols or []:
+        check_volume_name(vol)
+        if vol not in known:
+            raise ChapterDataError(f"There is no volume {vol!r} in .papers/ (volumes: "
+                                   f"{', '.join(known) or 'none'}).")
+    chosen = vols if vols is not None else known
+    if not chosen:
+        print("No chapters yet (.papers/ holds no volume); nothing to check.")
+    behind, checked = set(), set()
+    for vol in chosen:
+        volume, _stub = read_volume(vol)
+        parts = list(volume["parts"])
+        for lang in [p for p in parts if p != INTRO and (langs is None or p in langs)]:
+            checked.add(check_title(vol, lang))
+            found = check_chapter(vol, lang, parts)
+            if found is None:
+                print(f"{get_display_name(lang)} in volume {vol}: not built yet.")
+                continue
+            print(f"{get_display_name(lang)} in volume {vol}: annotation {_said(found['data'])}, "
+                  f"{len(found['data_files'])} file(s); code {_said(found['code'])}, "
+                  f"{len(found['files'])} file(s); claims failing {found['claims_now']}, "
+                  f"failing after a move {found['claims_moved']}.")
+            if not found["behind"]:
+                continue
+            behind.add(check_title(vol, lang))
+            if apply:
+                number, created = issues.file_issue(CHECK_LABEL, check_title(vol, lang),
+                                                    check_body(vol, lang, found, today),
+                                                    replace=True, match_title=True)
+                print(f"  {'Filed' if created else 'Rewrote'} issue #{number} ({CHECK_LABEL}).")
     if not apply:
         if behind:
             print("Dry run: add --apply to file the issues.")
         return
-    titles = {check_title(lang) for lang in behind}
-    checked = {check_title(lang) for lang in chapters}
+    narrowed = vols is not None or langs is not None
     for issue in issues.list_open(CHECK_LABEL):
-        if issue["title"] in titles or (langs is not None and issue["title"] not in checked):
+        if issue["title"] in behind or (narrowed and issue["title"] not in checked):
             continue
         issues.close(issue["number"], f"The chapter matches its data again (or is no longer in "
                                       f"the volume) on {today} — closing.")
@@ -796,8 +853,12 @@ def check(langs: list | None, apply: bool, today: str) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python -m coding build-chapters",
-        description="Build the volume's chapters in planars-data's .papers/: the outline, "
+        description="Build the volumes' chapters in planars-data's .papers/: the outline, "
                     "the generated fragments and values, and a stub for each prose slot.")
+    parser.add_argument("--volume", default=None, metavar="NAME",
+                        help="Only this volume (its folder in .papers/; default: every volume, or "
+                             "with --lang or --intro every volume listing that part). A name not "
+                             "yet used starts that volume.")
     which = parser.add_mutually_exclusive_group()
     which.add_argument("--lang", help="Build only this language's chapter (Glottocode).")
     which.add_argument("--intro", action="store_true", help="Build only the introduction.")
@@ -809,9 +870,10 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Move each language chapter's pin to --position (default: the files "
                              "as they are) and report what that changes.")
     parser.add_argument("--check", action="store_true",
-                        help="Write nothing in .papers/: compare each language chapter (or "
-                             "--lang's) with today's data and code, and with --apply file, rewrite "
-                             "or close its chapter-behind issue (the daily refresh).")
+                        help="Write nothing in .papers/: compare each volume's language chapters "
+                             "(or --volume's, or --lang's) with today's data and code, and with "
+                             "--apply file, rewrite or close each one's chapter-behind issue "
+                             "(the daily refresh).")
     parser.add_argument("--apply", action="store_true", help="Write (default: dry run).")
     return parser
 
@@ -823,49 +885,82 @@ def main(args: argparse.Namespace | None = None) -> None:
     if args.check:
         if args.intro or args.update or args.position is not None:
             sys.exit("--check compares each chapter at its pin with today's data; it takes "
-                     "only --lang and --apply.")
+                     "only --volume, --lang and --apply.")
         try:
-            check([args.lang] if args.lang else None, args.apply,
-                  datetime.now(timezone.utc).strftime("%Y-%m-%d"))
+            check([args.volume] if args.volume else None, [args.lang] if args.lang else None,
+                  args.apply, datetime.now(timezone.utc).strftime("%Y-%m-%d"))
         except ChapterDataError as e:
             sys.exit(str(e))
         return
     try:
-        volume, volume_stub = read_volume(args.lang)
-        parts = [args.lang] if args.lang else [INTRO] if args.intro else list(volume["parts"])
-        languages = [p for p in volume["parts"] if p != INTRO]
-        built = {STY_FILE: tex.STY, tex.VENUE_STY: tex.venue_sty(volume["venue"]), MAIN: tex.render(
-            "main.tex.j2", file=MAIN, title=volume["title"], parts=volume["parts"],
-            languages=languages)}
-        # One file per chapter, so whoever writes it compiles only theirs;
-        # every language's values are loaded, as any chapter may cite them.
-        built.update({f"{p}.tex": tex.render("main.tex.j2", file=f"{p}.tex", title=volume["title"],
-                                             parts=[p], languages=languages)
-                      for p in volume["parts"]})
-        stubs = {VOLUME: volume_stub} if volume_stub else {}
-        prose_parts = list(dict.fromkeys(list(volume["parts"]) + parts))
-        values = {}
-        for part in parts:
-            part_built, part_stubs, said, part_values = part_files(part, args.position, args.update,
-                                                                   prose_parts)
-            built.update(part_built)
-            stubs.update(part_stubs)
-            values.update(part_values)
-            for line in said:
-                print(line)
+        chosen = chosen_volumes(args.volume, args.lang, args.intro)
+        if args.position is not None and len(chosen) > 1:
+            raise ChapterDataError(f"--position names one chapter, and {get_display_name(args.lang)} "
+                                   f"is in volumes {', '.join(chosen)}: give --volume too.")
+        reports = [build_volume(vol, args) for vol in chosen]
     except ChapterDataError as e:
         sys.exit(str(e))
-    report = write(built, stubs, parts, args.apply)
+    if any(reports) and not args.apply:
+        print("Dry run: add --apply to write.")
+
+
+def chosen_volumes(vol: str | None, lang: str | None, intro: bool) -> list:
+    """The volumes a build works on: `vol` (an existing volume, or a new one
+    to start), or every volume listing the part asked for (`lang`, or the
+    introduction), or every volume."""
+    if vol is not None:
+        check_volume_name(vol)
+        return [vol]
+    known = volumes()
+    if not known:
+        raise ChapterDataError("There is no volume in .papers/ yet: start one with --volume NAME "
+                               "(its folder's name, e.g. `--volume book`).")
+    part = lang if lang else INTRO if intro else None
+    if part is None:
+        return known
+    listing = [v for v in known if part in read_volume(v)[0]["parts"]]
+    if not listing:
+        raise ChapterDataError(f"No volume lists `{part}` in its parts ({', '.join(known)}): add it "
+                               f"to one's volume.yaml, or give --volume to build it there.")
+    return listing
+
+
+def build_volume(vol: str, args: argparse.Namespace) -> list:
+    """Build volume `vol` (only --lang's or the introduction's part, when
+    asked), printing what it does; the lines saying what it wrote."""
+    volume, volume_stub = read_volume(vol, args.lang)
+    parts = [args.lang] if args.lang else [INTRO] if args.intro else list(volume["parts"])
+    languages = [p for p in volume["parts"] if p != INTRO]
+    built = {STY_FILE: tex.STY, tex.VENUE_STY: tex.venue_sty(volume["venue"]), MAIN: tex.render(
+        "main.tex.j2", file=MAIN, title=volume["title"], parts=volume["parts"],
+        languages=languages)}
+    # One file per chapter, so whoever writes it compiles only theirs;
+    # every language's values are loaded, as any chapter may cite them.
+    built.update({f"{p}.tex": tex.render("main.tex.j2", file=f"{p}.tex", title=volume["title"],
+                                         parts=[p], languages=languages)
+                  for p in volume["parts"]})
+    stubs = {VOLUME: volume_stub} if volume_stub else {}
+    prose_parts = list(dict.fromkeys(list(volume["parts"]) + parts))
+    values = {}
+    print(f"Volume {vol}" + (" (new)" if volume_stub else "") + f": {volume['title']}")
+    for part in parts:
+        part_built, part_stubs, said, part_values = part_files(vol, part, args.position, args.update,
+                                                               prose_parts)
+        built.update(part_built)
+        stubs.update(part_stubs)
+        values.update(part_values)
+        for line in said:
+            print(line)
+    report = write(vol, built, stubs, parts, args.apply)
     print("\n".join(report) if report else "Nothing to change.")
-    print("\n".join(slot_report(stubs, parts)))
-    for line in broken_claims(values, [p for p in parts if p != INTRO], prose_parts):
+    print("\n".join(slot_report(vol, stubs, parts)))
+    for line in broken_claims(vol, values, [p for p in parts if p != INTRO], prose_parts):
         print(line)
     missing = [p for p in parts if p not in volume["parts"]]
     if missing:
-        print(f"Not in .papers/volume.yaml, so main.tex leaves it out: {', '.join(missing)}. "
+        print(f"Not in .papers/{vol}/{VOLUME}, so main.tex leaves it out: {', '.join(missing)}. "
               f"Add it to `parts` there to include it.")
-    if report and not args.apply:
-        print("Dry run: add --apply to write.")
+    return report
 
 
 if __name__ == "__main__":

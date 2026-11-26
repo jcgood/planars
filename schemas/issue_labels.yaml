@@ -347,9 +347,9 @@ labels:
     color: "fbca04"
     description: "A chapter's data or code has moved on since the version it is built from."
     meaning: >-
-      One issue per language chapter ("Chapter behind its data — {Name
-      [glottocode]}"): the daily refresh built the chapter in
-      planars-data's `.papers/` against today's annotation and code without
+      One issue per language chapter in each volume ("Chapter behind its
+      data — {Name [glottocode]}, volume {volume}"): the daily refresh built
+      the chapter in planars-data's `.papers/{volume}/` against today's annotation and code without
       moving its pinned data version, and something the chapter shows
       changed (spans, the planar structure, the diagnostics, the analysis,
       a generated file, or a `\claim` in its prose). The issue gives counts
@@ -362,13 +362,14 @@ labels:
 
   - name: overleaf-sync
     color: "fbca04"
-    description: "The chapters' Overleaf project needs a person: two edits met, or the sync failed."
+    description: "A volume's Overleaf project needs a person: two edits met, or the sync failed."
     meaning: >-
-      One issue ("Overleaf sync — chapters"): `sync-overleaf --apply` found
-      a file in planars-data's `.papers/` changed both in Overleaf and in
-      planars-data since the last sync, or a file the chapter build makes
-      edited in Overleaf, and kept the other version as a copy under
-      `conflicts/` (on both sides); or the sync failed. The issue names the
+      One issue per volume ("Overleaf sync — volume {volume}"):
+      `sync-overleaf --apply` found a file in planars-data's
+      `.papers/{volume}/` changed both in Overleaf and in planars-data since
+      the last sync, or a file the chapter build makes edited in Overleaf,
+      and kept the other version as a copy under the volume's `conflicts/`
+      (on both sides); or the volume's sync failed. The issue names the
       files, never their text (the repository is public). Resolve: merge
       each copy into its file (in Overleaf or locally), delete the copy;
       for a failure, fix its cause. Rewritten in place while open;

@@ -21,11 +21,11 @@ docs/chapter-generation-plan.md): ``booktabs`` and ``longtable`` tables,
 and the macros in ``planarschapter.sty`` (``STY``: ``\\pv``, ``\\claim``
 for a checked statement in prose, and ``\\proseslot`` for a slot nobody
 has written yet), which the build writes
-at the top of ``.papers/``. **Examples** go through two macros of our
+at the top of each volume's folder (``.papers/<volume>/``). **Examples** go through two macros of our
 own, ``\\planarsex{form}{gloss}{translation}{source}`` and
 ``\\planarsplainex{sentence}{source}`` (a language whose examples need no
 gloss), defined per venue in ``chapters/venues/<venue>.sty`` on top of the
-venue's glossing package and written as ``.papers/planarsvenue.sty``; so
+venue's glossing package and written as ``planarsvenue.sty`` there; so
 when the publisher's template arrives, a new venue file is all that
 changes. ``example(...)`` in a template writes the right call for the
 language's example style.
@@ -40,8 +40,8 @@ from pathlib import Path
 import jinja2
 
 TEMPLATES = Path(__file__).resolve().parent / "templates"
-# One file per venue (``venues/<venue>.sty``), copied to .papers/ as
-# planarsvenue.sty: the example macros on top of the venue's glossing package.
+# One file per venue (``venues/<venue>.sty``), copied to each volume's
+# folder in .papers/ as planarsvenue.sty: the example macros on top of the venue's glossing package.
 VENUES = Path(__file__).resolve().parent / "venues"
 VENUE_STY = "planarsvenue.sty"
 

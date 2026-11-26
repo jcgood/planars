@@ -381,12 +381,18 @@ The dry run says which of these is missing.
 #### 6. Building the chapters
 
 The chapters written from the annotation live in planars-data's
-`.papers/` (private, like the annotation). One command builds them:
+`.papers/` (private, like the annotation), one folder per volume:
+`.papers/book/` for the De Gruyter book, another for the annual report.
+Each volume is complete in itself (its own `volume.yaml`, chapters, pins
+and Overleaf project), so the same language can appear in two volumes at
+different data versions. One command builds them:
 
 ```bash
-python -m coding build-chapters                    # dry run: every part in .papers/volume.yaml
+python -m coding build-chapters                    # dry run: every part of every volume
 python -m coding build-chapters --apply            # write, commit and push
-python -m coding build-chapters --lang stan1293 --apply   # one language's chapter
+python -m coding build-chapters --lang stan1293 --apply   # one language's chapter, in each volume that has it
+python -m coding build-chapters --volume book --apply     # one volume
+python -m coding build-chapters --volume report --apply   # a name not used yet starts a new volume
 ```
 
 It rewrites the generated parts (tables, one sentence per span, every
@@ -394,12 +400,12 @@ number a sentence can cite) and makes, once, a file for each piece of prose
 someone has to write (`prose/<slot>.tex`), with instructions saying who
 writes it and what it should say. It never changes a prose file again, so
 rebuild whenever you like. Each language chapter is pinned to the
-annotation as it was when first built (`.papers/<glottocode>/data.lock`),
+annotation as it was when first built (`.papers/<volume>/<glottocode>/data.lock`),
 so new annotation reaches it only when you move the pin:
 
 ```bash
-python -m coding build-chapters --lang stan1293 --update           # dry run: what moving to today's annotation changes
-python -m coding build-chapters --lang stan1293 --update --apply   # move it
+python -m coding build-chapters --volume book --lang stan1293 --update           # dry run: what moving to today's annotation changes
+python -m coding build-chapters --volume book --lang stan1293 --update --apply   # move it
 ```
 
 The report lists the spans and numbers that change, first from changes
@@ -407,11 +413,12 @@ to the schemas and span rules, then from the annotation, and the prose
 files to reread. A writer states a fact their argument depends on as
 `\claim{name}{value}` (e.g. `\claim{stan1293.planar.positions}{38}`);
 every build lists the claims the data no longer bear out, with file and
-line, and the PDF boxes them. Compile `.papers/main.tex` for the whole
-volume, or a chapter's own file (`stan1293.tex`, `intro.tex`) for one
-chapter (`latexmk -pdf -cd coded_data/.papers/stan1293.tex`); an unwritten
-slot shows as a boxed "Still to write". The volume's title, its venue and the order of its chapters
-are `.papers/volume.yaml`, edited by hand. The venue (`book` until the
+line, and the PDF boxes them. Compile a volume's `main.tex`
+(`.papers/book/main.tex`) for the whole volume, or a chapter's own file
+(`stan1293.tex`, `intro.tex`) for one chapter
+(`latexmk -pdf -cd coded_data/.papers/book/stan1293.tex`); an unwritten
+slot shows as a boxed "Still to write". A volume's title, its venue and the order of its chapters
+are its `volume.yaml` (`.papers/book/volume.yaml`), edited by hand. The venue (`book` until the
 publisher's template arrives) names a file in `chapters/venues/` that sets
 how examples are printed; each language's examples come from its sheets'
 Example column, glossed or not as `examples` in `schemas/languages.yaml`
@@ -419,16 +426,17 @@ says.
 
 Nobody has to remember to check whether a chapter has fallen behind: the
 daily refresh runs `build-chapters --check --apply`, which files one
-`chapter-behind` issue per chapter whose spans, structure, analysis,
+`chapter-behind` issue per volume's chapter whose spans, structure, analysis,
 generated files or claims would change, and closes it once the chapter
 catches up. The issue says what to run. Design and state:
 `docs/chapter-generation-plan.md`.
 
-**Overleaf.** `.papers/` can be co-written in an Overleaf project, kept in
-step both ways by `python -m coding sync-overleaf --apply`, which the daily
-refresh also runs. Setup, once: make an empty Overleaf project, put its ID
-(the end of its address) in `.papers/volume.yaml` as `overleaf: <ID>`, and
-store an Overleaf git token (Overleaf → Account settings → Git
+**Overleaf.** Each volume can be co-written in its own Overleaf project,
+kept in step with the volume's folder both ways by
+`python -m coding sync-overleaf --apply` (`--volume NAME` for one), which
+the daily refresh also runs. Setup, once per volume: make an empty Overleaf
+project and put its ID (the end of its address) in the volume's
+`volume.yaml` as `overleaf: <ID>`; and, once for all, store an Overleaf git token (Overleaf → Account settings → Git
 integration) as this repository's `OVERLEAF_TOKEN` secret
 (`gh secret set OVERLEAF_TOKEN`). Run it by hand whenever you want the two
 sides to meet sooner; on your own machine git's stored Overleaf login is
@@ -436,8 +444,9 @@ used. Anyone added to the project can read and edit every chapter, nothing
 else in planars-data. In Overleaf, write only in `prose/`, `volume.yaml`
 and files you add (figures, a `.bib`): an edit to a generated file is kept
 only as a copy. So is an edit made in Overleaf and locally to the same file
-between two syncs. Copies go under `conflicts/` and an `overleaf-sync`
-issue lists them; merge each into its file and delete it.
+between two syncs. Copies go under the volume's `conflicts/` and an
+`overleaf-sync` issue for that volume lists them; merge each into its file
+and delete it.
 
 #### Cross-sheet criterion consistency
 

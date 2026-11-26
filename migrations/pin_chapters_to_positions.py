@@ -14,7 +14,10 @@ now. That moves the data under the chapter, so it is done only for a
 chapter the daily check finds not behind its data (no open
 ``chapter-behind`` issue). A chapter that is behind is left for the
 coordinator, who moves it with ``build-chapters --lang L --update`` once
-the lock is deleted by hand. Run 2026-11-01 for English.
+the lock is deleted by hand. Run 2026-11-01 for English. Written for
+``.papers/`` as one volume; since 2026-11-25 it holds one folder per volume
+(migrations/papers_into_volume_folders.py), and this script no longer runs
+against chapters/build.py.
 
 Found when it ran: "not behind" did not mean nothing differed. The check
 compared only values for annotation changes, so English's diagnostics

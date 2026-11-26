@@ -31,14 +31,14 @@ both went when those Sheets became read-only copies, unit 11b, 2026-10-24.)
 - ``LAMINAR_CHARTS_STATE_PATH``: what each language's contributor charts
   were last drawn from (laminar-charts), so they are redrawn only when that
   changes.
-- ``OVERLEAF_STATE_PATH``: the Overleaf project ``.papers/`` was last
-  synced with and its version then (sync-overleaf), the common ground its
-  next sync compares both sides with.
+- ``OVERLEAF_STATE_PATH``: for each volume in ``.papers/``, the Overleaf
+  project it was last synced with and that project's version then
+  (sync-overleaf), the common ground its next sync compares both sides with.
 
 and, at planars-data's top level, ``ID_FILE`` (``drive_config.json``): the
 Drive IDs of the files the tooling made; and ``PAPERS_DIR``
-(``.papers/``), the chapters written from the annotation
-(``python -m coding build-chapters``; docs/chapter-generation-plan.md,
+(``.papers/``), the chapters written from the annotation, one folder per
+volume (``python -m coding build-chapters``; docs/chapter-generation-plan.md,
 decision 2); and ``BUNDLES_DIR`` (``.bundles/``), the weekly analysis's
 bundles, one folder per language and dataset (``python -m coding
 laminar-analysis``; docs/laminar-analysis-plan.md Phase 4d). Not state,
