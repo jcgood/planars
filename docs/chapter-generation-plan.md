@@ -408,7 +408,13 @@ Open with Jeff: where annotators' chapter drafts live, and whether
   `chapters/venues/<venue>.sty` (written as `.papers/planarsvenue.sty`);
   `volume.yaml` names the venue (`venue: book`, on expex, which leaves `_`
   and `^` alone). When De Gruyter's template arrives, a new venue file is
-  the whole change.
+  the whole change. A venue file also sets the layout (2026-11-25): two
+  comment lines the build reads give `main.tex`'s document class and the
+  heading a chapter starts at (`chapters/tex.py`). `book` is the book
+  class, a part per `\chapter`; `report` (the Zenodo annual report,
+  `docs/zenodo-report-plan.md` item 3) is an 11pt article whose parts are
+  `\section`s, every heading one level down, parts `\input` so none
+  starts a page. The compile test runs on every venue.
 - **Each class section ends with `examples_<class>.tex`**: the
   annotation's examples by construction and row (outline.yaml's
   `class_fragments`). English prints all of its examples plain; the

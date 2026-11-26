@@ -98,7 +98,7 @@ The draft is an unpublished manuscript, so it lives in planars-data's
    `sync-overleaf` cover each (`--volume NAME`; a new name starts a
    volume). The book moved to `.papers/book/`
    (`migrations/papers_into_volume_folders.py`). The report's volume is
-   started once items 2 and 3 give it a chapter kind and a venue. Details:
+   can be started now that items 2 and 3 give it a chapter kind and a venue. Details:
    `docs/chapter-generation-plan.md` § "More than one volume".
 2. **Built 2026-11-25: a results chapter kind**, the part `results`
    (`build-chapters --results`): the analysis summary and the three
@@ -107,8 +107,15 @@ The draft is an unpublished manuscript, so it lives in planars-data's
    listed in `outline.yaml`). Chapters now read the weekly bundles in
    `.bundles/`. Details: `docs/chapter-generation-plan.md` § "The results
    chapter".
-3. **A report venue file** (`chapters/venues/report.sty`): an article-like
-   layout, not the book's.
+3. **Built 2026-11-25: a report venue file** (`chapters/venues/report.sty`):
+   an 11pt article, letter paper, 1in margins, links (hyperref, for the
+   DOIs). A venue file now also sets the document class and the heading a
+   part starts at, so in the report each part (introduction, English,
+   results) is a numbered section and every heading is one level below the
+   book's (`chapters/tex.py`). Intro, English and results compile under it
+   (a test, run for every venue). Still to come with the report's volume:
+   its authors on the title page (read from `CITATION.cff`) and the
+   report's own parts (summary, method, contributions).
 4. **The laminar modules in the bundle** (already the next step in
    `docs/laminar-analysis-progress.md`): domain support, the resolution
    test and the profile exported behind permutation flags and run weekly,

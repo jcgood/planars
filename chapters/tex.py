@@ -29,6 +29,20 @@ venue's glossing package and written as ``planarsvenue.sty`` there; so
 when the publisher's template arrives, a new venue file is all that
 changes. ``example(...)`` in a template writes the right call for the
 language's example style.
+
+**A venue also sets the layout.** Its file declares, in two comment lines
+the build reads (``venue(...)``; one missing or malformed is an error,
+never a default), the document class ``main.tex`` uses and the heading
+level a chapter starts at::
+
+    % documentclass: [11pt]{article}
+    % top heading: section
+
+``book`` starts each chapter at ``\\chapter`` (its sections at
+``\\section``); ``report`` (the annual report, an article) at
+``\\section``, so every heading moves down one level (``HEADINGS``) and the
+parts are ``\\input`` rather than ``\\include``d, which would start each
+on a new page.
 """
 
 from __future__ import annotations
@@ -41,9 +55,18 @@ import jinja2
 
 TEMPLATES = Path(__file__).resolve().parent / "templates"
 # One file per venue (``venues/<venue>.sty``), copied to each volume's
-# folder in .papers/ as planarsvenue.sty: the example macros on top of the venue's glossing package.
+# folder in .papers/ as planarsvenue.sty: the example macros on top of the
+# venue's glossing package, and the layout lines venue() reads.
 VENUES = Path(__file__).resolve().parent / "venues"
 VENUE_STY = "planarsvenue.sty"
+
+# The heading levels, outermost first. A chapter's own heading is the
+# venue's top level; the outline's "section" and "subsection" are the
+# levels below it.
+HEADINGS = ("chapter", "section", "subsection", "subsubsection")
+_CLASS_LINE = re.compile(r"^% documentclass: (\S.*)$", re.M)
+_TOP_LINE = re.compile(r"^% top heading: (\S.*)$", re.M)
+_CLASS = re.compile(r"(\[[A-Za-z0-9,=. -]*\])?\{[A-Za-z0-9-]+\}")
 
 
 def venues() -> list:
@@ -51,13 +74,36 @@ def venues() -> list:
     return sorted(p.stem for p in VENUES.glob("*.sty"))
 
 
-def venue_sty(venue: str) -> str:
-    """The text of `venue`'s planarsvenue.sty. Fails on a venue with no file."""
-    if venue not in venues():
-        raise ValueError(f"No venue {venue!r}: there is a file in chapters/venues/ for "
-                         f"{', '.join(venues())}. Write chapters/venues/{venue}.sty "
-                         f"(defining \\planarsex and \\planarsplainex) to add one.")
-    return (VENUES / f"{venue}.sty").read_text(encoding="utf-8")
+def venue(name: str) -> dict:
+    """`name`'s venue: ``sty`` (the text of its planarsvenue.sty),
+    ``documentclass`` (what follows ``\\documentclass``, e.g.
+    ``[11pt]{article}``) and ``headings`` ({"chapter", "section",
+    "subsection": the command each is written as}). Fails on a venue with
+    no file, or whose file lacks either layout line or gives one it can't
+    use."""
+    if name not in venues():
+        raise ValueError(f"No venue {name!r}: there is a file in chapters/venues/ for "
+                         f"{', '.join(venues())}. Write chapters/venues/{name}.sty "
+                         f"(defining \\planarsex and \\planarsplainex, with the "
+                         f"`% documentclass:` and `% top heading:` lines) to add one.")
+    where = f"chapters/venues/{name}.sty"
+    sty = (VENUES / f"{name}.sty").read_text(encoding="utf-8")
+    found = {}
+    for key, line in (("documentclass", _CLASS_LINE), ("top heading", _TOP_LINE)):
+        hits = line.findall(sty)
+        if len(hits) != 1:
+            raise ValueError(f"{where} needs exactly one `% {key}: ...` line "
+                             f"({len(hits)} found); see chapters/tex.py.")
+        found[key] = hits[0].strip()
+    if not _CLASS.fullmatch(found["documentclass"]):
+        raise ValueError(f"{where}: `% documentclass: {found['documentclass']}` is not "
+                         f"`{{class}}` or `[options]{{class}}`.")
+    top = found["top heading"]
+    if top not in HEADINGS[:2]:
+        raise ValueError(f"{where}: `% top heading: {top}` must be `chapter` or `section`.")
+    shift = HEADINGS.index(top)
+    return {"sty": sty, "documentclass": found["documentclass"],
+            "headings": {level: HEADINGS[i + shift] for i, level in enumerate(HEADINGS[:3])}}
 
 _SPECIALS = {
     "\\": r"\textbackslash{}", "{": r"\{", "}": r"\}", "$": r"\$", "&": r"\&",

@@ -420,9 +420,10 @@ line, and the PDF boxes them. Compile a volume's `main.tex`
 (`stan1293.tex`, `intro.tex`) for one chapter
 (`latexmk -pdf -cd coded_data/.papers/book/stan1293.tex`); an unwritten
 slot shows as a boxed "Still to write". A volume's title, its venue and the order of its chapters
-are its `volume.yaml` (`.papers/book/volume.yaml`), edited by hand. The venue (`book` until the
-publisher's template arrives) names a file in `chapters/venues/` that sets
-how examples are printed; each language's examples come from its sheets'
+are its `volume.yaml` (`.papers/book/volume.yaml`), edited by hand. The venue names a file in
+`chapters/venues/` that sets the layout and how examples are printed: `book`
+(a book of chapters, until the publisher's template arrives) or `report` (an
+article whose chapters are sections, for the annual report); each language's examples come from its sheets'
 Example column, glossed or not as `examples` in `schemas/languages.yaml`
 says.
 

@@ -1,0 +1,38 @@
+% planarsvenue.sty for the venue `report`: the annual report on Zenodo
+% (docs/zenodo-report-plan.md), an article rather than a book. Copied to
+% .papers/<volume>/planarsvenue.sty by `python -m coding build-chapters`
+% from chapters/venues/report.sty; edit that file, never the copy.
+%
+% A venue file defines the two example macros every fragment uses, on top
+% of whichever glossing package the venue wants (here expex, which leaves
+% _ and ^ alone):
+%   \planarsex{form}{gloss}{translation}{source}  a glossed example: the
+%       form and its gloss aligned word for word, then the translation
+%   \planarsplainex{sentence}{source}  an example in the metalanguage
+%       itself, which needs no gloss (an unglossed language, e.g. English)
+% Either may have an empty source.
+%
+% The layout, read by the build (chapters/tex.py, venue()): an article,
+% whose parts (introduction, a language, results) are its sections, so
+% every heading sits one level below the book's.
+% documentclass: [11pt]{article}
+% top heading: section
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{planarsvenue}[2026/11/25 planars venue: report]
+\RequirePackage[letterpaper,margin=1in]{geometry}
+\RequirePackage{lmodern}
+\RequirePackage{microtype}
+\RequirePackage{parskip}
+% Number the sub-subsections (a class's section in a language's part) and
+% list them in the contents.
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+% Links: the DOIs of the dataset and software records, and the contents.
+% A value in a heading goes into the PDF's bookmarks as its name.
+\RequirePackage[hidelinks]{hyperref}
+\pdfstringdefDisableCommands{\def\pv#1{#1}\def\claim#1#2{#2}}
+\RequirePackage{expex}
+\newcommand{\planarsex}[4]{%
+  \ex \begingl \gla #1// \glb #2// \glft `#3'\if\relax\detokenize{#4}\relax\else\hfill #4\fi// \endgl \xe}
+\newcommand{\planarsplainex}[2]{%
+  \ex #1\if\relax\detokenize{#2}\relax\else\hfill #2\fi \xe}

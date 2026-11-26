@@ -34,8 +34,9 @@ used starts that volume. In each volume's folder:
   build makes a starting one for a new volume, and checks every part is
   one it can build.
 - ``main.tex`` (from volume.yaml), ``planarschapter.sty`` (``\\pv``,
-  ``\\proseslot``) and ``planarsvenue.sty`` (the venue's example macros,
-  chapters.tex): compile ``main.tex`` there for the volume. Each part
+  ``\\proseslot``) and ``planarsvenue.sty`` (the venue's example macros
+  and layout, chapters.tex: ``book`` a book of chapters, ``report`` an
+  article whose parts are sections): compile ``main.tex`` there for the volume. Each part
   also gets ``<part>.tex`` (``stan1293.tex``, ``intro.tex``): that
   chapter alone, so each writer compiles only their own.
 - one folder per part: ``chapter.tex`` (the outline: sections in the order
@@ -685,10 +686,11 @@ def results_chapters(vol: str, languages: list) -> list:
 
 
 def part_files(vol: str, part: str, position: int | None = None, update: bool = False,
-               parts: list | None = None, languages: list | None = None, apply: bool = False
-               ) -> tuple[dict, dict, list, dict]:
+               parts: list | None = None, languages: list | None = None, apply: bool = False,
+               *, headings: dict) -> tuple[dict, dict, list, dict]:
     """({path in the volume's folder: text} built, {path: text} stubs, lines
-    to print, {name: value} the part's values) for one part of volume `vol`.
+    to print, {name: value} the part's values) for one part of volume `vol`,
+    its headings written as the volume's venue gives (``tex.venue``).
     A language is built from its pin (``pinned_position``); `update` moves
     the pin to `position`. `parts` are the parts whose prose the report
     looks through; `languages` the volume's language chapters, which the
@@ -736,7 +738,8 @@ def part_files(vol: str, part: str, position: int | None = None, update: bool = 
             f"{sorted(made - placed) or 'none'}; placed but not made: {sorted(placed - made) or 'none'}.")
     built.update({f"{part}/fragments/{name}": text for name, text in fragments.items()})
     title = tex.pv(f"{L}.language.name") if L else PART_TITLE[part]
-    built[f"{part}/chapter.tex"] = tex.render("chapter.tex.j2", part=part, title=title, items=items)
+    built[f"{part}/chapter.tex"] = tex.render("chapter.tex.j2", part=part, title=title, items=items,
+                                              headings=headings)
     where = f"the {get_display_name(part)} chapter" if L else PART_WHERE[part]
     stubs = {f"{part}/prose/{item['slot']}.tex": tex.render(
                  "prose_stub.tex.j2", L=L, where=where, slot=item["slot"],
@@ -1167,13 +1170,16 @@ def build_volume(vol: str, args: argparse.Namespace) -> list:
     parts = ([args.lang] if args.lang else [INTRO] if args.intro
              else [RESULTS] if args.results else list(volume["parts"]))
     languages = language_parts(volume["parts"])
-    built = {STY_FILE: tex.STY, tex.VENUE_STY: tex.venue_sty(volume["venue"]), MAIN: tex.render(
+    venue = tex.venue(volume["venue"])
+    layout = {"venue": volume["venue"], "documentclass": venue["documentclass"],
+              "headings": venue["headings"]}
+    built = {STY_FILE: tex.STY, tex.VENUE_STY: venue["sty"], MAIN: tex.render(
         "main.tex.j2", file=MAIN, title=volume["title"], parts=volume["parts"],
-        languages=languages)}
+        languages=languages, **layout)}
     # One file per chapter, so whoever writes it compiles only theirs;
     # every language's values are loaded, as any chapter may cite them.
     built.update({f"{p}.tex": tex.render("main.tex.j2", file=f"{p}.tex", title=volume["title"],
-                                         parts=[p], languages=languages)
+                                         parts=[p], languages=languages, **layout)
                   for p in volume["parts"]})
     stubs = {VOLUME: volume_stub} if volume_stub else {}
     prose_parts = list(dict.fromkeys(list(volume["parts"]) + parts))
@@ -1181,7 +1187,8 @@ def build_volume(vol: str, args: argparse.Namespace) -> list:
     print(f"Volume {vol}" + (" (new)" if volume_stub else "") + f": {volume['title']}")
     for part in parts:
         part_built, part_stubs, said, part_values = part_files(vol, part, args.position, args.update,
-                                                               prose_parts, languages, args.apply)
+                                                               prose_parts, languages, args.apply,
+                                                               headings=venue["headings"])
         built.update(part_built)
         stubs.update(part_stubs)
         values.update(part_values)

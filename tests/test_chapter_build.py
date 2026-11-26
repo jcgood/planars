@@ -99,7 +99,8 @@ def test_intro_has_every_class_and_no_bare_math_symbols():
 
 
 def test_the_intro_outline_places_every_fragment_and_has_a_stub_per_slot():
-    built, stubs, _said, _values = build.part_files(VOL, build.INTRO)
+    built, stubs, _said, _values = build.part_files(VOL, build.INTRO,
+                                                    headings=tex.venue("book")["headings"])
     outline = built["intro/chapter.tex"]
     for rel in built:
         if rel.startswith("intro/fragments/"):
@@ -153,13 +154,32 @@ def test_an_example_uses_its_style_macro_and_falls_back_to_plain():
     assert tex.example("a b", "", "", "", False) == r"\planarsplainex{a b}{}"
 
 
-def test_every_venue_file_defines_both_example_macros():
-    assert "book" in tex.venues()
-    for venue in tex.venues():
-        sty = tex.venue_sty(venue)
-        assert r"\newcommand{\planarsex}[4]" in sty and r"\newcommand{\planarsplainex}[2]" in sty
+def test_every_venue_file_defines_both_example_macros_and_its_layout():
+    assert {"book", "report"} <= set(tex.venues())
+    for name in tex.venues():
+        venue = tex.venue(name)
+        assert (r"\newcommand{\planarsex}[4]" in venue["sty"]
+                and r"\newcommand{\planarsplainex}[2]" in venue["sty"])
+        assert set(venue["headings"]) == {"chapter", "section", "subsection"}
+    assert tex.venue("book")["documentclass"] == "{book}"
+    assert tex.venue("book")["headings"] == {"chapter": "chapter", "section": "section",
+                                             "subsection": "subsection"}
+    assert tex.venue("report")["documentclass"].endswith("{article}")
+    assert tex.venue("report")["headings"] == {"chapter": "section", "section": "subsection",
+                                               "subsection": "subsubsection"}
     with pytest.raises(ValueError, match="chapters/venues"):
-        tex.venue_sty("nosuchvenue")
+        tex.venue("nosuchvenue")
+
+
+def test_a_venue_file_without_its_layout_lines_is_refused(tmp_path, monkeypatch):
+    monkeypatch.setattr(tex, "VENUES", tmp_path)
+    (tmp_path / "bare.sty").write_text("\\ProvidesPackage{planarsvenue}\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="documentclass"):
+        tex.venue("bare")
+    (tmp_path / "odd.sty").write_text("% documentclass: {article}\n% top heading: part\n",
+                                      encoding="utf-8")
+    with pytest.raises(ValueError, match="chapter` or `section"):
+        tex.venue("odd")
 
 
 def _volume_yaml(text, vol=VOL):
@@ -221,6 +241,20 @@ def test_each_volume_is_built_in_its_own_folder(capsys):
     _run("--volume", "report", "--apply")
     out = capsys.readouterr().out
     assert "Volume report" in out and f"Volume {VOL}" not in out
+
+
+def test_a_report_venue_volume_is_an_article_whose_parts_are_sections():
+    _volume_yaml("title: A report\nvenue: report\nparts: [intro]\n", "report")
+    _run("--volume", "report", "--intro", "--apply")
+    folder = state_files.PAPERS_DIR / "report"
+    main = (folder / "main.tex").read_text(encoding="utf-8")
+    assert r"\documentclass[11pt]{article}" in main
+    assert r"\input{intro/chapter}" in main and r"\include{" not in main
+    outline = (folder / "intro" / "chapter.tex").read_text(encoding="utf-8")
+    assert r"\chapter{" not in outline and outline.count(r"\section{") == 1
+    assert re.search(r"\\subsection\{\w+ diagnostics\}", outline)
+    assert r"\subsubsection{" in outline
+    assert "planars venue: report" in (folder / tex.VENUE_STY).read_text(encoding="utf-8")
 
 
 def test_written_prose_is_kept_and_a_retired_slot_or_fragment_is_handled(capsys):
@@ -426,7 +460,8 @@ def _compile(folder, file="main.tex"):
 
 @needs_english
 def test_the_results_outline_places_every_fragment_and_cites_only_values_it_has(reads_english):
-    built, stubs, said, values = build.part_files(VOL, build.RESULTS, languages=["stan1293"])
+    built, stubs, said, values = build.part_files(VOL, build.RESULTS, languages=["stan1293"],
+                                                  headings=tex.venue("book")["headings"])
     outline = built["results/chapter.tex"]
     assert "\\chapter{Results}" in outline
     fragments = {rel for rel in built if rel.startswith("results/fragments/")}
@@ -444,7 +479,7 @@ def test_the_results_outline_places_every_fragment_and_cites_only_values_it_has(
 
 def test_a_results_chapter_needs_a_language_in_its_volume():
     with pytest.raises(ChapterDataError, match="parts list none"):
-        build.part_files(VOL, build.RESULTS, languages=[])
+        build.part_files(VOL, build.RESULTS, languages=[], headings=tex.venue("book")["headings"])
 
 
 def test_a_dataset_with_no_words_for_it_fails(monkeypatch):
@@ -527,13 +562,16 @@ def test_only_the_results_chapter_takes_figures(monkeypatch):
 
 @needs_latex
 @needs_english
-def test_the_volume_compiles(english, own_english, drawn):
+@pytest.mark.parametrize("venue", tex.venues())
+def test_the_volume_compiles(english, own_english, drawn, venue):
     # The weekly analysis's bundles, so the results chapter's tables and
     # figures are there.
     _with_weekly_bundles(own_english)
     _run("--volume", VOL, "--intro", "--apply")
-    (_vol() / "volume.yaml").write_text(VOLUME.replace("stan1293]", "stan1293, results]"),
-                                        encoding="utf-8")
+    (_vol() / "volume.yaml").write_text(
+        VOLUME.replace("stan1293]", "stan1293, results]").replace("venue: book",
+                                                                  f"venue: {venue}"),
+        encoding="utf-8")
     _run("--apply")
     total = english.values["stan1293.planar.positions"]
     _prose("intro", "argument.tex", f"English has \\claim{{stan1293.planar.positions}}{{{total}}} "

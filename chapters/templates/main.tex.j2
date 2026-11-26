@@ -1,7 +1,9 @@
 \#{ The volume, from volume.yaml, or one chapter of it on its own. Context:
    file (this file's name), title, parts (folder names, in order: every
    part for main.tex, one for a chapter's own file), languages (every
-   language chapter in the volume, whose values are loaded). }
+   language chapter in the volume, whose values are loaded), venue (its
+   name), documentclass and headings (tex.venue: a part is \include'd,
+   starting a page, only when it is a \chapter). }
 \BLOCK{if file == "main.tex"}
 % main.tex: the volume, from volume.yaml.
 \BLOCK{else}
@@ -11,8 +13,8 @@
 % Written by `python -m coding build-chapters`; never edit it by hand
 % (change the title or the parts in volume.yaml, then rebuild).
 % Compile it here, in the volume's folder in .papers/: latexmk -pdf \VAR{file}
-% The document class is a stand-in for the venue's (De Gruyter's dgruyter).
-\documentclass{book}
+% The document class is the venue's (chapters/venues/\VAR{venue}.sty).
+\documentclass\VAR{Tex(documentclass)}
 \usepackage[T1]{fontenc}
 \usepackage{planarschapter}
 \usepackage{planarsvenue}
@@ -24,6 +26,10 @@
 \maketitle
 \tableofcontents
 \BLOCK{for p in parts}
+\BLOCK{if headings.chapter == "chapter"}
 \include{\VAR{path(p ~ "/chapter")}}
+\BLOCK{else}
+\input{\VAR{path(p ~ "/chapter")}}
+\BLOCK{endif}
 \BLOCK{endfor}
 \end{document}
