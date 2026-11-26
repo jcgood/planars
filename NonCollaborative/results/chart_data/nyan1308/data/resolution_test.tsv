@@ -1,0 +1,2 @@
+region	n_spans	n_positions	n_trees	resolution_in	resolution_out	difference	resolution_tree	crossing_mean	trees_flatter_inside	trees_equal	trees_flatter_outside	null_mean	null_p05	null_p95	null_crossing_mean	p_le_observed	p_ge_observed	n_truncated	n_permutations	seed
+5-19	26	22	69	0.5714	0.5714	0.0	0.5714	0.0	23	14	32	-0.1316	-0.3091	0.0274	2.344	0.9092	0.0926	0	5000	0

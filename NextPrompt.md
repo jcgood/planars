@@ -22,9 +22,12 @@ units 1–20; don't answer from this table alone.
 
 **First (2026-11-25): build the Zenodo annual report's pieces** in the
 order `docs/zenodo-report-plan.md` gives under "What has to be built"
-(items 1, 2, 3, 8 and 9 built; the book now lives in `.papers/book/`;
-next, item 4, the laminar modules in the bundle, which is also the
-laminar "Then" below). Starting the report's own volume
+(items 1–5 and 7–9 built; item 4, the laminar modules in the bundle,
+2026-11-25; next, item 6's `values.tex` half, which waits on the report's
+volume). **Check the first weekly run after 2026-11-25** (Sunday
+2026-11-29): every dataset re-analyses once, with the tests side by side;
+English `types_all` should take about two hours, not four (progress doc,
+"Domain support and resolution"). Starting the report's own volume
 (`--volume report`, `venue: report`) writes to planars-data: ask Jeff
 first. They wait on no open question.
 Zenodo's GitHub link is now on for this repository: **do not make a GitHub
@@ -40,17 +43,15 @@ as quantum? test an edge as a run of steps?) is in
 `docs/laminar-analysis-progress.md` ("Domain support and resolution").
 Don't add a new test before he answers.
 
-**Then:** export the three modules into the bundle and the weekly run, with
-the weekly fingerprint narrowed to the code the bundle imports (progress
-doc, Findings: any `laminar/` change now reruns every dataset); then
-package charts. The profile needs no word, so it can run on English as is;
-only the resolution test waits on English's word (#335, Jeff and Adam).
+**Then:** package charts for the three modules (progress doc, step 2; they
+are in the bundle and the weekly run since 2026-11-25). Only the resolution
+test waits on English's word (#335, Jeff and Adam).
 Chichewa: Jeff to confirm the proposed answers to #70's four questions
 before they are posted there.
 
 | Plan | Owner of its state | Where it stands | Next | Waiting on |
 |---|---|---|---|---|
-| Laminar analysis on English | `docs/laminar-analysis-plan.md`, `docs/laminar-analysis-progress.md` | Phases 1–5 done (5 on 2026-11-03); domain support, resolution test and profile (with conflict density) built standalone 2026-11-14/15 | put them in the bundle, weekly run, charts | #335 (English's word, for the resolution test only) |
+| Laminar analysis on English | `docs/laminar-analysis-plan.md`, `docs/laminar-analysis-progress.md` | Phases 1–5 done (5 on 2026-11-03); domain support, resolution test and profile in the bundle and weekly run 2026-11-25 | their charts | #335 (English's word, for the resolution test only) |
 | Data layer (#271) | `docs/data-layer-implementation-plan.md`, `docs/data-layer-progress.md` | Phases 0–9 done; Phase 10's units 1–20 all built; unlabelled Drive targets refused (2026-11-02) | enforce notes Docs after their first clean real write (every other kind is in `drive_door.LIVE_ENFORCED_KINDS`, reports since 2026-11-06); Q4 (notebooks shared by name only) untested live | Adam: #332 (decision backfill; then `--apply` it and move `decisions.CHECK_FROM` back) |
 | Data layer Phase 11 (research logic as a spec) | implementation plan § Phase 11 | not started; worked examples go in `tests/span_examples/` (none yet: the suite's one skip) | design pause with Jeff | #321 finished (0 of 7 classes) — don't propose starting it |
 | Span-rule review with Adam | #321; coordinator guide § "Reviewing a span rule with the domain expert" | 0 of 7 classes | review each `Span rule: {class}` pull request as it arrives | Adam |
@@ -58,7 +59,7 @@ before they are posted there.
 | Adam's English requests | #318 (and #322, #319, #314) | (a)–(d), (f), item 6 done | build the impossible-pairs plan (point 8) once he agrees | Adam: point 8, the (b) questions, (e) construction descriptions |
 | Biuniqueness deviations | #254 (body checklist, 2026-10-11 design comment) | built, on English | — | Adam: span/type review, morphs tab, #298 |
 | CCDB charts across languages | `NonCollaborative/docs/CROSS_LANGUAGE_PROGRESS.md` (plan `PLAN_cross_language_charts.md`) | built 2026-09-23 | freeze references for the charts kept; write "what they show" | Jeff's cuts |
-| Annual report on Zenodo (English) | `docs/zenodo-report-plan.md` | items 1, 2, 3, 5, 6 (spans), 7, 8, 9 built 2026-11-25; Claude drafts counted; Zenodo's GitHub link on | item 4 | Jeff and Adam: the plan's "Open" list; Adam: 1,415 Claude drafts |
+| Annual report on Zenodo (English) | `docs/zenodo-report-plan.md` | items 1–5, 6 (spans), 7, 8, 9 built 2026-11-25; Claude drafts counted; Zenodo's GitHub link on | the report's volume (ask Jeff), then 6's `values.tex` | Jeff and Adam: the plan's "Open" list; Adam: 1,415 Claude drafts |
 | Bundle storage | #333 | full bundles in planars-data for now | move before a third language gets weekly runs | — |
 
 Daily: check the refresh and Sheet validation are green, and any open
@@ -94,10 +95,11 @@ carrying all of them.
 
 ### Things that will bite
 
-- **A full bundle re-export needs all four permutation tests**, or the tables
+- **A full bundle re-export needs every permutation test**, or the tables
   left un-asked-for drop out of the bundle. `python -m laminar charts
-  <dataset> --apply` passes all four (5000 draws); nyan1308 takes ~11
-  minutes, all 21 CCDB structures (`--ccdb`) ~8.
+  <dataset> --apply` passes them all (5000 draws, side by side). The CCDB
+  bundles and charts were made before the three 2026-11-25 tests, so a
+  `--ccdb` re-export adds their tables.
 - **Redrawn PDFs always show as modified**: R stamps the date in each, and
   the Quartz-drawn ones (IPA labels) differ in internal details too. Compare
   as images before committing; if the pictures are identical, restore the

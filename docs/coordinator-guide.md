@@ -337,15 +337,17 @@ failed:
 The weekly full analysis is `python -m coding laminar-analysis` (dry run:
 which datasets are behind their data). For every dataset of each language
 whose spans, planar or chart code changed since its last run (made-up
-`synth` languages left out), it runs the four permutation tests (5000 draws
-each), commits the bundle to planars-data under
+`synth` languages left out), it runs every permutation test (5000 draws
+each, side by side), commits the bundle to planars-data under
 `.bundles/{lang}/{dataset}/`, and puts one PDF per dataset,
 `analysis_{grouping}_{selection}_{lang}.pdf`, in an `analysis` folder
 inside the language's Drive folder. The `laminar-analysis.yml` workflow
 runs it on Sundays, one job per dataset; to run one dataset yourself:
 `python -m coding laminar-analysis --lang stan1293 --dataset stan1293_types_all --apply`
-(for English, 50 minutes to over four hours depending on the dataset; the
-workflow's limit is 5 h 30 min per job). To see why one failed:
+(for English up to 4 h 22 min with four tests run one after another,
+2026-11-22; since 2026-11-25 the tests run side by side, so the slowest one
+sets the time, estimated at about two hours for `types_all`; the workflow's
+limit is 5 h 30 min per job). To see why one failed:
 `python -m laminar charts <dataset> --apply` (writes locally only).
 
 For working on the analysis yourself, one local command does all of it:
@@ -359,7 +361,7 @@ It first checks that R is installed, that the R packages are the pinned ones,
 and that `coded_data/` has everything on GitHub, and says what to run if not.
 It then builds the language's datasets from the annotation (two groupings, by
 domain type and by class, times four selections of spans: eight in all),
-exports each one's bundle with the four permutation tests and draws its
+exports each one's bundle with the permutation tests and draws its
 charts, four at a time. For English that took about 100 minutes
 (2026-10-24); without the permutation tests (`--no-permutations`) a few
 minutes. Bundles and charts go to `coded_data/.analysis/{lang}/`
@@ -1055,7 +1057,7 @@ Each issue closes by itself on the next clean run. The run's summary page on Git
 
 **`laminar-charts.yml`** — runs `laminar-charts --apply` (see § "5. Laminar charts for a language") with R and the pinned packages from `renv.lock`, cached between runs. Most days nothing has changed and it draws nothing. The repository is public, so its log says only which languages were drawn or failed and at what stage, never why: the reason can quote the annotation. The `laminar-charts-error` issue gives the command that shows the reason on your machine. You can trigger it manually at any time (`gh workflow run laminar-charts.yml`).
 
-**`laminar-analysis.yml`** — the weekly full analysis (see § "5. Laminar charts for a language"), Sundays 16:00 UTC: a planning job lists the datasets behind their data, one job per dataset runs the permutation tests side by side (up to about four hours each for English, a few minutes for Araona), and a last job files or closes the `laminar-analysis-error` issue. The log, like `laminar-charts.yml`'s, says only which dataset failed and at what stage. A week with no span changes runs nothing. Trigger it by hand with `gh workflow run laminar-analysis.yml`.
+**`laminar-analysis.yml`** — the weekly full analysis (see § "5. Laminar charts for a language"), Sundays 16:00 UTC: a planning job lists the datasets behind their data, one job per dataset runs the permutation tests side by side (about two hours for English's slowest dataset, a few minutes for Araona), and a last job files or closes the `laminar-analysis-error` issue. The log, like `laminar-charts.yml`'s, says only which dataset failed and at what stage. A week with no span changes runs nothing. Trigger it by hand with `gh workflow run laminar-analysis.yml`.
 
 ### Drive folder structure
 

@@ -259,3 +259,29 @@ def test_boundary_strength_test_covers_every_position():
     for row in rows:
         if row["statistic"] == "jump" and int(row["position"]) == 1:
             assert float(row["observed"]) == 0.0
+
+
+def test_domain_support_covers_every_observed_span():
+    """One row per observed span: a span missing from the support table
+    would simply have no support shown, with nothing looking wrong."""
+    support = {row["span_id"] for row in read_tsv("domain_support.tsv")}
+    observed = {row["span_id"] for row in read_tsv("spans.tsv") if row["synthetic"] != "True"}
+    assert support == observed
+
+
+def test_resolution_test_tables_agree():
+    """The null tally accounts for every draw, one tree row per family, and
+    the region is the word highlight's first row (nyan1308: 5-19)."""
+    metadata = json.loads((BUNDLE / "metadata.json").read_text())
+    summary = read_tsv("resolution_test.tsv")
+    assert len(summary) == 1
+    assert summary[0]["region"] == metadata["resolution_test_region"] == "5-19"
+    assert sum(int(r["n"]) for r in read_tsv("resolution_null.tsv")) == int(summary[0]["n_permutations"])
+    assert len(read_tsv("resolution_trees.tsv")) == metadata["n_maximal_families"]
+
+
+def test_resolution_profile_covers_every_stretch_and_juncture():
+    n = json.loads((BUNDLE / "metadata.json").read_text())["n_positions"]
+    assert len(read_tsv("resolution_profile.tsv")) == n * (n - 1) // 2
+    assert len(read_tsv("conflict_junctures.tsv")) == n - 1
+    assert len(read_tsv("conflict_quantal.tsv")) == 1

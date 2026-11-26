@@ -84,17 +84,29 @@ from laminar.laminar_analysis import Span, enumerate_maximal_laminar_families, f
 from laminar.span_placement_test import random_replicate
 
 
-def region_from_highlights(dataset: str, region_id: str) -> tuple[int, int]:
-    """The first row of `region_id` in planar_tables/highlights_<dataset>.tsv
-    (the exporter's highlights file; its first row is the outermost layer)."""
-    path = NC / "planar_tables" / f"highlights_{dataset}.tsv"
-    if not path.exists():
-        raise SystemExit(f"No highlights file for {dataset} ({path}); give the region with --region L-R.")
+DEFAULT_REGION_ID = "orthographic_word"   # the highlight the region is read from
+
+
+def region_in_highlights(path: Path, region_id: str = DEFAULT_REGION_ID) -> tuple[int, int] | None:
+    """The first row of `region_id` in a highlights file (its first row is
+    the outermost layer), or None when the file has no such highlight."""
     with path.open(encoding="utf-8", newline="") as handle:
         for row in csv.DictReader(handle, delimiter="\t"):
             if row["highlight_id"] == region_id:
                 return int(row["left"]), int(row["right"])
-    raise SystemExit(f"{path} has no highlight {region_id!r}; give the region with --region L-R.")
+    return None
+
+
+def region_from_highlights(dataset: str, region_id: str) -> tuple[int, int]:
+    """The region from planar_tables/highlights_<dataset>.tsv (the
+    exporter's highlights file); stops with what to do when there is none."""
+    path = NC / "planar_tables" / f"highlights_{dataset}.tsv"
+    if not path.exists():
+        raise SystemExit(f"No highlights file for {dataset} ({path}); give the region with --region L-R.")
+    region = region_in_highlights(path, region_id)
+    if region is None:
+        raise SystemExit(f"{path} has no highlight {region_id!r}; give the region with --region L-R.")
+    return region
 
 
 def tree_resolution(family, region: tuple[int, int], n_positions: int) -> dict:
@@ -168,6 +180,17 @@ def run_test(domain_file: str, domains_dir: Path, region: tuple[int, int],
     return summary, trees, dict(Counter(round(float(x), 4) for x in null))
 
 
+def tree_rows(trees: list[dict]) -> list[dict]:
+    """The observed trees as the _trees table writes them, one row each."""
+    return [{"tree": i + 1, **{k: (round(v, 4) if isinstance(v, float) else v) for k, v in t.items()}}
+            for i, t in enumerate(trees)]
+
+
+def tally_rows(tally: dict[float, int]) -> list[dict]:
+    """The null as the _null_tally table writes it: (difference, n)."""
+    return [{"difference": d, "n": n} for d, n in sorted(tally.items())]
+
+
 def write_tsv(path: Path, rows: list[dict]) -> None:
     with path.open("w", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=list(rows[0]), delimiter="\t")
@@ -178,7 +201,7 @@ def write_tsv(path: Path, rows: list[dict]) -> None:
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     add_dataset_arguments(parser, "counts-and-chance", groupings=False)
-    parser.add_argument("--region-id", default="orthographic_word",
+    parser.add_argument("--region-id", default=DEFAULT_REGION_ID,
                         help="Highlight whose first row is the region (default orthographic_word).")
     parser.add_argument("--region", default=None, metavar="L-R",
                         help="The region as positions, instead of a highlight.")
@@ -197,11 +220,8 @@ def main():
                                      n_positions=run.n_positions)
     stem = run.output_dir / f"{run.dataset}_resolution_{region[0]}-{region[1]}"
     write_tsv(Path(f"{stem}_test.tsv"), [summary])
-    write_tsv(Path(f"{stem}_trees.tsv"),
-              [{"tree": i + 1, **{k: (round(v, 4) if isinstance(v, float) else v) for k, v in t.items()}}
-               for i, t in enumerate(trees)])
-    write_tsv(Path(f"{stem}_null_tally.tsv"),
-              [{"difference": d, "n": n} for d, n in sorted(tally.items())])
+    write_tsv(Path(f"{stem}_trees.tsv"), tree_rows(trees))
+    write_tsv(Path(f"{stem}_null_tally.tsv"), tally_rows(tally))
     for key, value in summary.items():
         print(f"{key:24} {value}")
 

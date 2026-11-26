@@ -169,6 +169,17 @@ class Span:
     domain_types: frozenset = field(compare=False, hash=False, default_factory=frozenset)
     convergence: int = field(compare=False, hash=False, default=1)
 
+    # The hash is worked out once, not on every set operation: family
+    # enumeration hashes spans tens of millions of times in a permutation
+    # test, a third of its time. It is the same value the dataclass would
+    # compute, hash((left, right)), so sets of spans iterate in the same
+    # order and every enumeration finds the same families in the same order.
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "_hash", hash((self.left, self.right)))
+
+    def __hash__(self) -> int:
+        return self._hash
+
     @property
     def size(self) -> int:
         return self.right - self.left + 1

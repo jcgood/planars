@@ -437,10 +437,39 @@ Jeff:** whether a ramp counts as a quantum for decision 11, and whether
 to test an edge as a run of steps (decided after seeing this result, so
 it would have to be said).
 
+**Done 2026-11-25: all three in the bundle and the weekly run**
+(Zenodo plan item 4). The exporter's permutation tests are now one list,
+`PERMUTATION_TESTS` (`laminar/export_planarsviz_data.py`): each entry's
+flags, tables and export function, read by the command line, the clearing of
+old tables, `laminar/charts.py` and the tests, so a new test is one entry.
+The three new ones are `--domain-support-permutations`,
+`--resolution-test-permutations` and `--resolution-profile-permutations`,
+and the weekly run passes them like the rest. Their tables are in
+`planarsviz/inst/data-contract.md`. On nyan1308 at 5000 draws every
+existing bundle file came back byte-identical, and the nine new tables are
+byte-identical to the standalone scripts' committed TSVs (5–19 for the
+resolution test). The resolution test needs the dataset's
+`orthographic_word` highlight; without one (every dataset but nyan1308) it
+runs nothing and the metadata says why (`resolution_test_skipped`).
+- **The tests now run side by side**, one process each: the weekly run's
+  slowest dataset (English `types_all`) took 4 h 22 min with four tests in
+  a row on 2026-11-22, under the job's 5 h 30 min limit. Timed locally at
+  100 draws (2026-11-25): boundary strength 72 s, span placement 71,
+  profile 47, arbitrary layers 19, domain support 12, fragmentation 6; in a
+  row on GitHub that would be about 5.9 h, side by side about 2 h (the
+  slowest test). Each test seeds its own draws, so nothing changes but the
+  time. Check the first weekly run's job times against this. A span's hash is also stored once instead
+  of worked out tens of millions of times per test (`Span.__post_init__`;
+  the same value, so every enumeration finds the same families in the same
+  order): about 12% faster.
+- **The weekly fingerprint now counts only the code the charts run**
+  (`contributor_charts.chart_code_files()`: the chart commands' laminar
+  modules and everything they import, read from the import statements, plus
+  the renderer and `planarsviz/`), fixing the 2026-11-15 finding below.
+  Both changes alter the fingerprint, so the next weekly run re-analyses
+  every dataset once, which it had to anyway for the new tables.
+
 **Not yet done, in order:**
-1. Export all three into the bundle behind permutation flags, like the four
-   existing tests, and add them to the weekly run (`laminar-analysis.yml`;
-   the bootstrap enumerates families 1000 times, minutes per dataset).
 2. Charts in planarsviz: per-domain support beside the span chart (tests
    for/against, bootstrap interval); the resolution null as a histogram
    with the observed difference; the profile as a left-by-right grid of
@@ -456,15 +485,15 @@ it would have to be said).
 
 ## Findings
 
-- **Found 2026-11-15, to fix:** the weekly run re-analyses every dataset
+- **Fixed 2026-11-25 (found 2026-11-15):** the weekly run re-analysed every dataset
   whenever any code file in `laminar/` or `planarsviz/` changes, because
   its fingerprint hashes them all (`contributor_charts.code_version`).
   On 2026-11-15 all 16 English and Araona datasets reran (about four
   hours) for modules the bundle never runs (`domain_support`,
   `resolution_test`, `resolution_profile`). Results are right, just
-  redone. Fix: hash only the modules the exporter and renderer import
-  (read from the imports, so nothing has to be listed by hand); do it with
-  step 1 above, which brings those modules into the bundle anyway.
+  redone. Fixed by hashing only the modules the chart commands import
+  (read from the imports, so nothing is listed by hand;
+  `tests/test_chart_code_files.py`).
 
 - **Fixed 2026-11-04 (found 2026-10-24, drawing 4b's PDFs):** English's
   by-class pooled span chart (`pooled_plot`) cut its legend off at the

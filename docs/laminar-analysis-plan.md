@@ -62,8 +62,8 @@ draft, started while Adam is still annotating. **Current state:
      time), drawn and put in the language's Drive folder through the
      doorway. Each chart's title carries the date and how complete the
      annotation was.
-   - **Full analysis, weekly:** every dataset with all four permutation
-     tests, for each language whose spans changed since its last run;
+   - **Full analysis, weekly:** every dataset with every permutation
+     test, for each language whose spans changed since its last run;
      bundles into planars-data through the local-file door, charts into an
      analysis folder beside the contributor charts. A failed run files an
      issue. Nobody has to remember the tests exist or run them.

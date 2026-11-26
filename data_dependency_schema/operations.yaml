@@ -271,7 +271,7 @@
     The weekly full analysis (coding/laminar_analysis.py; run by
     laminar-analysis.yml): for each dataset of each language whose spans,
     planar or chart code changed since its last run (made-up synth languages
-    left out), the bundle with all four permutation tests, committed to
+    left out), the bundle with every permutation test, committed to
     planars-data's .bundles/, and its charts as one PDF in the language's
     Drive analysis folder. --plan lists the datasets, --dataset runs one,
     --report files or closes the issue.

@@ -116,11 +116,13 @@ The draft is an unpublished manuscript, so it lives in planars-data's
    (a test, run for every venue). Still to come with the report's volume:
    its authors on the title page (read from `CITATION.cff`) and the
    report's own parts (summary, method, contributions).
-4. **The laminar modules in the bundle** (already the next step in
-   `docs/laminar-analysis-progress.md`): domain support, the resolution
-   test and the profile exported behind permutation flags and run weekly,
-   so the report's numbers come from the pinned bundle, not from
-   standalone runs.
+4. **Built 2026-11-25: the laminar modules in the bundle**: domain
+   support, the resolution test and the profile exported behind permutation
+   flags and run weekly, so the report's numbers come from the pinned
+   bundle, not from standalone runs. English gets domain support and the
+   profile; its resolution test waits on its word (#335). No chart and no
+   chapter value reads them yet. Details: `docs/laminar-analysis-progress.md`
+   ("Domain support and resolution").
 5. **Built 2026-11-25: `export-release`** (`coding/export_release.py`, whose
    docstring says what the folder holds; English's dry run: 783 files,
    stopped only by the Claude drafts). As planned, it writes

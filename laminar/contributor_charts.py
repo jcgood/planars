@@ -7,7 +7,7 @@ which decides when to draw and does the uploading; this module only draws).
 
 **What is drawn.** For a planars language, the two datasets with every span
 (``CONTRIBUTOR_DATASETS``: ``<lang>_classes_all`` and ``<lang>_types_all``),
-exported **without** the four permutation tests (they are for the analysis,
+exported **without** the permutation tests (they are for the analysis,
 run weekly, and take nearly all the time) and rendered with every chart the
 renderer draws from such a bundle. Built from the annotation in a folder the
 caller gives (a temporary one): derived and redrawn, so nothing is stored.
@@ -30,7 +30,7 @@ as everywhere else (Chichewa's and CCDB's reference images are unaffected).
 
 **The weekly analysis** (Phase 4d, ``python -m coding laminar-analysis``)
 draws its PDFs here too, one dataset at a time (``draw_dataset`` with
-``permutations``): the same PDF, with the four tests' charts, a title naming
+``permutations``): the same PDF, with the tests' charts, a title naming
 the selection, and a first page saying it is the analysis.
 
 **A chapter's figures** (chapters/build.py, the results chapter) are a few
@@ -38,9 +38,12 @@ charts drawn alone from a committed bundle: ``draw_charts``.
 
 **When to redraw** is ``fingerprint()``: the two domains files (the spans,
 which is all a chart is drawn from apart from the planar file) plus the
-planar file and the chart code (git's record of the code files in
-``laminar/`` and ``planarsviz/``; their documentation is left out). Completeness and the planars-data commit are left out, so
-annotation that changes no span redraws nothing.
+planar file and the chart code (git's record of the code the charts are
+drawn by: ``chart_code_files()``, the laminar modules the chart commands
+import, read from their imports, with the renderer and ``planarsviz/``;
+documentation is left out). Completeness and the planars-data commit are
+left out, so annotation that changes no span redraws nothing, and nor does
+a change to a laminar module the charts never import.
 """
 
 from __future__ import annotations
@@ -97,7 +100,14 @@ PARTS = {
 STRIP_POINTS = 34          # height of the strip added above a page up to...
 STRIP_BASE_WIDTH = 600     # ...this wide (points); wider pages scale it up
 DIVIDER_LIST_MAX = 40      # a divider lists at most this many lines
-_CODE_FOLDERS = ("laminar", "planarsviz")
+# What the charts are drawn by (code_version()): these modules and every
+# laminar module they import, followed to the end; the renderer; the R
+# package. Only the starting points are named: the rest is read from the
+# import statements, so a module added to the exporter is counted without
+# anyone listing it, and one the charts never run (a standalone analysis
+# script) changes nothing.
+_ENTRY_MODULES = ("laminar.charts", "laminar.contributor_charts", "laminar.planars_language")
+_RENDER_CODE = ("laminar/render_planarsviz.R", "planarsviz")
 
 
 class DrawingFailed(RuntimeError):
@@ -119,13 +129,57 @@ def contributor_datasets(lang_id: str) -> dict[str, str]:
     return {g: dataset_name(lang_id, g, s) for g, s in CONTRIBUTOR_DATASETS.items()}
 
 
+def _laminar_imports(path: Path) -> set[str]:
+    """The laminar modules a module imports, anywhere in it (a function's
+    own imports too), as dotted names."""
+    import ast
+    names: set[str] = set()
+    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+        if isinstance(node, ast.Import):
+            names |= {a.name for a in node.names if a.name.split(".")[0] == "laminar"}
+        elif isinstance(node, ast.ImportFrom):
+            base = "laminar" if node.level else (node.module or "")
+            if node.level and node.module:
+                base = f"laminar.{node.module}"
+            if base.split(".")[0] != "laminar":
+                continue
+            names.add(base)
+            # `from laminar import charts` names a module, not an attribute.
+            names |= {f"{base}.{a.name}" for a in node.names
+                      if (REPO / f"{base}.{a.name}".replace(".", "/")).with_suffix(".py").exists()}
+    return names
+
+
+def chart_code_files() -> list[str]:
+    """The repository paths of the code the charts are drawn by
+    (``_ENTRY_MODULES`` and every laminar module they import, the renderer,
+    planarsviz/), sorted."""
+    seen: set[str] = set()
+    todo = list(_ENTRY_MODULES)
+    while todo:
+        module = todo.pop()
+        if module in seen:
+            continue
+        seen.add(module)
+        path = REPO / (module.replace(".", "/") + ".py")
+        if not path.exists():
+            path = REPO / module.replace(".", "/") / "__init__.py"
+        if not path.exists():
+            raise DrawingFailed(f"The chart code imports {module}, which has no file.")
+        todo += sorted(_laminar_imports(path) - seen)
+    files = {str((REPO / (m.replace(".", "/") + ".py")).relative_to(REPO)) for m in seen
+             if (REPO / (m.replace(".", "/") + ".py")).exists()}
+    return sorted(files | {"laminar/__init__.py"} | set(_RENDER_CODE))
+
+
 def code_version() -> str:
-    """git's record of the chart code as committed (``laminar/``,
-    ``planarsviz/``), as one hash: changes when a code file in either does,
-    not when the documentation beside it does (``coding.versions.is_result_code``)."""
+    """git's record of the chart code as committed (``chart_code_files()``),
+    as one hash: changes when one of those code files does, not when the
+    documentation beside it does (``coding.versions.is_result_code``) and
+    not when a laminar module the charts never import does."""
     from coding.versions import is_result_code
     done = subprocess.run(["git", "-C", str(REPO), "ls-tree", "-r", "HEAD", "--",
-                           *_CODE_FOLDERS], capture_output=True, text=True)
+                           *chart_code_files()], capture_output=True, text=True)
     if done.returncode != 0 or not done.stdout.strip():
         raise DrawingFailed("Could not read the chart code's version from git: "
                             + (done.stderr.strip() or done.stdout.strip() or "no files"))
@@ -165,7 +219,7 @@ def draw(lang_id: str, work: Path, date: str, table=None) -> list[Drawn]:
 def draw_dataset(lang_id: str, dataset: str, work: Path, date: str, table,
                  permutations: int = 0) -> Drawn:
     """Export and draw one dataset in `work` and return its PDF. With
-    `permutations`, the four permutation tests run with that many draws each
+    `permutations`, every permutation test runs with that many draws each
     and the PDF is the weekly analysis's (its first page says so); the
     bundle is left in ``work / "chart_data" / dataset``
     (coding/laminar_analysis.py commits it)."""
@@ -275,7 +329,7 @@ SELECTION_WORDS = {
 
 def analysis_cover(selection: str, permutations: int) -> str:
     return (f"The weekly analysis of the annotation: {SELECTION_WORDS[selection]}, with the "
-            f"four statistical tests ({permutations} random draws each). Drawn by the "
+            f"statistical tests ({permutations} random draws each). Drawn by the "
             "project's tooling each week the spans change; the data behind them is kept in "
             "planars-data. Not for checking the annotation: the contributor charts in the "
             "language's folder are drawn daily for that.")

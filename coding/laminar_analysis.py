@@ -1,4 +1,4 @@
-"""The weekly full analysis: every dataset, with the four permutation tests.
+"""The weekly full analysis: every dataset, with every permutation test.
 
 Run from the repo root:
     python -m coding laminar-analysis                    # dry run: what is behind its data
@@ -21,8 +21,9 @@ it in three steps, one job each:
    language and dataset names are written: the list goes into the public log.
 2. **``--lang L --dataset D``**, one job per pair, side by side: builds the
    dataset from the annotation in a temporary folder, exports it with the
-   four tests (``PERMUTATIONS`` draws each, seed 0, as ``python -m laminar
-   charts`` does), draws it, uploads one PDF, ``analysis_{grouping}_{selection}_{lang}.pdf``
+   permutation tests (the exporter's ``PERMUTATION_TESTS``, side by side,
+   ``PERMUTATIONS`` draws each, seed 0, as ``python -m laminar charts``
+   does), draws it, uploads one PDF, ``analysis_{grouping}_{selection}_{lang}.pdf``
    (Drive kind ``analysis_charts``; ``laminar/contributor_charts.draw_dataset``),
    into the analysis folder, and then commits the bundle to planars-data
    through the local-file door, under ``.bundles/{lang}/{dataset}/``
@@ -37,7 +38,9 @@ it in three steps, one job each:
    ``laminar-analysis-error`` issue naming them, or closes it when none did.
 
 **Behind its data** means the dataset's fingerprint (its domains file, the
-planar file, the chart code's git version and ``PERMUTATIONS``) differs from
+planar file, the chart code's git version -- only the code the charts
+import, ``laminar.contributor_charts.chart_code_files()`` -- and
+``PERMUTATIONS``) differs from
 the one in its committed bundle's ``run.json``, or there is no bundle. The
 bundle is the record: there is no separate state file to fall out of step
 with it. ``run.json`` is written last, after the upload, so a job that fails
@@ -398,7 +401,7 @@ def build_parser() -> argparse.ArgumentParser:
     """Build the argument parser for `python -m coding laminar-analysis`."""
     ap = argparse.ArgumentParser(
         description="The weekly full analysis: every dataset of every language whose spans "
-                    "changed, with the four permutation tests; bundles to planars-data, "
+                    "changed, with every permutation test; bundles to planars-data, "
                     "charts to the language's Drive analysis folder.")
     mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--plan", action="store_true",

@@ -130,8 +130,11 @@ def holm(p_values: list[float]) -> list[float]:
     return adjusted
 
 
+N_BOOTSTRAP = 1000   # bootstrap replicates, here and in the bundle
+
+
 def run_support(domain_file: str, domains_dir: Path, n_permutations: int = 5000,
-                n_bootstrap: int = 1000, seed: int = 0,
+                n_bootstrap: int = N_BOOTSTRAP, seed: int = 0,
                 n_positions: int | None = None) -> list[dict]:
     """One row per observed span (FIELDS). One rng, seeded once, serves the
     shuffles and then the bootstrap, so a run is reproducible from `seed`."""
@@ -209,7 +212,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     add_dataset_arguments(parser, "counts-and-chance", groupings=False)
     parser.add_argument("--n-permutations", type=int, default=5000)
-    parser.add_argument("--n-bootstrap", type=int, default=1000)
+    parser.add_argument("--n-bootstrap", type=int, default=N_BOOTSTRAP)
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
     run = resolve_dataset_arguments(args, "counts-and-chance")

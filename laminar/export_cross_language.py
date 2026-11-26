@@ -170,7 +170,8 @@ def load(bundle_dir):
                  "boundary_strength_test_permutations"):
         if not meta.get(flag):
             raise SystemExit(f"{bundle_dir.name}: bundle was exported without --{flag.replace('_', '-')}; "
-                             "re-export it with all four permutation flags (see NextPrompt.md).")
+                             f"re-export it with every permutation test: python -m laminar charts "
+                             f"{bundle_dir.name} --apply")
     return {
         "dir": bundle_dir,
         "meta": meta,

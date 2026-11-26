@@ -18,8 +18,11 @@ import collections
 import csv
 import hashlib
 import json
+import multiprocessing
+import os
 import unicodedata
-from typing import NamedTuple
+from concurrent.futures import ProcessPoolExecutor
+from typing import Callable, NamedTuple
 from pathlib import Path
 
 import numpy as np
@@ -45,6 +48,12 @@ from laminar.class_fragmentation_test import run_test as run_fragmentation_test
 from laminar.boundary_strength_test import run_test as run_boundary_strength_test
 from laminar.span_placement_test import run_test as run_span_placement_test
 from laminar.arbitrary_layers_test import run_test as run_arbitrary_layers_test
+from laminar.domain_support import FIELDS as DOMAIN_SUPPORT_FIELDS, N_BOOTSTRAP, run_support
+from laminar.resolution_test import (
+    DEFAULT_REGION_ID, region_in_highlights, run_test as run_resolution_test,
+    tally_rows as resolution_tally_rows, tree_rows as resolution_tree_rows,
+)
+from laminar.resolution_profile import run_profile
 
 
 class Style(NamedTuple):
@@ -238,6 +247,15 @@ def export_overlay_groups(domain_file: Path, domains_dir: Path, data_dir: Path,
     )
 
 
+def highlights_path(dataset: str, highlights_file: Path | None) -> Path | None:
+    """The dataset's highlights file: `highlights_file` when given, else
+    planar_tables/highlights_<dataset>.tsv when it exists, else None."""
+    if highlights_file is not None:
+        return highlights_file
+    candidate = NC / "planar_tables" / f"highlights_{dataset}.tsv"
+    return candidate if candidate.exists() else None
+
+
 def export_highlights(dataset: str, data_dir: Path, highlights_file: Path | None) -> None:
     """Copy a dataset's named position highlights into the bundle.
 
@@ -247,9 +265,7 @@ def export_highlights(dataset: str, data_dir: Path, highlights_file: Path | None
     left, right, colour (a default the chart may override), layer (later
     layers win where ranges overlap). Absent file = no highlights.
     """
-    if highlights_file is None:
-        candidate = NC / "planar_tables" / f"highlights_{dataset}.tsv"
-        highlights_file = candidate if candidate.exists() else None
+    highlights_file = highlights_path(dataset, highlights_file)
     fields = ["highlight_id", "name", "left", "right", "colour", "layer"]
     rows = []
     if highlights_file is not None:
@@ -292,9 +308,21 @@ def export_tree_counts(domain_file: Path, domains_dir: Path, data_dir: Path, bun
                "kind", "label", "colour"], rows)
 
 
-def export_fragmentation_test(domain_file: Path, domains_dir: Path, data_dir: Path,
-                              n_permutations: int, seed: int, bundles: list,
-                              n_positions: int | None = None, style: Style | None = None) -> dict:
+class PermutationInputs(NamedTuple):
+    """What every permutation test's export reads: one dataset's domains
+    file and folder, the bundle's data folder, its grouping set's bundles and
+    style, the structure's length and its highlights file (None when it has
+    none)."""
+    domain_file: Path
+    domains_dir: Path
+    data_dir: Path
+    bundles: list
+    n_positions: int
+    style: Style
+    highlights_file: Path | None
+
+
+def export_fragmentation_test(inputs: PermutationInputs, n_permutations: int, seed: int) -> dict:
     """Write fragmentation_test.tsv and fragmentation_null.tsv.
 
     Calls class_fragmentation_test.run_test() unchanged, so the numbers equal
@@ -316,6 +344,7 @@ def export_fragmentation_test(domain_file: Path, domains_dir: Path, data_dir: Pa
     the 1.6 seconds the rest of the export costs, so it sits behind
     --fragmentation-permutations rather than on the default path.
     """
+    domain_file, domains_dir, data_dir, bundles, n_positions, style, _ = inputs
     _classes, bundles = observed_groups(domain_file, bundles)
     palette = _palette(style)
 
@@ -354,9 +383,7 @@ def export_fragmentation_test(domain_file: Path, domains_dir: Path, data_dir: Pa
     return {"fragmentation_permutations": n_permutations, "fragmentation_seed": seed}
 
 
-def export_span_placement_test(domain_file: Path, domains_dir: Path, data_dir: Path,
-                               n_permutations: int, seed: int, bundles: list,
-                               n_positions: int | None = None, style: Style | None = None) -> dict:
+def export_span_placement_test(inputs: PermutationInputs, n_permutations: int, seed: int) -> dict:
     """Write span_placement_test.tsv and span_placement_null.tsv: does the
     real arrangement of a group's spans produce fewer laminar families than
     the same span *lengths* placed at random would?
@@ -383,6 +410,7 @@ def export_span_placement_test(domain_file: Path, domains_dir: Path, data_dir: P
     Not run unless asked, for the same reason as --fragmentation-permutations:
     one family enumeration per replicate costs minutes.
     """
+    domain_file, domains_dir, data_dir, bundles, n_positions, style, _ = inputs
     _classes, bundles = observed_groups(domain_file, bundles)
     palette = _palette(style)
     bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
@@ -421,9 +449,7 @@ def export_span_placement_test(domain_file: Path, domains_dir: Path, data_dir: P
     return {"span_placement_permutations": n_permutations, "span_placement_seed": seed}
 
 
-def export_arbitrary_layers_test(domain_file: Path, domains_dir: Path, data_dir: Path,
-                                 n_permutations: int, seed: int, bundles: list,
-                                 n_positions: int | None = None, style: Style | None = None) -> dict:
+def export_arbitrary_layers_test(inputs: PermutationInputs, n_permutations: int, seed: int) -> dict:
     """Write arbitrary_layers_test.tsv and arbitrary_layers_null.tsv: is a
     group's family count remarkable for that many spans of arbitrary size at
     arbitrary positions?
@@ -441,6 +467,7 @@ def export_arbitrary_layers_test(domain_file: Path, domains_dir: Path, data_dir:
 
     Not run unless asked, for the same reason as --fragmentation-permutations.
     """
+    domain_file, domains_dir, data_dir, bundles, n_positions, style, _ = inputs
     _classes, bundles = observed_groups(domain_file, bundles)
     palette = _palette(style)
     bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
@@ -479,9 +506,7 @@ def export_arbitrary_layers_test(domain_file: Path, domains_dir: Path, data_dir:
     return {"arbitrary_layers_permutations": n_permutations, "arbitrary_layers_seed": seed}
 
 
-def export_boundary_strength_test(domain_file: Path, domains_dir: Path, data_dir: Path,
-                                  n_permutations: int, seed: int, bundles: list,
-                                  n_positions: int | None = None, style: Style | None = None) -> dict:
+def export_boundary_strength_test(inputs: PermutationInputs, n_permutations: int, seed: int) -> dict:
     """Write boundary_strength_test.tsv: is the per-position boundary
     strength (and its jump from the previous position) higher than a
     same-length-profile random arrangement would produce?
@@ -498,6 +523,7 @@ def export_boundary_strength_test(domain_file: Path, domains_dir: Path, data_dir
     enumeration per replicate, same as span_placement_test.py) costs
     minutes, not the ~2 seconds the rest of the export takes.
     """
+    domain_file, domains_dir, data_dir, bundles, n_positions, style, _ = inputs
     _classes, bundles = observed_groups(domain_file, bundles)
     palette = _palette(style)
     bundle_style = {name: (display, colour) for name, _types, colour, display in bundles}
@@ -522,6 +548,183 @@ def export_boundary_strength_test(domain_file: Path, domains_dir: Path, data_dir
                "null_mean", "null_p05", "null_p95", "p_value_ge_observed",
                "n_permutations", "seed"], rows)
     return {"boundary_strength_test_permutations": n_permutations, "boundary_strength_test_seed": seed}
+
+
+def export_domain_support(inputs: PermutationInputs, n_permutations: int, seed: int) -> dict:
+    """Write domain_support.tsv: for every observed span, the tests for and
+    against it, a shuffle test (n_permutations shuffles) and a bootstrap
+    (domain_support.N_BOOTSTRAP replicates) -- domain_support.py's
+    docstring says what each column measures.
+
+    Calls domain_support.run_support() unchanged, so the numbers equal that
+    script's own <dataset>_domain_support.tsv at the same settings. Pooled
+    only (every span of the dataset), as that script is: support is a
+    property of a span, not of a group.
+    """
+    rows = run_support(inputs.domain_file.name, inputs.domains_dir, n_permutations=n_permutations,
+                       n_bootstrap=N_BOOTSTRAP, seed=seed, n_positions=inputs.n_positions)
+    write_tsv(inputs.data_dir / "domain_support.tsv", DOMAIN_SUPPORT_FIELDS, rows)
+    return {"domain_support_permutations": n_permutations, "domain_support_seed": seed,
+            "domain_support_bootstrap": N_BOOTSTRAP}
+
+
+def export_resolution_test(inputs: PermutationInputs, n_permutations: int, seed: int) -> dict:
+    """Write resolution_test.tsv, resolution_trees.tsv and
+    resolution_null.tsv: is the region flatter (less resolved) inside than
+    the structure around it? resolution_test.py's docstring has the measure,
+    the null and how to read it.
+
+    The region is the dataset's word, read from the first row of its
+    highlights file's resolution_test.DEFAULT_REGION_ID highlight (the
+    highlights the bundle carries, export_highlights()). Where to put a
+    language's word is a linguistic call, so there is no default: a dataset
+    with no such highlight runs nothing, writes no table, and its metadata
+    says why (resolution_test_skipped). On 2026-11-25 only nyan1308 has one;
+    English's word is #335.
+
+    Calls resolution_test.run_test() unchanged, so the numbers equal that
+    script's own <dataset>_resolution_<L>-<R>_*.tsv at the same settings;
+    the null tally is that script's _null_tally table.
+    """
+    metadata = {"resolution_test_permutations": n_permutations, "resolution_test_seed": seed}
+    region = (region_in_highlights(inputs.highlights_file, DEFAULT_REGION_ID)
+              if inputs.highlights_file is not None else None)
+    if region is None:
+        return metadata | {"resolution_test_region": None,
+                           "resolution_test_skipped": f"no {DEFAULT_REGION_ID!r} highlight for this dataset"}
+    summary, trees, tally = run_resolution_test(
+        inputs.domain_file.name, inputs.domains_dir, region,
+        n_permutations=n_permutations, seed=seed, n_positions=inputs.n_positions,
+    )
+    write_tsv(inputs.data_dir / "resolution_test.tsv", list(summary), [summary])
+    trees_out = resolution_tree_rows(trees)
+    write_tsv(inputs.data_dir / "resolution_trees.tsv", list(trees_out[0]), trees_out)
+    write_tsv(inputs.data_dir / "resolution_null.tsv", ["difference", "n"],
+              resolution_tally_rows(tally))
+    return metadata | {"resolution_test_region": summary["region"],
+                       "resolution_test_region_source": f"highlights: {DEFAULT_REGION_ID}"}
+
+
+def export_resolution_profile(inputs: PermutationInputs, n_permutations: int, seed: int) -> dict:
+    """Write the resolution profile's five tables: resolution_profile.tsv
+    (every stretch), resolution_jumps.tsv (every one-position step),
+    resolution_positions.tsv (steps by the position added),
+    conflict_junctures.tsv (every juncture) and conflict_quantal.tsv (the
+    largest change in conflict against chance's largest). Their columns are
+    resolution_profile.py's docstring.
+
+    Calls resolution_profile.run_profile() unchanged, so the numbers equal
+    that script's own <dataset>_*.tsv at the same settings. It needs no
+    region, so it runs on every dataset.
+    """
+    profile, jumps, positions, junctures, quantal = run_profile(
+        inputs.domain_file.name, inputs.domains_dir, n_permutations=n_permutations,
+        seed=seed, n_positions=inputs.n_positions)
+    for name, rows in (("resolution_profile.tsv", profile), ("resolution_jumps.tsv", jumps),
+                       ("resolution_positions.tsv", positions), ("conflict_junctures.tsv", junctures),
+                       ("conflict_quantal.tsv", [quantal])):
+        if not rows:
+            raise RuntimeError(f"The resolution profile produced no rows for {name}; "
+                               "the planar structure is too short for it.")
+        write_tsv(inputs.data_dir / name, list(rows[0]), rows)
+    return {"resolution_profile_permutations": n_permutations, "resolution_profile_seed": seed}
+
+
+class PermutationTest(NamedTuple):
+    """One permutation test a bundle can carry. `name` gives its exporter
+    flags (--<name>-permutations N and --<name>-seed S, with - for _) and
+    its metadata keys (<name>_permutations, <name>_seed); `tables` are the
+    files it can write in data/; `help` is its flag's help."""
+    name: str
+    export: Callable[[PermutationInputs, int, int], dict]
+    tables: tuple[str, ...]
+    help: str
+
+    @property
+    def flag(self) -> str:
+        return f"--{self.name.replace('_', '-')}-permutations"
+
+
+# Every permutation test, in the order their flags are listed. The exporter's
+# flags, the tables a re-export clears, laminar/charts.py's flags and the
+# tests' list of tables are all read from here.
+PERMUTATION_TESTS: tuple[PermutationTest, ...] = (
+    PermutationTest(
+        "fragmentation", export_fragmentation_test,
+        ("fragmentation_test.tsv", "fragmentation_null.tsv"),
+        "the class-fragmentation test (is a domain type's family count lower than a "
+        "same-sized random sample of tests gives?)"),
+    PermutationTest(
+        "boundary_strength_test", export_boundary_strength_test,
+        ("boundary_strength_test.tsv",),
+        "the boundary-strength test (is the per-position strength, and its jump from the "
+        "previous position, higher than a same-length-profile random arrangement gives?)"),
+    PermutationTest(
+        "span_placement", export_span_placement_test,
+        ("span_placement_test.tsv", "span_placement_null.tsv"),
+        "the span-placement test (does the real arrangement of a group's spans give fewer "
+        "laminar families than those same span lengths placed at random?)"),
+    PermutationTest(
+        "arbitrary_layers", export_arbitrary_layers_test,
+        ("arbitrary_layers_test.tsv", "arbitrary_layers_null.tsv"),
+        "the arbitrary-layers test (is a group's family count remarkable for that many spans "
+        "of arbitrary size at arbitrary positions? The most naive of the nulls)"),
+    PermutationTest(
+        "domain_support", export_domain_support,
+        ("domain_support.tsv",),
+        "domain support (tests for and against each span, N shuffles, and a bootstrap of "
+        f"{N_BOOTSTRAP} replicates)"),
+    PermutationTest(
+        "resolution_test", export_resolution_test,
+        ("resolution_test.tsv", "resolution_trees.tsv", "resolution_null.tsv"),
+        f"the resolution test (is the word, the dataset's {DEFAULT_REGION_ID!r} highlight, "
+        "flatter than the structure around it? Skipped, saying so in the metadata, when "
+        "there is no such highlight)"),
+    PermutationTest(
+        "resolution_profile", export_resolution_profile,
+        ("resolution_profile.tsv", "resolution_jumps.tsv", "resolution_positions.tsv",
+         "conflict_junctures.tsv", "conflict_quantal.tsv"),
+        "the resolution profile (resolution, crossing and conflict for every stretch, and "
+        "where conflict changes in a jump)"),
+)
+TESTS_BY_NAME = {test.name: test for test in PERMUTATION_TESTS}
+
+
+def _run_one(name: str, inputs: PermutationInputs, n_permutations: int, seed: int) -> dict:
+    """One test, by name, so that a worker process is sent only the name."""
+    return TESTS_BY_NAME[name].export(inputs, n_permutations, seed)
+
+
+def run_permutation_tests(inputs: PermutationInputs, permutations: dict[str, int],
+                          seeds: dict[str, int]) -> dict:
+    """Run every test with draws in `permutations`, side by side, one process
+    each (up to one per processor core), and return their metadata merged.
+
+    Side by side changes no number: each test seeds its own random stream
+    from its own seed and shares nothing with the others (the arbitrary-
+    layers test's raised family cap is set and restored inside its own
+    process). It changes the time: the weekly run's slowest dataset took
+    4 h 22 min with four tests run one after another (2026-11-22), under a
+    5 h 30 min limit, and the resolution profile alone adds about as much
+    as the slowest of them.
+    """
+    asked = [(test.name, permutations[test.name], seeds.get(test.name, 0))
+             for test in PERMUTATION_TESTS if permutations.get(test.name)]
+    if len(asked) <= 1:
+        results = [_run_one(name, inputs, n, seed) for name, n, seed in asked]
+    else:
+        # "spawn" everywhere (the Mac's default, not Linux's), so the weekly
+        # run on GitHub starts its workers exactly as a run here does; a
+        # script calling export_bundle() needs the usual
+        # `if __name__ == "__main__":` guard for it.
+        with ProcessPoolExecutor(max_workers=min(len(asked), os.cpu_count() or 1),
+                                 mp_context=multiprocessing.get_context("spawn")) as pool:
+            futures = [pool.submit(_run_one, name, inputs, n, seed) for name, n, seed in asked]
+            results = [future.result() for future in futures]
+    merged: dict = {}
+    for result in results:
+        merged |= result
+    return merged
 
 
 def export_boundary_strength(domain_file: Path, domains_dir: Path, target_dir: Path,
@@ -996,14 +1199,8 @@ def export_bundle(
     conflict_group_cap: int = 12,
     exemplary_k: int = 6,
     exemplary_include_sparsest: bool = True,
-    fragmentation_permutations: int = 0,
-    fragmentation_seed: int = 0,
-    boundary_strength_test_permutations: int = 0,
-    boundary_strength_test_seed: int = 0,
-    span_placement_permutations: int = 0,
-    span_placement_seed: int = 0,
-    arbitrary_layers_permutations: int = 0,
-    arbitrary_layers_seed: int = 0,
+    permutations: dict[str, int] | None = None,
+    seeds: dict[str, int] | None = None,
 ) -> Path:
     """Export one validated domain dataset and return its bundle directory.
 
@@ -1022,7 +1219,16 @@ def export_bundle(
     ``forest_axis`` is "subset" (default: each per-type forest stops at its
     own last position, as nyan1308's always have) or "planar" (every forest
     runs over the whole planar structure; see export_forests()).
+    ``permutations`` maps a test's name (PERMUTATION_TESTS) to its number
+    of draws, and ``seeds`` to its seed (default 0); a test not given draws
+    is not run, and its tables are not in the bundle.
     """
+    permutations = dict(permutations or {})
+    seeds = dict(seeds or {})
+    unknown = sorted((set(permutations) | set(seeds)) - set(TESTS_BY_NAME))
+    if unknown:
+        raise ValueError(f"No such permutation test: {', '.join(unknown)} "
+                         f"(known: {', '.join(TESTS_BY_NAME)})")
     if not domain_file.exists():
         raise FileNotFoundError(domain_file)
     if groupings not in GROUPINGS:
@@ -1186,50 +1392,20 @@ def export_bundle(
                "alt_colour", "colour_priority", "known"],
               domain_type_rows(observed_types, style))
 
-    # Off unless asked: the permutation test is minutes, the rest of the
-    # export is seconds. A bundle without it has no fragmentation tables
-    # (any from an earlier export are removed below), and
-    # plot_fragmentation_test() says so rather than failing obscurely.
-    fragmentation_metadata: dict = {}
-    if fragmentation_permutations:
-        fragmentation_metadata = export_fragmentation_test(
-            domain_file, domains_dir, data_dir,
-            fragmentation_permutations, fragmentation_seed, bundles, n_positions, style,
-        )
-
-    boundary_strength_test_metadata: dict = {}
-    if boundary_strength_test_permutations:
-        boundary_strength_test_metadata = export_boundary_strength_test(
-            domain_file, domains_dir, data_dir,
-            boundary_strength_test_permutations, boundary_strength_test_seed, bundles, n_positions, style,
-        )
-
-    span_placement_metadata: dict = {}
-    if span_placement_permutations:
-        span_placement_metadata = export_span_placement_test(
-            domain_file, domains_dir, data_dir,
-            span_placement_permutations, span_placement_seed, bundles, n_positions, style,
-        )
-
-    arbitrary_layers_metadata: dict = {}
-    if arbitrary_layers_permutations:
-        arbitrary_layers_metadata = export_arbitrary_layers_test(
-            domain_file, domains_dir, data_dir,
-            arbitrary_layers_permutations, arbitrary_layers_seed, bundles, n_positions, style,
-        )
-
-    # A test not run this time must not leave its tables from an earlier
-    # export behind: the renderer draws a test's chart whenever its table is
-    # there, so a leftover table would be drawn as if it belonged to this data.
-    for ran, names in (
-        (fragmentation_permutations, ["fragmentation_test.tsv", "fragmentation_null.tsv"]),
-        (boundary_strength_test_permutations, ["boundary_strength_test.tsv"]),
-        (span_placement_permutations, ["span_placement_test.tsv", "span_placement_null.tsv"]),
-        (arbitrary_layers_permutations, ["arbitrary_layers_test.tsv", "arbitrary_layers_null.tsv"]),
-    ):
-        if not ran:
-            for name in names:
-                (data_dir / name).unlink(missing_ok=True)
+    # The permutation tests, off unless asked: they take minutes to hours,
+    # the rest of the export seconds. Every test's tables from an earlier
+    # export are removed first, so a test not run this time (or the
+    # resolution test, skipped for want of a region) leaves none behind: the
+    # renderer draws a test's chart whenever its table is there, so a
+    # leftover table would be drawn as if it belonged to this data. A chart
+    # function whose table is missing says so rather than failing obscurely.
+    for test in PERMUTATION_TESTS:
+        for name in test.tables:
+            (data_dir / name).unlink(missing_ok=True)
+    test_metadata = run_permutation_tests(
+        PermutationInputs(domain_file, domains_dir, data_dir, bundles, n_positions, style,
+                          highlights_path(dataset, highlights_file)),
+        permutations, seeds)
 
     metadata = {
         "contract_version": "0.2.0",
@@ -1266,10 +1442,7 @@ def export_bundle(
         # Only for a planars language, so every other bundle is unchanged.
         **({"planars_source": planars_source} if planars_source else {}),
         **selection_metadata,
-        **fragmentation_metadata,
-        **boundary_strength_test_metadata,
-        **span_placement_metadata,
-        **arbitrary_layers_metadata,
+        **test_metadata,
         "producer": "laminar/export_planarsviz_data.py",
         "analysis_source": "laminar/laminar_analysis.py",
     }
@@ -1434,68 +1607,34 @@ def main() -> None:
         "--no-exemplary-sparsest", action="store_true",
         help="Don't add the family with the least evidence to the exemplary selection",
     )
-    parser.add_argument(
-        "--fragmentation-permutations", type=int, default=0, metavar="N",
-        help="Also run the class-fragmentation permutation test with N draws and "
-             "put its two tables in the bundle. Off by default because it is slow: "
-             "5000 draws takes about four minutes against the rest of the export's "
-             "1.6 seconds. Use 5000 to match the committed "
-             "results/nyan1308/counts-and-chance/ files.",
-    )
-    parser.add_argument(
-        "--fragmentation-seed", type=int, default=0,
-        help="Seed for --fragmentation-permutations (default: 0, what made the committed files)",
-    )
-    parser.add_argument(
-        "--boundary-strength-test-permutations", type=int, default=0, metavar="N",
-        help="Also run the boundary-strength permutation test (is the per-position strength, "
-             "and its jump from the previous position, higher than a same-length-profile random "
-             "arrangement?) with N draws and put its table in the bundle. Off by default for the "
-             "same reason as --fragmentation-permutations: one family enumeration per replicate, "
-             "so 5000 draws takes minutes against the rest of the export's ~2 seconds. Use 5000 "
-             "to match the committed results/nyan1308/boundaries/ files.",
-    )
-    parser.add_argument(
-        "--boundary-strength-test-seed", type=int, default=0,
-        help="Seed for --boundary-strength-test-permutations (default: 0, what made the committed files)",
-    )
-    parser.add_argument(
-        "--span-placement-permutations", type=int, default=0, metavar="N",
-        help="Also run the span-placement permutation test (does the real arrangement of a "
-             "group's spans give fewer laminar families than those same span lengths placed at "
-             "random?) with N draws and put its tables in the bundle. Off by default for the "
-             "same reason as --fragmentation-permutations: one family enumeration per replicate. "
-             "Use 5000 to match the committed results/nyan1308/counts-and-chance/ files.",
-    )
-    parser.add_argument(
-        "--span-placement-seed", type=int, default=0,
-        help="Seed for --span-placement-permutations (default: 0, what made the committed files)",
-    )
-    parser.add_argument(
-        "--arbitrary-layers-permutations", type=int, default=0, metavar="N",
-        help="Also run the arbitrary-layers permutation test (is a group's family count "
-             "remarkable for that many spans of arbitrary size at arbitrary positions?) with N "
-             "draws and put its tables in the bundle. The most naive of the three nulls: it "
-             "knows only how many spans a group has, not how big they are. Off by default for "
-             "the same reason as --fragmentation-permutations. Use 5000 to match the committed "
-             "results/nyan1308/counts-and-chance/ files.",
-    )
-    parser.add_argument(
-        "--arbitrary-layers-seed", type=int, default=0,
-        help="Seed for --arbitrary-layers-permutations (default: 0, what made the committed files)",
-    )
+    # One pair of flags per permutation test, from PERMUTATION_TESTS. Each is
+    # off by default because it is slow (one family enumeration per draw:
+    # minutes to hours, against the rest of the export's seconds); 5000 draws,
+    # seed 0, is what made the committed files and what the weekly run uses.
+    # Tests asked for together run side by side (run_permutation_tests()).
+    for test in PERMUTATION_TESTS:
+        parser.add_argument(
+            test.flag, type=int, default=0, metavar="N", dest=f"{test.name}_permutations",
+            help=f"Also run {test.help} with N draws and put its tables in the bundle.",
+        )
+        parser.add_argument(
+            test.flag.removesuffix("-permutations") + "-seed", type=int, default=0,
+            dest=f"{test.name}_seed",
+            help=f"Seed for {test.flag} (default: 0, what made the committed files)",
+        )
     args = parser.parse_args()
 
     output_dir = args.output_dir or bundle_root(args.domain_file.stem.removeprefix("domains_"))
     bundle_dir = export_bundle(args.domain_file, output_dir, args.planar_file,
                                # By name, not position, from here down: this is
                                # the tail of a long signature and each new
-                               # option (a permutation test, --root-position,
-                               # --groupings) adds another. Passed positionally,
-                               # an addition that misses this call silently
-                               # leaves the new option at its default rather
-                               # than failing -- which is exactly what happened
-                               # when --arbitrary-layers-permutations was added.
+                               # option (--root-position, --groupings) adds
+                               # another. Passed positionally, an addition that
+                               # misses this call silently leaves the new option
+                               # at its default rather than failing -- which is
+                               # what happened when --arbitrary-layers-permutations
+                               # was added (the tests now come from
+                               # PERMUTATION_TESTS, so a new one can't miss it).
                                labels_file=args.labels_file,
                                root_element=args.root_element,
                                root_position_override=args.root_position,
@@ -1508,14 +1647,10 @@ def main() -> None:
                                conflict_group_cap=args.conflict_group_cap,
                                exemplary_k=args.exemplary_k,
                                exemplary_include_sparsest=not args.no_exemplary_sparsest,
-                               fragmentation_permutations=args.fragmentation_permutations,
-                               fragmentation_seed=args.fragmentation_seed,
-                               boundary_strength_test_permutations=args.boundary_strength_test_permutations,
-                               boundary_strength_test_seed=args.boundary_strength_test_seed,
-                               span_placement_permutations=args.span_placement_permutations,
-                               span_placement_seed=args.span_placement_seed,
-                               arbitrary_layers_permutations=args.arbitrary_layers_permutations,
-                               arbitrary_layers_seed=args.arbitrary_layers_seed)
+                               permutations={t.name: getattr(args, f"{t.name}_permutations")
+                                             for t in PERMUTATION_TESTS},
+                               seeds={t.name: getattr(args, f"{t.name}_seed")
+                                      for t in PERMUTATION_TESTS})
     print(f"Exported planarsviz bundle: {bundle_dir}")
 
 

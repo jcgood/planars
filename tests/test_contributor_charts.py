@@ -123,7 +123,8 @@ def test_draw_dataset_runs_the_exporter_with_the_tests_then_the_renderer(tmp_pat
                             permutations=5000)
     assert drawn.n_charts == 1 and drawn.pdf.startswith(b"%PDF-")
     export, render = run
-    assert export.count("5000") == 4, "all four permutation tests"
+    from laminar.export_planarsviz_data import PERMUTATION_TESTS
+    assert export.count("5000") == len(PERMUTATION_TESTS), "every permutation test"
     assert "laminar/render_planarsviz.R" in render
 
 

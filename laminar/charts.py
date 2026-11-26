@@ -4,7 +4,8 @@
 the exporter (``laminar/export_planarsviz_data.py``) and the renderer
 (``laminar/render_planarsviz.R``), with options between them that have to
 agree: the dataset's files, its root position, its groupings, its display
-name and the four permutation tests. This command works all of that out
+name and the permutation tests (the exporter's ``PERMUTATION_TESTS``, run
+side by side). This command works all of that out
 from the dataset name, prints the two commands in full, and with
 ``--apply`` runs them. It holds no analysis or drawing code of its own and
 adds no setting the two scripts don't already have.
@@ -82,26 +83,14 @@ from pathlib import Path
 from laminar.datasets import (
     NC, REPO, bundle_root, charts_root, dataset_settings, domain_file, planar_file,
 )
+from laminar.export_planarsviz_data import PERMUTATION_TESTS
 from laminar.planars_language import CODED_DATA, SpanTableError, parse_dataset, write_inputs
 from laminar.planars_language import planar_file as lang_planar_file
 from planars.languages import get_display_name
 
-# The four permutation tests, each switched on by its own exporter flag. A
-# re-export without one of them drops that test's tables from the bundle, so
-# they are always passed together.
-PERMUTATION_FLAGS = [
-    "--fragmentation-permutations",
-    "--boundary-strength-test-permutations",
-    "--span-placement-permutations",
-    "--arbitrary-layers-permutations",
-]
-# One table each test writes, to tell whether a bundle already has them.
-PERMUTATION_TABLES = [
-    "fragmentation_test.tsv",
-    "boundary_strength_test.tsv",
-    "span_placement_test.tsv",
-    "arbitrary_layers_test.tsv",
-]
+# The permutation tests (the exporter's PERMUTATION_TESTS), each switched on
+# by its own exporter flag. A re-export without one of them drops that
+# test's tables from the bundle, so they are always passed together.
 
 BATCH_DIR = NC / "results" / "ccdb_batch"
 
@@ -145,8 +134,8 @@ def export_command(dataset: str, settings: dict, permutations: int,
         if value is not None:
             cmd += [flag, str(value)]
     if permutations:
-        for flag in PERMUTATION_FLAGS:
-            cmd += [flag, str(permutations)]
+        for test in PERMUTATION_TESTS:
+            cmd += [test.flag, str(permutations)]
     return cmd
 
 
@@ -265,10 +254,11 @@ def draw_one(args: argparse.Namespace) -> None:
         shown = "-" if value is None else value
         print(f"  {key:14s} {shown!s:32s} from {source}")
     print(f"  {'permutations':14s} {permutations if permutations else 'off'!s:32s} "
-          f"{'all four tests' if permutations else ''}")
+          f"{f'all {len(PERMUTATION_TESTS)} tests' if permutations else ''}")
 
     bundle_data = bundle_root(dataset) / dataset / "data"
-    had_tests = [t for t in PERMUTATION_TABLES if (bundle_data / t).exists()]
+    had_tests = [t.name for t in PERMUTATION_TESTS
+                 if any((bundle_data / name).exists() for name in t.tables)]
     if not permutations and had_tests:
         print(f"\nNote: the current bundle has permutation-test tables ({', '.join(had_tests)}); "
               "exporting without the tests removes them, and their charts with them.")
@@ -532,10 +522,10 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--apply", action="store_true",
                         help="Run. Without it, only print what would run.")
     parser.add_argument("--permutations", type=int, default=None, metavar="N",
-                        help="Draws for each of the four permutation tests (default 5000, "
+                        help="Draws for each permutation test (default 5000, "
                              "what the committed bundles use).")
     parser.add_argument("--no-permutations", action="store_true",
-                        help="Skip the four permutation tests: the export takes seconds "
+                        help="Skip the permutation tests: the export takes seconds "
                              "instead of minutes, but the bundle then has none of their "
                              "tables or charts.")
     parser.add_argument("--formats", help="Passed to the renderer, e.g. pdf,png (default pdf).")

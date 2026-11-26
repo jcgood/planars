@@ -124,7 +124,10 @@ whole dataset, use `python -m laminar charts <dataset> --apply`.
   `boot_present` beside them.
 - **Output**: `results/nyan1308/counts-and-chance/nyan1308_domain_support.tsv`
 - **Example**: `python -m laminar.domain_support`
-- **Not yet in the bundle** or the weekly run (docs/laminar-analysis-progress.md).
+- **Also in the bundle**, since 2026-11-25: the exporter calls this same
+  `run_support()` behind `--domain-support-permutations` (`domain_support.tsv`,
+  identical to the committed TSV above), and the weekly run includes it. No
+  chart yet.
 
 **`laminar/resolution_test.py`** (2026-11-14)
 - **Purpose**: are words flatter (less resolved) than phrases? Resolution
@@ -155,7 +158,12 @@ whole dataset, use `python -m laminar charts <dataset> --apply`.
   `_<L>-<R>_trees.tsv` (one row per observed tree), `_<L>-<R>_null_tally.tsv`;
   saved for 5–19 and 5–17
 - **Example**: `python -m laminar.resolution_test`; `--region 5-17`
-- **Not yet in the bundle** or the weekly run.
+- **Also in the bundle**, since 2026-11-25, behind
+  `--resolution-test-permutations`, for the `orthographic_word` region only
+  (`resolution_test.tsv`, `_trees.tsv`, `_null.tsv`, identical to the 5–19
+  files above). A dataset with no such highlight (all but nyan1308; English's
+  word is #335) runs nothing, and its metadata says so. In the weekly run. No
+  chart yet.
 
 **`laminar/resolution_profile.py`** (2026-11-15)
 - **Purpose**: resolution across every stretch [a, b] (the 26 real domains
@@ -229,7 +237,10 @@ whole dataset, use `python -m laminar charts <dataset> --apply`.
   `_conflict_junctures.tsv` (one per juncture), `_conflict_quantal.tsv`
   (the quantal test)
 - **Example**: `python -m laminar.resolution_profile`
-- **Not yet in the bundle**, the weekly run or a chart.
+- **Also in the bundle**, since 2026-11-25, behind
+  `--resolution-profile-permutations` (the same five tables, without the
+  dataset prefix, identical to those above), on every dataset, and in the
+  weekly run. No chart yet.
 
 *(The R that drew this test, `analysis/span_placement_test_plot.r`, was
 archived to `NonCollaborative/OlderFiles/planarsviz_superseded/scripts/analysis/` on
@@ -397,7 +408,8 @@ with `groups` for the two-bundle variant — from a bundle exported with
   structures, 2026-09-23; plan `NonCollaborative/docs/PLAN_cross_language_charts.md`). Reads
   the per-language bundles and re-runs no analysis; the one computation of
   its own is the label shuffle behind the conflicts-and-the-divide chart's
-  p-value. Refuses a bundle exported without all four permutation flags.
+  p-value. Refuses a bundle exported without the span-placement,
+  arbitrary-layers and boundary-strength tests.
 - **Output**: `results/chart_data/cross_language/data/` (`structures.tsv`,
   `family_count_tests.tsv`, `pooled_tests.tsv`, `conflict_divide.tsv`,
   `boundary_profile.tsv`, `convergent_spans.tsv`, `summary.tsv`,
@@ -491,6 +503,11 @@ with `groups` for the two-bundle variant — from a bundle exported with
   wording and where each per-domain-type forest's axis stops. A CCDB
   structure sets all of these itself via `python -m laminar charts` below,
   rather than needing them typed by hand.
+- **The permutation tests** are `PERMUTATION_TESTS`, one entry each (its
+  flags `--<test>-permutations N` and `--<test>-seed S`, its tables, its
+  export function); charts.py and the tests read the list from there. Tests
+  asked for together run side by side, one process each, with no number
+  changed (each seeds its own draws).
 - **Records its inputs relative to the repo root** in `metadata.json`
   (`source_domain_file`, `producer`), so a bundle does not depend on where
   the exporter was run from.
@@ -520,8 +537,8 @@ with `groups` for the two-bundle variant — from a bundle exported with
 - **Output**: the bundle in `results/chart_data/<dataset>/`, the charts in
   `results/<dataset>/<topic>/`
 - **Example**: `python -m laminar charts chac1251_verbal --apply`
-  (dry run without `--apply`; all four permutation tests run at 5000 draws
-  by default; `--no-permutations` skips them, `--permutations N` sets the
+  (dry run without `--apply`; every permutation test runs at 5000 draws
+  by default, side by side; `--no-permutations` skips them, `--permutations N` sets the
   count, `--formats pdf,png`, `--plots a,b`)
 
 **`python -m laminar charts --ccdb`**

@@ -207,6 +207,35 @@ percentiles are kept, the same choice already made for
 `boundary_strength_density.tsv`'s curves, since the chart needs an envelope
 band around the observed curve rather than a distribution shape.
 
+**Three tests added 2026-11-25** (in `data/` only, each only when the bundle
+was exported with its flag: `--domain-support-permutations`,
+`--resolution-test-permutations`, `--resolution-profile-permutations`; each
+is that module's standalone output, so its columns are defined once, in the
+module's docstring, not repeated here). No chart draws them yet. Each
+records `n_permutations` and `seed` in its rows and
+`<test>_permutations`/`<test>_seed` in `metadata.json`, as the others do.
+
+- `domain_support.tsv` (`laminar/domain_support.py`): one row per observed
+  span: tests for and against it, a shuffle test, and a bootstrap
+  (`n_bootstrap` replicates, also `domain_support_bootstrap` in the
+  metadata).
+- `resolution_test.tsv` (one row), `resolution_trees.tsv` (one row per
+  observed tree) and `resolution_null.tsv` (the null as a tally,
+  `difference`, `n`) (`laminar/resolution_test.py`): is the word flatter
+  than the structure around it? The word is the first row of the
+  `orthographic_word` highlight in `highlights.tsv`. **A bundle with no such
+  highlight has none of the three tables**, and its metadata has
+  `resolution_test_region: null` and `resolution_test_skipped` saying why:
+  where a language's word is, is a linguistic call, so there is no default.
+  Otherwise `resolution_test_region` is `L-R`.
+- `resolution_profile.tsv` (one row per stretch), `resolution_jumps.tsv`
+  (one per one-position step), `resolution_positions.tsv` (steps by the
+  position added), `conflict_junctures.tsv` (one per juncture) and
+  `conflict_quantal.tsv` (one row) (`laminar/resolution_profile.py`):
+  resolution, crossing and conflict for every stretch, and where conflict
+  changes in a jump. Needs no region, so present for every dataset
+  exported with the flag.
+
 `forests.json` / `forests/<id>.tsv`: the trees of each per-class forest
 (Newick, span order, thickness), computed with the class's own position
 count. Each forest's `label` is what a chart title calls it (a bundle's
@@ -238,6 +267,14 @@ reject a bundle marked as truncated.
   `n_positions` rows for each of `(side, statistic)` — four combinations —
   and `statistic == "jump"` rows at `position == 1` carry `observed == 0`
   (there is no position 0 to jump from).
+- When `domain_support.tsv` is present, it has one row per row of
+  `spans.tsv` that is not synthetic.
+- When `resolution_null.tsv` is present, its `n` values sum to
+  `resolution_test.tsv`'s `n_permutations`, and `resolution_trees.tsv` has
+  `n_maximal_families` rows.
+- When `resolution_profile.tsv` is present, it has one row per stretch
+  (`n_positions * (n_positions - 1) / 2`), and `conflict_junctures.tsv` one
+  per juncture (`n_positions - 1`).
 
 ## Illustrations bundle
 
@@ -302,7 +339,9 @@ illustrations bundle it is its own contract, read with
 `read_planars_cross_language()`. Written by
 `laminar/export_cross_language.py`, which **re-runs no analysis**:
 every number is read from, or arithmetic on, the per-language bundles' tables.
-Every input bundle must have been exported with all four permutation flags.
+Every input bundle must have been exported with the span-placement,
+arbitrary-layers and boundary-strength tests (`python -m laminar charts`
+runs every test).
 
 ```text
 data/
