@@ -432,7 +432,8 @@ def test_the_results_outline_places_every_fragment_and_cites_only_values_it_has(
     fragments = {rel for rel in built if rel.startswith("results/fragments/")}
     assert fragments == {f"results/fragments/{n}.tex" for n in
                          ["analysis_summary", "test_fragmentation", "test_span_placement",
-                          "test_arbitrary_layers"]}
+                          "test_arbitrary_layers"]
+                         + [f["name"] for f in build.outline_figures(build.RESULTS)]}
     for rel in fragments | set(stubs):
         assert f"\\input{{{rel[:-4]}}}" in outline
     assert all("the results chapter" in text for text in stubs.values())
@@ -452,13 +453,84 @@ def test_a_dataset_with_no_words_for_it_fails(monkeypatch):
         build._dataset_words("stan1293_types_all")
 
 
-@needs_latex
-@needs_english
-def test_the_volume_compiles(english, own_english):
-    # The weekly analysis's bundles, so the results chapter's tables are full.
+def _blank_pdf() -> bytes:
+    import io
+    from pypdf import PdfWriter
+    writer, out = PdfWriter(), io.BytesIO()
+    writer.add_blank_page(width=200, height=100)
+    writer.write(out)
+    return out.getvalue()
+
+
+@pytest.fixture()
+def drawn(monkeypatch):
+    """The renderer stood in for: each call to draw_charts is recorded and
+    gives a blank page per chart, so no test needs R."""
+    from laminar import contributor_charts
+    calls = []
+
+    def draw(folder, dataset, charts):
+        calls.append((dataset, tuple(charts)))
+        return {c: (_blank_pdf(), f"Chart {c}") for c in charts}
+    monkeypatch.setattr(contributor_charts, "draw_charts", draw)
+    monkeypatch.setattr(contributor_charts, "code_version", lambda: "code")
+    return calls
+
+
+def _with_weekly_bundles(own_english) -> bool:
+    """Copy English's weekly bundles into the test's own planars-data."""
     real = pl.REPO / "coded_data" / state_files.BUNDLES_DIR.name / "stan1293"
     if real.is_dir():
         shutil.copytree(real, own_english / state_files.BUNDLES_DIR.name / "stan1293")
+    return real.is_dir()
+
+
+@needs_english
+def test_a_figure_is_drawn_once_and_a_dry_run_never_draws(own_english, drawn, capsys):
+    if not _with_weekly_bundles(own_english):
+        pytest.skip("no weekly bundles for English in planars-data")
+    (_vol() / "volume.yaml").parent.mkdir(parents=True, exist_ok=True)
+    (_vol() / "volume.yaml").write_text(VOLUME.replace("stan1293]", "stan1293, results]"),
+                                        encoding="utf-8")
+    _run("--volume", VOL, "--results")
+    assert not drawn and "Would draw" in capsys.readouterr().out
+    _run("--volume", VOL, "--results", "--apply")
+    figures = build.outline_figures(build.RESULTS)
+    assert drawn == [("stan1293_types_all", tuple(f["chart"] for f in figures))]
+    for f in figures:
+        pdf = _vol() / "results" / "figures" / f"stan1293_types_all_{f['chart']}.pdf"
+        assert pdf.read_bytes() == _blank_pdf()
+        fragment = (_vol() / "results" / "fragments" / f"{f['name']}.tex").read_text(encoding="utf-8")
+        assert tex.escape(f"Chart {f['chart']}") in fragment and pdf.stem in fragment
+    capsys.readouterr()
+    _run("--volume", VOL, "--results", "--apply")
+    assert len(drawn) == 1 and "Nothing to change." in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("figure, says", [
+    ({"chart": "x"}, "a figure is"),
+    ({"chart": "x", "dataset": "types_most"}, "not <grouping>_<selection>"),
+    ({"chart": "x y", "dataset": "types_all"}, "letters, digits"),
+])
+def test_a_figure_the_build_cannot_place_fails(monkeypatch, figure, says):
+    monkeypatch.setattr(build, "_outline", lambda kind: [{"heading": "X", "figures": [figure]}])
+    with pytest.raises(ChapterDataError, match=says):
+        build.outline_figures(build.RESULTS)
+
+
+def test_only_the_results_chapter_takes_figures(monkeypatch):
+    monkeypatch.setattr(build, "_outline", lambda kind: [
+        {"heading": "X", "figures": [{"chart": "x", "dataset": "types_all"}]}])
+    with pytest.raises(ChapterDataError, match="only the results chapter"):
+        build.outline_items(build.INTRO, [])
+
+
+@needs_latex
+@needs_english
+def test_the_volume_compiles(english, own_english, drawn):
+    # The weekly analysis's bundles, so the results chapter's tables and
+    # figures are there.
+    _with_weekly_bundles(own_english)
     _run("--volume", VOL, "--intro", "--apply")
     (_vol() / "volume.yaml").write_text(VOLUME.replace("stan1293]", "stan1293, results]"),
                                         encoding="utf-8")

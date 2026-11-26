@@ -33,6 +33,9 @@ draws its PDFs here too, one dataset at a time (``draw_dataset`` with
 ``permutations``): the same PDF, with the four tests' charts, a title naming
 the selection, and a first page saying it is the analysis.
 
+**A chapter's figures** (chapters/build.py, the results chapter) are a few
+charts drawn alone from a committed bundle: ``draw_charts``.
+
 **When to redraw** is ``fingerprint()``: the two domains files (the spans,
 which is all a chart is drawn from apart from the planar file) plus the
 planar file and the chart code (git's record of the code files in
@@ -179,6 +182,22 @@ def draw_dataset(lang_id: str, dataset: str, work: Path, date: str, table,
     pdf, n = combine(charts / dataset, dataset, grouping, lang_id, date, source,
                      analysis=(selection, permutations) if permutations else None)
     return Drawn(grouping, dataset, pdf, n)
+
+
+def draw_charts(bundle_data: Path, dataset: str, charts: list[str]) -> dict[str, tuple[bytes, str]]:
+    """Draw only `charts` (the renderer's names, chart_table()) from the
+    bundle whose data folder is `bundle_data` (``.../<dataset>/data``), into
+    a temporary folder: {chart: (its PDF, its title)}. For a chapter's
+    figures (chapters/build.py); the bundle is only read."""
+    with tempfile.TemporaryDirectory(prefix="chapter_figures_") as tmp:
+        out = Path(tmp)
+        _run(render_command(dataset, "pdf", ",".join(charts), bundle_dir=bundle_data.parent.parent,
+                            output_dir=out), f"Drawing {', '.join(charts)} for {dataset}")
+        rows = {row["chart"]: row for row in _manifest(out / dataset, dataset)}
+        missing = [c for c in charts if c not in rows]
+        if missing:
+            raise DrawingFailed(f"The renderer drew no {', '.join(missing)} for {dataset}.")
+        return {c: ((out / dataset / rows[c]["file"]).read_bytes(), rows[c]["title"]) for c in charts}
 
 
 # ── One PDF ─────────────────────────────────────────────────────────────────

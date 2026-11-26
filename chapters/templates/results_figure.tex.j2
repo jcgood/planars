@@ -1,0 +1,16 @@
+\#{ One chart of the results chapter, once per language of the volume.
+   Context: figures (list of dicts: L, words (the dataset in words), file
+   (the PDF's path without .pdf, or None when the language has no analysis
+   of that dataset at its pin), title (the renderer's title for the chart)). }
+\BLOCK{for f in figures}
+\BLOCK{if f.file}
+\begin{figure}[p]
+\centering
+\includegraphics[width=\linewidth,height=0.8\textheight,keepaspectratio]{\VAR{path(f.file)}}
+\caption{\VAR{f.title}: \pv{\VAR{f.L}.language.display_name}, \VAR{f.words|lower}}
+\end{figure}
+\BLOCK{else}
+No analysis of \pv{\VAR{f.L}.language.name} (\VAR{f.words|lower}) was drawn from this version of the
+data, so its chart is left out.
+\BLOCK{endif}
+\BLOCK{endfor}

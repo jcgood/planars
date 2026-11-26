@@ -40,7 +40,8 @@ used starts that volume. In each volume's folder:
   chapter alone, so each writer compiles only their own.
 - one folder per part: ``chapter.tex`` (the outline: sections in the order
   of ``chapters/templates/outline.yaml``, each with its prose slot and
-  then its fragments), ``fragments/``, ``prose/``, and for a language
+  then its fragments), ``fragments/``, ``prose/``, for the results
+  chapter ``figures/``, and for a language
   ``values.tex`` (every named value, ``\\pvset{name}{value}``) and
   ``data.lock`` (its pin, below).
 
@@ -99,7 +100,12 @@ numbers are the ones its language's chapter shows: ``analysis_summary.tex``
 version) and ``test_<test>.tex`` for each permutation test (each group's
 families observed and by chance, and its p-value), every number a ``\\pv``
 from the language's values.tex. Which test bears on which hypothesis is
-prose. The daily check compares language chapters only; a change under the
+prose. **Figures:** the charts a results section's ``figures`` names in
+outline.yaml (the renderer's chart and a dataset), one per language, drawn
+from the language's bundle at its pin into ``results/figures/`` with
+``figure_<dataset>_<chart>.tex`` placing them; ``results/figures/figures.lock``
+records what each was drawn from, so R runs (about a minute) only for a
+figure whose bundle, chart or chart code changed, and never in a dry run. The daily check compares language chapters only; a change under the
 results chapter shows there as a change in its language's values, and the
 prose it lists to reread includes the results chapter's.
 
@@ -123,6 +129,7 @@ The wording is in chapters/templates/ (chapters.tex says how they work).
 from __future__ import annotations
 
 import argparse
+import hashlib
 import re
 import sys
 from datetime import datetime, timezone
@@ -134,7 +141,7 @@ from chapters import tex
 from chapters.data import (PERMUTATION_TESTS, ChapterData, ChapterDataError, chapter_data,
                            is_glossed, split_examples)
 from coding import file_door
-from laminar.planars_language import dataset_names, parse_dataset
+from laminar.planars_language import dataset_name, dataset_names, parse_dataset
 from planars.languages import get_display_name, get_entry
 from planars.reports import span_constructions
 from planars.schema_values import is_keystone
@@ -308,6 +315,77 @@ def results_fragments(chapters: list) -> dict:
     return out
 
 
+FIGURES = "figures"
+FIGURE_LOCK = "figures.lock"
+FIGURE_LOCK_HEADER = (
+    "# figures.lock: for each figure of the results chapter, what it was drawn from\n"
+    "# (a hash of its bundle's metadata, the chart and the chart code) and its\n"
+    "# title. A figure is redrawn only when that changes. Written by\n"
+    "# `python -m coding build-chapters`; never edit it by hand.\n")
+
+
+def _figure_fingerprint(bundle_data, chart: str, code: str) -> str:
+    digest = hashlib.sha256((bundle_data / "metadata.json").read_bytes())
+    digest.update(f"\n{chart}\n{code}".encode("utf-8"))
+    return digest.hexdigest()
+
+
+def results_figures(vol: str, chapters: list, figures: list, apply: bool) -> tuple[dict, dict, list]:
+    """({path in the volume's folder: content} built, {fragment file: text},
+    lines to print) for the results chapter's `figures` (outline_figures),
+    one per figure and language, each drawn from the language's bundle at its
+    pin. A figure whose bundle, chart and chart code are what figures.lock
+    records is kept as it is, so R runs only when something changed; a dry
+    run never draws (a figure it would draw shows as one it would write)."""
+    from laminar import contributor_charts
+    if not figures:
+        return {}, {}, []
+    lock_rel = f"{RESULTS}/{FIGURES}/{FIGURE_LOCK}"
+    old = yaml.safe_load(file_door.read_paper(file_door.paper_built(f"{vol}/{lock_rel}")) or "") or {}
+    code = contributor_charts.code_version()
+    record, built, shown, to_draw, lines = {}, {}, {}, {}, []
+    for fig in figures:
+        shown[fig["name"]] = []
+        for chapter in chapters:
+            L = chapter.lang_id
+            dataset = dataset_name(L, fig["grouping"], fig["selection"])
+            entry = {"L": L, "words": _dataset_words(dataset), "file": None, "title": ""}
+            shown[fig["name"]].append(entry)
+            folder = chapter.bundles.get(dataset)
+            if folder is None:
+                continue
+            stem = f"{L}_{fig['grouping']}_{fig['selection']}_{fig['chart']}"
+            rel = f"{RESULTS}/{FIGURES}/{stem}.pdf"
+            entry["file"] = rel.removesuffix(".pdf")
+            fingerprint = _figure_fingerprint(folder, fig["chart"], code)
+            target = file_door.paper_built(f"{vol}/{rel}")
+            was = old.get(stem) or {}
+            if was.get("fingerprint") == fingerprint and target.path.exists():
+                built[rel], entry["title"] = target.path.read_bytes(), was["title"]
+            else:
+                to_draw.setdefault((dataset, folder), []).append((fig["chart"], stem, rel, entry))
+                built[rel], entry["title"] = b"", was.get("title", fig["chart"])
+            record[stem] = {"fingerprint": fingerprint, "title": entry["title"]}
+    for (dataset, folder), wanted in to_draw.items():
+        charts = [chart for chart, *_rest in wanted]
+        if not apply:
+            lines.append(f"Would draw {', '.join(charts)} from {dataset} (new, or its bundle or "
+                         f"the chart code changed).")
+            continue
+        try:
+            drawn = contributor_charts.draw_charts(folder, dataset, charts)
+        except contributor_charts.DrawingFailed as e:
+            raise ChapterDataError(f"The results chapter's figures: {e}")
+        for chart, stem, rel, entry in wanted:
+            built[rel], entry["title"] = drawn[chart]
+            record[stem]["title"] = entry["title"]
+        lines.append(f"Drew {', '.join(charts)} from {dataset}.")
+    built[lock_rel] = FIGURE_LOCK_HEADER + yaml.safe_dump(record, sort_keys=True, allow_unicode=True)
+    fragments = {f"{name}.tex": tex.render("results_figure.tex.j2", figures=entries)
+                 for name, entries in shown.items()}
+    return built, fragments, lines
+
+
 VALUES_HEADER = ("% values.tex: every value the chapter can cite, as \\pvset{name}{value}.\n"
                  "% Written by `python -m coding build-chapters`; never edit it by hand.\n")
 
@@ -327,7 +405,44 @@ MAIN = "main.tex"
 STY_FILE = "planarschapter.sty"
 # What a prose stub holds until someone writes in it.
 SLOT_MARK = "\\proseslot{"
-_SECTION_KEYS = {"heading", "slot", "who", "says", "fragments", "classes", "class_fragments"}
+_SECTION_KEYS = {"heading", "slot", "who", "says", "fragments", "classes", "class_fragments",
+                 "figures"}
+_FIGURE_KEYS = {"chart", "dataset"}
+_CHART_NAME = re.compile(r"[A-Za-z0-9_]+")
+
+
+def figure_specs(section: dict, kind: str) -> list:
+    """A section's `figures` (outline.yaml), checked: [{chart, grouping,
+    selection, name}], `name` being the fragment that holds the figure."""
+    figures = section.get("figures") or []
+    if figures and kind != RESULTS:
+        raise ChapterDataError(f"outline.yaml ({kind}): only the {RESULTS} chapter takes `figures` "
+                               f"(they are drawn from each language's analysis): {section}")
+    out = []
+    for fig in figures:
+        if not isinstance(fig, dict) or set(fig) != _FIGURE_KEYS:
+            raise ChapterDataError(f"outline.yaml ({kind}): a figure is {{chart: <the renderer's "
+                                   f"name>, dataset: <grouping>_<selection>}}, e.g. {{chart: "
+                                   f"all_families_labeled_legend, dataset: types_all}}: {fig}")
+        grouping, _sep, selection = str(fig["dataset"]).partition("_")
+        if grouping not in GROUPING_WORDS or selection not in SELECTION_WORDS:
+            raise ChapterDataError(
+                f"outline.yaml ({kind}): figure dataset {fig['dataset']!r} is not <grouping>_"
+                f"<selection> (groupings {', '.join(GROUPING_WORDS)}; selections "
+                f"{', '.join(SELECTION_WORDS)}).")
+        chart = str(fig["chart"])
+        if not _CHART_NAME.fullmatch(chart):
+            raise ChapterDataError(f"outline.yaml ({kind}): figure chart {chart!r}: a chart's name "
+                                   f"is letters, digits and _ (`Rscript laminar/render_planarsviz.R "
+                                   f"--bundle <bundle folder> --list` lists a bundle's charts).")
+        out.append({"chart": chart, "grouping": grouping, "selection": selection,
+                    "name": f"figure_{grouping}_{selection}_{chart}"})
+    return out
+
+
+def outline_figures(kind: str) -> list:
+    """Every figure the outline of `kind` places, in order."""
+    return [f for section in _outline(kind) for f in figure_specs(section, kind)]
 
 
 def _outline(kind: str) -> list:
@@ -354,6 +469,9 @@ def outline_items(kind: str, classes: list) -> list:
             raise ChapterDataError(f"outline.yaml ({kind}): a section with a prose slot needs "
                                    f"`who` and `says` (its stub's instructions): {section}")
         if section.get("classes"):
+            if section.get("figures"):
+                raise ChapterDataError(f"outline.yaml ({kind}): a `classes` section takes no "
+                                       f"`figures`; give them a section of their own: {section}")
             if not section.get("class_fragments"):
                 raise ChapterDataError(f"outline.yaml ({kind}): a `classes` section needs "
                                        f"`class_fragments` (e.g. [class]): {section}")
@@ -369,9 +487,11 @@ def outline_items(kind: str, classes: list) -> list:
                            "who": section["who"],
                            "says": section["says"]} for cls, display_name in members]
         else:
+            fragments = (list(section.get("fragments") or [])
+                         + [f["name"] for f in figure_specs(section, kind)])
             items.append({"command": "section" if section.get("heading") else None,
                           "heading": section.get("heading"), "domain": None, "in_domain": None,
-                          "slot": section.get("slot"), "fragments": list(section.get("fragments") or []),
+                          "slot": section.get("slot"), "fragments": fragments,
                           "who": section.get("who"), "says": section.get("says")})
     return items
 
@@ -565,14 +685,15 @@ def results_chapters(vol: str, languages: list) -> list:
 
 
 def part_files(vol: str, part: str, position: int | None = None, update: bool = False,
-               parts: list | None = None, languages: list | None = None
+               parts: list | None = None, languages: list | None = None, apply: bool = False
                ) -> tuple[dict, dict, list, dict]:
     """({path in the volume's folder: text} built, {path: text} stubs, lines
     to print, {name: value} the part's values) for one part of volume `vol`.
     A language is built from its pin (``pinned_position``); `update` moves
     the pin to `position`. `parts` are the parts whose prose the report
     looks through; `languages` the volume's language chapters, which the
-    results chapter reports on."""
+    results chapter reports on; `apply` lets it draw the results chapter's
+    figures (a dry run never does)."""
     entries = _class_entries()
     changed, report = set(), []
     if part == INTRO:
@@ -580,11 +701,14 @@ def part_files(vol: str, part: str, position: int | None = None, update: bool = 
         classes = [(name, e["display_name"], e["domain_type"]) for name, e in entries.items()]
     elif part == RESULTS:
         chapters = results_chapters(vol, languages or [])
-        fragments, L, built, classes = results_fragments(chapters), None, {}, []
+        fragments, L, classes = results_fragments(chapters), None, []
+        built, figure_fragments, drew = results_figures(vol, chapters, outline_figures(RESULTS),
+                                                        apply)
+        fragments.update(figure_fragments)
         values = {k: v for c in chapters for k, v in c.values.items()}
         said = [f"Results in volume {vol}: " + "; ".join(
             f"{get_display_name(c.lang_id)} at {_pin(c.version)}, {len(c.bundles)} of "
-            f"{len(dataset_names(c.lang_id))} analyses" for c in chapters)]
+            f"{len(dataset_names(c.lang_id))} analyses" for c in chapters)] + drew
     else:
         lock = read_lock(vol, part)
         chapter = chapter_data(part, position=pinned_position(vol, part, lock, position, update))
@@ -685,6 +809,8 @@ def read_volume(vol: str, lang: str | None = None) -> tuple[dict, str | None]:
 # ── Writing ─────────────────────────────────────────────────────────────────
 
 PART_BUILT = {"chapter.tex", "values.tex", LOCK}
+# A part's folders the build makes whole: what it no longer makes there is deleted.
+BUILT_FOLDERS = ("fragments", FIGURES)
 
 
 def _is_part(name: str) -> bool:
@@ -700,7 +826,7 @@ def is_built(rel: str) -> bool:
     """Whether the build makes the file at ``rel`` (a path in a volume's
     folder, ``.papers/<volume>/``): the volume's main.tex, its .sty files
     and ``<part>.tex``, and in a part's folder chapter.tex, values.tex,
-    data.lock and fragments/.
+    data.lock, fragments/ and figures/.
     Everything else is a person's: volume.yaml, prose/, and any file a
     writer adds (a figure, a .bib), which sync-overleaf carries both ways.
     ``write`` refuses a build that disagrees, so this can't drift."""
@@ -712,7 +838,7 @@ def is_built(rel: str) -> bool:
         return False
     if len(parts) == 2:
         return parts[1] in PART_BUILT
-    return parts[1] == "fragments"
+    return parts[1] in BUILT_FOLDERS
 
 
 def write(vol: str, built: dict, stubs: dict, parts: list, apply: bool) -> list:
@@ -727,7 +853,8 @@ def write(vol: str, built: dict, stubs: dict, parts: list, apply: bool) -> list:
     report = []
     for rel, text in sorted(built.items()):
         target = file_door.paper_built(f"{vol}/{rel}")
-        if file_door.read_paper(target) == text:
+        content = text.encode("utf-8") if isinstance(text, str) else text
+        if target.path.exists() and target.path.read_bytes() == content:
             continue
         report.append(f"{did} {vol}/{rel}")
         if apply:
@@ -740,12 +867,14 @@ def write(vol: str, built: dict, stubs: dict, parts: list, apply: bool) -> list:
         if apply:
             file_door.write_paper(target, text)
     for part in parts:
-        for path in file_door.paper_files(f"{vol}/{part}/fragments", "*.tex"):
-            rel = f"{part}/fragments/{path.name}"
-            if rel not in built:
-                report.append(f"{'deleted' if apply else 'would delete'} {vol}/{rel} (no longer made)")
-                if apply:
-                    file_door.remove_paper(file_door.paper_built(f"{vol}/{rel}"))
+        for folder in BUILT_FOLDERS:
+            for path in file_door.paper_files(f"{vol}/{part}/{folder}", "*"):
+                rel = f"{part}/{folder}/{path.name}"
+                if path.is_file() and rel not in built:
+                    report.append(f"{'deleted' if apply else 'would delete'} {vol}/{rel} "
+                                  f"(no longer made)")
+                    if apply:
+                        file_door.remove_paper(file_door.paper_built(f"{vol}/{rel}"))
     return report
 
 
@@ -1052,7 +1181,7 @@ def build_volume(vol: str, args: argparse.Namespace) -> list:
     print(f"Volume {vol}" + (" (new)" if volume_stub else "") + f": {volume['title']}")
     for part in parts:
         part_built, part_stubs, said, part_values = part_files(vol, part, args.position, args.update,
-                                                               prose_parts, languages)
+                                                               prose_parts, languages, args.apply)
         built.update(part_built)
         stubs.update(part_stubs)
         values.update(part_values)

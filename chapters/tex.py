@@ -201,6 +201,7 @@ STY =r"""% planarschapter.sty: macros the generated fragments use.
 \RequirePackage{booktabs}
 \RequirePackage{longtable}
 \RequirePackage{array}
+\RequirePackage{graphicx}
 % \pvset{name}{value} stores a value (values.tex); \pv{name} prints it.
 % A name with no value prints in bold and warns, so it is seen, not skipped.
 % Robust, so a value can sit in a heading that goes into the contents.

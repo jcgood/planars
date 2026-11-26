@@ -487,7 +487,13 @@ Open with Jeff: where annotators' chapter drafts live, and whether
   a permutation test, since the daily bundles have none. A language
   chapter's values gain each group's `n`, `null_p05` and `null_p95`, so its
   next build reports them as changes from the code.
-- **Not yet:** figures. The laminar charts are drawn by R into files that
-  aren't committed (`.analysis/<L>/charts/`, and the weekly PDF on Drive),
-  so placing one in a chapter needs a choice of which charts and a way to
-  draw them at the pin.
+- **Figures (Jeff, 2026-11-25: the combined forest and the domain-coloured
+  span bars for now, easy to change):** a section's `figures` in
+  `outline.yaml`, each `{chart, dataset}` (the renderer's chart name, the
+  dataset's grouping and selection); now `all_families_labeled_legend` and
+  `pooled_domainplot`, both from `types_all`, in "The analysis". The build
+  draws each, per language, from the bundle at the chapter's pin
+  (`contributor_charts.draw_charts`) and redraws only when the bundle, the
+  chart or the chart code changes (`figures.lock`), since R takes about a
+  minute and stamps the date into every PDF. Changing the charts is
+  editing that list.
