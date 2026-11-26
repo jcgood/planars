@@ -100,9 +100,13 @@ The draft is an unpublished manuscript, so it lives in planars-data's
    (`migrations/papers_into_volume_folders.py`). The report's volume is
    started once items 2 and 3 give it a chapter kind and a venue. Details:
    `docs/chapter-generation-plan.md` § "More than one volume".
-2. **A results chapter kind** in `chapters/templates/outline.yaml` (the
-   chapter plan names it; only `language` and `intro` exist): the
-   hypotheses' tests and the laminar figures, citing values.
+2. **Built 2026-11-25 (all but figures): a results chapter kind**, the
+   part `results` (`build-chapters --results`): the analysis summary and
+   the three permutation tests' tables, citing values, and a prose slot
+   per hypothesis. Chapters now read the weekly bundles in `.bundles/`.
+   Details: `docs/chapter-generation-plan.md` § "The results chapter".
+   The laminar figures are still to come: which charts, and how to draw
+   them at the pin, is open with Jeff.
 3. **A report venue file** (`chapters/venues/report.sty`): an article-like
    layout, not the book's.
 4. **The laminar modules in the bundle** (already the next step in

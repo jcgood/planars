@@ -1,14 +1,9 @@
 \#{ The starting text of a prose slot, made once and never written over.
    Everything here but the last line is a comment, so nothing is escaped
-   (Tex). Context: L (glottocode, or None for the introduction), chapter
-   (the language's display name, or None), slot, heading (the section's,
-   or None), in_domain (a class subsection's domain type, or None), who,
-   says. }
-\BLOCK{if L}
-\BLOCK{set where = "the " ~ chapter ~ " chapter"}
-\BLOCK{else}
-\BLOCK{set where = "the introduction"}
-\BLOCK{endif}
+   (Tex). Context: L (glottocode, or None for a part that is not a
+   language's), where (the chapter in words: "the English [stan1293]
+   chapter", "the introduction"), slot, heading (the section's, or None),
+   in_domain (a class subsection's domain type, or None), who, says. }
 \BLOCK{if in_domain}
 % Prose slot "\VAR{Tex(slot)}": the \VAR{Tex(heading)} subsection of the
 % \VAR{Tex(in_domain)} diagnostics, in \VAR{Tex(where)}.

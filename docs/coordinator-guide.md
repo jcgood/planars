@@ -365,8 +365,10 @@ charts, four at a time. For English that took about 100 minutes
 minutes. Bundles and charts go to `coded_data/.analysis/{lang}/`
 (`chart_data/`, `charts/{dataset}/`): working files on your machine, which
 planars-data's `.gitignore` leaves out, so nothing is committed. Each bundle's
-`metadata.json` (`planars_source`) says which planars-data commit it came from
-and how complete the annotation was.
+`metadata.json` (`planars_source`) says which data version it came from (its
+`stamp`: the language's change-log position) and how complete the annotation
+was. The weekly full analysis keeps its own bundles, committed in
+planars-data's `.bundles/{lang}/`; chapters read those first.
 
 **Setting up a machine for the first time** (once):
 

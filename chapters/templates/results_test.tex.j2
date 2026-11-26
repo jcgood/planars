@@ -1,0 +1,35 @@
+\#{ One permutation test's results, one table per language of the volume,
+   grouped by dataset. Context: test (its name in words), count (what a
+   group's n counts: "tests" or "spans"), languages (list of dicts: L,
+   datasets: list of dicts: words, rows: list of dicts: label, key (the
+   stem of the group's values))). }
+\BLOCK{for lang in languages}
+\subsection*{\VAR{test|capitalize}: \pv{\VAR{lang.L}.language.display_name}}
+\BLOCK{if lang.datasets}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.34\linewidth} r r r r r@{}}
+\caption{The \VAR{test} for \pv{\VAR{lang.L}.language.name}: laminar families observed and
+drawn by chance (mean, and the middle 90\%), and the share of draws with as few}\\
+\toprule
+Group & \VAR{count|capitalize} & Observed & Chance & 90\% & $p$ \\
+\midrule
+\endfirsthead
+\toprule
+Group & \VAR{count|capitalize} & Observed & Chance & 90\% & $p$ \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\BLOCK{for d in lang.datasets}
+\BLOCK{if not loop.first}
+\midrule
+\BLOCK{endif}
+\multicolumn{6}{@{}l}{\emph{\VAR{d.words}}} \\
+\BLOCK{for r in d.rows}
+\VAR{r.label} & \VAR{pv(r.key ~ ".n")} & \VAR{pv(r.key ~ ".observed")} & \VAR{pv(r.key ~ ".null_mean")} & \VAR{pv(r.key ~ ".null_p05")}--\VAR{pv(r.key ~ ".null_p95")} & \VAR{pv(r.key ~ ".p_value")} \\
+\BLOCK{endfor}
+\BLOCK{endfor}
+\end{longtable}
+\BLOCK{else}
+No analysis of \pv{\VAR{lang.L}.language.name} in this build has the \VAR{test}.
+\BLOCK{endif}
+\BLOCK{endfor}

@@ -1,0 +1,30 @@
+\#{ What the analysis covers, one table per language of the volume. Context:
+   languages (list of dicts: L, datasets: list of dicts: words (the
+   grouping and selection in words), base (the stem of its values);
+   absent: the datasets in words that this build has no analysis of). }
+\BLOCK{for lang in languages}
+\subsection*{\pv{\VAR{lang.L}.language.display_name}}
+\BLOCK{if lang.datasets}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.34\linewidth} r r r r r@{}}
+\caption{The analysis of \pv{\VAR{lang.L}.language.name}, at change-log line
+\pv{\VAR{lang.L}.data.position} (\pv{\VAR{lang.L}.data.date})}\\
+\toprule
+Dataset & Positions & Tests & Spans & Families & Conflicts \\
+\midrule
+\endfirsthead
+\toprule
+Dataset & Positions & Tests & Spans & Families & Conflicts \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\BLOCK{for d in lang.datasets}
+\VAR{d.words} & \VAR{pv(d.base ~ ".positions")} & \VAR{pv(d.base ~ ".tests")} & \VAR{pv(d.base ~ ".spans")} & \VAR{pv(d.base ~ ".families")} & \VAR{pv(d.base ~ ".conflict_pairs")} \\
+\BLOCK{endfor}
+\end{longtable}
+\BLOCK{endif}
+\BLOCK{if lang.absent}
+Not in this build, because no analysis was drawn from this version of the data:
+\VAR{lang.absent|join("; ")}.
+\BLOCK{endif}
+\BLOCK{endfor}

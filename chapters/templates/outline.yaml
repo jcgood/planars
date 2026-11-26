@@ -57,6 +57,49 @@ language:
       do not, and what that says about constituency in this language.
     fragments: [spans_table]
 
+# The results chapter: the analysis of every language in the volume, each
+# read at its own chapter's pin. The tables are generated; which test bears
+# on which hypothesis, and what the numbers show, is prose.
+results:
+  - heading: The analysis
+    slot: analysis
+    who: Jeff Good and Adam Tallman
+    says: >-
+      What was analysed: the datasets (spans grouped by domain type or by
+      class; every span, those from complete or partial positions, or
+      distinct spans), what a laminar family and a conflict are, and how to
+      read the table that follows, written by the build.
+    fragments: [analysis_summary]
+  - heading: The permutation tests
+    slot: tests
+    who: Jeff Good and Adam Tallman
+    says: >-
+      What each of the three tests asks (the fragmentation test shuffles
+      domain-type labels; the span-placement test keeps each span's length
+      and moves it; the arbitrary-layers test draws spans of any size), and
+      why three. Their tables follow, written by the build.
+    fragments: [test_fragmentation, test_span_placement, test_arbitrary_layers]
+  - heading: The tree hypothesis
+    slot: tree
+    who: Jeff Good and Adam Tallman
+    says: >-
+      Whether the domains nest, and which numbers above show it, cited by
+      name (\pv) rather than typed.
+  - heading: The morphosyntax/phonology divide
+    slot: divide
+    who: Jeff Good and Adam Tallman
+    says: >-
+      Whether deviations from nesting fall between morphosyntactic and
+      phonological diagnostics rather than within either, from the
+      per-group results above.
+  - heading: The word hypothesis
+    slot: word
+    who: Jeff Good and Adam Tallman
+    says: >-
+      Whether some diagnostics converge on a span that partitions the
+      larger domain. Needs each language's word chosen (English: #335);
+      until then, say what is still open.
+
 intro:
   - heading: The question
     slot: argument

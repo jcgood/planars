@@ -48,7 +48,9 @@ chapter citing several languages has one namespace. The groups:
 - ``<L>.analysis.<grouping>.<selection>.*``: positions, tests, spans,
   families, conflict_pairs, and for each permutation test in the bundle
   (fragmentation, span_placement, arbitrary_layers) and each group,
-  ``<test>.<group>.observed``, ``.null_mean``, ``.p_value``.
+  ``<test>.<group>.observed``, ``.null_mean``, ``.p_value``, ``.n`` (the
+  group's tests or spans) and ``.null_p05``, ``.null_p95`` (the middle 90%
+  of the counts drawn by chance).
 
 **Tables** (pandas DataFrames): ``planar`` (the planar file), ``diagnostics``
 (one row per class and construction, in the schema's class order, with its
@@ -57,11 +59,15 @@ domain type and criteria as ``{criterion: [values]}``), ``completeness`` (one ro
 that has any, with its count), ``examples`` (every annotation row with
 an Example, its row identified by the schema's row columns, with its Gloss,
 Translation and Source; ``split_examples`` splits a row into its examples,
-and ``missing`` lists a glossed row whose cells don't pair up).
+and ``missing`` lists a glossed row whose cells don't pair up), ``analysis``
+(one row per dataset, permutation test and group in the bundles used, with
+the group's label and the stem of its values; what a results chapter's
+tables are built from).
 
-**The analysis** comes from the laminar bundles in the clone's
-``.analysis/<L>/chart_data/`` (working files, never committed; the weekly
-full analysis, laminar plan 4d, will keep them current). A bundle is used
+**The analysis** comes from the laminar bundles (``bundle_folders``): the
+weekly full analysis's, committed in planars-data's ``.bundles/<L>/`` (laminar
+plan 4d; the only ones with the permutation tests), else the daily working
+ones in ``.analysis/<L>/chart_data/`` (never committed). A bundle is used
 only when it was drawn from the same spans and planar file as the version
 being read: the domains file this version gives, rebuilt here, must have
 the hash the bundle records (``source_domain_sha256``), and likewise the
@@ -88,7 +94,7 @@ from typing import Iterator, Optional
 import pandas as pd
 import yaml
 
-from coding import file_door, source_log, versions
+from coding import file_door, source_log, state_files, versions
 from laminar import planars_language as _pl
 from laminar.datasets import bundle_root
 from planars.languages import get_display_name, get_entry
@@ -105,6 +111,15 @@ PERMUTATION_TESTS = {
     "span_placement_test": "span_placement",
     "arbitrary_layers_test": "arbitrary_layers",
 }
+
+# A permutation test's further columns -> value name: how many tests (the
+# fragmentation test) or spans (the others) the group has, and the middle
+# 90% of the counts drawn by chance.
+TEST_EXTRAS = {"n_tests": "n", "n_spans": "n", "null_p05": "null_p05", "null_p95": "null_p95"}
+
+# The ``analysis`` table: one row per dataset, permutation test and group,
+# with the group's label and the stem of its values (``Key``).
+ANALYSIS_COLUMNS = ["Dataset", "Grouping", "Selection", "Test", "Group", "Label", "Key"]
 
 # Bundle metadata field -> value name.
 BUNDLE_COUNTS = {
@@ -343,9 +358,21 @@ def _sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def bundle_folders(lang_id: str, dataset: str) -> list:
+    """Where a dataset's bundle may be, in the order they are tried: the
+    weekly analysis's, committed in planars-data (``.bundles/<L>/<dataset>/``,
+    with the four permutation tests), then the daily working one
+    (``.analysis/<L>/chart_data/``, never committed, without them). Read
+    from the planars-data the local-file door keeps (``file_door.CODED_DATA``),
+    as the language's files are."""
+    weekly = file_door.CODED_DATA / state_files.BUNDLES_DIR.name / lang_id / dataset / "data"
+    return [weekly, bundle_root(dataset) / dataset / "data"]
+
+
 def _analysis(lang_id: str, root: Path, chapter: ChapterData) -> None:
     """Values from each of the language's laminar bundles that was drawn from
     the same spans and planar file as this version (module docstring)."""
+    chapter.tables["analysis"] = pd.DataFrame(columns=ANALYSIS_COLUMNS)
     try:
         table = _pl.span_table(lang_id, repo_root=root)
     except _pl.NoSpansYet:
@@ -353,21 +380,29 @@ def _analysis(lang_id: str, root: Path, chapter: ChapterData) -> None:
         return
     planar_text = (root / "coded_data" / lang_id / "lang_setup" / f"planar_{lang_id}.tsv").read_text(encoding="utf-8")
     not_drawn, other_data, without_tests = [], {}, {}
+    rows = []
     for dataset in _pl.dataset_names(lang_id):
         _lang, grouping, selection = _pl.parse_dataset(dataset)
-        folder = bundle_root(dataset) / dataset / "data"
-        metadata_path = folder / "metadata.json"
-        if not metadata_path.exists():
-            not_drawn.append(dataset)
-            continue
-        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
         domains_text = _pl.domains_frame(_pl.select(table, selection), grouping).to_csv(sep="\t", index=False)
-        if (metadata.get("source_domain_sha256") != _sha256(domains_text)
-                or metadata.get("source_planar_sha256") != _sha256(planar_text)):
-            stamp = (metadata.get("planars_source") or {}).get("stamp") or {}
-            drawn_at = (stamp.get("languages") or {}).get(lang_id, {}).get("position")
-            other_data.setdefault("unknown" if drawn_at is None else f"line {drawn_at}",
-                                  []).append(dataset)
+        folder, drawn_elsewhere = None, None
+        for candidate in bundle_folders(lang_id, dataset):
+            metadata_path = candidate / "metadata.json"
+            if not metadata_path.exists():
+                continue
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            if (metadata.get("source_domain_sha256") == _sha256(domains_text)
+                    and metadata.get("source_planar_sha256") == _sha256(planar_text)):
+                folder = candidate
+                break
+            if drawn_elsewhere is None:
+                stamp = (metadata.get("planars_source") or {}).get("stamp") or {}
+                drawn_at = (stamp.get("languages") or {}).get(lang_id, {}).get("position")
+                drawn_elsewhere = "unknown" if drawn_at is None else f"line {drawn_at}"
+        if folder is None:
+            if drawn_elsewhere is None:
+                not_drawn.append(dataset)
+            else:
+                other_data.setdefault(drawn_elsewhere, []).append(dataset)
             continue
         chapter.bundles[dataset] = folder
         base = f"analysis.{grouping}.{selection}"
@@ -385,6 +420,12 @@ def _analysis(lang_id: str, root: Path, chapter: ChapterData) -> None:
                 chapter.values[f"{key}.observed"] = int(row["observed_families"])
                 chapter.values[f"{key}.null_mean"] = float(row["null_mean"])
                 chapter.values[f"{key}.p_value"] = float(row["p_value_le_observed"])
+                for column, name in TEST_EXTRAS.items():
+                    if column in row and row[column] != "":
+                        chapter.values[f"{key}.{name}"] = int(float(row[column]))
+                rows.append({"Dataset": dataset, "Grouping": grouping, "Selection": selection,
+                             "Test": test, "Group": row["group"],
+                             "Label": row.get("label", "") or row["group"], "Key": key})
         if absent:
             without_tests[dataset] = absent
     if not_drawn:
@@ -398,6 +439,7 @@ def _analysis(lang_id: str, root: Path, chapter: ChapterData) -> None:
     for dataset, absent in without_tests.items():
         chapter.missing.append(f"The {dataset} analysis has no permutation tests "
                                f"({', '.join(absent)}); the weekly full analysis adds them.")
+    chapter.tables["analysis"] = pd.DataFrame(rows, columns=ANALYSIS_COLUMNS)
 
 
 # ── The one entry point ─────────────────────────────────────────────────────

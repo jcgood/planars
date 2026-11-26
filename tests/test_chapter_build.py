@@ -424,18 +424,51 @@ def _compile(folder, file="main.tex"):
     return log
 
 
+@needs_english
+def test_the_results_outline_places_every_fragment_and_cites_only_values_it_has(reads_english):
+    built, stubs, said, values = build.part_files(VOL, build.RESULTS, languages=["stan1293"])
+    outline = built["results/chapter.tex"]
+    assert "\\chapter{Results}" in outline
+    fragments = {rel for rel in built if rel.startswith("results/fragments/")}
+    assert fragments == {f"results/fragments/{n}.tex" for n in
+                         ["analysis_summary", "test_fragmentation", "test_span_placement",
+                          "test_arbitrary_layers"]}
+    for rel in fragments | set(stubs):
+        assert f"\\input{{{rel[:-4]}}}" in outline
+    assert all("the results chapter" in text for text in stubs.values())
+    cited = {m for rel in fragments for m in PV.findall(built[rel])}
+    assert cited and not cited - set(values)
+    assert said[0].startswith("Results in volume book: English [stan1293]")
+
+
+def test_a_results_chapter_needs_a_language_in_its_volume():
+    with pytest.raises(ChapterDataError, match="parts list none"):
+        build.part_files(VOL, build.RESULTS, languages=[])
+
+
+def test_a_dataset_with_no_words_for_it_fails(monkeypatch):
+    monkeypatch.delitem(build.SELECTION_WORDS, "all")
+    with pytest.raises(ChapterDataError, match="SELECTION_WORDS"):
+        build._dataset_words("stan1293_types_all")
+
+
 @needs_latex
 @needs_english
-def test_the_volume_compiles(english, reads_english):
+def test_the_volume_compiles(english, own_english):
+    # The weekly analysis's bundles, so the results chapter's tables are full.
+    real = pl.REPO / "coded_data" / state_files.BUNDLES_DIR.name / "stan1293"
+    if real.is_dir():
+        shutil.copytree(real, own_english / state_files.BUNDLES_DIR.name / "stan1293")
     _run("--volume", VOL, "--intro", "--apply")
-    (_vol() / "volume.yaml").write_text(VOLUME, encoding="utf-8")
+    (_vol() / "volume.yaml").write_text(VOLUME.replace("stan1293]", "stan1293, results]"),
+                                        encoding="utf-8")
     _run("--apply")
     total = english.values["stan1293.planar.positions"]
     _prose("intro", "argument.tex", f"English has \\claim{{stan1293.planar.positions}}{{{total}}} "
                                     f"positions, not \\claim{{stan1293.planar.positions}}{{{total + 1}}}.\n"
                                     + tex.example("ema=ja kweti", "1SG=ERG go.PST", "I went", "p. 3",
                                                   True) + "\n")
-    for chapter in ("intro", "stan1293"):
+    for chapter in ("intro", "stan1293", "results"):
         _compile(_vol(), f"{chapter}.tex")
     log = _compile(_vol())
     # TeX breaks log lines at 79 characters.

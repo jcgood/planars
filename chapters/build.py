@@ -4,6 +4,7 @@
     python -m coding build-chapters [--volume V] --lang stan1293 [--position N] [--apply]
     python -m coding build-chapters [--volume V] [--lang stan1293] --update [--position N] [--apply]
     python -m coding build-chapters [--volume V] --intro [--apply]
+    python -m coding build-chapters [--volume V] --results [--apply]
     python -m coding build-chapters --check [--volume V] [--lang stan1293] [--apply]
     python -m coding build-chapters --volume NEW [--lang L] --apply   # start a volume
 
@@ -21,14 +22,14 @@ itself: its own parts, pins and Overleaf project, so two volumes can carry
 the same language's chapter at different data versions. A volume is a
 folder holding ``volume.yaml`` (``volumes()``); its name is the folder's,
 lower-case letters, digits and hyphens. Without ``--volume`` the command
-works on every volume (``--lang`` and ``--intro``: every volume that
+works on every volume (``--lang``, ``--intro`` and ``--results``: every volume that
 lists that part); ``--position`` names one volume's chapter, so with more
 than one volume it needs ``--volume``. ``--volume`` with a name not yet
 used starts that volume. In each volume's folder:
 
 - ``volume.yaml``: the volume's title, its venue (a file in
-  ``chapters/venues/``) and its parts in order (``intro``, or a language's
-  Glottocode); optionally the Overleaf project the volume's folder is
+  ``chapters/venues/``) and its parts in order (``intro``, ``results``, or
+  a language's Glottocode); optionally the Overleaf project the volume's folder is
   synced with (``overleaf``, coding/sync_overleaf.py). Hand-edited; the
   build makes a starting one for a new volume, and checks every part is
   one it can build.
@@ -90,7 +91,17 @@ language's example style), and ``spans_table.tex`` (every span of
 the language in one table, grouped by domain type in the schema's class
 order). **The introduction** (``--intro``) comes from the schemas alone:
 ``terms.tex`` (schemas/terms.yaml) and ``class_<class>.tex`` for every
-class (what it tests, its criteria, its span rule).
+class (what it tests, its criteria, its span rule). **The results chapter**
+(``--results``) reports on every language chapter in the volume, each read
+at its pin (one not built yet: as its first build would pin it), so its
+numbers are the ones its language's chapter shows: ``analysis_summary.tex``
+(each dataset's counts, and the datasets with no analysis drawn from that
+version) and ``test_<test>.tex`` for each permutation test (each group's
+families observed and by chance, and its p-value), every number a ``\\pv``
+from the language's values.tex. Which test bears on which hypothesis is
+prose. The daily check compares language chapters only; a change under the
+results chapter shows there as a change in its language's values, and the
+prose it lists to reread includes the results chapter's.
 
 **The daily check** (``--check``, run by the daily refresh) writes nothing
 in ``.papers/``. For each language chapter in each volume's volume.yaml
@@ -103,8 +114,8 @@ or would fail after a move. When any of that touches the chapter (see
 ``--apply`` files or rewrites that chapter's ``chapter-behind`` issue (one
 per volume and language), counts and file names only (the repository is public); when nothing does,
 it closes it. The analysis is compared only for datasets with a bundle on
-the machine running it, which on GitHub is none (bundles are never
-committed) until the weekly analysis (laminar plan 4d) keeps them.
+the machine running it (on GitHub: the weekly analysis's, committed in
+planars-data's ``.bundles/``; chapters.data.bundle_folders).
 
 The wording is in chapters/templates/ (chapters.tex says how they work).
 """
@@ -120,9 +131,10 @@ from importlib.resources import files as _res_files
 import yaml
 
 from chapters import tex
-from chapters.data import ChapterData, ChapterDataError, chapter_data, is_glossed, split_examples
+from chapters.data import (PERMUTATION_TESTS, ChapterData, ChapterDataError, chapter_data,
+                           is_glossed, split_examples)
 from coding import file_door
-from laminar.planars_language import parse_dataset
+from laminar.planars_language import dataset_names, parse_dataset
 from planars.languages import get_display_name, get_entry
 from planars.reports import span_constructions
 from planars.schema_values import is_keystone
@@ -242,6 +254,60 @@ def language_fragments(chapter: ChapterData) -> dict:
     return out
 
 
+# ── The results chapter ─────────────────────────────────────────────────────
+
+# A dataset's grouping and selection in words (laminar.planars_language's
+# GROUPINGS_BY and SELECTIONS); one not listed fails, so a new one is named
+# here before a chapter prints it.
+GROUPING_WORDS = {"types": "by domain type", "classes": "by class"}
+SELECTION_WORDS = {"all": "every span", "complete": "spans from complete positions",
+                   "partial": "spans from partial positions", "distinct": "distinct spans"}
+# Each permutation test (chapters.data.PERMUTATION_TESTS's names): its name
+# in words, and what a group's n counts (the test's own column).
+TEST_WORDS = {"fragmentation": ("fragmentation test", "tests"),
+              "span_placement": ("span-placement test", "spans"),
+              "arbitrary_layers": ("arbitrary-layers test", "spans")}
+
+
+def _dataset_words(dataset: str) -> str:
+    _lang, grouping, selection = parse_dataset(dataset)
+    if grouping not in GROUPING_WORDS or selection not in SELECTION_WORDS:
+        raise ChapterDataError(f"Dataset {dataset}: chapters/build.py GROUPING_WORDS and "
+                               f"SELECTION_WORDS have no words for {grouping!r} or {selection!r}.")
+    return f"{SELECTION_WORDS[selection].capitalize()}, {GROUPING_WORDS[grouping]}"
+
+
+def results_fragments(chapters: list) -> dict:
+    """{file name: text} for the results chapter: what the analysis covers
+    (``analysis_summary.tex``) and one table per permutation test
+    (``test_<test>.tex``), for each language chapter in `chapters`."""
+    if set(TEST_WORDS) != set(PERMUTATION_TESTS.values()):
+        raise ChapterDataError("chapters/build.py TEST_WORDS and chapters/data.py "
+                               "PERMUTATION_TESTS name different tests.")
+    summary = []
+    for chapter in chapters:
+        L = chapter.lang_id
+        summary.append({"L": L, "datasets": [
+            {"words": _dataset_words(d), "base": f"{L}.analysis.{g}.{s}"}
+            for d, (_l, g, s) in ((d, parse_dataset(d)) for d in dataset_names(L))
+            if d in chapter.bundles],
+            "absent": [_dataset_words(d) for d in dataset_names(L) if d not in chapter.bundles]})
+    out = {"analysis_summary.tex": tex.render("results_summary.tex.j2", languages=summary)}
+    for test, (words, count) in TEST_WORDS.items():
+        languages = []
+        for chapter in chapters:
+            rows = chapter.tables["analysis"]
+            rows = rows[rows["Test"] == test]
+            languages.append({"L": chapter.lang_id, "datasets": [
+                {"words": _dataset_words(d),
+                 "rows": [{"label": r["Label"], "key": r["Key"]}
+                          for _i, r in rows[rows["Dataset"] == d].iterrows()]}
+                for d in dict.fromkeys(rows["Dataset"])]})
+        out[f"test_{test}.tex"] = tex.render("results_test.tex.j2", test=words, count=count,
+                                             languages=languages)
+    return out
+
+
 VALUES_HEADER = ("% values.tex: every value the chapter can cite, as \\pvset{name}{value}.\n"
                  "% Written by `python -m coding build-chapters`; never edit it by hand.\n")
 
@@ -249,6 +315,13 @@ VALUES_HEADER = ("% values.tex: every value the chapter can cite, as \\pvset{nam
 # ── The outline ─────────────────────────────────────────────────────────────
 
 INTRO = "intro"
+RESULTS = "results"
+# The parts that are not a language's chapter: built from the schemas (the
+# introduction) or from every language in the volume (the results).
+NON_LANGUAGE = (INTRO, RESULTS)
+# How a stub names the chapter it is in, for each part that is not a language's.
+PART_WHERE = {INTRO: "the introduction", RESULTS: "the results chapter"}
+PART_TITLE = {INTRO: "Introduction", RESULTS: "Results"}
 VOLUME = "volume.yaml"
 MAIN = "main.tex"
 STY_FILE = "planarschapter.sty"
@@ -479,18 +552,39 @@ def broken_claims(vol: str, values: dict, langs: list, parts: list) -> list:
 
 # ── A part: its built files and its stubs ───────────────────────────────────
 
+def results_chapters(vol: str, languages: list) -> list:
+    """The language chapters a results chapter reports on: each of
+    `languages`, read at its chapter's pin in volume `vol` (or, for one not
+    built yet, as its first build would pin it: the files as they are)."""
+    if not languages:
+        raise ChapterDataError(f".papers/{vol}/{VOLUME}: the results chapter reports on the "
+                               f"volume's languages, and its parts list none: add a language's "
+                               f"Glottocode to `parts` there.")
+    return [chapter_data(L, position=pinned_position(vol, L, read_lock(vol, L), None, False))
+            for L in languages]
+
+
 def part_files(vol: str, part: str, position: int | None = None, update: bool = False,
-               parts: list | None = None) -> tuple[dict, dict, list, dict]:
+               parts: list | None = None, languages: list | None = None
+               ) -> tuple[dict, dict, list, dict]:
     """({path in the volume's folder: text} built, {path: text} stubs, lines
     to print, {name: value} the part's values) for one part of volume `vol`.
     A language is built from its pin (``pinned_position``); `update` moves
     the pin to `position`. `parts` are the parts whose prose the report
-    looks through."""
+    looks through; `languages` the volume's language chapters, which the
+    results chapter reports on."""
     entries = _class_entries()
     changed, report = set(), []
     if part == INTRO:
         fragments, L, built, said, values = intro_fragments(), None, {}, [], {}
         classes = [(name, e["display_name"], e["domain_type"]) for name, e in entries.items()]
+    elif part == RESULTS:
+        chapters = results_chapters(vol, languages or [])
+        fragments, L, built, classes = results_fragments(chapters), None, {}, []
+        values = {k: v for c in chapters for k, v in c.values.items()}
+        said = [f"Results in volume {vol}: " + "; ".join(
+            f"{get_display_name(c.lang_id)} at {_pin(c.version)}, {len(c.bundles)} of "
+            f"{len(dataset_names(c.lang_id))} analyses" for c in chapters)]
     else:
         lock = read_lock(vol, part)
         chapter = chapter_data(part, position=pinned_position(vol, part, lock, position, update))
@@ -509,7 +603,7 @@ def part_files(vol: str, part: str, position: int | None = None, update: bool = 
                       for k, v in chapter_data(part, position=lock["position"]).values.items()}
         report, changed = change_report(part, lock, tex.read_values_tex(old_text) if old_text else None,
                                         middle, chapter)
-    items = outline_items(INTRO if part == INTRO else "language", classes)
+    items = outline_items(part if part in NON_LANGUAGE else "language", classes)
     placed = {f for item in items for f in item["fragments"]}
     made = {name.removesuffix(".tex") for name in fragments}
     if placed != made:
@@ -517,10 +611,11 @@ def part_files(vol: str, part: str, position: int | None = None, update: bool = 
             f"{part}: outline.yaml and the build disagree. Fragments made but placed nowhere: "
             f"{sorted(made - placed) or 'none'}; placed but not made: {sorted(placed - made) or 'none'}.")
     built.update({f"{part}/fragments/{name}": text for name, text in fragments.items()})
-    built[f"{part}/chapter.tex"] = tex.render("chapter.tex.j2", part=part, L=L, items=items)
-    chapter_name = get_display_name(part) if L else None
+    title = tex.pv(f"{L}.language.name") if L else PART_TITLE[part]
+    built[f"{part}/chapter.tex"] = tex.render("chapter.tex.j2", part=part, title=title, items=items)
+    where = f"the {get_display_name(part)} chapter" if L else PART_WHERE[part]
     stubs = {f"{part}/prose/{item['slot']}.tex": tex.render(
-                 "prose_stub.tex.j2", L=L, chapter=chapter_name, slot=item["slot"],
+                 "prose_stub.tex.j2", L=L, where=where, slot=item["slot"],
                  heading=item["heading"], in_domain=item.get("in_domain"),
                  who=item["who"], says=item["says"])
              for item in items if item["slot"]}
@@ -554,8 +649,8 @@ def check_volume_name(vol: str) -> None:
         raise ChapterDataError(f"Volume name {vol!r}: use lower-case letters, digits and hyphens, "
                                f"starting with a letter (it is the volume's folder in .papers/).")
     if _is_part(vol):
-        raise ChapterDataError(f"Volume name {vol!r} is also a part's name (`{INTRO}` or a "
-                               f"Glottocode); choose another.")
+        raise ChapterDataError(f"Volume name {vol!r} is also a part's name (`{INTRO}`, "
+                               f"`{RESULTS}` or a Glottocode); choose another.")
 
 
 def read_volume(vol: str, lang: str | None = None) -> tuple[dict, str | None]:
@@ -573,11 +668,11 @@ def read_volume(vol: str, lang: str | None = None) -> tuple[dict, str | None]:
     parts = volume.get("parts")
     if not isinstance(volume.get("title"), str) or not isinstance(parts, list) or not parts:
         raise ChapterDataError(f"{where} needs a `title`, a `venue` and a list of `parts`.")
-    unknown = [p for p in parts if p != INTRO and get_entry(str(p)) is None]
+    unknown = [p for p in parts if not _is_part(str(p))]
     if unknown:
         raise ChapterDataError(
-            f"{where}: parts {unknown} are neither `{INTRO}` nor a language in "
-            f"schemas/languages.yaml (a part is `{INTRO}` or a Glottocode).")
+            f"{where}: parts {unknown} are neither `{INTRO}`, `{RESULTS}` nor a language in "
+            f"schemas/languages.yaml (a part is `{INTRO}`, `{RESULTS}` or a Glottocode).")
     repeated = sorted({p for p in parts if parts.count(p) > 1})
     if repeated:
         raise ChapterDataError(f"{where} lists {repeated} more than once.")
@@ -593,7 +688,12 @@ PART_BUILT = {"chapter.tex", "values.tex", LOCK}
 
 
 def _is_part(name: str) -> bool:
-    return name == INTRO or get_entry(name) is not None
+    return name in NON_LANGUAGE or get_entry(name) is not None
+
+
+def language_parts(parts: list) -> list:
+    """The parts of a volume that are a language's chapter."""
+    return [p for p in parts if p not in NON_LANGUAGE]
 
 
 def is_built(rel: str) -> bool:
@@ -693,8 +793,9 @@ def _group(name: str) -> str:
 
 def _comparable(values: dict, lang: str, chapters: list) -> dict:
     """`values` without the analysis of datasets that some of `chapters` has
-    no bundle for here (none is committed: on GitHub there is none at all),
-    so an analysis absent from this machine never reads as one that changed."""
+    no bundle for here (on GitHub only the weekly ones, committed in
+    planars-data, are there), so an analysis absent from this machine never
+    reads as one that changed."""
     drawn = set.intersection(*(set(c.bundles) for c in chapters))
     keep = tuple(f"{lang}.analysis.{g}.{s}." for _l, g, s in map(parse_dataset, drawn))
     return {k: v for k, v in values.items() if _group(k) != "analysis" or k.startswith(keep)}
@@ -817,7 +918,7 @@ def check(vols: list | None, langs: list | None, apply: bool, today: str) -> Non
     for vol in chosen:
         volume, _stub = read_volume(vol)
         parts = list(volume["parts"])
-        for lang in [p for p in parts if p != INTRO and (langs is None or p in langs)]:
+        for lang in [p for p in language_parts(parts) if langs is None or p in langs]:
             checked.add(check_title(vol, lang))
             found = check_chapter(vol, lang, parts)
             if found is None:
@@ -857,11 +958,15 @@ def build_parser() -> argparse.ArgumentParser:
                     "the generated fragments and values, and a stub for each prose slot.")
     parser.add_argument("--volume", default=None, metavar="NAME",
                         help="Only this volume (its folder in .papers/; default: every volume, or "
-                             "with --lang or --intro every volume listing that part). A name not "
+                             "with --lang, --intro or --results every volume listing that part). "
+                             "A name not "
                              "yet used starts that volume.")
     which = parser.add_mutually_exclusive_group()
     which.add_argument("--lang", help="Build only this language's chapter (Glottocode).")
     which.add_argument("--intro", action="store_true", help="Build only the introduction.")
+    which.add_argument("--results", action="store_true",
+                       help="Build only the results chapter (from each of the volume's languages "
+                            "at its chapter's pin).")
     parser.add_argument("--position", type=int, default=None, metavar="N",
                         help="With --lang: the language's change-log position (its log's line "
                              "count) to build from: a chapter not built yet, or with --update "
@@ -883,7 +988,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     if args.position is not None and not args.lang:
         sys.exit("--position names a line of one language's change log; give --lang too.")
     if args.check:
-        if args.intro or args.update or args.position is not None:
+        if args.intro or args.results or args.update or args.position is not None:
             sys.exit("--check compares each chapter at its pin with today's data; it takes "
                      "only --volume, --lang and --apply.")
         try:
@@ -893,7 +998,8 @@ def main(args: argparse.Namespace | None = None) -> None:
             sys.exit(str(e))
         return
     try:
-        chosen = chosen_volumes(args.volume, args.lang, args.intro)
+        chosen = chosen_volumes(args.volume, args.lang, INTRO if args.intro
+                                else RESULTS if args.results else None)
         if args.position is not None and len(chosen) > 1:
             raise ChapterDataError(f"--position names one chapter, and {get_display_name(args.lang)} "
                                    f"is in volumes {', '.join(chosen)}: give --volume too.")
@@ -904,10 +1010,10 @@ def main(args: argparse.Namespace | None = None) -> None:
         print("Dry run: add --apply to write.")
 
 
-def chosen_volumes(vol: str | None, lang: str | None, intro: bool) -> list:
+def chosen_volumes(vol: str | None, lang: str | None, other: str | None) -> list:
     """The volumes a build works on: `vol` (an existing volume, or a new one
-    to start), or every volume listing the part asked for (`lang`, or the
-    introduction), or every volume."""
+    to start), or every volume listing the part asked for (`lang`, or
+    `other`: the introduction or the results), or every volume."""
     if vol is not None:
         check_volume_name(vol)
         return [vol]
@@ -915,7 +1021,7 @@ def chosen_volumes(vol: str | None, lang: str | None, intro: bool) -> list:
     if not known:
         raise ChapterDataError("There is no volume in .papers/ yet: start one with --volume NAME "
                                "(its folder's name, e.g. `--volume book`).")
-    part = lang if lang else INTRO if intro else None
+    part = lang or other
     if part is None:
         return known
     listing = [v for v in known if part in read_volume(v)[0]["parts"]]
@@ -929,8 +1035,9 @@ def build_volume(vol: str, args: argparse.Namespace) -> list:
     """Build volume `vol` (only --lang's or the introduction's part, when
     asked), printing what it does; the lines saying what it wrote."""
     volume, volume_stub = read_volume(vol, args.lang)
-    parts = [args.lang] if args.lang else [INTRO] if args.intro else list(volume["parts"])
-    languages = [p for p in volume["parts"] if p != INTRO]
+    parts = ([args.lang] if args.lang else [INTRO] if args.intro
+             else [RESULTS] if args.results else list(volume["parts"]))
+    languages = language_parts(volume["parts"])
     built = {STY_FILE: tex.STY, tex.VENUE_STY: tex.venue_sty(volume["venue"]), MAIN: tex.render(
         "main.tex.j2", file=MAIN, title=volume["title"], parts=volume["parts"],
         languages=languages)}
@@ -945,7 +1052,7 @@ def build_volume(vol: str, args: argparse.Namespace) -> list:
     print(f"Volume {vol}" + (" (new)" if volume_stub else "") + f": {volume['title']}")
     for part in parts:
         part_built, part_stubs, said, part_values = part_files(vol, part, args.position, args.update,
-                                                               prose_parts)
+                                                               prose_parts, languages)
         built.update(part_built)
         stubs.update(part_stubs)
         values.update(part_values)
@@ -954,7 +1061,10 @@ def build_volume(vol: str, args: argparse.Namespace) -> list:
     report = write(vol, built, stubs, parts, args.apply)
     print("\n".join(report) if report else "Nothing to change.")
     print("\n".join(slot_report(vol, stubs, parts)))
-    for line in broken_claims(vol, values, [p for p in parts if p != INTRO], prose_parts):
+    # The languages whose values this build read (a results chapter reads
+    # every language of the volume), whose claims it can check.
+    read = sorted({k.split(".", 1)[0] for k in values})
+    for line in broken_claims(vol, values, read, prose_parts):
         print(line)
     missing = [p for p in parts if p not in volume["parts"]]
     if missing:

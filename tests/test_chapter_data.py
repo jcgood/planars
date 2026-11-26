@@ -116,7 +116,7 @@ def test_an_unknown_position_says_so(reads_english):
 
 def _bundle(tmp_path, dataset, domain_sha, planar_sha, tests=()):
     folder = tmp_path / dataset / "data"
-    folder.mkdir(parents=True)
+    folder.mkdir(parents=True, exist_ok=True)
     metadata = {"source_domain_sha256": domain_sha, "source_planar_sha256": planar_sha,
                 "planars_source": {"stamp": {"languages": {"stan1293": {"position": 41}}}}}
     metadata.update({field: 1 for field in cd.BUNDLE_COUNTS})
@@ -148,3 +148,32 @@ def test_a_bundle_is_used_only_when_drawn_from_these_spans(tmp_path, monkeypatch
     assert "the language's change log at line 41" in missing
     assert "stan1293_types_all analysis has no permutation tests (span_placement, arbitrary_layers)" in missing
     assert "No analysis drawn for stan1293_types_complete" in missing
+    rows = chapter.tables["analysis"]
+    assert list(rows["Key"]) == ["stan1293.analysis.types.all.fragmentation.all"]
+
+
+@needs_english
+def test_the_weekly_bundle_is_read_before_the_daily_one(tmp_path, monkeypatch):
+    """The weekly analysis's bundle (committed, with the permutation tests)
+    wins when both were drawn from these spans; a daily one drawn from other
+    data never hides a weekly one that matches."""
+    daily, coded = tmp_path / "daily", tmp_path / "coded_data"
+    monkeypatch.setattr(cd, "bundle_root", lambda dataset: daily)
+    monkeypatch.setattr(cd.file_door, "CODED_DATA", coded)
+    weekly = coded / cd.state_files.BUNDLES_DIR.name / "stan1293"
+    table = pl.span_table("stan1293")
+    planar_sha = cd._sha256(pl.planar_file("stan1293").read_text(encoding="utf-8"))
+    right = cd._sha256(pl.domains_frame(pl.select(table, "all"), "types").to_csv(sep="\t", index=False))
+    _bundle(weekly, "stan1293_types_all", right, planar_sha, tests=list(cd.PERMUTATION_TESTS))
+    _bundle(daily, "stan1293_types_all", right, planar_sha)
+    _bundle(daily, "stan1293_classes_all", "0" * 64, planar_sha)
+    right_classes = cd._sha256(pl.domains_frame(pl.select(table, "all"), "classes")
+                               .to_csv(sep="\t", index=False))
+    _bundle(weekly, "stan1293_classes_all", right_classes, planar_sha)
+
+    chapter = cd.ChapterData(lang_id="stan1293", version={})
+    cd._analysis("stan1293", pl.REPO, chapter)
+
+    assert chapter.bundles["stan1293_types_all"] == weekly / "stan1293_types_all" / "data"
+    assert chapter.bundles["stan1293_classes_all"] == weekly / "stan1293_classes_all" / "data"
+    assert "stan1293.analysis.types.all.span_placement.all.p_value" in chapter.values

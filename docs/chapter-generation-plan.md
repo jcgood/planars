@@ -239,7 +239,8 @@ Open with Jeff: where annotators' chapter drafts live, and whether
   descriptions yet (#318 (e)); examples are the annotation's plain
   `Example` column (English needs no more, decision 4); the analysis is
   read from the working bundles in `.analysis/<lang>/chart_data/` until
-  4d decides where the weekly ones live (only `bundle_root` changes).
+  4d decides where the weekly ones live (since 2026-11-25 the weekly
+  ones in `.bundles/<lang>/` first: "The results chapter" below).
 - `completeness_summary` moved into `planars.reports`; the laminar
   bundles' source record and the chapters both read it.
 - **Found, for Phase 4:** reading an old version with today's code is not
@@ -373,9 +374,9 @@ Open with Jeff: where annotators' chapter drafts live, and whether
   on its own files nothing; a new value group fails the check until it is
   placed.
 - **The analysis is compared only where a bundle exists on both sides.**
-  Bundles are never committed, so on GitHub the daily check compares no
-  analysis at all; that changes when 4d decides where the weekly bundles
-  live.
+  Until 2026-11-25 chapters read only the uncommitted daily bundles, so on
+  GitHub the daily check compared no analysis; since then they read the
+  weekly ones committed in `.bundles/` first, which GitHub has.
 - Until the first real `build-chapters --apply` makes `.papers/`, the step
   prints "No chapters yet" and files nothing.
 
@@ -464,3 +465,29 @@ Open with Jeff: where annotators' chapter drafts live, and whether
   the old layout and name the migration.
 - The one-project-per-chapter plan above now sits inside a volume: the
   map of projects would be per volume.
+
+## The results chapter (2026-11-25)
+
+- **A third kind of part, `results`** (`outline.yaml`'s `results`;
+  `build-chapters --results`), for the Zenodo annual report
+  (`docs/zenodo-report-plan.md` item 2). It reports on every language
+  chapter in its volume, each read at that chapter's pin, so it shows the
+  same numbers as the language's chapter. How it is built:
+  `chapters/build.py`'s docstring.
+- **Generated:** what the analysis covers (each dataset's positions, tests,
+  spans, families and conflicts) and one table per permutation test
+  (fragmentation, span placement, arbitrary layers: each group's families
+  observed, the mean and middle 90% by chance, the p-value), every number a
+  `\pv`. **Prose:** the analysis, the tests, and one slot per hypothesis
+  (tree, divide, word), for Jeff and Adam. Which test bears on which
+  hypothesis is left to the prose (decision 3).
+- **Chapters now read the weekly analysis's bundles** (`.bundles/<L>/`,
+  committed, with the four permutation tests) before the daily working
+  ones (`chapters.data.bundle_folders`). Before this, no chapter could cite
+  a permutation test, since the daily bundles have none. A language
+  chapter's values gain each group's `n`, `null_p05` and `null_p95`, so its
+  next build reports them as changes from the code.
+- **Not yet:** figures. The laminar charts are drawn by R into files that
+  aren't committed (`.analysis/<L>/charts/`, and the weekly PDF on Drive),
+  so placing one in a chapter needs a choice of which charts and a way to
+  draw them at the pin.
