@@ -20,6 +20,10 @@ links to the other records and to the work it builds on):
   ``.gitattributes``' ``export-ignore`` leaves ``NonCollaborative/`` out).
   Title, authors, abstract, keywords and the works it builds on
   (``references``) are read from this repository's ``CITATION.cff``.
+  Its ``README.md`` and ``CITATION.cff`` at HEAD also go beside the zip,
+  and so do the dataset's: Zenodo shows them on the record page, so a
+  reader sees what the zip holds before downloading it (a dataset is too
+  many files for a record to hold loose, as Zenodo allows 100).
 - ``2-dataset-<L>/`` for each language chapter in the volume: the
   release export-release writes (coding/export_release.py), at the
   chapter's pin in the volume, zipped, with ``--licence``'s licence (the
@@ -243,6 +247,8 @@ def build(vol: str, licences: dict, out: Path, apply: bool,
         folder.mkdir()
         _git(ROOT, "archive", "--format=zip", f"--prefix=planars-{code}/",
              f"--output={folder / f'planars-{code}.zip'}", "HEAD")
+        for name in (README, er.CITATION):   # shown on the record page
+            (folder / name).write_text(_git(ROOT, "show", f"HEAD:{name}"), encoding="utf-8")
         (folder / METADATA).write_text(_metadata({
             "upload_type": "software", "title": repo_cff.get("title", "planars"), "version": code,
             "creators": creators(repo_cff.get("authors") or []),
@@ -271,6 +277,8 @@ def build(vol: str, licences: dict, out: Path, apply: bool,
             lang_version = json.loads((release / er.RELEASE_RECORD).read_text(encoding="utf-8")
                                       )["stamp"]["languages"][L]["version"]
             shutil.make_archive(str(folder / f"{L}-dataset"), "zip", root_dir=release)
+            for name in (er.README, er.CITATION):   # shown on the record page
+                shutil.copy2(release / name, folder / name)
             drafts = sum(d["answers"] for d in summary["claude_drafts"])
             (folder / METADATA).write_text(_metadata({
                 "upload_type": "dataset", "title": dataset_cff["title"],
