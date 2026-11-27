@@ -60,16 +60,25 @@ _STATE_PATHS = _state_paths()
 @pytest.fixture(scope="session")
 def english_files(tmp_path_factory):
     """A private copy of English's real folder (its files, change log and
-    archive) in a ``coded_data/`` of its own, for tests that read a
-    chapter's data (chapters/data.py reads the files where the local-file
-    door keeps them, ``file_door.CODED_DATA``). Never the real clone: the
-    door commits there. Empty when planars-data isn't cloned."""
+    archive) and its weekly analysis bundles (``.bundles/stan1293/``, which
+    planars-data commits, so CI has them too) in a ``coded_data/`` of its
+    own, for tests that read a chapter's data (chapters/data.py reads the
+    files where the local-file door keeps them, ``file_door.CODED_DATA``).
+    Not the daily working bundles (``.analysis/``, never committed): a test
+    that passes only with them would pass here and fail in CI. Never the
+    real clone: the door commits there. Empty when planars-data isn't
+    cloned."""
     import shutil
     from pathlib import Path
-    real = Path(__file__).resolve().parent.parent / "coded_data" / "stan1293"
+    real_data = Path(__file__).resolve().parent.parent / "coded_data"
+    real = real_data / "stan1293"
     coded = tmp_path_factory.mktemp("english") / "coded_data"
     if real.is_dir():
         shutil.copytree(real, coded / "stan1293")
+        from coding.state_files import BUNDLES_DIR
+        bundles = real_data / BUNDLES_DIR.name / "stan1293"
+        if bundles.is_dir():
+            shutil.copytree(bundles, coded / BUNDLES_DIR.name / "stan1293")
     else:
         coded.mkdir()
     return coded
@@ -77,9 +86,14 @@ def english_files(tmp_path_factory):
 
 @pytest.fixture()
 def reads_english(english_files, monkeypatch):
-    """The local-file door's planars-data is the copy of English (read only)."""
+    """The local-file door's planars-data, and laminar's, is the copy of
+    English (read only): so a daily working bundle in the real clone's
+    ``.analysis/`` is never read, and a test passes here only if it would
+    in CI."""
     from coding import file_door
+    from laminar import planars_language
     monkeypatch.setattr(file_door, "CODED_DATA", english_files)
+    monkeypatch.setattr(planars_language, "CODED_DATA", english_files)
     return english_files
 
 

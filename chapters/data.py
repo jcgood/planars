@@ -370,9 +370,11 @@ def bundle_folders(lang_id: str, dataset: str) -> list:
     """Where a dataset's bundle may be, in the order they are tried: the
     weekly analysis's, committed in planars-data (``.bundles/<L>/<dataset>/``,
     with the four permutation tests), then the daily working one
-    (``.analysis/<L>/chart_data/``, never committed, without them). Read
-    from the planars-data the local-file door keeps (``file_door.CODED_DATA``),
-    as the language's files are."""
+    (``.analysis/<L>/chart_data/``, never committed, without them). The
+    weekly one is read from the planars-data the local-file door keeps
+    (``file_door.CODED_DATA``), as the language's files are; the daily one
+    from where laminar puts it (``laminar.datasets.bundle_root``, under
+    ``laminar.planars_language.CODED_DATA``)."""
     weekly = file_door.CODED_DATA / state_files.BUNDLES_DIR.name / lang_id / dataset / "data"
     return [weekly, bundle_root(dataset) / dataset / "data"]
 

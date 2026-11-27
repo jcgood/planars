@@ -39,10 +39,12 @@ def english(english_files):
 
 @pytest.fixture()
 def own_english(english_files, tmp_path, monkeypatch):
-    """English's files in a copy of this test's own, which it may add to."""
+    """English's files in a copy of this test's own, which it may add to
+    (laminar reads it too, as in ``reads_english``)."""
     coded = tmp_path / "own" / "coded_data"
     shutil.copytree(english_files, coded)
     monkeypatch.setattr(file_door, "CODED_DATA", coded)
+    monkeypatch.setattr(pl, "CODED_DATA", coded)
     return coded
 
 
@@ -570,11 +572,9 @@ def drawn(monkeypatch):
 
 
 def _with_weekly_bundles(own_english) -> bool:
-    """Copy English's weekly bundles into the test's own planars-data."""
-    real = pl.REPO / "coded_data" / state_files.BUNDLES_DIR.name / "stan1293"
-    if real.is_dir():
-        shutil.copytree(real, own_english / state_files.BUNDLES_DIR.name / "stan1293")
-    return real.is_dir()
+    """Whether the test's own planars-data has English's weekly bundles
+    (the ``english_files`` fixture copies them when planars-data has them)."""
+    return (own_english / state_files.BUNDLES_DIR.name / "stan1293").is_dir()
 
 
 @needs_english
