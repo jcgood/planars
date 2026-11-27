@@ -20,13 +20,15 @@ units 1–20; don't answer from this table alone.
 
 ## Now
 
-**First (2026-11-25): build the Zenodo progress report's pieces** in the
-order `docs/zenodo-report-plan.md` gives under "What has to be built"
-(items 1–9 all built; the rebuild check for the report's numbers,
-`python -m chapters rebuild-check`, 2026-11-26). The report's volume was
-started 2026-11-26 (`.papers/report/`, with its method part); next, the
-report's own parts: summary, who did what (contributions), status and
-limits, next steps (plan, "What the report contains").
+**First: the Zenodo progress report** (`docs/zenodo-report-plan.md`).
+Everything under "What has to be built" is built, and the report volume
+(`.papers/report/`) has every part since 2026-11-26 (summary, intro,
+method, who did what, English, results, status and limits, next steps;
+it compiles, 0 of 53 prose slots written). Next is the plan's phase 4:
+Jeff and Adam write the prose, and Adam sets English's freeze point; then
+phase 5, the trial run on Zenodo's sandbox. Who did what is counted up
+to the end of the day of English's pin (2026-11-08): moving the pin
+recounts it, which needs a full clone and GitHub.
 **Check the first weekly run after 2026-11-25** (Sunday
 2026-11-29): every dataset re-analyses once, with the tests side by side;
 English `types_all` should take about two hours, not four (progress doc,
@@ -60,7 +62,7 @@ before they are posted there.
 | Adam's English requests | #318 (and #322, #319, #314) | (a)–(d), (f), item 6 done | build the impossible-pairs plan (point 8) once he agrees | Adam: point 8, the (b) questions, (e) construction descriptions |
 | Biuniqueness deviations | #254 (body checklist, 2026-10-11 design comment) | built, on English | — | Adam: span/type review, morphs tab, #298 |
 | CCDB charts across languages | `NonCollaborative/docs/CROSS_LANGUAGE_PROGRESS.md` (plan `PLAN_cross_language_charts.md`) | built 2026-09-23 | freeze references for the charts kept; write "what they show" | Jeff's cuts |
-| Progress report on Zenodo (English) | `docs/zenodo-report-plan.md` | items 1–9 built (6, the rebuild check, 2026-11-26); Claude drafts counted; Zenodo's GitHub link on; report volume started 2026-11-26 (method part in) | the report's summary, contributions, status and next-steps parts | Adam: English's freeze point |
+| Progress report on Zenodo (English) | `docs/zenodo-report-plan.md` | everything built; the report volume has every part (2026-11-26); Zenodo's GitHub link on | the prose (phase 4), then the sandbox run | Jeff and Adam: the prose; Adam: English's freeze point |
 | Bundle storage | #333 | full bundles in planars-data for now | move before a third language gets weekly runs | — |
 
 Daily: check the refresh and Sheet validation are green, and any open
