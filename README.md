@@ -47,7 +47,7 @@ For diagnostic criterion definitions and span rules, see `schemas/diagnostic_cri
 
 > Good, Jeff & Adam J. R. Tallman. 2026. *planars*: A Python toolkit for deriving morphosyntactic constituency spans from annotated planar structures (version 0.1.0a19). GitHub repository. https://github.com/jcgood/planars
 
-A `CITATION.cff` file is included in the repository root for citation manager import. A Zenodo DOI will be added when the repository is formally archived at release.
+A `CITATION.cff` file is included in the repository root for citation manager import. A Zenodo DOI will be added when the repository is formally archived at release. The archived copy leaves out `NonCollaborative/` (Jeff's working area, including Chichewa results coded under an older system), so the tests that read it skip there.
 
 **Citing the underlying theoretical framework:**
 

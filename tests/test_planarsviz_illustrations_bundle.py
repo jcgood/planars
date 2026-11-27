@@ -9,7 +9,11 @@ section for the contract these assertions are checking.
 import csv
 import json
 
+import pytest
+
 from laminar.datasets import NC as ROOT   # NonCollaborative/, where the bundle stays
+# A release archive leaves NonCollaborative/ out (.gitattributes).
+pytestmark = pytest.mark.skipif(not ROOT.is_dir(), reason="NonCollaborative/ is not in this copy")
 BUNDLE = ROOT / "results" / "chart_data" / "illustrations" / "data"
 
 

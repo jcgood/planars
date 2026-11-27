@@ -1,0 +1,7 @@
+# What a release archive leaves out (git archive; Zenodo's GitHub link
+# archives each release this way). NonCollaborative/ holds Chichewa
+# results coded under the old system, not to be made a citable copy (Jeff,
+# 2026-11-26; docs/zenodo-report-plan.md, "Decided"). Tests that read it
+# skip when it is absent (each one's pytestmark).
+NonCollaborative export-ignore
+NonCollaborative/** export-ignore

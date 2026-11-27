@@ -10,6 +10,9 @@ import pytest
 from laminar.datasets import NC as ROOT   # NonCollaborative/, where the CCDB domains files stay
 from laminar.export_planarsviz_data import PERMUTATION_TESTS, export_bundle
 
+# A release archive leaves NonCollaborative/ out (.gitattributes).
+pytestmark = pytest.mark.skipif(not ROOT.is_dir(), reason="NonCollaborative/ is not in this copy")
+
 TABLES = [name for test in PERMUTATION_TESTS for name in test.tables]
 
 

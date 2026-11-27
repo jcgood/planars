@@ -16,6 +16,8 @@ from itertools import combinations
 import pytest
 
 from laminar.datasets import NC as ROOT   # NonCollaborative/, where the 22 bundles stay
+# A release archive leaves NonCollaborative/ out (.gitattributes).
+pytestmark = pytest.mark.skipif(not ROOT.is_dir(), reason="NonCollaborative/ is not in this copy")
 CHART_DATA = ROOT / "results" / "chart_data"
 BUNDLE = CHART_DATA / "cross_language" / "data"
 NOT_STRUCTURES = {"illustrations", "shifted_nyan", "cross_language"}

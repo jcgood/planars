@@ -4,7 +4,11 @@ import csv
 import hashlib
 import json
 
+import pytest
+
 from laminar.datasets import NC as ROOT   # NonCollaborative/, where nyan1308's bundle stays
+# A release archive leaves NonCollaborative/ out (.gitattributes).
+pytestmark = pytest.mark.skipif(not ROOT.is_dir(), reason="NonCollaborative/ is not in this copy")
 BUNDLE = ROOT / "results" / "chart_data" / "nyan1308" / "data"
 RESULTS = ROOT / "results" / "chart_data" / "nyan1308"
 SOURCE = ROOT / "domains" / "domains_nyan1308.tsv"

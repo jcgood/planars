@@ -140,6 +140,17 @@ The draft is an unpublished manuscript, so it lives in planars-data's
    Built for the spans 2026-11-25 (`tests/test_export_release.py`: the
    spans derived from the released folder are its `derived/spans.tsv`);
    `values.tex` waits for the report volume (item 1).
+   **Found 2026-11-26, to fix before the rebuild check counts:** the
+   software record is a `git archive` of the tag, with no git history, and
+   three things read git: `laminar.contributor_charts.code_version()` (the
+   chart code's fingerprint, which the results chapter's figures and the
+   weekly run use), the "before" copy `log-change` measures against
+   (`coding/change_effects.py`), and `test_no_retired_term_reappears`'s
+   file list (`git ls-files`). In a trial archive (NonCollaborative/ left
+   out, planars-data linked in) those three tests fail and everything else
+   passes or skips. The fix is a fingerprint read from the files
+   themselves when there is no git, giving the same value as from git, so
+   the rebuild check can run from the downloaded record.
 7. **`CITATION.cff` kept in step with the version.** Found while planning:
    it said `0.1.0a19`, `pyproject.toml` `0.1.0a71`. Done 2026-11-25 by
    deleting the copy (and the stale `date-released`): Zenodo's GitHub link
@@ -157,12 +168,12 @@ The draft is an unpublished manuscript, so it lives in planars-data's
    not hold, so the rebuild check (item 6) can't rebuild them from the
    Zenodo records alone; the report says where they are read from.
 9. **Built 2026-11-25: the dataset's `CITATION.cff`, written by
-   `export-release`**: authors, ORCIDs and affiliations read from this
-   repository's `CITATION.cff` at each export, never copied; the licence
-   is `--licence` (CC-BY-4.0 or CC0-1.0), and a release that names none is
-   refused, so the licence is always a stated choice, not a default
-   (English: CC0, below). The authors are in the repository file's order (Jeff, then
-   Adam) until open question 7 is answered.
+   `export-release`**: the authors are the language's `dataset_authors`
+   in `schemas/languages.yaml`, in that order (2026-11-26), with ORCIDs and
+   affiliations read from this repository's `CITATION.cff` at each
+   export, never copied; the licence is `--licence` (CC-BY-4.0 or
+   CC0-1.0), and a release that names none is refused, so the licence is
+   always a stated choice, not a default (English: CC0, below).
 
 Order of building (Jeff, 2026-11-25): 8, then 9, then 1 (dry run shown to
 Jeff before planars-data's `.papers/` is moved), then 2 and 3.
@@ -170,13 +181,14 @@ Jeff before planars-data's `.papers/` is moved), then 2 and 3.
 ## Before release: what has to be true
 
 - **A freeze point for English** (a change-log position), chosen by Adam.
-- **Each span rule's status is printed** in the report beside its spans;
-  none has been reviewed with Adam yet (#321, 0 of 7).
+- **Each span rule's status is printed** in the report beside its spans
+  (decided); none has been reviewed with Adam yet (#321, 0 of 7).
+- **The rebuild check runs without git** (item 6's 2026-11-26 finding).
 - **English's word chosen** (#335) if the report tests the word hypothesis.
 - **Zenodo metadata**: keywords (no funder: decided), related
   identifiers (the 2024 volume's DOI, the CCDB). Authors' ORCIDs and
   affiliations are in `CITATION.cff` (2026-11-25), which the dataset's
-  citation file should read rather than copy.
+  citation file reads rather than copies.
 - **Zenodo's GitHub link is on for `jcgood/planars`** (2026-11-25; the
   repository's webhook sends release events to Zenodo), so the next GitHub
   release gets a DOI: make it only when the software record is meant to
@@ -196,8 +208,7 @@ build.
 1. Decisions below (Jeff, Adam).
 2. Items 4 and 7 under "What has to be built" (needed whatever is decided).
 3. Items 1–3, 5, 6.
-4. Prose: Jeff and Adam write their slots; Adam sets the freeze point and
-   settles the Claude drafts.
+4. Prose: Jeff and Adam write their slots; Adam sets the freeze point.
 5. Sandbox run; rebuild check against the downloaded records.
 6. Publish; DOIs into `CITATION.cff`, the README and the dataset's
    `CITATION.cff`.
@@ -210,17 +221,12 @@ build.
 3. Settled 2026-11-26: the data licence is CC0 (see "Decided").
 4. Settled 2026-11-26: Claude-drafted answers are released marked (see
    "Decided").
-5. **Unreviewed span rules:** review some with Adam before release, or
-   release with every rule marked by its status (recommended: mark; the
-   report is a progress report).
-6. **Chichewa material in the software archive.** `NonCollaborative/`
-   holds nyan1308 results and is already public on GitHub, but a DOI makes
-   it a permanent citable copy. Leaving it out of the archive
-   (`export-ignore` in `.gitattributes`, which Zenodo's GitHub link
-   respects) also leaves out data some `laminar` tests read
-   (`laminar.datasets.NC`), so those tests would skip in the archived copy.
-   Recommended: leave it out and say so in the README.
-7. **Authors and order** on each record (the data: Adam first?).
+5. Settled 2026-11-26: unreviewed span rules are released marked by status.
+6. Settled 2026-11-26: `NonCollaborative/` is left out of the software
+   archive.
+7. Settled 2026-11-26: authors and order on each record.
+
+Nothing is open: every question above is settled (see "Decided").
 
 ## Decided (don't re-ask)
 
@@ -244,3 +250,17 @@ build.
   `export-release --licence CC0-1.0`. The README and `CITATION.cff` ask for
   a citation rather than require one. The CCDB samples stay CC BY-SA and
   the report's own text stays CC BY.
+- **Span rules are released marked by status** (Jeff, 2026-11-26): the
+  report prints each rule's status beside its spans; release doesn't wait
+  for #321's review.
+- **`NonCollaborative/` is left out of the software archive** (Jeff,
+  2026-11-26: its Chichewa results are coded under the old system).
+  `.gitattributes` marks it `export-ignore`, which Zenodo's GitHub link
+  follows; the tests that read it skip without it. The README says so.
+- **Authors** (Jeff, 2026-11-26):
+  - dataset: the language's `dataset_authors` (`schemas/languages.yaml`):
+    English, Adam then Jeff; Araona, if it is ever released, Adam alone;
+  - software: Jeff first, then Adam (the repository's `CITATION.cff`);
+  - report: alphabetical (Good, Tallman), with a note on the title page
+    saying the order is alphabetical. Written into the report volume's
+    front matter when the volume is started.

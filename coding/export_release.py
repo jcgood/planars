@@ -29,8 +29,10 @@ version it names:
 - ``release.json``: the stamp (code version, schemas' and language's
   positions and versions), and every file's sha256;
 - ``README.md``: what each folder is and how to rebuild the spans;
-- ``CITATION.cff``: how to cite the dataset. Its authors (names, ORCIDs,
-  affiliations, in that file's order) are read from this repository's
+- ``CITATION.cff``: how to cite the dataset. Its authors are the
+  language's ``dataset_authors`` in ``schemas/languages.yaml``, in that
+  order (English: Adam, then Jeff; Araona: Adam; Jeff, 2026-11-26), with
+  each one's ORCID and affiliation read from this repository's
   ``CITATION.cff`` at each export, never copied here; its licence is
   ``--licence`` (``LICENCES``), which a release must name, since each
   language's annotator chooses for their own dataset (English: CC0, Adam,
@@ -228,14 +230,42 @@ The result is `derived/spans.tsv`.
 """
 
 
-def citation(lang_id: str, record: dict, licence: str, repo_cff: Path | None = None) -> str:
-    """The dataset's CITATION.cff text. Authors come from this repository's
-    CITATION.cff (`repo_cff`), read now; ReleaseRefused if it names none."""
+def _cff_name(person: dict) -> str:
+    return f"{person.get('given-names', '')} {person.get('family-names', '')}".strip()
+
+
+def dataset_authors(lang_id: str, repo_cff: Path | None = None,
+                    names: list | None = None) -> tuple[list, list]:
+    """The dataset's authors, as CITATION.cff entries, and the software's
+    (the repository file's). `names` (default: the language's
+    dataset_authors in schemas/languages.yaml) picks and orders them from
+    `repo_cff`; ReleaseRefused for a language with none or a name the file
+    doesn't have."""
     import yaml
+    from planars.languages import get_entry
     repo_cff = repo_cff or ROOT / CITATION
-    authors = (yaml.safe_load(repo_cff.read_text(encoding="utf-8")) or {}).get("authors") or []
-    if not authors:
+    software = (yaml.safe_load(repo_cff.read_text(encoding="utf-8")) or {}).get("authors") or []
+    if not software:
         raise ReleaseRefused(f"{repo_cff} lists no authors, so the dataset's {CITATION} can't name any.")
+    if names is None:
+        names = ((get_entry(lang_id) or {}).get("meta") or {}).get("dataset_authors") or []
+    if not names:
+        raise ReleaseRefused(f"{get_display_name(lang_id)} has no dataset_authors in "
+                             f"schemas/languages.yaml: list them there, in order.")
+    by_name = {_cff_name(p): p for p in software}
+    unknown = [n for n in names if n not in by_name]
+    if unknown:
+        raise ReleaseRefused(f"{', '.join(unknown)} (dataset_authors of {get_display_name(lang_id)}) "
+                             f"not in {repo_cff.name}, which has {', '.join(by_name)}: add them there "
+                             f"or write the name as it does.")
+    return [by_name[n] for n in names], software
+
+
+def citation(lang_id: str, record: dict, licence: str, repo_cff: Path | None = None,
+             names: list | None = None) -> str:
+    """The dataset's CITATION.cff text (authors: `dataset_authors`)."""
+    import yaml
+    authors, software = dataset_authors(lang_id, repo_cff, names)
     stamp = record["stamp"]
     lang = stamp["languages"][lang_id]
     name = get_display_name(lang_id)
@@ -257,7 +287,7 @@ def citation(lang_id: str, record: dict, licence: str, repo_cff: Path | None = N
             "title": "planars",
             "version": stamp["code"]["version"],
             "url": "https://github.com/jcgood/planars",
-            "authors": authors,
+            "authors": software,
         }],
     }
     return yaml.safe_dump(cff, sort_keys=False, allow_unicode=True)

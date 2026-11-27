@@ -90,6 +90,11 @@ languages.yaml
     here (this repo is public): the annotator's address lives in private
     planars-data, ``coded_data/people.yaml``, keyed by the ``annotator``
     name, and is read only through ``coding/people.py``.
+    ``dataset_authors`` lists, in order, the authors of the language's
+    released dataset (``coding/export_release.py``), each written as
+    "given-names family-names" exactly as the repository's CITATION.cff
+    has them, which supplies their ORCIDs and affiliations; a release of a
+    language without it is refused.
     Key machine-readable entries:
       required_meta_fields: meta fields integrity-check warns about when blank
         (the list is in languages.yaml itself).
