@@ -201,7 +201,11 @@ Jeff before planars-data's `.papers/` is moved), then 2 and 3.
 
 ## Before release: what has to be true
 
-- **A freeze point for English** (a change-log position), chosen by Adam.
+- **A freeze point for English** (a change-log position): **line 59
+  (2026-11-08)**, set 2026-11-26 ("now": no change has been logged since,
+  so it is the pin the report was already built at). `export-release
+  --lang stan1293 --position 59 --licence CC0-1.0` dry run: 784 files, no
+  refusal.
 - **Each span rule's status is printed** in the report beside its spans
   (decided; built 2026-11-26); none has been reviewed with Adam yet (#321,
   0 of 7).
