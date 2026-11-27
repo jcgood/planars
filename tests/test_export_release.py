@@ -51,15 +51,26 @@ def test_the_comments_column_is_left_out():
 
 
 @needs_english
-def test_claude_drafts_stop_a_release(reads_english, tmp_path, monkeypatch):
+def test_claude_drafts_are_released_marked(reads_english, tmp_path, monkeypatch):
     monkeypatch.setattr(cd, "claude_drafts", lambda lang_dir: pd.DataFrame(
         [{"Class": "phrasal_accent", "Construction": "general", "Rows": 3}]))
+    monkeypatch.setattr(versions, "stamp_problems", lambda stamp: [])  # this checkout may be mid-edit
+    # No licence: refused for that, and only that.
     summary = er.build("stan1293", None, tmp_path / "out", apply=False, check_release=False)
-    assert any("3 answer(s) still marked as Claude drafts" in r for r in summary["refusals"])
-    assert any("No licence named" in r for r in summary["refusals"])
-    with pytest.raises(er.ReleaseRefused, match="Claude drafts"):
+    assert [r for r in summary["refusals"] if "No licence named" not in r] == []
+    with pytest.raises(er.ReleaseRefused, match="No licence"):
         er.build("stan1293", None, tmp_path / "out", apply=True, check_release=False)
     assert not (tmp_path / "out").exists()
+    out = tmp_path / "out"
+    er.build("stan1293", None, out, apply=True, check_release=False, licence="CC0-1.0")
+    record = json.loads((out / er.RELEASE_RECORD).read_text(encoding="utf-8"))
+    assert record["claude_drafts"] == [{"class": "phrasal_accent", "construction": "general", "answers": 3}]
+    text = (out / er.README).read_text(encoding="utf-8")
+    assert "## Answers drafted with Claude" in text and "`phrasal_accent/general.tsv`: 3" in text
+
+
+def test_a_release_with_no_drafts_says_nothing_of_them():
+    assert er.drafts_section([]) == ""
 
 
 @needs_english

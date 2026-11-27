@@ -17,7 +17,7 @@ commits and pushes what the command wrote when it ends.
 **Where:** planars-data's ``.papers/`` (``state_files.PAPERS_DIR``,
 decision 2; a language chapter holds unpublished annotation, so it never
 goes in this public repository), one folder per volume
-(``.papers/<volume>/``: the book, the annual report), each complete in
+(``.papers/<volume>/``: the book, the progress report), each complete in
 itself: its own parts, pins and Overleaf project, so two volumes can carry
 the same language's chapter at different data versions. A volume is a
 folder holding ``volume.yaml`` (``volumes()``); its name is the folder's,

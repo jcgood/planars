@@ -1,6 +1,7 @@
-# Plan: the annual report as a citable Zenodo output (English)
+# Plan: a progress report as a citable Zenodo output (English)
 
-Jeff, 2026-11-25. Being built (see "What has to be built"). A final annual report by Jeff and Adam,
+Jeff, 2026-11-25. Being built (see "What has to be built"). The first
+progress report by Jeff and Adam, covering all the project's work to date,
 published on Zenodo with a DOI: what the project's method is, what data it
 has, and what the analysis shows. **English [stan1293] only.** The code
 released with it includes the libraries first built on Chichewa (`laminar/`,
@@ -11,7 +12,7 @@ results.
 
 | Record | Contents | Licence | Versions |
 |---|---|---|---|
-| **Report** (Zenodo type: Publication / Report) | the PDF, its LaTeX source and `values.tex` | CC BY 4.0 | one, final |
+| **Report** (Zenodo type: Publication / Report) | the PDF, its LaTeX source and `values.tex` | CC BY 4.0 | one per report: a later report is a record of its own, not a new version of this one |
 | **English dataset** (type: Dataset) | the annotation at one pinned change-log position: `planar_stan1293.tsv`, `diagnostics_stan1293.yaml`, every class's TSVs; the codebook (`render_codebook.py`); the spans and the analysis bundle, in a folder marked *derived*; a README and `CITATION.cff` | CC0 (decided 2026-11-26) | one per data freeze |
 | **Software** (type: Software) | `planars` at a tagged release, through Zenodo's GitHub link (one DOI for all versions, one per release); includes `planarsviz/` | MIT (as now) | one per release |
 
@@ -75,7 +76,7 @@ data position, not from recollection:
 |---|---|---|
 | Code and docs written in Claude sessions | `Co-Authored-By: Claude` lines in this repository's commits | 1,117 of 1,324 commits (merges left out; 32 more by the pipeline), all since 2026-03-15; before that, everything is Jeff's (tag `pre-claude-noncollaborative`) |
 | Comments Claude posted | issue comments signed `klᴐd` (Jeff's Claude) or `klod` (Adam's), whose Claude read from the account | 85 of 506 (Jeff's 80, Adam's 5); 254 by Jeff and Adam themselves, 167 by the pipeline |
-| Annotation Claude drafted | Source cells marked "Claude draft"; the language's change log (which command wrote each change) | phrasal_accent only, to be replaced by Adam |
+| Annotation Claude drafted | Source cells marked "Claude draft"; the language's change log (which command wrote each change) | phrasal_accent only, released marked (Adam replaces each once checked) |
 | Decisions | `schemas/decisions.tsv`, `coded_data/stan1293/decisions.tsv`; `diagnostics`/`linguistics` issues | every one made by Jeff or Adam |
 | Limits on Claude | CLAUDE.md: only a coordinator promotes a class's status; ask before live writes and linguistic calls; sign every comment | CLAUDE.md |
 
@@ -169,12 +170,10 @@ Jeff before planars-data's `.papers/` is moved), then 2 and 3.
 ## Before release: what has to be true
 
 - **A freeze point for English** (a change-log position), chosen by Adam.
-- **No Claude-drafted answers left**, or the release says how many and
-  where (see the decisions).
 - **Each span rule's status is printed** in the report beside its spans;
   none has been reviewed with Adam yet (#321, 0 of 7).
 - **English's word chosen** (#335) if the report tests the word hypothesis.
-- **Zenodo metadata**: funder and grant number, keywords, related
+- **Zenodo metadata**: keywords (no funder: decided), related
   identifiers (the 2024 volume's DOI, the CCDB). Authors' ORCIDs and
   affiliations are in `CITATION.cff` (2026-11-25), which the dataset's
   citation file should read rather than copy.
@@ -205,13 +204,12 @@ build.
 
 ## Open with Jeff and Adam
 
-1. **Whose annual report, and by when?** (a funder's, the department's,
-   the project's own): sets the funder field, the period covered and the
-   schedule.
-2. **Three records or one?** Recommended: three (above).
+1. Settled 2026-11-26: Jeff's and Adam's own progress report (see
+   "Decided").
+2. Settled 2026-11-26: three records (see "Decided").
 3. Settled 2026-11-26: the data licence is CC0 (see "Decided").
-4. **The Claude-drafted phrasal_accent answers:** wait for Adam to replace
-   them (recommended), or release them marked.
+4. Settled 2026-11-26: Claude-drafted answers are released marked (see
+   "Decided").
 5. **Unreviewed span rules:** review some with Adam before release, or
    release with every rule marked by its status (recommended: mark; the
    report is a progress report).
@@ -230,6 +228,18 @@ build.
   (Jeff, 2026-11-25).
 - **The report states human and Claude contributions**, from the records
   above (Jeff, 2026-11-25).
+- **The report is Jeff's and Adam's own** (Jeff, 2026-11-26): each
+  uses it in reporting to their own employer, so there is no funder
+  field. This first one covers all the project's work to date; later ones
+  may come more often than yearly, each its own Zenodo record citing its
+  own data freeze. No deadline given.
+- **Three Zenodo records**, as under "What gets published" (Jeff,
+  2026-11-26).
+- **Claude-drafted answers are released as they are, marked** (Jeff,
+  2026-11-26: the data as it is, stated openly). `export-release` counts
+  them per construction in the dataset's README and `release.json`, and
+  the report says how many there are; the release doesn't wait for Adam
+  to check them.
 - **English's dataset is CC0** (Jeff and Adam, 2026-11-26): release it with
   `export-release --licence CC0-1.0`. The README and `CITATION.cff` ask for
   a citation rather than require one. The CCDB samples stay CC BY-SA and

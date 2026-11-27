@@ -39,7 +39,7 @@ level a chapter starts at::
     % top heading: section
 
 ``book`` starts each chapter at ``\\chapter`` (its sections at
-``\\section``); ``report`` (the annual report, an article) at
+``\\section``); ``report`` (the progress report, an article) at
 ``\\section``, so every heading moves down one level (``HEADINGS``) and the
 parts are ``\\input`` rather than ``\\include``d, which would start each
 on a new page.

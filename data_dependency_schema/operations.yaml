@@ -379,9 +379,10 @@
     files without the Comments column, its change log, the schemas and
     codebook, the derived spans and analysis, a README, a CITATION.cff
     (authors read from this repository's, licence from --licence) and a
-    record of every file's sha256. Refuses while no licence is named, the
-    release check fails, the data can't be rebuilt from what it names, or
-    an answer is still a Claude draft.
+    record of every file's sha256; answers still marked as Claude drafts are
+    released marked, counted in the README and the record. Refuses while no
+    licence is named, the release check fails, or the data can't be rebuilt
+    from what it names.
   side_effects:
     - >-
       with --apply, writes the folder given as --out (new or empty, outside

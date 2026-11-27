@@ -20,7 +20,7 @@ units 1–20; don't answer from this table alone.
 
 ## Now
 
-**First (2026-11-25): build the Zenodo annual report's pieces** in the
+**First (2026-11-25): build the Zenodo progress report's pieces** in the
 order `docs/zenodo-report-plan.md` gives under "What has to be built"
 (items 1–5 and 7–9 built; item 4, the laminar modules in the bundle,
 2026-11-25; next, item 6's `values.tex` half, which waits on the report's
@@ -59,7 +59,7 @@ before they are posted there.
 | Adam's English requests | #318 (and #322, #319, #314) | (a)–(d), (f), item 6 done | build the impossible-pairs plan (point 8) once he agrees | Adam: point 8, the (b) questions, (e) construction descriptions |
 | Biuniqueness deviations | #254 (body checklist, 2026-10-11 design comment) | built, on English | — | Adam: span/type review, morphs tab, #298 |
 | CCDB charts across languages | `NonCollaborative/docs/CROSS_LANGUAGE_PROGRESS.md` (plan `PLAN_cross_language_charts.md`) | built 2026-09-23 | freeze references for the charts kept; write "what they show" | Jeff's cuts |
-| Annual report on Zenodo (English) | `docs/zenodo-report-plan.md` | items 1–5, 6 (spans), 7, 8, 9 built 2026-11-25; Claude drafts counted; Zenodo's GitHub link on | the report's volume (ask Jeff), then 6's `values.tex` | Jeff and Adam: the plan's "Open" list; Adam: 1,415 Claude drafts |
+| Progress report on Zenodo (English) | `docs/zenodo-report-plan.md` | items 1–5, 6 (spans), 7, 8, 9 built 2026-11-25; Claude drafts counted; Zenodo's GitHub link on | the report's volume (ask Jeff), then 6's `values.tex` | Jeff and Adam: the plan's "Open" list |
 | Bundle storage | #333 | full bundles in planars-data for now | move before a third language gets weekly runs | — |
 
 Daily: check the refresh and Sheet validation are green, and any open

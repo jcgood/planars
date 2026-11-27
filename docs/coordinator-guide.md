@@ -386,7 +386,7 @@ The dry run says which of these is missing.
 
 The chapters written from the annotation live in planars-data's
 `.papers/` (private, like the annotation), one folder per volume:
-`.papers/book/` for the De Gruyter book, another for the annual report.
+`.papers/book/` for the De Gruyter book, another for the progress report.
 Each volume is complete in itself (its own `volume.yaml`, chapters, pins
 and Overleaf project), so the same language can appear in two volumes at
 different data versions. One command builds them:
@@ -425,7 +425,7 @@ slot shows as a boxed "Still to write". A volume's title, its venue and the orde
 are its `volume.yaml` (`.papers/book/volume.yaml`), edited by hand. The venue names a file in
 `chapters/venues/` that sets the layout and how examples are printed: `book`
 (a book of chapters, until the publisher's template arrives) or `report` (an
-article whose chapters are sections, for the annual report); each language's examples come from its sheets'
+article whose chapters are sections, for the progress report); each language's examples come from its sheets'
 Example column, glossed or not as `examples` in `schemas/languages.yaml`
 says.
 
@@ -612,7 +612,7 @@ python -m coding integrity-check --check-release
 
 When it passes, run `pytest`, record the versions it printed in the release notes, tag the release on GitHub (the tag is the code version in `pyproject.toml`, e.g. `v0.1.0a71`; Zenodo records the version and date from the release, so `CITATION.cff` carries neither), and add the DOI Zenodo gives it to `CITATION.cff` (`doi:`) and the README.
 
-A language's annotation is released as a dataset of its own: `python -m coding export-release --lang LANG_ID --out DIR --licence CC0-1.0` (or `CC-BY-4.0`; dry run; `--apply` writes `DIR`, a new folder outside both repositories). It writes the annotation at one change-log position (`--position N`, default the files as they are) with its schemas, codebook, derived spans and analysis, and a `CITATION.cff` whose authors are read from this repository's, and refuses while no licence is named, the release check fails or any answer is still marked as a Claude draft. Upload the folder to Zenodo as a dataset; what goes in it is `coding/export_release.py`'s docstring.
+A language's annotation is released as a dataset of its own: `python -m coding export-release --lang LANG_ID --out DIR --licence CC0-1.0` (or `CC-BY-4.0`; dry run; `--apply` writes `DIR`, a new folder outside both repositories). It writes the annotation at one change-log position (`--position N`, default the files as they are) with its schemas, codebook, derived spans and analysis, and a `CITATION.cff` whose authors are read from this repository's, and refuses while no licence is named or the release check fails. Answers still marked as Claude drafts go out as they are, counted per construction in the README and `release.json`. Upload the folder to Zenodo as a dataset; what goes in it is `coding/export_release.py`'s docstring.
 
 ---
 

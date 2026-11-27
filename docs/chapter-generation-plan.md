@@ -411,7 +411,7 @@ Open with Jeff: where annotators' chapter drafts live, and whether
   the whole change. A venue file also sets the layout (2026-11-25): two
   comment lines the build reads give `main.tex`'s document class and the
   heading a chapter starts at (`chapters/tex.py`). `book` is the book
-  class, a part per `\chapter`; `report` (the Zenodo annual report,
+  class, a part per `\chapter`; `report` (the Zenodo progress report,
   `docs/zenodo-report-plan.md` item 3) is an 11pt article whose parts are
   `\section`s, every heading one level down, parts `\input` so none
   starts a page. The compile test runs on every venue.
@@ -455,7 +455,7 @@ Open with Jeff: where annotators' chapter drafts live, and whether
 - **Each volume is a folder, `.papers/<volume>/`,** holding its own
   `volume.yaml` and everything the layout above puts at the top of
   `.papers/`: parts, pins, `main.tex`, its Overleaf project and its
-  `conflicts/`. Needed for the Zenodo annual report, a second volume
+  `conflicts/`. Needed for the Zenodo progress report, a second volume
   beside the book (`docs/zenodo-report-plan.md`, item 1). A volume is
   complete in itself, so the report can pin English at the release's
   position while the book's English chapter moves on.
@@ -475,7 +475,7 @@ Open with Jeff: where annotators' chapter drafts live, and whether
 ## The results chapter (2026-11-25)
 
 - **A third kind of part, `results`** (`outline.yaml`'s `results`;
-  `build-chapters --results`), for the Zenodo annual report
+  `build-chapters --results`), for the Zenodo progress report
   (`docs/zenodo-report-plan.md` item 2). It reports on every language
   chapter in its volume, each read at that chapter's pin, so it shows the
   same numbers as the language's chapter. How it is built:

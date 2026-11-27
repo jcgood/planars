@@ -45,10 +45,14 @@ so nothing is dropped unseen.
 what it names (``versions.stamp_problems``: uncommitted result code, a
 source changed outside the tooling), when the release check fails
 (``versions.release_problems``: a breaking change with annotation still
-waiting on it; reads GitHub), or when an answer is still marked as drafted
-with Claude (``chapters.data.claude_drafts``; ``schemas/planar.yaml``
-claude_draft_source_prefix). A release states the annotator's judgements;
-an unchecked draft is not one.
+waiting on it; reads GitHub).
+
+**Answers drafted with Claude** and not yet checked by the annotator
+(``chapters.data.claude_drafts``: Source starts with ``schemas/planar.yaml``
+claude_draft_source_prefix) are released as they are, marked: the README
+and ``release.json`` say how many there are in each construction and how
+to find them (Jeff, 2026-11-26: the data as it is, stated openly;
+docs/zenodo-report-plan.md, "Decided").
 
 The folder is written straight to ``DIR``, not through the local-file
 door: it writes nothing in planars-data.
@@ -69,7 +73,7 @@ import pandas as pd
 from coding import file_door, source_log, versions
 from coding.check_comments import COMMENTS
 from planars.languages import get_display_name
-from planars.schema_values import class_domain_types
+from planars.schema_values import CLAUDE_DRAFT_SOURCE_PREFIX, class_domain_types
 
 ROOT = file_door.ROOT
 LANG_SETUP = "lang_setup"
@@ -159,12 +163,32 @@ def _codebook(schemas_dir: Path) -> str:
                                   load("terms.yaml"), load("planar.yaml"))
 
 
+def drafts_section(drafts: list) -> str:
+    """The README's account of the answers drafted with Claude (`drafts`:
+    release.json's list), or "" when there are none."""
+    if not drafts:
+        return ""
+    total = sum(d["answers"] for d in drafts)
+    lines = "\n".join(f"- `{d['class']}/{d['construction']}.tsv`: {d['answers']}" for d in drafts)
+    return f"""
+## Answers drafted with Claude
+
+{total} answers were drafted with Claude and have not yet been checked by
+the annotator. They are released as they are. Each one's `Source` begins
+"{CLAUDE_DRAFT_SOURCE_PREFIX}"; when the annotator checks an answer, the mark
+is replaced by their own source in a later version.
+
+{lines}
+"""
+
+
 def readme(lang_id: str, record: dict, counts: dict, datasets: list) -> str:
     stamp = record["stamp"]
     lang = stamp["languages"][lang_id]
     name = get_display_name(lang_id)
     analysis = ("\n".join(f"  - `{d}`" for d in datasets) if datasets
                 else "  (none drawn from this version's spans)")
+    drafts = drafts_section(record.get("claude_drafts", []))
     return f"""# {name}: planars annotation, change-log position {lang['position']} ({record['date']})
 
 The annotation of {name} for the planars project: which positions of its
@@ -191,7 +215,7 @@ the Zenodo record.
   `completeness.tsv`, and the laminar analysis:
 {analysis}
 - `release.json`: the versions above and every file's sha256.
-
+{drafts}
 ## Deriving the spans again
 
 Install planars at the tagged version (its schemas are the ones in
@@ -277,11 +301,8 @@ def build(lang_id: str, position: int | None, out: Path, apply: bool,
             versions.rebuild({"schemas": record_stamp["schemas"], "languages": {}}, stage)
         except source_log.RebuildError as e:
             raise ReleaseRefused(f"{get_display_name(lang_id)} can't be rebuilt at line {at}: {e}")
-        drafts = claude_drafts(lang_dir)
-        for _i, row in drafts.iterrows():
-            refusals.append(f"{row['Class']}/{row['Construction']}: {row['Rows']} answer(s) still "
-                            f"marked as Claude drafts in Source; the annotator checks them and "
-                            f"replaces the mark with their own source.")
+        drafts = [{"class": r["Class"], "construction": r["Construction"], "answers": int(r["Rows"])}
+                  for _i, r in claude_drafts(lang_dir).iterrows()]
         kept, left_out = chosen_files(lang_id, lang_dir)
         for rel in left_out:
             (lang_dir / rel).unlink()
@@ -303,7 +324,8 @@ def build(lang_id: str, position: int | None, out: Path, apply: bool,
         counts = {"classes": chapter.values[f"{lang_id}.diagnostics.classes"],
                   "constructions": chapter.values[f"{lang_id}.diagnostics.constructions"],
                   "percent": chapter.values[f"{lang_id}.annotation.percent"]}
-        record = {"language": lang_id, "date": chapter.version["date"], "stamp": record_stamp}
+        record = {"language": lang_id, "date": chapter.version["date"], "stamp": record_stamp,
+                  "claude_drafts": drafts}
         (stage / README).write_text(readme(lang_id, record, counts, sorted(chapter.bundles)),
                                     encoding="utf-8")
         if licence is not None:
@@ -314,7 +336,7 @@ def build(lang_id: str, position: int | None, out: Path, apply: bool,
                                             encoding="utf-8")
         summary = {"files": files + [RELEASE_RECORD],
                    "left_out": [str(r) for r in left_out], "missing": chapter.missing,
-                   "refusals": refusals, "position": at}
+                   "refusals": refusals, "position": at, "claude_drafts": drafts}
         if refusals:
             if apply:
                 raise ReleaseRefused("\n".join(refusals))
@@ -361,6 +383,10 @@ def main(args: argparse.Namespace | None = None) -> None:
               + (" …" if len(summary["left_out"]) > 12 else ""))
     for m in summary["missing"]:
         print(f"Note: {m}")
+    if summary["claude_drafts"]:
+        total = sum(d["answers"] for d in summary["claude_drafts"])
+        print(f"Released marked, as drafted with Claude: {total} answer(s) in "
+              f"{len(summary['claude_drafts'])} construction(s) (listed in the README).")
     if summary["refusals"]:
         print(f"NO RELEASE YET ({len(summary['refusals'])}):")
         for r in summary["refusals"]:

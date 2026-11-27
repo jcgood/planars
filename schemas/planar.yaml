@@ -151,7 +151,8 @@ example_separator: ";"
 # phrasal_accent, 2026-10-27: "Claude draft (Adam, 2026-10-27)"). The
 # annotator replaces the note with their own source once they have checked
 # the answer. The chapters count such answers (chapters/data.py) and a data
-# release refuses them. Read through planars.schema_values.is_claude_draft.
+# release lists them (coding/export_release.py). Read through
+# planars.schema_values.is_claude_draft.
 claude_draft_source_prefix: "Claude draft"
 
 # The Status tab every annotation sheet carries, its columns, and the two
