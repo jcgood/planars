@@ -32,7 +32,7 @@ English `types_all` should take about two hours, not four (progress doc,
 first. They wait on no open question.
 Zenodo's GitHub link is now on for this repository: **do not make a GitHub
 release**, since each one publishes a permanent DOI. Don't settle the
-plan's "Open" list (the licence is with Adam).
+plan's "Open" list (the licence is settled: CC0, 2026-11-26).
 
 **Laminar, waiting on Jeff (2026-11-15): he reads the per-juncture result.** The Gini was
 replaced and the conflict slide redrawn

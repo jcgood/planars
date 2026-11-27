@@ -32,8 +32,9 @@ version it names:
 - ``CITATION.cff``: how to cite the dataset. Its authors (names, ORCIDs,
   affiliations, in that file's order) are read from this repository's
   ``CITATION.cff`` at each export, never copied here; its licence is
-  ``--licence`` (``LICENCES``), which a release must name: the choice is
-  open (docs/zenodo-report-plan.md, open question 3). Under CC0 the file
+  ``--licence`` (``LICENCES``), which a release must name, since each
+  language's annotator chooses for their own dataset (English: CC0, Adam,
+  2026-11-26; docs/zenodo-report-plan.md, "Decided"). Under CC0 the file
   asks for a citation rather than requiring one.
 
 Everything else in the language's folder (``records/``, ``decisions.tsv``,
@@ -251,8 +252,8 @@ def build(lang_id: str, position: int | None, out: Path, apply: bool,
 
     refusals = out_problems(out)
     if licence is None:
-        refusals.append(f"No licence named: give --licence ({' or '.join(LICENCES)}); the choice "
-                        f"is open question 3 in docs/zenodo-report-plan.md.")
+        refusals.append(f"No licence named: give --licence ({' or '.join(LICENCES)}); the language's "
+                        f"annotator chooses it (English: CC0-1.0; docs/zenodo-report-plan.md, \"Decided\").")
     elif licence not in LICENCES:
         raise ReleaseRefused(f"{licence} is not a licence a dataset may carry ({', '.join(LICENCES)}).")
     try:
