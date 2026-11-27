@@ -252,7 +252,19 @@ build.
    authors delete once a slot is theirs; Adam sets the freeze point.
 5. Skipped (no sandbox run, above); the rebuild check passed on the
    local export.
-6. Publish; DOIs into `CITATION.cff`, the README and the dataset's
+5a. The three drafts are on Zenodo (2026-11-27), filled from the second
+   staging (`~/zenodo-staging/report-2026-11-final/`, ids in its
+   `drafts.json`), DOIs reserved and printed in the report: software
+   10.5281/zenodo.24591736, English dataset 10.5281/zenodo.24591738
+   (release 0.0.1, `--release-version`; the language's own version is
+   0.0.0), report 10.5281/zenodo.24591740. The rebuild check passed on
+   the final dataset zip. They were made through Zenodo's deposit API with a
+   token in Keychain that can't publish, by a script kept outside the
+   repository. If a second report needs the same, make it a command then.
+   Before publishing: tag `v0.1.0a86` (the dataset's README installs the
+   code at that tag; a tag is not a GitHub release, so Zenodo makes no
+   record of it).
+6. Publish (Jeff, on Zenodo: software, then dataset, then report); DOIs into `CITATION.cff`, the README and the dataset's
    `CITATION.cff`.
 
 ## Open with Jeff and Adam

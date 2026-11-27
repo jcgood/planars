@@ -30,13 +30,11 @@ opens with `\claudedraft{2026-11-26}` ("Drafted by Claude" in the PDF;
 Jeff: the aim is getting to Zenodo, not work for the authors), so the
 authors read and delete that line rather than write. English's freeze
 point is change-log line 59 (set 2026-11-26; the report's pin already).
-No sandbox run (Jeff, 2026-11-26). The three records are staged in
-`~/zenodo-staging/report-2026-11/` (`stage-zenodo`, item 10; its
-README says the steps; the rebuild check passed on the zipped dataset).
-Next, Jeff on Zenodo (or Claude with a token in Keychain, service
-`zenodo`; never press Publish): upload each as a draft, reserve the
-DOIs, put them in `.papers/report/volume.yaml`'s `records`, rebuild,
-stage again, upload those files, then Jeff publishes. Who did what is counted up
+No sandbox run (Jeff, 2026-11-26). The three Zenodo drafts are made
+and filled, DOIs reserved and printed in the report (2026-11-27; plan
+phase 5a has the DOIs and ids). Next: tag `v0.1.0a86` (waiting on Jeff's
+OK); Jeff checks the draft pages and publishes, software first. Claude
+never presses Publish. Who did what is counted up
 to the end of the day of English's pin (2026-11-08): moving the pin
 recounts it, which needs a full clone and GitHub.
 **Check the first weekly run after 2026-11-25** (Sunday
