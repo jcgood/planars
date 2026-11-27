@@ -229,7 +229,10 @@ build.
 1. Decisions below (Jeff, Adam).
 2. Items 4 and 7 under "What has to be built" (needed whatever is decided).
 3. Items 1–3, 5, 6.
-4. Prose: Jeff and Adam write their slots; Adam sets the freeze point.
+4. Prose: drafted by Claude for every slot (2026-11-26, Jeff: the point
+   is getting to Zenodo, not work for the authors), each opening with
+   `\claudedraft{date}`, which prints "Drafted by Claude" and which the
+   authors delete once a slot is theirs; Adam sets the freeze point.
 5. Sandbox run; rebuild check against the downloaded records.
 6. Publish; DOIs into `CITATION.cff`, the README and the dataset's
    `CITATION.cff`.
