@@ -5,7 +5,8 @@
    part for main.tex, one for a chapter's own file), languages (every
    language chapter in the volume, whose values are loaded), venue (its
    name), documentclass and headings (tex.venue: a part is \include'd,
-   starting a page, only when it is a \chapter). }
+   starting a page, only when it is a \chapter). No date is printed: the
+   day of the build is not the volume's, and a title gives its own. }
 \BLOCK{if file == "main.tex"}
 % main.tex: the volume, from volume.yaml.
 \BLOCK{else}
@@ -24,6 +25,7 @@
 \input{\VAR{path(L ~ "/values")}}
 \BLOCK{endfor}
 \title{\VAR{title}}
+\date{}
 \BLOCK{if authors}
 \author{\BLOCK{for a in authors}\BLOCK{if not loop.first} \and \BLOCK{endif}\VAR{a}\BLOCK{endfor}\BLOCK{if author_note}\thanks{\VAR{author_note}}\BLOCK{endif}}
 \BLOCK{endif}

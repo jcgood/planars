@@ -28,8 +28,8 @@ than one volume it needs ``--volume``. ``--volume`` with a name not yet
 used starts that volume. In each volume's folder:
 
 - ``volume.yaml``: the volume's title, its venue (a file in
-  ``chapters/venues/``) and its parts in order (``intro``, ``results``, or
-  a language's Glottocode); optionally its ``authors`` (names, in the order
+  ``chapters/venues/``) and its parts in order (``intro``, ``method``,
+  ``results``, or a language's Glottocode); optionally its ``authors`` (names, in the order
   printed) with an ``author_note`` footnote on them, and the Overleaf project the volume's folder is
   synced with (``overleaf``, coding/sync_overleaf.py). Hand-edited; the
   build makes a starting one for a new volume, and checks every part is
@@ -88,13 +88,17 @@ at its pinned version. Its fragments:
 ``front_matter.tex`` (language, annotator, data version, how complete the
 annotation was), ``planar_table.tex``, ``diagnostics_table.tex``,
 ``class_<class>.tex`` for each class the language has (one sentence per
-span, then the class's span table), ``examples_<class>.tex`` (the examples
+span, then the class's span table), ``examples_<class>.tex`` (examples
 its annotation gives, through the venue's example macro for the
-language's example style), and ``spans_table.tex`` (every span of
+language's example style: ``EXAMPLES_SHOWN`` rows per construction, the
+annotator's own before Claude's drafts, and a count of the rest), and ``spans_table.tex`` (every span of
 the language in one table, grouped by domain type in the schema's class
 order). **The introduction** (``--intro``) comes from the schemas alone:
 ``terms.tex`` (schemas/terms.yaml) and ``class_<class>.tex`` for every
-class (what it tests, its criteria, its span rule). **The results chapter**
+class (what it tests, its criteria, its span rule). **The method chapter**
+(the part ``method``, for the progress report) is prose only: one slot per
+section of outline.yaml's ``method``, each with its instructions and the
+documents to draw on. **The results chapter**
 (``--results``) reports on every language chapter in the volume, each read
 at its pin (one not built yet: as its first build would pin it), so its
 numbers are the ones its language's chapter shows: ``analysis_summary.tex``
@@ -146,7 +150,7 @@ from coding import file_door
 from laminar.planars_language import dataset_name, dataset_names, parse_dataset
 from planars.languages import get_display_name, get_entry
 from planars.reports import span_constructions
-from planars.schema_values import is_keystone
+from planars.schema_values import is_claude_draft, is_keystone
 
 
 def _schema(name: str) -> dict:
@@ -215,18 +219,35 @@ def _class_context(chapter: ChapterData, cls: str) -> list:
     return constructions
 
 
+# How many of a construction's annotation rows with an Example a language
+# chapter prints; the rest are counted (Jeff, 2026-11-26: English's
+# phrasal_accent printed every one, some 250 pages).
+EXAMPLES_SHOWN = 3
+
+
 def _class_examples(chapter: ChapterData, cls: str) -> list:
-    """[{name, rows: [{row, examples: [Tex]}]}] for the class's annotation
-    rows with an Example, in table order, each example as its venue macro."""
+    """[{name, rows: [{row, examples: [Tex]}], more}] for the class's
+    annotation rows with an Example: per construction, ``EXAMPLES_SHOWN``
+    of them, the annotator's own (not marked as a Claude draft) first, then
+    in table order, each example as its venue macro; ``more`` counts the
+    rows left out."""
     glossed = is_glossed(chapter.lang_id)
     examples = chapter.tables["examples"]
-    out = {}
+    by_construction = {}
     for _i, r in examples[examples["Class"] == cls].iterrows():
-        items, _paired = split_examples(r, glossed)
-        out.setdefault(r["Construction"], []).append({"row": r["Row"], "examples": [
-            tex.example(e["form"], e["gloss"], e["translation"], r["Source"], glossed)
-            for e in items]})
-    return [{"name": name, "rows": rows} for name, rows in out.items()]
+        by_construction.setdefault(r["Construction"], []).append(r)
+    out = []
+    for name, rows in by_construction.items():
+        chosen = sorted(rows, key=lambda r: is_claude_draft(r["Source"]))[:EXAMPLES_SHOWN]
+        chosen = [r for r in rows if any(r is c for c in chosen)]   # back in table order
+        shown = []
+        for r in chosen:
+            items, _paired = split_examples(r, glossed)
+            shown.append({"row": r["Row"], "examples": [
+                tex.example(e["form"], e["gloss"], e["translation"], r["Source"], glossed)
+                for e in items]})
+        out.append({"name": name, "rows": shown, "more": len(rows) - len(shown)})
+    return out
 
 
 def language_fragments(chapter: ChapterData) -> dict:
@@ -395,13 +416,16 @@ VALUES_HEADER = ("% values.tex: every value the chapter can cite, as \\pvset{nam
 # ── The outline ─────────────────────────────────────────────────────────────
 
 INTRO = "intro"
+METHOD = "method"
 RESULTS = "results"
 # The parts that are not a language's chapter: built from the schemas (the
-# introduction) or from every language in the volume (the results).
-NON_LANGUAGE = (INTRO, RESULTS)
+# introduction), prose only (the method), or from every language in the
+# volume (the results).
+NON_LANGUAGE = (INTRO, METHOD, RESULTS)
 # How a stub names the chapter it is in, for each part that is not a language's.
-PART_WHERE = {INTRO: "the introduction", RESULTS: "the results chapter"}
-PART_TITLE = {INTRO: "Introduction", RESULTS: "Results"}
+PART_WHERE = {INTRO: "the introduction", METHOD: "the method chapter",
+              RESULTS: "the results chapter"}
+PART_TITLE = {INTRO: "Introduction", METHOD: "Method", RESULTS: "Results"}
 VOLUME = "volume.yaml"
 MAIN = "main.tex"
 STY_FILE = "planarschapter.sty"
@@ -702,6 +726,8 @@ def part_files(vol: str, part: str, position: int | None = None, update: bool = 
     if part == INTRO:
         fragments, L, built, said, values = intro_fragments(), None, {}, [], {}
         classes = [(name, e["display_name"], e["domain_type"]) for name, e in entries.items()]
+    elif part == METHOD:
+        fragments, L, built, said, values, classes = {}, None, {}, [], {}, []
     elif part == RESULTS:
         chapters = results_chapters(vol, languages or [])
         fragments, L, classes = results_fragments(chapters), None, []
@@ -778,13 +804,14 @@ def check_volume_name(vol: str) -> None:
                                f"starting with a letter (it is the volume's folder in .papers/).")
     if _is_part(vol):
         raise ChapterDataError(f"Volume name {vol!r} is also a part's name (`{INTRO}`, "
-                               f"`{RESULTS}` or a Glottocode); choose another.")
+                               f"`{METHOD}`, `{RESULTS}` or a Glottocode); choose another.")
 
 
 def read_volume(vol: str, lang: str | None = None) -> tuple[dict, str | None]:
-    """volume.yaml's title and parts, and the starting volume.yaml's text
-    when there is none yet (None otherwise). Every part must be one the
-    build knows: ``intro`` or a language in schemas/languages.yaml."""
+    """volume.yaml's title, authors and parts, and the starting
+    volume.yaml's text when there is none yet (None otherwise). Every part
+    must be one the build knows: ``NON_LANGUAGE`` or a language in
+    schemas/languages.yaml."""
     check_volume_name(vol)
     where = f".papers/{vol}/{VOLUME}"
     current = file_door.read_paper(file_door.paper_stub(f"{vol}/{VOLUME}"))
@@ -799,8 +826,9 @@ def read_volume(vol: str, lang: str | None = None) -> tuple[dict, str | None]:
     unknown = [p for p in parts if not _is_part(str(p))]
     if unknown:
         raise ChapterDataError(
-            f"{where}: parts {unknown} are neither `{INTRO}`, `{RESULTS}` nor a language in "
-            f"schemas/languages.yaml (a part is `{INTRO}`, `{RESULTS}` or a Glottocode).")
+            f"{where}: parts {unknown} are neither `{INTRO}`, `{METHOD}`, `{RESULTS}` nor a "
+            f"language in schemas/languages.yaml (a part is `{INTRO}`, `{METHOD}`, `{RESULTS}` "
+            f"or a Glottocode).")
     repeated = sorted({p for p in parts if parts.count(p) > 1})
     if repeated:
         raise ChapterDataError(f"{where} lists {repeated} more than once.")

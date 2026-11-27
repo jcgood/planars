@@ -1,7 +1,9 @@
 \#{ The examples the annotation gives for one class in a language chapter,
-   by construction and row, each through the venue's example macro.
+   by construction and row, each through the venue's example macro: a few
+   rows per construction, and how many more the annotation has.
    Context: display_name, constructions (list of dicts: name, rows: list of
-   dicts: row, examples: list of Tex). }
+   dicts: row, examples: list of Tex; more: rows with an example not
+   shown). }
 \BLOCK{if constructions}
 \par\medskip\noindent\textbf{Examples from the annotation (\VAR{display_name})}\par
 
@@ -12,6 +14,10 @@
 \VAR{e}
 \BLOCK{endfor}
 \BLOCK{endfor}
+\BLOCK{if c.more}
+\noindent\textit{\VAR{c.more} more \BLOCK{if c.more == 1}row\BLOCK{else}rows\BLOCK{endif} of \texttt{\VAR{c.name|name}} give examples, in the annotation.}\par\medskip
+
+\BLOCK{endif}
 \BLOCK{endfor}
 \BLOCK{else}
 % The annotation gives no examples for this class yet.

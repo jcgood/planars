@@ -98,8 +98,11 @@ The draft is an unpublished manuscript, so it lives in planars-data's
    pins and Overleaf project; `build-chapters`, its daily check and
    `sync-overleaf` cover each (`--volume NAME`; a new name starts a
    volume). The book moved to `.papers/book/`
-   (`migrations/papers_into_volume_folders.py`). The report's volume is
-   can be started now that items 2 and 3 give it a chapter kind and a venue. Details:
+   (`migrations/papers_into_volume_folders.py`). **The report's volume was
+   started 2026-11-26** (`.papers/report/`: title "Report of the
+   constituency typology project (November 2026)", the date set by hand at
+   release; venue `report`; authors alphabetical with a note; parts intro,
+   method, stan1293, results). Details:
    `docs/chapter-generation-plan.md` § "More than one volume".
 2. **Built 2026-11-25: a results chapter kind**, the part `results`
    (`build-chapters --results`): the analysis summary and the three
@@ -114,9 +117,15 @@ The draft is an unpublished manuscript, so it lives in planars-data's
    part starts at, so in the report each part (introduction, English,
    results) is a numbered section and every heading is one level below the
    book's (`chapters/tex.py`). Intro, English and results compile under it
-   (a test, run for every venue). Still to come with the report's volume:
-   its authors on the title page (read from `CITATION.cff`) and the
-   report's own parts (summary, method, contributions).
+   (a test, run for every venue). Added 2026-11-26: a volume's authors and
+   a note on them (`volume.yaml`'s `authors`, `author_note`), no build
+   date on the title page, and the part `method` (prose only: one slot per
+   part of "The method section" below, each naming the documents to draw
+   on). A language chapter now prints three examples per construction,
+   the annotator's own first, and counts the rest (English's phrasal_accent
+   examples had filled some 250 pages). Still to come: the report's other
+   parts of its own (the summary, who did what, status and limits, next
+   steps; "What the report contains").
 4. **Built 2026-11-25: the laminar modules in the bundle**: domain
    support, the resolution test and the profile exported behind permutation
    flags and run weekly, so the report's numbers come from the pinned

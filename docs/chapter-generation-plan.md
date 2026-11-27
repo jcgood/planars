@@ -301,7 +301,8 @@ Open with Jeff: where annotators' chapter drafts live, and whether
   statement of where; moving the manuscripts means changing it; since
   2026-11-25 all of this sits in one folder per volume, `.papers/<volume>/`:
   "More than one volume" below):
-  `volume.yaml` (title and parts: `intro` or a Glottocode), `main.tex`
+  `volume.yaml` (title, optional authors, and parts: `intro`, `method`,
+  `results` or a Glottocode), `main.tex`
   built from it, `planarschapter.sty`, and per part `chapter.tex` (the
   outline), `fragments/`, `prose/`, and `values.tex` for a language.
   `main.tex` loads every language's values, so the introduction or a

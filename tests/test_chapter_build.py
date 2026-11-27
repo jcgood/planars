@@ -132,12 +132,33 @@ def test_the_language_wide_span_table_has_every_span(english):
 
 
 @needs_english
-def test_every_english_example_is_printed_plain(english):
+def test_a_few_english_examples_per_construction_are_printed_plain_and_the_rest_counted(english):
+    from planars.schema_values import is_claude_draft
     fragments = build.language_fragments(english)
     text = "".join(t for name, t in fragments.items() if name.startswith("examples_"))
-    expected = sum(len(split_examples(r, False)[0])
-                   for _i, r in english.tables["examples"].iterrows())
+    examples = english.tables["examples"]
+    expected, more = 0, 0
+    for (_cls, _con), rows in examples.groupby(["Class", "Construction"], sort=False):
+        rows = [r for _i, r in rows.iterrows()]
+        shown = sorted(rows, key=lambda r: is_claude_draft(r["Source"]))[:build.EXAMPLES_SHOWN]
+        expected += sum(len(split_examples(r, False)[0]) for r in shown)
+        more += len(rows) - len(shown)
     assert text.count(r"\planarsplainex{") == expected and r"\planarsex{" not in text
+    said = sum(int(n) for n in re.findall(r"\\textit\{(\d+) more rows? of", text))
+    assert more and said == more, "English has constructions with more examples than are shown"
+
+
+def test_the_annotators_own_examples_come_before_claude_s_drafts(monkeypatch):
+    import pandas as pd
+    from planars.schema_values import CLAUDE_DRAFT_SOURCE_PREFIX
+    rows = [{"Class": "c", "Construction": "k", "Row": f"r{i}", "Example": f"ex{i}",
+             "Gloss": "", "Translation": "",
+             "Source": f"{CLAUDE_DRAFT_SOURCE_PREFIX} (x)" if i < 3 else "p. 1"} for i in range(5)]
+    chapter = type("C", (), {"lang_id": "stan1293", "tables": {"examples": pd.DataFrame(rows)}})()
+    monkeypatch.setattr(build, "EXAMPLES_SHOWN", 3)
+    out = build._class_examples(chapter, "c")
+    # r3 and r4 are the annotator's; one draft fills the third place; table order kept.
+    assert [r["row"] for r in out[0]["rows"]] == ["r0", "r3", "r4"] and out[0]["more"] == 2
 
 
 def test_a_glossed_row_pairs_each_example_with_its_gloss_or_with_neither():
@@ -267,6 +288,20 @@ def test_the_volume_s_authors_go_on_the_title_with_their_note():
     assert (r"\author{Jeff Good \and Adam J. R. Tallman\thanks{Authors are listed alphabetically.}}"
             in main)
     assert main.index(r"\author") < main.index(r"\begin{document}")
+
+
+def test_the_method_chapter_is_prose_slots_with_their_instructions():
+    _volume_yaml("title: A report\nvenue: report\nparts: [intro, method]\n", "report")
+    _run("--volume", "report", "--apply")
+    folder = state_files.PAPERS_DIR / "report"
+    outline = (folder / "method" / "chapter.tex").read_text(encoding="utf-8")
+    assert r"\section{Method}" in outline and outline.count(r"\subsection{") == 7
+    stubs = sorted(p.name for p in (folder / "method" / "prose").glob("*.tex"))
+    assert len(stubs) == 7 and "reproducibility.tex" in stubs
+    assert "docs/zenodo-report-plan.md" in (folder / "method" / "prose" / "reproducibility.tex"
+                                            ).read_text(encoding="utf-8")
+    main = (folder / "main.tex").read_text(encoding="utf-8")
+    assert r"\input{method/chapter}" in main and r"\date{}" in main
 
 
 @pytest.mark.parametrize("extra, message", [
@@ -591,8 +626,8 @@ def test_the_volume_compiles(english, own_english, drawn, venue):
     _with_weekly_bundles(own_english)
     _run("--volume", VOL, "--intro", "--apply")
     (_vol() / "volume.yaml").write_text(
-        VOLUME.replace("stan1293]", "stan1293, results]").replace("venue: book",
-                                                                  f"venue: {venue}")
+        VOLUME.replace("stan1293]", "method, stan1293, results]").replace("venue: book",
+                                                                          f"venue: {venue}")
         + "authors: [Jeff Good, Adam J. R. Tallman]\nauthor_note: Authors are listed alphabetically.\n",
         encoding="utf-8")
     _run("--apply")
@@ -601,7 +636,7 @@ def test_the_volume_compiles(english, own_english, drawn, venue):
                                     f"positions, not \\claim{{stan1293.planar.positions}}{{{total + 1}}}.\n"
                                     + tex.example("ema=ja kweti", "1SG=ERG go.PST", "I went", "p. 3",
                                                   True) + "\n")
-    for chapter in ("intro", "stan1293", "results"):
+    for chapter in ("intro", "method", "stan1293", "results"):
         _compile(_vol(), f"{chapter}.tex")
     log = _compile(_vol())
     # TeX breaks log lines at 79 characters.

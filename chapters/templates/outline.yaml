@@ -110,6 +110,76 @@ results:
       larger domain. Needs each language's word chosen (English: #335);
       until then, say what is still open.
 
+# The method chapter (the progress report; docs/zenodo-report-plan.md, "The
+# method section"): how the work is done, the software design as well as
+# the linguistics. Prose only; each slot names the documents in planars it
+# draws on, so the text states what they say rather than recollection.
+method:
+  - heading: Framework and diagnostics
+    slot: framework
+    who: Jeff Good and Adam Tallman
+    says: >-
+      The hypotheses, the terms, and how each class's criteria and span
+      rule are set; what extends Tallman, Auderset and Uchihara (2024)
+      (strict and loose spans, partial and complete positions, the named
+      *-combines criteria), marked as such. Draw on schemas/terms.yaml,
+      schemas/diagnostic_classes.yaml, the codebook and docs/analyses.md.
+  - heading: Annotation by language experts who do not program
+    slot: annotation
+    who: Jeff Good and Adam Tallman
+    says: >-
+      How an annotator works with only a browser and a spreadsheet; the
+      GitHub issue as the instruction for each situation; the daily
+      pipeline, so nobody has to remember a sequence of steps; annotators'
+      proposals reviewed by issue. Draw on CLAUDE.md ("Who the tooling is
+      for"), docs/collaborator-guide.md, docs/tooling-design.md and
+      docs/coordinator-guide.md.
+  - heading: Principles of the research software
+    slot: principles
+    who: Jeff Good and Adam Tallman
+    says: >-
+      One owner for every fact, and the failures that taught it; aggregate
+      late and never store derived values in the annotation; definition
+      files apart from data files; explicit, not implicit (refuse what
+      cannot be placed); light maintenance (regenerate, never keep a copy
+      by hand). Draw on docs/data-layer-design.md, docs/data-management.md,
+      docs/hidden-facts-inventory.md and CLAUDE.md ("Working rules",
+      "Design rules").
+  - heading: Provenance as the schemas change
+    slot: provenance
+    who: Jeff Good and Adam Tallman
+    says: >-
+      The schemas as outputs of the research; change logs with typed change
+      classes; a version stamp on every result; chapters pinned to a data
+      position; checked claims; the schema- and ontology-evolution
+      literature. Draw on docs/change-log-design.md,
+      docs/result-stamp-design.md, docs/plain-record-design.md,
+      schemas/changes.tsv and docs/references.md.
+  - heading: Safeguards on the data
+    slot: safeguards
+    who: Jeff Good and Adam Tallman
+    says: >-
+      The doors every write to Drive and to the data passes through; the
+      unlogged-source, integrity and codebook checks; issues the pipeline
+      files itself; the frozen test copy of Drive. Draw on
+      docs/drive-door-design.md, docs/ownership-design.md,
+      data_dependency_schema/SCHEMA.md and docs/testing.md.
+  - heading: Analysis methods
+    slot: analysis_methods
+    who: Jeff Good and Adam Tallman
+    says: >-
+      Laminar families and forests; the permutation tests; domain support
+      and the resolution profile, with the phylogenetics methods they
+      borrow. Draw on laminar/INDEX.md, the modules' docstrings,
+      NonCollaborative/REFERENCES.md and docs/laminar-analysis-plan.md.
+  - heading: Reproducibility
+    slot: reproducibility
+    who: Jeff Good and Adam Tallman
+    says: >-
+      How every number here can be rebuilt from the dataset and software
+      records on Zenodo alone, and the check that does it. Draw on
+      docs/zenodo-report-plan.md (item 6) and coding/export_release.py.
+
 intro:
   - heading: The question
     slot: argument
