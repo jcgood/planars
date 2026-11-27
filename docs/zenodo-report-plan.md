@@ -218,8 +218,10 @@ Jeff before planars-data's `.papers/` is moved), then 2 and 3.
   repository's webhook sends release events to Zenodo), so the next GitHub
   release gets a DOI: make it only when the software record is meant to
   exist.
-- **A trial run on Zenodo's sandbox** (sandbox.zenodo.org) for all three
-  records before the real ones.
+- **No trial run on Zenodo's sandbox** (Jeff, 2026-11-26: skipped). The
+  rebuild check ran instead on the export written locally at line 59: all
+  2,407 values rebuilt as released (2026-11-26). Run it once more on the
+  dataset downloaded from Zenodo after publishing.
 
 ## Order of publishing
 
@@ -237,7 +239,8 @@ build.
    is getting to Zenodo, not work for the authors), each opening with
    `\claudedraft{date}`, which prints "Drafted by Claude" and which the
    authors delete once a slot is theirs; Adam sets the freeze point.
-5. Sandbox run; rebuild check against the downloaded records.
+5. Skipped (no sandbox run, above); the rebuild check passed on the
+   local export.
 6. Publish; DOIs into `CITATION.cff`, the README and the dataset's
    `CITATION.cff`.
 
