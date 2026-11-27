@@ -1,5 +1,7 @@
 \#{ The volume, from volume.yaml, or one chapter of it on its own. Context:
-   file (this file's name), title, parts (folder names, in order: every
+   file (this file's name), title, authors (names, in order; may be
+   empty) and author_note (a footnote on them, e.g. that the order is
+   alphabetical; may be empty), parts (folder names, in order: every
    part for main.tex, one for a chapter's own file), languages (every
    language chapter in the volume, whose values are loaded), venue (its
    name), documentclass and headings (tex.venue: a part is \include'd,
@@ -11,7 +13,7 @@
 % main.tex is the whole volume.
 \BLOCK{endif}
 % Written by `python -m coding build-chapters`; never edit it by hand
-% (change the title or the parts in volume.yaml, then rebuild).
+% (change the title, authors or parts in volume.yaml, then rebuild).
 % Compile it here, in the volume's folder in .papers/: latexmk -pdf \VAR{file}
 % The document class is the venue's (chapters/venues/\VAR{venue}.sty).
 \documentclass\VAR{Tex(documentclass)}
@@ -22,6 +24,9 @@
 \input{\VAR{path(L ~ "/values")}}
 \BLOCK{endfor}
 \title{\VAR{title}}
+\BLOCK{if authors}
+\author{\BLOCK{for a in authors}\BLOCK{if not loop.first} \and \BLOCK{endif}\VAR{a}\BLOCK{endfor}\BLOCK{if author_note}\thanks{\VAR{author_note}}\BLOCK{endif}}
+\BLOCK{endif}
 \begin{document}
 \maketitle
 \tableofcontents

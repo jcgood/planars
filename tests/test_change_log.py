@@ -218,6 +218,8 @@ def test_an_edit_that_changes_nothing_measured_breaks_nothing(coded, real_measur
     assert not effects.breaking
 
 
+@pytest.mark.skipif(not (Path(__file__).resolve().parent.parent / ".git").exists(),
+                    reason="no git history in this copy (log-change is run in the repository)")
 def test_the_before_copy_can_take_the_code_as_last_committed(tmp_path):
     tree = tmp_path / "tree"
     (tree / "planars").mkdir(parents=True)

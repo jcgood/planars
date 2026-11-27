@@ -41,7 +41,8 @@ which is all a chart is drawn from apart from the planar file) plus the
 planar file and the chart code (git's record of the code the charts are
 drawn by: ``chart_code_files()``, the laminar modules the chart commands
 import, read from their imports, with the renderer and ``planarsviz/``;
-documentation is left out). Completeness and the planars-data commit are
+documentation is left out; in a copy with no git history, the same record
+worked out from the files, ``code_version()``). Completeness and the planars-data commit are
 left out, so annotation that changes no span redraws nothing, and nor does
 a change to a laminar module the charts never import.
 """
@@ -52,6 +53,7 @@ import csv
 import hashlib
 import html
 import io
+import os
 import subprocess
 import tempfile
 from dataclasses import dataclass
@@ -172,19 +174,50 @@ def chart_code_files() -> list[str]:
     return sorted(files | {"laminar/__init__.py"} | set(_RENDER_CODE))
 
 
+def _tree_lines_from_files(paths: list[str]) -> list[str]:
+    """What ``git ls-tree -r HEAD -- paths`` prints, worked out from the
+    files themselves: for a copy with no git history, such as the software
+    record on Zenodo (a ``git archive`` of the release tag), whose files are
+    the tag's. Each line is the mode, ``blob``, the hash git gives the
+    file's bytes and the path, in git's order (by path)."""
+    files = []
+    for rel in paths:
+        path = REPO / rel
+        files += ([p for p in path.rglob("*") if p.is_file() or p.is_symlink()] if path.is_dir()
+                  else [path] if path.exists() or path.is_symlink() else [])
+    lines = []
+    for path in files:
+        rel = path.relative_to(REPO).as_posix()
+        if path.is_symlink():
+            mode, data = "120000", os.readlink(path).encode("utf-8")
+        else:
+            mode = "100755" if os.access(path, os.X_OK) else "100644"
+            data = path.read_bytes()
+        blob = hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
+        lines.append((rel.encode("utf-8"), f"{mode} blob {blob}\t{rel}"))
+    return [line for _key, line in sorted(lines)]
+
+
 def code_version() -> str:
     """git's record of the chart code as committed (``chart_code_files()``),
     as one hash: changes when one of those code files does, not when the
     documentation beside it does (``coding.versions.is_result_code``) and
-    not when a laminar module the charts never import does."""
+    not when a laminar module the charts never import does. In a copy with
+    no git history (the software record) the same record is worked out from
+    the files (``_tree_lines_from_files``), so the value is the same."""
     from coding.versions import is_result_code
-    done = subprocess.run(["git", "-C", str(REPO), "ls-tree", "-r", "HEAD", "--",
-                           *chart_code_files()], capture_output=True, text=True)
-    if done.returncode != 0 or not done.stdout.strip():
-        raise DrawingFailed("Could not read the chart code's version from git: "
-                            + (done.stderr.strip() or done.stdout.strip() or "no files"))
-    code = [line for line in done.stdout.splitlines()
-            if is_result_code(line.split("\t", 1)[1])]
+    if (REPO / ".git").exists():
+        done = subprocess.run(["git", "-C", str(REPO), "ls-tree", "-r", "HEAD", "--",
+                               *chart_code_files()], capture_output=True, text=True)
+        if done.returncode != 0 or not done.stdout.strip():
+            raise DrawingFailed("Could not read the chart code's version from git: "
+                                + (done.stderr.strip() or done.stdout.strip() or "no files"))
+        lines = done.stdout.splitlines()
+    else:
+        lines = _tree_lines_from_files(chart_code_files())
+        if not lines:
+            raise DrawingFailed(f"No chart code in {REPO} to read a version from.")
+    code = [line for line in lines if is_result_code(line.split("\t", 1)[1])]
     return hashlib.sha256("\n".join(code).encode("utf-8")).hexdigest()
 
 

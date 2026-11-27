@@ -140,17 +140,16 @@ The draft is an unpublished manuscript, so it lives in planars-data's
    Built for the spans 2026-11-25 (`tests/test_export_release.py`: the
    spans derived from the released folder are its `derived/spans.tsv`);
    `values.tex` waits for the report volume (item 1).
-   **Found 2026-11-26, to fix before the rebuild check counts:** the
-   software record is a `git archive` of the tag, with no git history, and
-   three things read git: `laminar.contributor_charts.code_version()` (the
-   chart code's fingerprint, which the results chapter's figures and the
-   weekly run use), the "before" copy `log-change` measures against
-   (`coding/change_effects.py`), and `test_no_retired_term_reappears`'s
-   file list (`git ls-files`). In a trial archive (NonCollaborative/ left
-   out, planars-data linked in) those three tests fail and everything else
-   passes or skips. The fix is a fingerprint read from the files
-   themselves when there is no git, giving the same value as from git, so
-   the rebuild check can run from the downloaded record.
+   **Found and fixed 2026-11-26:** the software record is a `git archive`
+   of the tag, with no git history, and three things read git. The chart
+   code's fingerprint (`laminar.contributor_charts.code_version()`, which
+   the results chapter's figures use) now works git's record out from the
+   files when there is no git, the same value line for line
+   (`tests/test_chart_code_files.py` checks against git);
+   `test_no_retired_term_reappears` reads every file of such a copy; and
+   the test of `log-change`'s "before" copy, a command run only in the
+   repository, skips there. A trial archive (NonCollaborative/ left out,
+   planars-data linked in) passes or skips every test.
 7. **`CITATION.cff` kept in step with the version.** Found while planning:
    it said `0.1.0a19`, `pyproject.toml` `0.1.0a71`. Done 2026-11-25 by
    deleting the copy (and the stale `date-released`): Zenodo's GitHub link
@@ -183,7 +182,6 @@ Jeff before planars-data's `.papers/` is moved), then 2 and 3.
 - **A freeze point for English** (a change-log position), chosen by Adam.
 - **Each span rule's status is printed** in the report beside its spans
   (decided); none has been reviewed with Adam yet (#321, 0 of 7).
-- **The rebuild check runs without git** (item 6's 2026-11-26 finding).
 - **English's word chosen** (#335) if the report tests the word hypothesis.
 - **Zenodo metadata**: keywords (no funder: decided), related
   identifiers (the 2024 volume's DOI, the CCDB). Authors' ORCIDs and

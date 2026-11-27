@@ -29,7 +29,8 @@ used starts that volume. In each volume's folder:
 
 - ``volume.yaml``: the volume's title, its venue (a file in
   ``chapters/venues/``) and its parts in order (``intro``, ``results``, or
-  a language's Glottocode); optionally the Overleaf project the volume's folder is
+  a language's Glottocode); optionally its ``authors`` (names, in the order
+  printed) with an ``author_note`` footnote on them, and the Overleaf project the volume's folder is
   synced with (``overleaf``, coding/sync_overleaf.py). Hand-edited; the
   build makes a starting one for a new volume, and checks every part is
   one it can build.
@@ -806,6 +807,13 @@ def read_volume(vol: str, lang: str | None = None) -> tuple[dict, str | None]:
     if volume.get("venue") not in tex.venues():
         raise ChapterDataError(f"{where}: `venue` is {volume.get('venue')!r}; it must "
                                f"name a file in chapters/venues/ ({', '.join(tex.venues())}).")
+    authors = volume.get("authors", [])
+    if not isinstance(authors, list) or not all(isinstance(a, str) and a.strip() for a in authors):
+        raise ChapterDataError(f"{where}: `authors` must be a list of names.")
+    if not isinstance(volume.get("author_note", ""), str):
+        raise ChapterDataError(f"{where}: `author_note` must be a line of text.")
+    if volume.get("author_note") and not authors:
+        raise ChapterDataError(f"{where}: `author_note` is a note on the authors, and `authors` lists none.")
     return volume, stub
 
 
@@ -1172,7 +1180,8 @@ def build_volume(vol: str, args: argparse.Namespace) -> list:
     languages = language_parts(volume["parts"])
     venue = tex.venue(volume["venue"])
     layout = {"venue": volume["venue"], "documentclass": venue["documentclass"],
-              "headings": venue["headings"]}
+              "headings": venue["headings"], "authors": volume.get("authors", []),
+              "author_note": volume.get("author_note", "")}
     built = {STY_FILE: tex.STY, tex.VENUE_STY: venue["sty"], MAIN: tex.render(
         "main.tex.j2", file=MAIN, title=volume["title"], parts=volume["parts"],
         languages=languages, **layout)}

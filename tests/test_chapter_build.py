@@ -255,6 +255,28 @@ def test_a_report_venue_volume_is_an_article_whose_parts_are_sections():
     assert re.search(r"\\subsection\{\w+ diagnostics\}", outline)
     assert r"\subsubsection{" in outline
     assert "planars venue: report" in (folder / tex.VENUE_STY).read_text(encoding="utf-8")
+    assert r"\author" not in main
+
+
+def test_the_volume_s_authors_go_on_the_title_with_their_note():
+    _volume_yaml("title: A report\nvenue: report\nparts: [intro]\n"
+                 "authors: [Jeff Good, Adam J. R. Tallman]\n"
+                 "author_note: Authors are listed alphabetically.\n", "report")
+    _run("--volume", "report", "--intro", "--apply")
+    main = (state_files.PAPERS_DIR / "report" / "main.tex").read_text(encoding="utf-8")
+    assert (r"\author{Jeff Good \and Adam J. R. Tallman\thanks{Authors are listed alphabetically.}}"
+            in main)
+    assert main.index(r"\author") < main.index(r"\begin{document}")
+
+
+@pytest.mark.parametrize("extra, message", [
+    ("authors: Jeff Good\n", "list of names"),
+    ("author_note: Alphabetical.\n", "lists none"),
+])
+def test_the_volume_s_authors_are_a_list(extra, message):
+    _volume_yaml("title: T\nvenue: report\nparts: [intro]\n" + extra)
+    with pytest.raises(ChapterDataError, match=message):
+        build.read_volume(VOL)
 
 
 def test_written_prose_is_kept_and_a_retired_slot_or_fragment_is_handled(capsys):
@@ -570,7 +592,8 @@ def test_the_volume_compiles(english, own_english, drawn, venue):
     _run("--volume", VOL, "--intro", "--apply")
     (_vol() / "volume.yaml").write_text(
         VOLUME.replace("stan1293]", "stan1293, results]").replace("venue: book",
-                                                                  f"venue: {venue}"),
+                                                                  f"venue: {venue}")
+        + "authors: [Jeff Good, Adam J. R. Tallman]\nauthor_note: Authors are listed alphabetically.\n",
         encoding="utf-8")
     _run("--apply")
     total = english.values["stan1293.planar.positions"]

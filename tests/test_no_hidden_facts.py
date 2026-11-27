@@ -236,9 +236,15 @@ def test_every_written_command_and_flag_exists():
 
 
 def _tracked_text_files() -> Iterator[Tuple[str, str]]:
+    """Every committed text file; in a copy with no git history (the
+    software record, a git archive) every file in it, which are those."""
     import subprocess
-    names = subprocess.run(["git", "-C", str(ROOT), "ls-files"], capture_output=True,
-                           text=True, check=True).stdout.splitlines()
+    if (ROOT / ".git").exists():
+        names = subprocess.run(["git", "-C", str(ROOT), "ls-files"], capture_output=True,
+                               text=True, check=True).stdout.splitlines()
+    else:
+        names = sorted(p.relative_to(ROOT).as_posix() for p in ROOT.rglob("*")
+                       if p.is_file() and not p.is_symlink())
     for name in names:
         path = ROOT / name
         if not path.is_file():
