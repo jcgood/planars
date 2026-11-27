@@ -1,7 +1,8 @@
 """``python -m coding stage-zenodo``: a volume's three Zenodo records, ready
 to upload (docs/zenodo-report-plan.md, "What gets published").
 
-    python -m coding stage-zenodo --volume report --licence stan1293=CC0-1.0 --out DIR [--apply]
+    python -m coding stage-zenodo --volume report --licence stan1293=CC0-1.0 \
+        --release-version stan1293=0.0.1 --out DIR [--apply]
 
 Dry run by default: says what it would stage and whatever stops it;
 ``--apply`` writes ``DIR`` (new or empty, outside this repository and
@@ -22,7 +23,9 @@ links to the other records and to the work it builds on):
 - ``2-dataset-<L>/`` for each language chapter in the volume: the
   release export-release writes (coding/export_release.py), at the
   chapter's pin in the volume, zipped, with ``--licence``'s licence (the
-  annotator's choice, so it is always given, never a default).
+  annotator's choice, so it is always given, never a default) and
+  ``--release-version``'s number (export-release's ``--release-version``;
+  the record's version).
 - ``3-report/``: ``<volume>.pdf``, compiled from planars-data's committed
   copy of the volume's folder (refused on a LaTeX error, a value with no
   name or a claim that no longer holds), ``<volume>-source.zip`` (those
@@ -46,7 +49,7 @@ fetch; uncommitted code that produces results is refused by
 export-release's stamp check); when the volume's folder in planars-data
 has uncommitted changes; when a language chapter is not built, or was
 built with other code than this checkout's (rebuild the volume); when the
-volume has no ``abstract``, a language no licence, or a person named as
+volume has no ``abstract``, a language no licence or release version, or a person named as
 author is not in ``CITATION.cff``; and whenever export-release refuses.
 """
 
@@ -77,7 +80,7 @@ README = "README.md"
 ZENODO_LICENCE = {"MIT": "mit", "CC0-1.0": "cc-zero", "CC-BY-4.0": "cc-by-4.0"}
 # The report's own text (docs/zenodo-report-plan.md, "What gets published").
 REPORT_LICENCE = "CC-BY-4.0"
-_LICENCE_ARG = re.compile(r"^([a-z0-9]{4}\d{4})=(\S+)$")
+_LANG_ARG = re.compile(r"^([a-z0-9]{4}\d{4})=(\S+)$")
 
 
 class StagingRefused(Exception):
@@ -148,14 +151,14 @@ def _metadata(fields: dict) -> str:
     return json.dumps({"metadata": fields}, indent=2, ensure_ascii=False) + "\n"
 
 
-def parse_licences(values: list) -> dict:
-    """``L=SPDX`` arguments as {L: SPDX}."""
+def parse_per_language(flag: str, values: list, example: str) -> dict:
+    """``L=VALUE`` arguments (``--licence``, ``--release-version``) as {L: VALUE}."""
     out = {}
     for value in values or []:
-        m = _LICENCE_ARG.match(value)
+        m = _LANG_ARG.match(value)
         if not m:
-            raise StagingRefused(f"--licence {value!r}: write it as <glottocode>=<licence>, "
-                                 f"e.g. stan1293=CC0-1.0.")
+            raise StagingRefused(f"{flag} {value!r}: write it as <glottocode>=<value>, "
+                                 f"e.g. {example}.")
         out[m.group(1)] = m.group(2)
     return out
 
@@ -181,11 +184,13 @@ def _compile(folder: Path) -> list:
     return problems
 
 
-def build(vol: str, licences: dict, out: Path, apply: bool) -> dict:
+def build(vol: str, licences: dict, out: Path, apply: bool,
+          release_versions: dict | None = None) -> dict:
     """Stage the volume's records (or, without `apply`, say what it would).
     Returns {records: [folder names], refusals, notes}; raises
     StagingRefused when `apply` meets any refusal."""
     refusals = er.out_problems(out)
+    release_versions = release_versions or {}
     volume, _stub = cb.read_volume(vol)
     if _stub is not None:
         raise StagingRefused(f"There is no volume {vol!r} in .papers/.")
@@ -201,8 +206,9 @@ def build(vol: str, licences: dict, out: Path, apply: bool) -> dict:
                         f"(the report is made from the committed files).")
     if not volume.get("abstract"):
         refusals.append(f".papers/{vol}/{cb.VOLUME} has no `abstract` (the record's description).")
-    for L in sorted(set(licences) - set(langs)):
-        refusals.append(f"--licence names {L}, which is not a language chapter of volume {vol}.")
+    for flag, given in (("--licence", licences), ("--release-version", release_versions)):
+        for L in sorted(set(given) - set(langs)):
+            refusals.append(f"{flag} names {L}, which is not a language chapter of volume {vol}.")
     locks = {}
     for L in langs:
         if L not in licences:
@@ -256,11 +262,14 @@ def build(vol: str, licences: dict, out: Path, apply: bool) -> dict:
             try:
                 # Into the temporary folder, dry run or not: --apply decides only DIR.
                 summary = er.build(L, locks[L]["position"], release, apply=True,
-                                   licence=licences[L])
+                                   licence=licences[L],
+                                   release_version=release_versions.get(L))
             except er.ReleaseRefused as e:
                 refusals.append(f"{get_display_name(L)}'s dataset: {e}")
                 continue
             dataset_cff = _cff(release / er.CITATION)
+            lang_version = json.loads((release / er.RELEASE_RECORD).read_text(encoding="utf-8")
+                                      )["stamp"]["languages"][L]["version"]
             shutil.make_archive(str(folder / f"{L}-dataset"), "zip", root_dir=release)
             drafts = sum(d["answers"] for d in summary["claude_drafts"])
             (folder / METADATA).write_text(_metadata({
@@ -269,8 +278,11 @@ def build(vol: str, licences: dict, out: Path, apply: bool) -> dict:
                 "creators": creators(dataset_cff["authors"]),
                 "description": _paragraphs(
                     dataset_cff["abstract"],
-                    f"Released at change-log line {summary['position']} of the language's "
-                    f"annotation, with planars {code}; README.md says how to derive the spans "
+                    f"Release {dataset_cff['version']}: the language's annotation at "
+                    f"change-log line {summary['position']} (its version "
+                    f"{lang_version}, which counts edits to the "
+                    f"planar and diagnostics files), with planars {code}; README.md says how to "
+                    f"derive the spans "
                     f"again and check a report's numbers against these files.",
                     f"{drafts} answers drafted with Claude and not yet checked by the annotator "
                     f"are released as they are, marked in their Source column and listed in "
@@ -352,6 +364,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--volume", required=True, metavar="NAME", help="the volume in .papers/")
     p.add_argument("--licence", action="append", metavar="LANG=LICENCE",
                    help=f"a language's dataset licence ({' or '.join(er.LICENCES)}); one per language")
+    p.add_argument("--release-version", action="append", metavar="LANG=X.Y.Z",
+                   help="a language's dataset release number, e.g. stan1293=0.0.1; one per language")
     p.add_argument("--out", required=True, metavar="DIR",
                    help="the folder to write (new or empty, outside both repositories)")
     p.add_argument("--apply", action="store_true", help="write the folder")
@@ -362,7 +376,11 @@ def main(args: argparse.Namespace | None = None) -> None:
     if args is None:
         args = build_parser().parse_args()
     try:
-        result = build(args.volume, parse_licences(args.licence), Path(args.out), args.apply)
+        result = build(args.volume,
+                       parse_per_language("--licence", args.licence, "stan1293=CC0-1.0"),
+                       Path(args.out), args.apply,
+                       parse_per_language("--release-version", args.release_version,
+                                          "stan1293=0.0.1"))
     except (StagingRefused, cb.ChapterDataError) as e:
         sys.exit("NOT STAGED:\n  " + str(e).replace("\n", "\n  "))
     print(f"Volume {args.volume}: {', '.join(result['records'])}"

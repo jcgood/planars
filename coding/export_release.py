@@ -1,7 +1,7 @@
 """``python -m coding export-release``: one language's annotation as a
 dataset to publish (docs/zenodo-report-plan.md, item 5).
 
-    python -m coding export-release --lang stan1293 --out DIR --licence {CC-BY-4.0,CC0-1.0} [--position N] [--apply]
+    python -m coding export-release --lang stan1293 --out DIR --licence {CC-BY-4.0,CC0-1.0} --release-version 0.0.1 [--position N] [--apply]
 
 Dry run by default: says what the folder would hold and whatever stops a
 release; ``--apply`` writes it. ``DIR`` must not exist yet (or be empty)
@@ -40,13 +40,19 @@ version it names:
   ``--licence`` (``LICENCES``), which a release must name, since each
   language's annotator chooses for their own dataset (English: CC0, Adam,
   2026-11-26; docs/zenodo-report-plan.md, "Decided"). Under CC0 the file
-  asks for a citation rather than requiring one.
+  asks for a citation rather than requiring one. Its ``version`` is the
+  release's own number, ``--release-version`` (``RELEASE_VERSION``: three
+  numbers, e.g. 0.0.1; the Zenodo record's version too), chosen by whoever
+  releases it, since the language's version counts only edits to its planar
+  and diagnostics files, not its answers (English stayed 0.0.0 through its
+  first release; Jeff, 2026-11-27). The README and ``release.json`` give
+  both.
 
 Everything else in the language's folder (``records/``, ``decisions.tsv``,
 the archive, state the tooling keeps) is left out; the dry run lists it,
 so nothing is dropped unseen.
 
-**It refuses,** listing every case, when no licence is named, when the release can't be rebuilt from
+**It refuses,** listing every case, when no licence or release version is named, when the release can't be rebuilt from
 what it names (``versions.stamp_problems``: uncommitted result code, a
 source changed outside the tooling), when the release check fails
 (``versions.release_problems``: a breaking change with annotation still
@@ -68,6 +74,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import sys
 import tempfile
@@ -86,6 +93,8 @@ LANG_SETUP = "lang_setup"
 README = "README.md"
 CODEBOOK = "codebook.md"
 CITATION = "CITATION.cff"
+# A release's own number (--release-version): three numbers, as 0.0.1.
+RELEASE_VERSION = re.compile(r"^\d+\.\d+\.\d+$")
 
 # The licences a dataset may carry (SPDX identifiers), and what each
 # CITATION.cff says to its reader. One of them is chosen per release.
@@ -200,6 +209,7 @@ planar structure each constituency diagnostic picks out, as judged by its
 annotator. Authors, licence and how to cite are in `CITATION.cff` and on
 the Zenodo record.
 
+- Release {record['release']}
 - Language version {lang['version']}, its change log cut at line {lang['position']}
 - Schemas version {stamp['schemas']['version']} (their log at line {stamp['schemas']['position']})
 - Code: planars {stamp['code']['version']} (https://github.com/jcgood/planars, the release tagged `v{stamp['code']['version']}`)
@@ -288,7 +298,7 @@ def citation(lang_id: str, record: dict, licence: str, repo_cff: Path | None = N
         "type": "dataset",
         "title": f"{name}: planars constituency annotation",
         "authors": authors,
-        "version": f"{lang['version']} (change-log line {lang['position']})",
+        "version": record["release"],
         "date-released": record["date"],
         "license": licence,
         "abstract": (f"The annotation of {name} for the planars project: which positions of its "
@@ -313,7 +323,8 @@ def _table_text(df: pd.DataFrame) -> str:
 
 
 def build(lang_id: str, position: int | None, out: Path, apply: bool,
-          check_release: bool = True, licence: str | None = None) -> dict:
+          check_release: bool = True, licence: str | None = None,
+          release_version: str | None = None) -> dict:
     """Make the release (or, without `apply`, say what it would hold).
     Returns a summary: files, left_out, missing, refusals. Raises
     ReleaseRefused listing every reason a release can't be made."""
@@ -325,6 +336,12 @@ def build(lang_id: str, position: int | None, out: Path, apply: bool,
                         f"annotator chooses it (English: CC0-1.0; docs/zenodo-report-plan.md, \"Decided\").")
     elif licence not in LICENCES:
         raise ReleaseRefused(f"{licence} is not a licence a dataset may carry ({', '.join(LICENCES)}).")
+    if release_version is None:
+        refusals.append("No release version named: give --release-version (three numbers, e.g. "
+                        "0.0.1 for a first release; higher than the language's last release).")
+    elif not RELEASE_VERSION.match(release_version):
+        raise ReleaseRefused(f"--release-version {release_version!r}: write it as three numbers, "
+                             f"e.g. 0.0.1.")
     try:
         chapter = chapter_data(lang_id, position=position)
     except ChapterDataError as e:
@@ -369,7 +386,8 @@ def build(lang_id: str, position: int | None, out: Path, apply: bool,
         counts = {"classes": chapter.values[f"{lang_id}.diagnostics.classes"],
                   "constructions": chapter.values[f"{lang_id}.diagnostics.constructions"],
                   "percent": chapter.values[f"{lang_id}.annotation.percent"]}
-        record = {"language": lang_id, "date": chapter.version["date"], "stamp": record_stamp,
+        record = {"language": lang_id, "release": release_version or "(none named)",
+                  "date": chapter.version["date"], "stamp": record_stamp,
                   "claude_drafts": drafts}
         (stage / README).write_text(readme(lang_id, record, counts, sorted(chapter.bundles)),
                                     encoding="utf-8")
@@ -407,6 +425,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="the language's change-log position (default: the files as they are)")
     p.add_argument("--licence", choices=sorted(LICENCES),
                    help="the dataset's licence, written into its CITATION.cff (required to release)")
+    p.add_argument("--release-version", metavar="X.Y.Z",
+                   help="the release's own number, e.g. 0.0.1 (required to release)")
     p.add_argument("--apply", action="store_true", help="write the folder")
     return p
 
@@ -417,7 +437,7 @@ def main(args: argparse.Namespace | None = None) -> None:
     name = get_display_name(args.lang)
     try:
         summary = build(args.lang, args.position, Path(args.out), args.apply,
-                        licence=args.licence)
+                        licence=args.licence, release_version=args.release_version)
     except ReleaseRefused as e:
         sys.exit(f"NO RELEASE of {name}:\n  " + str(e).replace("\n", "\n  "))
     print(f"{name} at change-log line {summary['position']}: {len(summary['files'])} file(s)"

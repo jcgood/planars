@@ -10,11 +10,12 @@ from coding import drive_door, file_door
 from coding import stage_zenodo as sz
 
 
-def test_a_licence_is_given_per_language():
-    assert sz.parse_licences(["stan1293=CC0-1.0"]) == {"stan1293": "CC0-1.0"}
-    assert sz.parse_licences(None) == {}
+def test_a_licence_and_a_release_version_are_given_per_language():
+    assert sz.parse_per_language("--licence", ["stan1293=CC0-1.0"], "x") == {"stan1293": "CC0-1.0"}
+    assert sz.parse_per_language("--release-version", ["stan1293=0.0.1"], "x") == {"stan1293": "0.0.1"}
+    assert sz.parse_per_language("--licence", None, "x") == {}
     with pytest.raises(sz.StagingRefused, match="glottocode"):
-        sz.parse_licences(["CC0-1.0"])
+        sz.parse_per_language("--licence", ["CC0-1.0"], "stan1293=CC0-1.0")
 
 
 def test_creators_carry_orcid_and_affiliation():

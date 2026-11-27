@@ -34,7 +34,7 @@ def test_it_writes_only_outside_both_repositories(tmp_path):
 
 
 def test_the_citation_reads_its_authors_from_the_repository(tmp_path):
-    record = {"date": "2026-11-25", "stamp": {"code": {"version": "0.1.0a71"},
+    record = {"date": "2026-11-25", "release": "0.0.1", "stamp": {"code": {"version": "0.1.0a71"},
                                               "languages": {"synth0001": {"version": "1.2", "position": 9}}}}
     repo_cff = tmp_path / "CITATION.cff"
     repo_cff.write_text("authors:\n  - family-names: A\n    given-names: B\n"
@@ -42,6 +42,7 @@ def test_the_citation_reads_its_authors_from_the_repository(tmp_path):
     # The dataset's authors in the language's order; the software's as the file has them.
     cff = yaml.safe_load(er.citation("synth0001", record, "CC-BY-4.0", repo_cff, names=["D C", "B A"]))
     assert [a["family-names"] for a in cff["authors"]] == ["C", "A"]
+    assert cff["version"] == "0.0.1"
     assert [a["family-names"] for a in cff["references"][0]["authors"]] == ["A", "C"]
     assert cff["references"][0]["version"] == "0.1.0a71" and "requires attribution" in cff["message"]
     with pytest.raises(er.ReleaseRefused, match="not in CITATION.cff"):
@@ -74,14 +75,20 @@ def test_claude_drafts_are_released_marked(reads_english, tmp_path, monkeypatch)
     monkeypatch.setattr(cd, "claude_drafts", lambda lang_dir: pd.DataFrame(
         [{"Class": "phrasal_accent", "Construction": "general", "Rows": 3}]))
     monkeypatch.setattr(versions, "stamp_problems", lambda stamp: [])  # this checkout may be mid-edit
-    # No licence: refused for that, and only that.
+    # No licence and no release version: refused for those, and only those.
     summary = er.build("stan1293", None, tmp_path / "out", apply=False, check_release=False)
-    assert [r for r in summary["refusals"] if "No licence named" not in r] == []
+    assert [r for r in summary["refusals"]
+            if "No licence named" not in r and "No release version" not in r] == []
+    assert len(summary["refusals"]) == 2
     with pytest.raises(er.ReleaseRefused, match="No licence"):
         er.build("stan1293", None, tmp_path / "out", apply=True, check_release=False)
+    with pytest.raises(er.ReleaseRefused, match="three numbers"):
+        er.build("stan1293", None, tmp_path / "out", apply=True, check_release=False,
+                 licence="CC0-1.0", release_version="1")
     assert not (tmp_path / "out").exists()
     out = tmp_path / "out"
-    er.build("stan1293", None, out, apply=True, check_release=False, licence="CC0-1.0")
+    er.build("stan1293", None, out, apply=True, check_release=False, licence="CC0-1.0",
+             release_version="0.0.1")
     record = json.loads((out / er.RELEASE_RECORD).read_text(encoding="utf-8"))
     assert record["claude_drafts"] == [{"class": "phrasal_accent", "construction": "general", "answers": 3}]
     text = (out / er.README).read_text(encoding="utf-8")
@@ -98,13 +105,15 @@ def test_the_spans_derive_again_from_the_release(reads_english, tmp_path, monkey
         columns=["Class", "Construction", "Rows"]))
     monkeypatch.setattr(versions, "stamp_problems", lambda stamp: [])  # this checkout may be mid-edit
     out = tmp_path / "out"
-    summary = er.build("stan1293", None, out, apply=True, check_release=False, licence="CC0-1.0")
+    summary = er.build("stan1293", None, out, apply=True, check_release=False, licence="CC0-1.0",
+                       release_version="0.0.1")
     assert summary["refusals"] == []
     # The dataset's CITATION.cff: English's dataset_authors, with what this
     # repository's file says of each.
     cff = yaml.safe_load((out / er.CITATION).read_text(encoding="utf-8"))
     assert cff["authors"] == er.dataset_authors("stan1293")[0] and cff["license"] == "CC0-1.0"
     assert cff["type"] == "dataset" and "no citation is required" in cff["message"]
+    assert cff["version"] == "0.0.1" and "- Release 0.0.1" in (out / er.README).read_text(encoding="utf-8")
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(cff["date-released"]))
     lang_dir = out / "coded_data" / "stan1293"
     # Only what the release holds: no records, no proposal base, no archive.
