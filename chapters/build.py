@@ -31,7 +31,9 @@ used starts that volume. In each volume's folder:
   ``chapters/venues/``) and its parts in order (``NON_LANGUAGE``: ``intro``,
   ``summary``, ``method``, ``contributions``, ``results``, ``status``,
   ``next``; or a language's Glottocode); optionally its ``authors`` (names, in the order
-  printed) with an ``author_note`` footnote on them, and the Overleaf project the volume's folder is
+  printed) with an ``author_note`` footnote on them, ``intro_classes``
+  (``INTRO_CLASSES``: ``all``, the default, or ``volume``: only the
+  classes of the volume's language chapters), and the Overleaf project the volume's folder is
   synced with (``overleaf``, coding/sync_overleaf.py). Hand-edited; the
   build makes a starting one for a new volume, and checks every part is
   one it can build.
@@ -57,7 +59,9 @@ made (a class retired) is deleted. ``volume.yaml`` and each
 (the door refuses; only sync-overleaf, carrying an edit made in Overleaf,
 replaces one). Any other file a writer adds is theirs too. A prose file whose slot has left the outline is
 listed, never deleted; a slot still holding its ``\\proseslot`` line is
-counted as not yet written.
+counted as not yet written, and one opening with ``\\claudedraft{date}``
+(``DRAFT_MARK``; the PDF prints "Drafted by Claude") as Claude's draft,
+until its authors delete that line.
 
 **A language chapter is pinned to a data version**, recorded in
 ``<L>/data.lock``: the language's change-log position and that line's
@@ -192,11 +196,14 @@ def _domain(entry: dict) -> str:
 
 # ── The introduction ────────────────────────────────────────────────────────
 
-def intro_fragments() -> dict:
-    """{file name: text} for the introduction's fragments."""
+def intro_fragments(only: set | None = None) -> dict:
+    """{file name: text} for the introduction's fragments: every class, or
+    those in `only`."""
     out = {"terms.tex": tex.render("terms.tex.j2", terms=_schema("terms.yaml").get("terms", []))}
     criteria = _criteria_entries()
     for name, entry in _class_entries().items():
+        if only is not None and name not in only:
+            continue
         own = criteria.get(name, {"description": "", "criteria": {}})
         names = list(entry.get("required_criteria") or []) + list(entry.get("optional_criteria") or [])
         unknown = [c for c in names if c not in own["criteria"]]
@@ -563,6 +570,14 @@ PART_TITLE = {INTRO: "Introduction", SUMMARY: "Summary", METHOD: "Method",
               NEXT: "Next steps"}
 
 
+# Which classes a volume's introduction covers (volume.yaml's
+# `intro_classes`): every class in the schema (the book), or only those of
+# the volume's language chapters, at their pins (the English-only report).
+INTRO_ALL, INTRO_VOLUME = "all", "volume"
+INTRO_CLASSES = {INTRO_ALL: "every class in the schema",
+                 INTRO_VOLUME: "the classes of the volume's language chapters"}
+
+
 def _part_names() -> str:
     """The parts a volume.yaml may list, for a message."""
     return ", ".join(f"`{p}`" for p in NON_LANGUAGE) + " or a language's Glottocode"
@@ -571,6 +586,8 @@ MAIN = "main.tex"
 STY_FILE = "planarschapter.sty"
 # What a prose stub holds until someone writes in it.
 SLOT_MARK = "\\proseslot{"
+# What opens a slot Claude drafted, until its authors make it their own.
+DRAFT_MARK = "\\claudedraft{"
 _SECTION_KEYS = {"heading", "slot", "who", "says", "fragments", "classes", "class_fragments",
                  "figures"}
 _FIGURE_KEYS = {"chart", "dataset"}
@@ -852,7 +869,7 @@ def results_chapters(vol: str, languages: list) -> list:
 
 def part_files(vol: str, part: str, position: int | None = None, update: bool = False,
                parts: list | None = None, languages: list | None = None, apply: bool = False,
-               *, headings: dict) -> tuple[dict, dict, list, dict]:
+               *, headings: dict, intro_classes: str = INTRO_ALL) -> tuple[dict, dict, list, dict]:
     """({path in the volume's folder: text} built, {path: text} stubs, lines
     to print, {name: value} the part's values) for one part of volume `vol`,
     its headings written as the volume's venue gives (``tex.venue``).
@@ -860,12 +877,18 @@ def part_files(vol: str, part: str, position: int | None = None, update: bool = 
     the pin to `position`. `parts` are the parts whose prose the report
     looks through; `languages` the volume's language chapters, which the
     results chapter reports on; `apply` lets it draw the results chapter's
-    figures (a dry run never does)."""
+    figures (a dry run never does); `intro_classes` is volume.yaml's
+    (``INTRO_CLASSES``): which classes the introduction covers."""
     entries = _class_entries()
     changed, report = set(), []
     if part == INTRO:
-        fragments, L, built, said, values = intro_fragments(), None, {}, [], {}
-        classes = [(name, e["display_name"], e["domain_type"]) for name, e in entries.items()]
+        only = None
+        if intro_classes == INTRO_VOLUME:
+            only = {c for chapter in results_chapters(vol, languages or [])
+                    for c in chapter.tables["diagnostics"]["Class"]}
+        fragments, L, built, said, values = intro_fragments(only), None, {}, [], {}
+        classes = [(name, e["display_name"], e["domain_type"]) for name, e in entries.items()
+                   if only is None or name in only]
     elif part in PROSE_ONLY:
         fragments, L, built, said, values, classes = {}, None, {}, [], {}, []
     elif part == STATUS:
@@ -987,6 +1010,9 @@ def read_volume(vol: str, lang: str | None = None) -> tuple[dict, str | None]:
         raise ChapterDataError(f"{where}: `author_note` must be a line of text.")
     if volume.get("author_note") and not authors:
         raise ChapterDataError(f"{where}: `author_note` is a note on the authors, and `authors` lists none.")
+    if volume.get("intro_classes", INTRO_ALL) not in INTRO_CLASSES:
+        raise ChapterDataError(f"{where}: `intro_classes` is {volume.get('intro_classes')!r}; it is "
+                               f"one of {', '.join(INTRO_CLASSES)}.")
     return volume, stub
 
 
@@ -1063,12 +1089,16 @@ def write(vol: str, built: dict, stubs: dict, parts: list, apply: bool) -> list:
 
 
 def slot_report(vol: str, stubs: dict, parts: list) -> list:
-    """How many of volume `vol`'s prose slots are still unwritten, and every
-    prose file whose slot has left the outline (listed, never deleted)."""
+    """How many of volume `vol`'s prose slots are still unwritten, how many
+    of the written ones are still Claude's drafts (``DRAFT_MARK``), and
+    every prose file whose slot has left the outline (listed, never
+    deleted)."""
     slots = {rel for rel in stubs if "/prose/" in rel}
-    unwritten = sum(1 for rel in slots if SLOT_MARK in (
-        file_door.read_paper(file_door.paper_stub(f"{vol}/{rel}")) or SLOT_MARK))
-    lines = [f"Prose in volume {vol}: {len(slots) - unwritten} of {len(slots)} slots written."]
+    texts = [file_door.read_paper(file_door.paper_stub(f"{vol}/{rel}")) or SLOT_MARK for rel in slots]
+    unwritten = sum(1 for text in texts if SLOT_MARK in text)
+    drafts = sum(1 for text in texts if SLOT_MARK not in text and DRAFT_MARK in text)
+    lines = [f"Prose in volume {vol}: {len(slots) - unwritten} of {len(slots)} slots written"
+             + (f", {drafts} of them Claude's drafts." if drafts else ".")]
     for part in parts:
         for path in file_door.paper_files(f"{vol}/{part}/prose", "*.tex"):
             rel = f"{part}/prose/{path.name}"
@@ -1369,9 +1399,9 @@ def build_volume(vol: str, args: argparse.Namespace) -> list:
     values = {}
     print(f"Volume {vol}" + (" (new)" if volume_stub else "") + f": {volume['title']}")
     for part in parts:
-        part_built, part_stubs, said, part_values = part_files(vol, part, args.position, args.update,
-                                                               prose_parts, languages, args.apply,
-                                                               headings=venue["headings"])
+        part_built, part_stubs, said, part_values = part_files(
+            vol, part, args.position, args.update, prose_parts, languages, args.apply,
+            headings=venue["headings"], intro_classes=volume.get("intro_classes", INTRO_ALL))
         built.update(part_built)
         stubs.update(part_stubs)
         values.update(part_values)

@@ -383,6 +383,30 @@ def test_the_report_s_own_parts(own_english, counted, english):
 
 
 @needs_english
+def test_an_introduction_can_cover_only_the_volume_s_classes(own_english, english, capsys):
+    _volume_yaml("title: A report\nvenue: report\nintro_classes: volume\nparts: [intro, stan1293]\n",
+                 "report")
+    _run("--volume", "report", "--apply")
+    folder = state_files.PAPERS_DIR / "report" / "intro"
+    english_classes = set(english.tables["diagnostics"]["Class"])
+    made = {p.stem.removeprefix("class_") for p in (folder / "fragments").glob("class_*.tex")}
+    assert made == english_classes
+    assert {p.stem.removeprefix("class_") for p in (folder / "prose").glob("class_*.tex")} == english_classes
+    # A slot Claude drafted counts as written, and as a draft.
+    stub = folder / "prose" / "terms.tex"
+    stub.write_text("\\claudedraft{2026-11-26}\nThe terms.\n", encoding="utf-8")
+    capsys.readouterr()
+    _run("--volume", "report", "--apply")
+    assert "slots written, 1 of them Claude's drafts." in capsys.readouterr().out
+
+
+def test_intro_classes_is_one_of_the_known_scopes():
+    _volume_yaml("title: T\nvenue: report\nintro_classes: some\nparts: [intro]\n")
+    with pytest.raises(ChapterDataError, match="intro_classes"):
+        build.read_volume(VOL)
+
+
+@needs_english
 def test_who_did_what_is_counted_again_when_its_cut_off_moves(own_english, counted, english):
     _volume_yaml("title: A report\nvenue: report\nparts: [contributions, stan1293]\n", "report")
     _run("--volume", "report", "--apply")

@@ -276,4 +276,8 @@ STY =r"""% planarschapter.sty: macros the generated fragments use.
 % \proseslot{name} stands in a prose slot nobody has written yet, so the
 % gap shows in the PDF.
 \newcommand{\proseslot}[1]{\par\noindent\fbox{\textit{Still to write: #1}}\par}
+% \claudedraft{date} opens a prose slot Claude drafted and its authors have
+% not yet made their own, so the PDF says so; delete the line once you have.
+\newcommand{\claudedraft}[1]{\par\noindent{\small\textit{[Drafted by Claude, #1; not yet
+  checked by the authors.]}}\par\nopagebreak}
 """
