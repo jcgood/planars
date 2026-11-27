@@ -26,13 +26,14 @@ links to the other records and to the work it builds on):
   many files for a record to hold loose, as Zenodo allows 100).
 - ``2-dataset-<L>/`` for each language chapter in the volume: the
   release export-release writes (coding/export_release.py), at the
-  chapter's pin in the volume, zipped, with ``--licence``'s licence (the
+  chapter's pin in the volume, zipped as
+  ``planars-<L>-dataset-<release version>.zip``, with ``--licence``'s licence (the
   annotator's choice, so it is always given, never a default) and
   ``--release-version``'s number (export-release's ``--release-version``;
   the record's version).
-- ``3-report/``: ``<volume>.pdf``, compiled from planars-data's committed
+- ``3-report/``: ``<file_name>.pdf``, compiled from planars-data's committed
   copy of the volume's folder (refused on a LaTeX error, a value with no
-  name or a claim that no longer holds), ``<volume>-source.zip`` (those
+  name or a claim that no longer holds), ``<file_name>-source.zip`` (those
   committed files: the LaTeX source and every ``values.tex``), and the
   record's metadata: volume.yaml's title, authors (ORCIDs and affiliations
   read from ``CITATION.cff``) and ``abstract``.
@@ -83,7 +84,7 @@ README = "README.md"
 # Zenodo's identifiers for the licences a record may carry (SPDX -> Zenodo).
 ZENODO_LICENCE = {"MIT": "mit", "CC0-1.0": "cc-zero", "CC-BY-4.0": "cc-by-4.0"}
 # The report's own text (docs/zenodo-report-plan.md, "What gets published").
-REPORT_LICENCE = "CC-BY-4.0"
+REPORT_LICENCE = "CC0-1.0"   # Jeff, 2026-11-27
 _LANG_ARG = re.compile(r"^([a-z0-9]{4}\d{4})=(\S+)$")
 
 
@@ -210,6 +211,11 @@ def build(vol: str, licences: dict, out: Path, apply: bool,
                         f"(the report is made from the committed files).")
     if not volume.get("abstract"):
         refusals.append(f".papers/{vol}/{cb.VOLUME} has no `abstract` (the record's description).")
+    file_name = volume.get("file_name")
+    if not file_name:
+        refusals.append(f".papers/{vol}/{cb.VOLUME} has no `file_name` (what the PDF is called, "
+                        f"with a date in it, e.g. constituency-typology-report-2026-11).")
+    file_name = file_name or vol
     for flag, given in (("--licence", licences), ("--release-version", release_versions)):
         for L in sorted(set(given) - set(langs)):
             refusals.append(f"{flag} names {L}, which is not a language chapter of volume {vol}.")
@@ -276,7 +282,8 @@ def build(vol: str, licences: dict, out: Path, apply: bool,
             dataset_cff = _cff(release / er.CITATION)
             lang_version = json.loads((release / er.RELEASE_RECORD).read_text(encoding="utf-8")
                                       )["stamp"]["languages"][L]["version"]
-            shutil.make_archive(str(folder / f"{L}-dataset"), "zip", root_dir=release)
+            shutil.make_archive(str(folder / f"planars-{L}-dataset-{dataset_cff['version']}"),
+                                "zip", root_dir=release)
             for name in (er.README, er.CITATION):   # shown on the record page
                 shutil.copy2(release / name, folder / name)
             drafts = sum(d["answers"] for d in summary["claude_drafts"])
@@ -310,11 +317,11 @@ def build(vol: str, licences: dict, out: Path, apply: bool,
             target = source / Path(rel).relative_to(f".papers/{vol}")
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(state_files.CODED_DATA / rel, target)
-        shutil.make_archive(str(folder / f"{vol}-source"), "zip", root_dir=source)
+        shutil.make_archive(str(folder / f"{file_name}-source"), "zip", root_dir=source)
         compiled = _compile(source)
         refusals += compiled
         if not compiled:
-            shutil.copy2(source / "main.pdf", folder / f"{vol}.pdf")
+            shutil.copy2(source / "main.pdf", folder / f"{file_name}.pdf")
         (folder / METADATA).write_text(_metadata({
             "upload_type": "publication", "publication_type": "report", "title": volume["title"],
             "creators": creators([by_name[a] for a in volume.get("authors", []) if a in by_name]),

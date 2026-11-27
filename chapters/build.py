@@ -35,8 +35,10 @@ used starts that volume. In each volume's folder:
   (``INTRO_CLASSES``: ``all``, the default, or ``volume``: only the
   classes of the volume's language chapters), ``records`` (the DOIs
   reserved on Zenodo for the volume, each language's dataset and the
-  software, printed under the title: ``record_lines``) and ``abstract``
-  (the volume's description on Zenodo; coding/stage_zenodo.py), and the Overleaf project the volume's folder is
+  software, printed under the title: ``record_lines``), ``abstract``
+  (the volume's description on Zenodo; coding/stage_zenodo.py) and
+  ``file_name`` (``FILE_NAME``: the name its published PDF and source go
+  under, with a date in it), and the Overleaf project the volume's folder is
   synced with (``overleaf``, coding/sync_overleaf.py). Hand-edited; the
   build makes a starting one for a new volume, and checks every part is
   one it can build.
@@ -579,6 +581,12 @@ PART_TITLE = {INTRO: "Introduction", SUMMARY: "Summary", METHOD: "Method",
 # is keyed by its Glottocode.
 RECORD_REPORT, RECORD_SOFTWARE = "report", "software"
 _DOI = re.compile(r"10\.\d{4,9}/\S+")
+# volume.yaml's `file_name`: what the published PDF and source zip are
+# called (stage-zenodo), so a reader's download says which report it is and
+# when: lowercase words joined by hyphens, with its date (year-month at
+# least) in it, e.g. constituency-typology-report-2026-11 (Jeff, 2026-11-27).
+FILE_NAME = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*")
+_FILE_NAME_DATE = re.compile(r"(^|-)\d{4}-\d{2}(-|$)")
 
 
 def record_lines(volume: dict) -> list:
@@ -1039,6 +1047,12 @@ def read_volume(vol: str, lang: str | None = None) -> tuple[dict, str | None]:
         raise ChapterDataError(f"{where}: `records` gives the DOIs reserved on Zenodo, as "
                                f"{{{', '.join(sorted(known))}: 10.5281/zenodo.N}} (any of them; "
                                f"a DOI without https://doi.org/): {records!r}")
+    name = volume.get("file_name")
+    if name is not None and not (isinstance(name, str) and FILE_NAME.fullmatch(name)
+                                 and _FILE_NAME_DATE.search(name)):
+        raise ChapterDataError(f"{where}: `file_name` is {name!r}; write it as lowercase words "
+                               f"joined by hyphens, with the date in it, e.g. "
+                               f"constituency-typology-report-2026-11.")
     if not isinstance(volume.get("abstract", ""), str):
         raise ChapterDataError(f"{where}: `abstract` must be a paragraph of text.")
     if volume.get("intro_classes", INTRO_ALL) not in INTRO_CLASSES:

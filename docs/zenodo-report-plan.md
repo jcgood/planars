@@ -12,7 +12,7 @@ results.
 
 | Record | Contents | Licence | Versions |
 |---|---|---|---|
-| **Report** (Zenodo type: Publication / Report) | the PDF, its LaTeX source and `values.tex` | CC BY 4.0 | one per report: a later report is a record of its own, not a new version of this one |
+| **Report** (Zenodo type: Publication / Report) | the PDF, its LaTeX source and `values.tex`, under volume.yaml's `file_name` (e.g. `planars-report-2026-11.pdf`) | CC0 (Jeff, 2026-11-27) | one per report: a later report is a record of its own, not a new version of this one |
 | **English dataset** (type: Dataset) | the annotation at one pinned change-log position: `planar_stan1293.tsv`, `diagnostics_stan1293.yaml`, every class's TSVs; the codebook (`render_codebook.py`); the spans and the analysis bundle, in a folder marked *derived*; a README and `CITATION.cff` | CC0 (decided 2026-11-26) | one per data freeze |
 | **Software** (type: Software) | `planars` at a tagged release, through Zenodo's GitHub link (one DOI for all versions, one per release); includes `planarsviz/` | MIT (as now) | one per release |
 
@@ -302,8 +302,8 @@ Nothing is open: every question above is settled (see "Decided").
   to check them.
 - **English's dataset is CC0** (Jeff and Adam, 2026-11-26): release it with
   `export-release --licence CC0-1.0`. The README and `CITATION.cff` ask for
-  a citation rather than require one. The CCDB samples stay CC BY-SA and
-  the report's own text stays CC BY.
+  a citation rather than require one. The CCDB samples stay CC BY-SA. The
+  report is CC0 too (Jeff, 2026-11-27; it had been CC BY by default).
 - **Span rules are released marked by status** (Jeff, 2026-11-26): the
   report prints each rule's status beside its spans; release doesn't wait
   for #321's review.

@@ -59,6 +59,16 @@ def test_records_are_reserved_dois_for_the_volume_s_records():
             cb.read_volume(f"zen{i}")
 
 
+def test_a_file_name_is_hyphenated_words_with_a_date():
+    _volume(BASE + "file_name: planars-report-2026-11\n", "zenf")
+    assert cb.read_volume("zenf")[0]["file_name"] == "planars-report-2026-11"
+    for i, bad in enumerate(("planars-report", "Planars-Report-2026-11", "report 2026-11",
+                             "planars-report-202611")):
+        _volume(BASE + f"file_name: {bad}\n", f"zenf{i}")
+        with pytest.raises(ChapterDataError, match="file_name"):
+            cb.read_volume(f"zenf{i}")
+
+
 def test_the_staging_readme_says_which_dois_are_still_to_reserve():
     text = sz.staging_readme("report", ["1-software"], ["the report"])
     assert "not yet reserved" in text and "Reserve DOI" in text
