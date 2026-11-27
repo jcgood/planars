@@ -123,9 +123,16 @@ The draft is an unpublished manuscript, so it lives in planars-data's
    part of "The method section" below, each naming the documents to draw
    on). A language chapter now prints three examples per construction,
    the annotator's own first, and counts the rest (English's phrasal_accent
-   examples had filled some 250 pages). Still to come: the report's other
-   parts of its own (the summary, who did what, status and limits, next
-   steps; "What the report contains").
+   examples had filled some 250 pages). **Built 2026-11-26: the report's
+   other parts of its own** ("What the report contains"): `summary` and
+   `next` (prose only); `contributions` (who did what: item 8's counts in
+   its own `values.tex`, up to the end of the day of the volume's latest
+   language pin, counted again only when that moves, refused in a shallow
+   clone; a table and two prose slots); `status` (each class's span-rule
+   and criteria status, in words, beside a prose slot on the open
+   questions). A language chapter now prints each class's span-rule status
+   above its spans (the decision under "Before release"). Details:
+   chapters/build.py's docstring.
 4. **Built 2026-11-25: the laminar modules in the bundle**: domain
    support, the resolution test and the profile exported behind permutation
    flags and run weekly, so the report's numbers come from the pinned
@@ -196,7 +203,8 @@ Jeff before planars-data's `.papers/` is moved), then 2 and 3.
 
 - **A freeze point for English** (a change-log position), chosen by Adam.
 - **Each span rule's status is printed** in the report beside its spans
-  (decided); none has been reviewed with Adam yet (#321, 0 of 7).
+  (decided; built 2026-11-26); none has been reviewed with Adam yet (#321,
+  0 of 7).
 - **English's word chosen** (#335) if the report tests the word hypothesis.
 - **Zenodo metadata**: keywords (no funder: decided), related
   identifiers (the 2024 volume's DOI, the CCDB). Authors' ORCIDs and

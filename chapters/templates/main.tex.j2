@@ -2,8 +2,9 @@
    file (this file's name), title, authors (names, in order; may be
    empty) and author_note (a footnote on them, e.g. that the order is
    alphabetical; may be empty), parts (folder names, in order: every
-   part for main.tex, one for a chapter's own file), languages (every
-   language chapter in the volume, whose values are loaded), venue (its
+   part for main.tex, one for a chapter's own file), valued (the parts
+   whose values.tex is loaded: every language chapter in the volume, and
+   who did what if it has that part), venue (its
    name), documentclass and headings (tex.venue: a part is \include'd,
    starting a page, only when it is a \chapter). No date is printed: the
    day of the build is not the volume's, and a title gives its own. }
@@ -21,8 +22,8 @@
 \usepackage[T1]{fontenc}
 \usepackage{planarschapter}
 \usepackage{planarsvenue}
-\BLOCK{for L in languages}
-\input{\VAR{path(L ~ "/values")}}
+\BLOCK{for p in valued}
+\input{\VAR{path(p ~ "/values")}}
 \BLOCK{endfor}
 \title{\VAR{title}}
 \date{}

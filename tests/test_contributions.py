@@ -137,6 +137,21 @@ def test_contribution_values_end_to_end(tmp_path, monkeypatch, github):
         check_value_name(key)
 
 
+def test_a_shallow_clone_is_refused(tmp_path):
+    origin = tmp_path / "origin"
+    origin.mkdir()
+    _git(origin, "init", "-q")
+    _git(origin, "config", "user.name", "jcgood")
+    _git(origin, "config", "user.email", "jeff@example.org")
+    for message in ("one", "two"):
+        _git(origin, "commit", "-q", "--allow-empty", "-m", message)
+    shallow = tmp_path / "shallow"
+    subprocess.run(["git", "clone", "-q", "--depth", "1", f"file://{origin}", str(shallow)],
+                   check=True, capture_output=True)
+    with pytest.raises(c.ContributionsError, match="shallow clone"):
+        c._commits(c._cutoff(None), shallow)
+
+
 def test_github_unreachable_refuses(github):
     github.signed_in = False
     with pytest.raises(c.ContributionsError, match="gh auth login"):

@@ -1,0 +1,53 @@
+\#{ Who did what: every count a \pv from contributions/values.tex
+   (chapters/contributions.py, whose docstring says how each is counted).
+   Context: prefix (the values' common start), people (list of dicts:
+   name, key), models (list of dicts: name, key), languages (the volume's
+   language chapters), has (whether a value, named without the prefix,
+   was counted). A commit made in a Claude session is not a share of
+   authorship. }
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.75\linewidth} r@{}}
+\caption{What the project's records hold, up to \VAR{pv(prefix ~ "until")}}\\
+\toprule
+Record & Count \\
+\midrule
+\endfirsthead
+\toprule
+Record & Count \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+Commits to the software's repository (merges left out) & \VAR{pv(prefix ~ "commits.total")} \\
+\quad made in a Claude session & \VAR{pv(prefix ~ "commits.claude")} \\
+\BLOCK{for m in models}
+\qquad naming \VAR{m.name} & \VAR{pv(prefix ~ "commits.model." ~ m.key)} \\
+\BLOCK{endfor}
+\quad made by the pipeline's own runs & \VAR{pv(prefix ~ "commits.pipeline")} \\
+\quad made by people without Claude & \VAR{pv(prefix ~ "commits.people")} \\
+\midrule
+Comments on the issues and pull requests & \VAR{pv(prefix ~ "comments.total")} \\
+\BLOCK{for p in people}
+\BLOCK{if has("comments.people." ~ p.key)}
+\quad by \VAR{p.name} & \VAR{pv(prefix ~ "comments.people." ~ p.key)} \\
+\BLOCK{endif}
+\BLOCK{if has("comments.claude." ~ p.key)}
+\quad by \VAR{p.name}'s Claude, signed as such & \VAR{pv(prefix ~ "comments.claude." ~ p.key)} \\
+\BLOCK{endif}
+\BLOCK{endfor}
+\quad posted by the pipeline & \VAR{pv(prefix ~ "comments.pipeline")} \\
+\quad from an account in no one's entry in the project's list of people & \VAR{pv(prefix ~ "comments.unlisted")} \\
+\midrule
+Decisions recorded in the decision logs & \VAR{pv(prefix ~ "decisions.total")} \\
+\BLOCK{for p in people}
+\BLOCK{if has("decisions." ~ p.key)}
+\quad made by \VAR{p.name} & \VAR{pv(prefix ~ "decisions." ~ p.key)} \\
+\BLOCK{endif}
+\BLOCK{endfor}
+\midrule
+\BLOCK{for L in languages}
+Answers in the \pv{\VAR{L}.language.name} annotation still marked as drafted with Claude & \pv{\VAR{L}.annotation.claude_drafts} \\
+\BLOCK{endfor}
+\end{longtable}
+The first commit made in a Claude session is dated \VAR{pv(prefix ~ "commits.first_claude")}.
+A decision can name more than one person, so the decisions by person add up to
+more than the total.

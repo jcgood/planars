@@ -110,6 +110,72 @@ results:
       larger domain. Needs each language's word chosen (English: #335);
       until then, say what is still open.
 
+# The progress report's parts of its own (docs/zenodo-report-plan.md, "What
+# the report contains"): a summary, who did what, the status and limits, and
+# the next steps. The summary and the next steps are prose only.
+summary:
+  - slot: summary
+    who: Jeff Good and Adam Tallman
+    says: >-
+      What the project did in the period this report covers, in a few
+      paragraphs: the languages annotated, the framework and tooling built,
+      and what the analysis shows so far. Cite numbers by name (\pv), from
+      the English chapter, the results and who did what.
+
+# Who did what (the plan's "Human and Claude contributions"): the counts are
+# generated from the project's records (chapters/contributions.py), at the
+# end of the day of the volume's latest language pin.
+contributions:
+  - heading: People and Claude
+    slot: contributions
+    who: Jeff Good and Adam Tallman
+    says: >-
+      Who made the linguistic judgements (the diagnostics, the annotation,
+      every decision, every promotion of a span rule's status: Jeff Good
+      and Adam Tallman) and what Claude did (most of the tooling, under
+      written rules, directed and reviewed by Jeff Good). Say that a commit
+      made in a Claude session is not a share of authorship. The table
+      after this text is written by the build; cite its counts by name.
+    fragments: [contribution_table]
+  - heading: How Claude's work was kept under control
+    slot: controls
+    who: Jeff Good and Adam Tallman
+    says: >-
+      The written rules Claude works under (CLAUDE.md in planars): only a
+      coordinator promotes a class's status; Claude asks before writing to
+      Drive or GitHub and before any linguistic call; every comment it posts
+      is signed; answers it drafted are marked in their Source and released
+      marked. Say where the counts above are read from (the repository's
+      history and its GitHub issues, which the Zenodo software record does
+      not hold).
+
+# The status and limits: what is reviewed and what is not.
+status:
+  - heading: The diagnostic classes
+    slot: classes
+    who: Jeff Good and Adam Tallman
+    says: >-
+      How far each class's span rule and criteria have been reviewed (the
+      table after this text, from schemas/diagnostic_classes_status.yaml),
+      and what "derived automatically" and "needs review" mean for the
+      spans reported here. The span-rule review with the domain expert is
+      planars issue #321.
+    fragments: [class_status]
+  - heading: Open questions in the data
+    slot: open_questions
+    who: Jeff Good and Adam Tallman
+    says: >-
+      What is unsettled in the annotation and how it bears on the results:
+      English's word, which the word hypothesis needs (#335); the open data
+      questions (#314, #298); the answers still marked as Claude drafts.
+
+next:
+  - slot: next
+    who: Jeff Good and Adam Tallman
+    says: >-
+      What comes next: the languages to be added (Chichewa is planned), the
+      reviews still to do, and what the next report will cover.
+
 # The method chapter (the progress report; docs/zenodo-report-plan.md, "The
 # method section"): how the work is done, the software design as well as
 # the linguistics. Prose only; each slot names the documents in planars it

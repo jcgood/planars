@@ -301,12 +301,15 @@ Open with Jeff: where annotators' chapter drafts live, and whether
   statement of where; moving the manuscripts means changing it; since
   2026-11-25 all of this sits in one folder per volume, `.papers/<volume>/`:
   "More than one volume" below):
-  `volume.yaml` (title, optional authors, and parts: `intro`, `method`,
-  `results` or a Glottocode), `main.tex`
+  `volume.yaml` (title, optional authors, and parts: `intro`, `results`,
+  a Glottocode, or the progress report's `summary`, `method`,
+  `contributions`, `status` and `next`; `build.NON_LANGUAGE`), `main.tex`
   built from it, `planarschapter.sty`, and per part `chapter.tex` (the
-  outline), `fragments/`, `prose/`, and `values.tex` for a language.
-  `main.tex` loads every language's values, so the introduction or a
-  results chapter can cite any language's numbers.
+  outline), `fragments/`, `prose/`, and `values.tex` for a language and
+  for `contributions` (its counts, kept while the volume's latest pin
+  stands: chapters/build.py's docstring).
+  `main.tex` loads every one of them, so any part can cite any language's
+  numbers.
 - **The outline is `chapters/templates/outline.yaml`**: each kind of
   chapter's sections in order, with a slot's `who` and `says` (the
   instructions written into its stub, decision 5). Class sections are one

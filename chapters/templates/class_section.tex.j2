@@ -1,7 +1,12 @@
 \#{ One diagnostic class in a language chapter: one sentence per span
-   (decision 3), then the class's span table. Context: L, display_name,
+   (decision 3), then the class's span table, after the status of the
+   span rule that derived them (decided for the progress report,
+   2026-11-26). Context: L, display_name, span_rule_status (in words),
    constructions (list of dicts: name, feeder, spans: list of dicts:
    phrase, base, single). }
+Status of this class's span rule: \emph{\VAR{span_rule_status}}.
+
+
 \BLOCK{for c in constructions}
 \BLOCK{if c.feeder}
 The \texttt{\VAR{c.name|name}} tab decides what the other constructions of this

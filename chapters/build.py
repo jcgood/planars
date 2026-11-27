@@ -28,8 +28,9 @@ than one volume it needs ``--volume``. ``--volume`` with a name not yet
 used starts that volume. In each volume's folder:
 
 - ``volume.yaml``: the volume's title, its venue (a file in
-  ``chapters/venues/``) and its parts in order (``intro``, ``method``,
-  ``results``, or a language's Glottocode); optionally its ``authors`` (names, in the order
+  ``chapters/venues/``) and its parts in order (``NON_LANGUAGE``: ``intro``,
+  ``summary``, ``method``, ``contributions``, ``results``, ``status``,
+  ``next``; or a language's Glottocode); optionally its ``authors`` (names, in the order
   printed) with an ``author_note`` footnote on them, and the Overleaf project the volume's folder is
   synced with (``overleaf``, coding/sync_overleaf.py). Hand-edited; the
   build makes a starting one for a new volume, and checks every part is
@@ -43,9 +44,10 @@ used starts that volume. In each volume's folder:
 - one folder per part: ``chapter.tex`` (the outline: sections in the order
   of ``chapters/templates/outline.yaml``, each with its prose slot and
   then its fragments), ``fragments/``, ``prose/``, for the results
-  chapter ``figures/``, and for a language
+  chapter ``figures/``, for a language
   ``values.tex`` (every named value, ``\\pvset{name}{value}``) and
-  ``data.lock`` (its pin, below).
+  ``data.lock`` (its pin, below), and for who did what ``values.tex``
+  (its counts).
 
 **Built and hand-written files never share a file.** Everything
 ``is_built`` names is rebuilt every time; a fragment no longer
@@ -95,10 +97,23 @@ annotator's own before Claude's drafts, and a count of the rest), and ``spans_ta
 the language in one table, grouped by domain type in the schema's class
 order). **The introduction** (``--intro``) comes from the schemas alone:
 ``terms.tex`` (schemas/terms.yaml) and ``class_<class>.tex`` for every
-class (what it tests, its criteria, its span rule). **The method chapter**
-(the part ``method``, for the progress report) is prose only: one slot per
-section of outline.yaml's ``method``, each with its instructions and the
-documents to draw on. **The results chapter**
+class (what it tests, its criteria, its span rule). A language chapter's
+``class_<class>.tex`` opens with the status of the class's span rule
+(``class_status``: the tag of its ``status`` in
+schemas/diagnostic_classes_status.yaml, in ``STATUS_WORDS``' words; a tag
+not listed there fails). **The progress report's own parts**
+(docs/zenodo-report-plan.md): ``summary``, ``method`` and ``next`` are
+prose only (``PROSE_ONLY``), one slot per section of their outline, each
+with its instructions and the documents to draw on. ``status`` (the
+status and limits) adds ``class_status.tex``: each class of the volume's
+language chapters at their pins, with the status of its span rule and of
+its criteria. ``contributions`` (who did what) adds
+``contribution_table.tex``, citing the counts in its own ``values.tex``
+(chapters/contributions.py), counted up to the end of the day of the
+volume's latest language pin (``contributions_until``). The counts need the
+repository's whole history and GitHub, so they are made once for a
+cut-off and kept while it stands; when a pin moves, the next build counts
+again, and refuses in a shallow clone. **The results chapter**
 (``--results``) reports on every language chapter in the volume, each read
 at its pin (one not built yet: as its first build would pin it), so its
 numbers are the ones its language's chapter shows: ``analysis_summary.tex``
@@ -272,6 +287,7 @@ def language_fragments(chapter: ChapterData) -> dict:
         constructions = _class_context(chapter, cls)
         out[f"class_{cls}.tex"] = tex.render("class_section.tex.j2", L=L,
                                              display_name=entries[cls]["display_name"],
+                                             span_rule_status=class_status(cls)["span_rule"],
                                              constructions=constructions)
         out[f"examples_{cls}.tex"] = tex.render("examples_section.tex.j2",
                                                 display_name=entries[cls]["display_name"],
@@ -413,19 +429,143 @@ VALUES_HEADER = ("% values.tex: every value the chapter can cite, as \\pvset{nam
                  "% Written by `python -m coding build-chapters`; never edit it by hand.\n")
 
 
+# ── The status and limits ───────────────────────────────────────────────────
+
+# A status in schemas/diagnostic_classes_status.yaml starts with its tag
+# (`stable`, or `[TAG` with a note after a colon or dash); the tag in words.
+# A tag not listed here fails, so a new one is named before a report prints it.
+STATUS_WORDS = {"stable": "stable",
+                "NEEDS REVIEW": "needs review",
+                "AUTO-DERIVED": "derived automatically, not yet reviewed",
+                "PROVISIONAL": "provisional",
+                "PLACEHOLDER": "a placeholder"}
+NOT_RECORDED = "not recorded"
+_STATUS_TAG = re.compile(r"^\[([A-Z][A-Z \-]*[A-Z])")
+
+
+def status_words(status, what: str) -> str:
+    """A class's `status` or `criterion_set_status` in words (STATUS_WORDS);
+    "not recorded" when the field is absent (segmental's criteria,
+    2026-11-26). `what` names the field, for the message."""
+    if status is None:
+        return NOT_RECORDED
+    text = str(status).strip()
+    match = _STATUS_TAG.match(text)
+    tag = match.group(1) if match else text
+    if tag not in STATUS_WORDS:
+        raise ChapterDataError(f"schemas/diagnostic_classes_status.yaml: {what} {text!r} starts with "
+                               f"no tag chapters/build.py STATUS_WORDS knows "
+                               f"({', '.join(STATUS_WORDS)}); add its words there.")
+    return STATUS_WORDS[tag]
+
+
+def _status_entries() -> dict:
+    return {c["name"]: c for c in _schema("diagnostic_classes_status.yaml").get("classes", [])}
+
+
+def class_status(cls: str) -> dict:
+    """{span_rule, criteria}: a class's two statuses in words."""
+    entry = _status_entries().get(cls)
+    if entry is None:
+        raise ChapterDataError(f"Class {cls} has no entry in schemas/diagnostic_classes_status.yaml.")
+    return {"span_rule": status_words(entry.get("status"), f"{cls}'s status"),
+            "criteria": status_words(entry.get("criterion_set_status"),
+                                     f"{cls}'s criterion_set_status")}
+
+
+def status_fragments(chapters: list) -> dict:
+    """{file name: text} for the status and limits: ``class_status.tex``,
+    each class of the volume's language chapters (each at its pin) with
+    the status of its span rule and of its criteria, and which languages
+    have it."""
+    entries = _class_entries()
+    having = {}
+    for chapter in chapters:
+        for cls in dict.fromkeys(chapter.tables["diagnostics"]["Class"]):
+            having.setdefault(cls, []).append(chapter.lang_id)
+    rows = [{"display_name": entries[cls]["display_name"], "domain": _domain(entries[cls]),
+             "languages": having[cls], **class_status(cls)}
+            for cls in entries if cls in having]
+    return {"class_status.tex": tex.render("status_table.tex.j2", rows=rows)}
+
+
+# ── Who did what ────────────────────────────────────────────────────────────
+
+CONTRIBUTIONS_HEADER = (
+    "% values.tex: the contribution counts this section cites (chapters/contributions.py),\n"
+    "% counted up to project.contributions.until: the end of the day of the volume's latest\n"
+    "% language pin. Counted again only when that moves (it needs the repository's whole\n"
+    "% history and GitHub). Written by `python -m coding build-chapters`; never edit it by hand.\n")
+
+
+def contributions_until(chapters: list) -> str:
+    """The time the counts stop: the end of the day of the latest pin among
+    the volume's language chapters, so they stop where the data do."""
+    return f"{max(c.version['date'] for c in chapters)}T23:59:59Z"
+
+
+def contribution_files(vol: str, chapters: list) -> tuple[dict, dict, dict, list]:
+    """({path: text} built, {fragment file: text}, {name: value}, lines to print) for the section
+    on who did what: ``contributions/values.tex`` (kept as it is while its
+    cut-off is the volume's, since the counts up to a time don't change;
+    counted afresh otherwise) and the fragment ``contribution_table.tex``."""
+    from chapters import contributions
+    from coding.people import known_names
+    until = contributions_until(chapters)
+    rel = f"{CONTRIBUTIONS}/values.tex"
+    old = file_door.read_paper(file_door.paper_built(f"{vol}/{rel}"))
+    old_values = tex.read_values_tex(old) if old else {}
+    prefix = contributions.PREFIX
+    if old_values.get(f"{prefix}until") == until:
+        values, text = old_values, old
+        said = [f"Who did what in volume {vol}: the counts up to {until}, as counted before."]
+    else:
+        try:
+            values = contributions.contribution_values(until)
+        except contributions.ContributionsError as e:
+            raise ChapterDataError(f"Who did what in volume {vol}: {e}")
+        text = tex.values_tex(values, CONTRIBUTIONS_HEADER)
+        said = [f"Who did what in volume {vol}: counted up to {until}"
+                + (f" (was {old_values.get(prefix + 'until')})." if old else ".")]
+    keys = [contributions.person_key(n) for n in known_names()]
+    people = [{"name": n, "key": k} for n, k in zip(known_names(), keys)
+              if f"{prefix}comments.people.{k}" in values or f"{prefix}decisions.{k}" in values]
+    models = [{"name": m, "key": contributions.person_key(m)}
+              for m in str(values.get(f"{prefix}commits.models", "")).split("; ") if m]
+    fragment = tex.render("contributions_table.tex.j2", prefix=prefix, people=people, models=models,
+                          languages=[c.lang_id for c in chapters],
+                          has=lambda name: f"{prefix}{name}" in values)
+    return {rel: text}, {"contribution_table.tex": fragment}, values, said
+
+
 # ── The outline ─────────────────────────────────────────────────────────────
 
 INTRO = "intro"
+SUMMARY = "summary"
 METHOD = "method"
+CONTRIBUTIONS = "contributions"
 RESULTS = "results"
+STATUS = "status"
+NEXT = "next"
 # The parts that are not a language's chapter: built from the schemas (the
-# introduction), prose only (the method), or from every language in the
-# volume (the results).
-NON_LANGUAGE = (INTRO, METHOD, RESULTS)
+# introduction), prose only (the summary, the method, the next steps), from
+# the project's own records (who did what), or from every language in the
+# volume (the results, the status and limits). The last four are for the
+# progress report (docs/zenodo-report-plan.md).
+NON_LANGUAGE = (INTRO, SUMMARY, METHOD, CONTRIBUTIONS, RESULTS, STATUS, NEXT)
+PROSE_ONLY = (SUMMARY, METHOD, NEXT)
 # How a stub names the chapter it is in, for each part that is not a language's.
-PART_WHERE = {INTRO: "the introduction", METHOD: "the method chapter",
-              RESULTS: "the results chapter"}
-PART_TITLE = {INTRO: "Introduction", METHOD: "Method", RESULTS: "Results"}
+PART_WHERE = {INTRO: "the introduction", SUMMARY: "the summary", METHOD: "the method chapter",
+              CONTRIBUTIONS: "the section on who did what", RESULTS: "the results chapter",
+              STATUS: "the status and limits", NEXT: "the next steps"}
+PART_TITLE = {INTRO: "Introduction", SUMMARY: "Summary", METHOD: "Method",
+              CONTRIBUTIONS: "Who did what", RESULTS: "Results", STATUS: "Status and limits",
+              NEXT: "Next steps"}
+
+
+def _part_names() -> str:
+    """The parts a volume.yaml may list, for a message."""
+    return ", ".join(f"`{p}`" for p in NON_LANGUAGE) + " or a language's Glottocode"
 VOLUME = "volume.yaml"
 MAIN = "main.tex"
 STY_FILE = "planarschapter.sty"
@@ -703,9 +843,9 @@ def results_chapters(vol: str, languages: list) -> list:
     `languages`, read at its chapter's pin in volume `vol` (or, for one not
     built yet, as its first build would pin it: the files as they are)."""
     if not languages:
-        raise ChapterDataError(f".papers/{vol}/{VOLUME}: the results chapter reports on the "
-                               f"volume's languages, and its parts list none: add a language's "
-                               f"Glottocode to `parts` there.")
+        raise ChapterDataError(f".papers/{vol}/{VOLUME}: the results chapter, the status and "
+                               f"limits and who did what report on the volume's languages, and "
+                               f"its parts list none: add a language's Glottocode to `parts` there.")
     return [chapter_data(L, position=pinned_position(vol, L, read_lock(vol, L), None, False))
             for L in languages]
 
@@ -726,8 +866,14 @@ def part_files(vol: str, part: str, position: int | None = None, update: bool = 
     if part == INTRO:
         fragments, L, built, said, values = intro_fragments(), None, {}, [], {}
         classes = [(name, e["display_name"], e["domain_type"]) for name, e in entries.items()]
-    elif part == METHOD:
+    elif part in PROSE_ONLY:
         fragments, L, built, said, values, classes = {}, None, {}, [], {}, []
+    elif part == STATUS:
+        fragments = status_fragments(results_chapters(vol, languages or []))
+        L, built, said, values, classes = None, {}, [], {}, []
+    elif part == CONTRIBUTIONS:
+        built, fragments, values, said = contribution_files(vol, results_chapters(vol, languages or []))
+        L, classes = None, []
     elif part == RESULTS:
         chapters = results_chapters(vol, languages or [])
         fragments, L, classes = results_fragments(chapters), None, []
@@ -803,8 +949,8 @@ def check_volume_name(vol: str) -> None:
         raise ChapterDataError(f"Volume name {vol!r}: use lower-case letters, digits and hyphens, "
                                f"starting with a letter (it is the volume's folder in .papers/).")
     if _is_part(vol):
-        raise ChapterDataError(f"Volume name {vol!r} is also a part's name (`{INTRO}`, "
-                               f"`{METHOD}`, `{RESULTS}` or a Glottocode); choose another.")
+        raise ChapterDataError(f"Volume name {vol!r} is also a part's name ({_part_names()}); "
+                               f"choose another.")
 
 
 def read_volume(vol: str, lang: str | None = None) -> tuple[dict, str | None]:
@@ -826,9 +972,8 @@ def read_volume(vol: str, lang: str | None = None) -> tuple[dict, str | None]:
     unknown = [p for p in parts if not _is_part(str(p))]
     if unknown:
         raise ChapterDataError(
-            f"{where}: parts {unknown} are neither `{INTRO}`, `{METHOD}`, `{RESULTS}` nor a "
-            f"language in schemas/languages.yaml (a part is `{INTRO}`, `{METHOD}`, `{RESULTS}` "
-            f"or a Glottocode).")
+            f"{where}: parts {unknown} are not parts the build knows (a part is {_part_names()} "
+            f"in schemas/languages.yaml).")
     repeated = sorted({p for p in parts if parts.count(p) > 1})
     if repeated:
         raise ChapterDataError(f"{where} lists {repeated} more than once.")
@@ -1210,13 +1355,14 @@ def build_volume(vol: str, args: argparse.Namespace) -> list:
     layout = {"venue": volume["venue"], "documentclass": venue["documentclass"],
               "headings": venue["headings"], "authors": volume.get("authors", []),
               "author_note": volume.get("author_note", "")}
+    # The parts with a values.tex, every one loaded, as any chapter may cite them.
+    valued = languages + [p for p in volume["parts"] if p == CONTRIBUTIONS]
     built = {STY_FILE: tex.STY, tex.VENUE_STY: venue["sty"], MAIN: tex.render(
         "main.tex.j2", file=MAIN, title=volume["title"], parts=volume["parts"],
-        languages=languages, **layout)}
-    # One file per chapter, so whoever writes it compiles only theirs;
-    # every language's values are loaded, as any chapter may cite them.
+        valued=valued, **layout)}
+    # One file per chapter, so whoever writes it compiles only theirs.
     built.update({f"{p}.tex": tex.render("main.tex.j2", file=f"{p}.tex", title=volume["title"],
-                                         parts=[p], languages=languages, **layout)
+                                         parts=[p], valued=valued, **layout)
                   for p in volume["parts"]})
     stubs = {VOLUME: volume_stub} if volume_stub else {}
     prose_parts = list(dict.fromkeys(list(volume["parts"]) + parts))

@@ -1,0 +1,21 @@
+\#{ The status and limits: each class of the volume's language chapters,
+   the status of its span rule and of its criteria
+   (schemas/diagnostic_classes_status.yaml, in words), and the languages
+   that have it. Context: rows (list of dicts: display_name, domain,
+   span_rule, criteria, languages (Glottocodes)). }
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.22\linewidth} >{\raggedright\arraybackslash}p{0.2\linewidth} >{\raggedright\arraybackslash}p{0.2\linewidth} >{\raggedright\arraybackslash}p{0.16\linewidth} >{\raggedright\arraybackslash}p{0.12\linewidth}@{}}
+\caption{Each diagnostic class: how far its span rule and its criteria have been reviewed}\\
+\toprule
+Class & Domain & Span rule & Criteria & Languages \\
+\midrule
+\endfirsthead
+\toprule
+Class & Domain & Span rule & Criteria & Languages \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\BLOCK{for r in rows}
+\VAR{r.display_name} & \VAR{r.domain} & \VAR{r.span_rule} & \VAR{r.criteria} & \BLOCK{for L in r.languages}\BLOCK{if not loop.first}, \BLOCK{endif}\pv{\VAR{L}.language.name}\BLOCK{endfor} \\
+\BLOCK{endfor}
+\end{longtable}

@@ -11,7 +11,7 @@ Every key starts with ``project.contributions.``. The groups:
 
 - ``until``: the cut-off, as given (or the time the counts were made);
 - ``commits.*``: this checkout's commits (``git log HEAD``, merges left out,
-  by commit time): ``total``; ``claude`` (made in a Claude session: a
+  by commit time; refused in a shallow clone): ``total``; ``claude`` (made in a Claude session: a
   ``Co-Authored-By:`` line naming Claude anywhere in the message, not only
   where git reads trailers); ``pipeline`` (made by the
   tooling's own runs, an author ending ``[bot]``); ``people`` (the rest);
@@ -97,7 +97,17 @@ def _cutoff(until: Optional[str]) -> datetime:
 # ── Commits ─────────────────────────────────────────────────────────────────
 
 def _commits(cutoff: datetime, repo: Path) -> list[dict]:
-    """[{when, author, co_authors}] for HEAD's commits at or before `cutoff`."""
+    """[{when, author, co_authors}] for HEAD's commits at or before `cutoff`.
+    Refused in a shallow clone (GitHub's checkouts are, by default), whose
+    history stops short and would be counted as if it were all."""
+    shallow = subprocess.run(["git", "-C", str(repo), "rev-parse", "--is-shallow-repository"],
+                             capture_output=True, text=True)
+    if shallow.returncode != 0:
+        raise ContributionsError(f"git can't read the history in {repo}: {shallow.stderr.strip()}")
+    if shallow.stdout.strip() == "true":
+        raise ContributionsError(f"{repo} is a shallow clone, so its history is incomplete and the "
+                                 f"commits can't be counted. Run `git -C {repo} fetch --unshallow` "
+                                 f"first.")
     # The whole message, not git's trailer parsing: a cloud session's commits
     # end with a Claude-Session: line that stops git reading the
     # Co-Authored-By line as a trailer (14 commits, 2026-09).

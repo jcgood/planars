@@ -306,6 +306,93 @@ def test_the_method_chapter_is_prose_slots_with_their_instructions():
     assert r"\input{method/chapter}" in main and r"\date{}" in main
 
 
+def test_status_words_name_every_tag_and_refuse_an_unknown_one():
+    assert build.status_words("stable", "s") == "stable"
+    assert build.status_words("[AUTO-DERIVED: NEEDS REVIEW — redesigned]", "s") == \
+        "derived automatically, not yet reviewed"
+    assert build.status_words("[NEEDS REVIEW]", "s") == "needs review"
+    with pytest.raises(ChapterDataError, match="STATUS_WORDS"):
+        build.status_words("[DRAFTED]", "s")
+    with pytest.raises(ChapterDataError, match="STATUS_WORDS"):
+        build.status_words("", "s")
+    assert build.status_words(None, "s") == "not recorded"
+    for cls in build._class_entries():   # every class's two statuses have words
+        build.class_status(cls)
+
+
+NAMES = ["Jeff Good", "Adam J. R. Tallman"]
+
+
+def _counts(until):
+    """Contribution counts with every name contributions_table.tex.j2 cites."""
+    from chapters import contributions as c
+    values = {"until": until, "commits.total": 10, "commits.claude": 7, "commits.pipeline": 1,
+              "commits.people": 2, "commits.first_claude": "2026-03-15",
+              "commits.models": "Claude Opus 5.5", "commits.model.claude_opus_5_5": 7,
+              "comments.total": 6, "comments.pipeline": 1, "comments.unlisted": 0,
+              "decisions.total": 2}
+    for name in NAMES:
+        key = c.person_key(name)
+        values.update({f"comments.people.{key}": 2, f"comments.claude.{key}": 1,
+                       f"decisions.{key}": 1})
+    return {c.PREFIX + k: v for k, v in values.items()}
+
+
+@pytest.fixture()
+def counted(monkeypatch):
+    """The cut-offs contribution_values was asked for (it answers with _counts)."""
+    from chapters import contributions
+    calls = []
+    monkeypatch.setattr(contributions, "contribution_values",
+                        lambda until: calls.append(until) or _counts(until))
+    monkeypatch.setattr("coding.people.known_names", lambda: NAMES)
+    return calls
+
+
+@needs_english
+def test_the_report_s_own_parts(own_english, counted, english):
+    _volume_yaml("title: A report\nvenue: report\n"
+                 "parts: [summary, contributions, stan1293, status, next]\n", "report")
+    _run("--volume", "report", "--apply")
+    folder = state_files.PAPERS_DIR / "report"
+    until = f"{english.version['date']}T23:59:59Z"
+    # Who did what: counted once, up to the end of the pin's day, and loaded by main.tex.
+    assert counted == [until]
+    values = tex.read_values_tex((folder / "contributions" / "values.tex").read_text(encoding="utf-8"))
+    assert values["project.contributions.until"] == until
+    table = (folder / "contributions" / "fragments" / "contribution_table.tex").read_text(encoding="utf-8")
+    assert r"\pv{project.contributions.commits.model.claude_opus_5_5}" in table
+    assert r"\pv{stan1293.annotation.claude_drafts}" in table
+    assert set(PV.findall(table)) <= set(values) | set(english.values)
+    main = (folder / "main.tex").read_text(encoding="utf-8")
+    assert r"\input{contributions/values}" in main and r"\input{stan1293/values}" in main
+    # A rebuild with the same pin doesn't count again.
+    _run("--volume", "report", "--apply")
+    assert counted == [until]
+    # The status and limits: each of English's classes with its two statuses.
+    status = (folder / "status" / "fragments" / "class_status.tex").read_text(encoding="utf-8")
+    for cls in dict.fromkeys(english.tables["diagnostics"]["Class"]):
+        assert tex.escape(build._class_entries()[cls]["display_name"]) in status
+    # The span rule's status beside the language chapter's spans.
+    noninterruption = (folder / "stan1293" / "fragments" / "class_noninterruption.tex").read_text(encoding="utf-8")
+    assert "Status of this class's span rule: \\emph{" in noninterruption
+    # The prose-only parts: a stub each.
+    for part, slot in (("summary", "summary"), ("next", "next"), ("contributions", "controls"),
+                       ("status", "open_questions")):
+        assert (folder / part / "prose" / f"{slot}.tex").is_file()
+
+
+@needs_english
+def test_who_did_what_is_counted_again_when_its_cut_off_moves(own_english, counted, english):
+    _volume_yaml("title: A report\nvenue: report\nparts: [contributions, stan1293]\n", "report")
+    _run("--volume", "report", "--apply")
+    rel = state_files.PAPERS_DIR / "report" / "contributions" / "values.tex"
+    rel.write_text(rel.read_text(encoding="utf-8").replace(counted[0], "2026-01-01T23:59:59Z"),
+                   encoding="utf-8")
+    _run("--volume", "report", "--apply")
+    assert len(counted) == 2 and counted[1] == counted[0]
+
+
 @pytest.mark.parametrize("extra, message", [
     ("authors: Jeff Good\n", "list of names"),
     ("author_note: Alphabetical.\n", "lists none"),
@@ -617,17 +704,22 @@ def test_only_the_results_chapter_takes_figures(monkeypatch):
         build.outline_items(build.INTRO, [])
 
 
+# Every kind of part, in the progress report's order.
+REPORT_PARTS = ["summary", "intro", "method", "contributions", "stan1293", "results", "status",
+                "next"]
+
+
 @needs_latex
 @needs_english
 @pytest.mark.parametrize("venue", tex.venues())
-def test_the_volume_compiles(english, own_english, drawn, venue):
+def test_the_volume_compiles(english, own_english, drawn, counted, venue):
     # The weekly analysis's bundles, so the results chapter's tables and
     # figures are there.
     _with_weekly_bundles(own_english)
     _run("--volume", VOL, "--intro", "--apply")
     (_vol() / "volume.yaml").write_text(
-        VOLUME.replace("stan1293]", "method, stan1293, results]").replace("venue: book",
-                                                                          f"venue: {venue}")
+        VOLUME.replace("[intro, stan1293]", f"[{', '.join(REPORT_PARTS)}]").replace(
+            "venue: book", f"venue: {venue}")
         + "authors: [Jeff Good, Adam J. R. Tallman]\nauthor_note: Authors are listed alphabetically.\n",
         encoding="utf-8")
     _run("--apply")
@@ -636,7 +728,7 @@ def test_the_volume_compiles(english, own_english, drawn, venue):
                                     f"positions, not \\claim{{stan1293.planar.positions}}{{{total + 1}}}.\n"
                                     + tex.example("ema=ja kweti", "1SG=ERG go.PST", "I went", "p. 3",
                                                   True) + "\n")
-    for chapter in ("intro", "method", "stan1293", "results"):
+    for chapter in REPORT_PARTS:
         _compile(_vol(), f"{chapter}.tex")
     log = _compile(_vol())
     # TeX breaks log lines at 79 characters.
