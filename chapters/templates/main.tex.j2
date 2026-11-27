@@ -6,7 +6,8 @@
    whose values.tex is loaded: every language chapter in the volume, and
    who did what if it has that part), venue (its
    name), documentclass and headings (tex.venue: a part is \include'd,
-   starting a page, only when it is a \chapter). No date is printed: the
+   starting a page, only when it is a \chapter), records ([(what, DOI)]:
+   the Zenodo records volume.yaml names, printed under the title). No date is printed: the
    day of the build is not the volume's, and a title gives its own. }
 \BLOCK{if file == "main.tex"}
 % main.tex: the volume, from volume.yaml.
@@ -32,6 +33,13 @@
 \BLOCK{endif}
 \begin{document}
 \maketitle
+\BLOCK{if records}
+\begin{center}\small
+\BLOCK{for what, doi in records}
+\VAR{what}: doi:\VAR{doi}\par
+\BLOCK{endfor}
+\end{center}
+\BLOCK{endif}
 \tableofcontents
 \BLOCK{for p in parts}
 \BLOCK{if headings.chapter == "chapter"}

@@ -45,6 +45,7 @@ _COMMANDS = {
     "build-chapters":              "chapters.build",
     "sync-overleaf":               "coding.sync_overleaf",
     "export-release":              "coding.export_release",
+    "stage-zenodo":                "coding.stage_zenodo",
     "sync-params":                 "coding.sync_params",
     "sync-diagnostics-yaml":       "coding.sync_diagnostics_yaml",
     "sync-span-rule-hashes":       "coding.sync_span_rule_hashes",

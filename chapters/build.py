@@ -33,7 +33,10 @@ used starts that volume. In each volume's folder:
   ``next``; or a language's Glottocode); optionally its ``authors`` (names, in the order
   printed) with an ``author_note`` footnote on them, ``intro_classes``
   (``INTRO_CLASSES``: ``all``, the default, or ``volume``: only the
-  classes of the volume's language chapters), and the Overleaf project the volume's folder is
+  classes of the volume's language chapters), ``records`` (the DOIs
+  reserved on Zenodo for the volume, each language's dataset and the
+  software, printed under the title: ``record_lines``) and ``abstract``
+  (the volume's description on Zenodo; coding/stage_zenodo.py), and the Overleaf project the volume's folder is
   synced with (``overleaf``, coding/sync_overleaf.py). Hand-edited; the
   build makes a starting one for a new volume, and checks every part is
   one it can build.
@@ -570,6 +573,25 @@ PART_TITLE = {INTRO: "Introduction", SUMMARY: "Summary", METHOD: "Method",
               NEXT: "Next steps"}
 
 
+# volume.yaml's `records`: the DOIs reserved on Zenodo for the volume's
+# records (docs/zenodo-report-plan.md), printed under the title, and read by
+# stage-zenodo for each record's links to the others. A language's dataset
+# is keyed by its Glottocode.
+RECORD_REPORT, RECORD_SOFTWARE = "report", "software"
+_DOI = re.compile(r"10\.\d{4,9}/\S+")
+
+
+def record_lines(volume: dict) -> list:
+    """[(what, DOI)] for the title page: the volume, each language's
+    dataset, the software, in that order, those `records` gives."""
+    records = volume.get("records") or {}
+    lines = [("This report", records.get(RECORD_REPORT))]
+    lines += [(f"The {get_display_name(L)} dataset", records.get(L))
+              for L in language_parts(volume["parts"])]
+    lines.append(("The software (planars)", records.get(RECORD_SOFTWARE)))
+    return [(what, doi) for what, doi in lines if doi]
+
+
 # Which classes a volume's introduction covers (volume.yaml's
 # `intro_classes`): every class in the schema (the book), or only those of
 # the volume's language chapters, at their pins (the English-only report).
@@ -1010,6 +1032,15 @@ def read_volume(vol: str, lang: str | None = None) -> tuple[dict, str | None]:
         raise ChapterDataError(f"{where}: `author_note` must be a line of text.")
     if volume.get("author_note") and not authors:
         raise ChapterDataError(f"{where}: `author_note` is a note on the authors, and `authors` lists none.")
+    records = volume.get("records", {})
+    known = {RECORD_REPORT, RECORD_SOFTWARE, *language_parts(parts)}
+    if not isinstance(records, dict) or set(records) - known or not all(
+            isinstance(d, str) and _DOI.fullmatch(d) for d in records.values()):
+        raise ChapterDataError(f"{where}: `records` gives the DOIs reserved on Zenodo, as "
+                               f"{{{', '.join(sorted(known))}: 10.5281/zenodo.N}} (any of them; "
+                               f"a DOI without https://doi.org/): {records!r}")
+    if not isinstance(volume.get("abstract", ""), str):
+        raise ChapterDataError(f"{where}: `abstract` must be a paragraph of text.")
     if volume.get("intro_classes", INTRO_ALL) not in INTRO_CLASSES:
         raise ChapterDataError(f"{where}: `intro_classes` is {volume.get('intro_classes')!r}; it is "
                                f"one of {', '.join(INTRO_CLASSES)}.")
@@ -1384,7 +1415,7 @@ def build_volume(vol: str, args: argparse.Namespace) -> list:
     venue = tex.venue(volume["venue"])
     layout = {"venue": volume["venue"], "documentclass": venue["documentclass"],
               "headings": venue["headings"], "authors": volume.get("authors", []),
-              "author_note": volume.get("author_note", "")}
+              "author_note": volume.get("author_note", ""), "records": record_lines(volume)}
     # The parts with a values.tex, every one loaded, as any chapter may cite them.
     valued = languages + [p for p in volume["parts"] if p == CONTRIBUTIONS]
     built = {STY_FILE: tex.STY, tex.VENUE_STY: venue["sty"], MAIN: tex.render(

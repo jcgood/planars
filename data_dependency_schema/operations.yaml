@@ -402,6 +402,38 @@
   cascades_triggered: []
   modes: []
 
+- id: stage_zenodo
+  cli_command: stage-zenodo
+  writes_to_drive: false
+  writes_locally: false
+  description: >-
+    Stages a volume's Zenodo records as folders to upload
+    (coding/stage_zenodo.py; docs/zenodo-report-plan.md): the software
+    (git archive of HEAD), each language chapter's dataset (export-release
+    at the chapter's pin, zipped) and the report (its PDF, compiled from
+    planars-data's committed copy, and its LaTeX source), each with its
+    metadata in Zenodo's deposit form, linked to the others by the DOIs in
+    volume.yaml's records. Sends nothing to Zenodo.
+  side_effects:
+    - >-
+      with --apply, writes the folder given as --out (new or empty, outside
+      this repository and planars-data); writes nothing in planars-data
+    - "reads GitHub for the dataset's release check (versions.release_problems)"
+  idempotent: true
+  idempotency_note: >-
+    The same commits and pins give the same files, but for the date in each
+    record's metadata; a second --apply into the same folder is refused
+    because the folder is no longer empty.
+  apply_gate: "--apply"
+  preconditions: [coded_data_up_to_date]
+  facts_touched:
+    - {fact: planar_sheet_structure, role: reads}
+    - {fact: diagnostics_scope, role: reads}
+    - {fact: languages_metadata, role: reads}
+    - {fact: span_rule_semantics, role: reads}
+  cascades_triggered: []
+  modes: []
+
 - id: sync_overleaf
   cli_command: sync-overleaf
   writes_to_drive: false

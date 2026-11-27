@@ -35,7 +35,8 @@ version it names:
   language's ``dataset_authors`` in ``schemas/languages.yaml``, in that
   order (English: Adam, then Jeff; Araona: Adam; Jeff, 2026-11-26), with
   each one's ORCID and affiliation read from this repository's
-  ``CITATION.cff`` at each export, never copied here; its licence is
+  ``CITATION.cff`` at each export, never copied here, as are its keywords
+  (with the language's name added); its licence is
   ``--licence`` (``LICENCES``), which a release must name, since each
   language's annotator chooses for their own dataset (English: CC0, Adam,
   2026-11-26; docs/zenodo-report-plan.md, "Decided"). Under CC0 the file
@@ -77,7 +78,7 @@ import pandas as pd
 from chapters.data import DERIVED, RELEASE_RECORD   # named there: the rebuild check reads them too
 from coding import file_door, source_log, versions
 from coding.check_comments import COMMENTS
-from planars.languages import get_display_name
+from planars.languages import get_display_name, get_entry
 from planars.schema_values import CLAUDE_DRAFT_SOURCE_PREFIX, class_domain_types
 
 ROOT = file_door.ROOT
@@ -276,6 +277,8 @@ def citation(lang_id: str, record: dict, licence: str, repo_cff: Path | None = N
     """The dataset's CITATION.cff text (authors: `dataset_authors`)."""
     import yaml
     authors, software = dataset_authors(lang_id, repo_cff, names)
+    keywords = (yaml.safe_load((repo_cff or ROOT / CITATION).read_text(encoding="utf-8")) or {}
+                ).get("keywords") or []
     stamp = record["stamp"]
     lang = stamp["languages"][lang_id]
     name = get_display_name(lang_id)
@@ -291,7 +294,9 @@ def citation(lang_id: str, record: dict, licence: str, repo_cff: Path | None = N
         "abstract": (f"The annotation of {name} for the planars project: which positions of its "
                      f"planar structure each constituency diagnostic picks out, with the schemas "
                      f"it is read with and the spans derived from it."),
-        "keywords": ["linguistics", "morphosyntax", "constituency", "typology", "planar structure"],
+        # The software's, read from the repository's file, and the language.
+        "keywords": list(keywords) + [((get_entry(lang_id) or {}).get("glottolog") or {}).get("name")
+                                      or lang_id],
         "references": [{
             "type": "software",
             "title": "planars",

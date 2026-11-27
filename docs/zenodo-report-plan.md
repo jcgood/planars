@@ -196,6 +196,17 @@ The draft is an unpublished manuscript, so it lives in planars-data's
    CC0-1.0), and a release that names none is refused, so the licence is
    always a stated choice, not a default (English: CC0, below).
 
+10. **Built 2026-11-26: staging the three records**
+    (`python -m coding stage-zenodo`, coding/stage_zenodo.py): one folder
+    per record with its files and Zenodo metadata, linked by the DOIs in
+    volume.yaml's `records`, which the report prints under its title.
+    Nothing is sent to Zenodo; each upload stays a draft until a person
+    publishes it (Jeff, 2026-11-26: stage on Zenodo before any DOI is
+    registered). The software is staged by hand, not through a GitHub
+    release, which would publish at once. The works the records build on
+    (the 2024 book, the CCDB) are `references` in this repository's
+    `CITATION.cff`, read from there.
+
 Order of building (Jeff, 2026-11-25): 8, then 9, then 1 (dry run shown to
 Jeff before planars-data's `.papers/` is moved), then 2 and 3.
 

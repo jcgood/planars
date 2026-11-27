@@ -95,6 +95,13 @@ NOT_THROUGH_THE_DOOR: Dict[Site, str] = {
         "not in planars-data: empty folders in the staged release",
     ("export_release.py", "build", "shutil.copytree"):
         "not in planars-data: the staged release copied to --out (refused inside planars-data)",
+    # stage-zenodo likewise, its records staged in a temporary folder.
+    ("stage_zenodo.py", "build", "write_text"):
+        "not in planars-data: a record's metadata or the README, staged in a temporary folder",
+    ("stage_zenodo.py", "build", "shutil.copy2"):
+        "not in planars-data: the report's committed files, copied into a temporary folder",
+    ("stage_zenodo.py", "build", "shutil.copytree"):
+        "not in planars-data: the staged records copied to --out (refused inside planars-data)",
 }
 
 

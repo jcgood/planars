@@ -32,6 +32,27 @@ keywords:
   - typology
   - planar structure
   - span computation
+# The works this one builds on. coding/stage_zenodo.py links every Zenodo
+# record of the project to them (as "references") from here.
+references:
+  - type: book
+    title: "Constituency and convergence in the Americas"
+    doi: "10.5281/zenodo.10559861"
+    publisher:
+      name: "Language Science Press"
+    year: 2024
+    authors:
+      - family-names: Tallman
+        given-names: Adam J. R.
+      - family-names: Auderset
+        given-names: Sandra
+      - family-names: Uchihara
+        given-names: Hiroto
+  - type: database
+    title: "Constituency and Convergence Database (CCDB)"
+    url: "https://github.com/Constituency-and-Convergence/Constituency-Database"
+    authors:
+      - name: "Constituency and Convergence project"
 preferred-citation:
   type: software
   title: "planars: A Python toolkit for deriving morphosyntactic constituency spans from annotated planar structures"
