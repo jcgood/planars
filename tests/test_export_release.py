@@ -1,6 +1,7 @@
 """The data release (coding/export_release.py): where it may write, what it
-leaves out, what stops it, and that the spans can be derived again from
-the folder it writes (docs/zenodo-report-plan.md, items 5 and 6)."""
+leaves out, what stops it, and that the spans and every value a chapter
+cites can be derived again from the folder it writes (the rebuild check,
+chapters/rebuild_check.py; docs/zenodo-report-plan.md, items 5 and 6)."""
 
 import json
 import re
@@ -10,6 +11,7 @@ import pytest
 import yaml
 
 from chapters import data as cd
+from chapters import rebuild_check, tex
 from coding import export_release as er
 from coding import file_door, versions
 from coding.check_comments import COMMENTS
@@ -122,3 +124,24 @@ def test_the_spans_derive_again_from_the_release(reads_english, tmp_path, monkey
     again, _meta = language_spans("stan1293", out)
     saved = pd.read_csv(out / er.DERIVED / "spans.tsv", sep="\t")
     assert again.to_csv(sep="\t", index=False) == saved.to_csv(sep="\t", index=False)
+    # And every value a chapter cites (values.tex): those rebuilt from the
+    # release are the ones built from planars-data at the same position,
+    # the analysis included.
+    assert cd.release_problems(out) == []
+    pinned = cd.chapter_data("stan1293", position=summary["position"])
+    released = tex.values_tex(pinned.values, "")
+    (tmp_path / "values.tex").write_text(released, encoding="utf-8")
+    assert rebuild_check.differences(tex.read_values_tex(released), rebuild_check.rebuilt_values(out)) == []
+    assert set(cd.release_data(out).bundles) == set(pinned.bundles)
+    assert any(k.startswith("stan1293.analysis.") for k in pinned.values), sorted(pinned.bundles)
+    rebuild_check.main(["--release", str(out), "--values", str(tmp_path / "values.tex")])  # no exit: all match
+    # A file changed after the release is found before anything is compared.
+    planar = lang_dir / "lang_setup" / "planar_stan1293.tsv"
+    planar.write_text(planar.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+    assert any("planar_stan1293.tsv has changed" in p for p in cd.release_problems(out))
+
+
+def test_the_rebuild_check_names_each_value_that_differs():
+    lines = rebuild_check.differences({"a": "1", "b": "2", "c": "3"}, {"a": "1", "b": "5", "d": "4"})
+    assert lines == ["b: released '2', rebuilt '5'", "c: released '3', not rebuilt",
+                     "d: rebuilt '4', not in the released values.tex"]

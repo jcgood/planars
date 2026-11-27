@@ -14,6 +14,7 @@ import sys
 COMMANDS = {
     "values": ("chapters.show_values", "Print every value a language's chapter can cite, and what is missing."),
     "contributions": ("chapters.contributions", "Print the counts of what people and Claude did (commits, comments, decisions)."),
+    "rebuild-check": ("chapters.rebuild_check", "Rebuild a chapter's values from a released dataset and compare them with the released values.tex."),
 }
 
 

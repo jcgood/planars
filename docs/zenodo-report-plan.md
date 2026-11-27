@@ -143,12 +143,18 @@ The draft is an unpublished manuscript, so it lives in planars-data's
    (English's phrasal_accent has them, 2026-10-27). It leaves out
    `people.yaml` and the Comments column (notes between annotator and
    coordinator). Tests on `synth0001`.
-6. **A rebuild check**: from an unpacked dataset folder and the software at
-   its tag, rebuild `values.tex` and compare with the released one. A test,
-   so the claim "rebuildable from the records" is checked, not hoped.
-   Built for the spans 2026-11-25 (`tests/test_export_release.py`: the
-   spans derived from the released folder are its `derived/spans.tsv`);
-   `values.tex` waits for the report volume (item 1).
+6. **Built 2026-11-26: a rebuild check**: from an unpacked dataset folder
+   and the software at its tag, rebuild `values.tex` and compare with the
+   released one: `python -m chapters rebuild-check --release DIR --values
+   FILE` (`chapters/rebuild_check.py`; the dataset's README says how). It
+   first checks every file's sha256 against `release.json` and that the
+   software is the release's version (code version, schema files), then
+   works every value out from the folder (`chapters.data.release_data`,
+   the analysis from `derived/analysis/`) and lists each that differs.
+   `tests/test_export_release.py` runs it on English: all 2,407 values,
+   the analysis included, come back as built from planars-data at the same
+   position; the spans likewise match `derived/spans.tsv`. The
+   contribution counts (item 8) are outside it, as item 8 says.
    **Found and fixed 2026-11-26:** the software record is a `git archive`
    of the tag, with no git history, and three things read git. The chart
    code's fingerprint (`laminar.contributor_charts.code_version()`, which

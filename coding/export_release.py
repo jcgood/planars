@@ -28,7 +28,9 @@ version it names:
   version's spans (``chapters.data``'s rule);
 - ``release.json``: the stamp (code version, schemas' and language's
   positions and versions), and every file's sha256;
-- ``README.md``: what each folder is and how to rebuild the spans;
+- ``README.md``: what each folder is, how to rebuild the spans, and how to
+  check a report's numbers against the folder (``python -m chapters
+  rebuild-check``, chapters/rebuild_check.py);
 - ``CITATION.cff``: how to cite the dataset. Its authors are the
   language's ``dataset_authors`` in ``schemas/languages.yaml``, in that
   order (English: Adam, then Jeff; Araona: Adam; Jeff, 2026-11-26), with
@@ -72,6 +74,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from chapters.data import DERIVED, RELEASE_RECORD   # named there: the rebuild check reads them too
 from coding import file_door, source_log, versions
 from coding.check_comments import COMMENTS
 from planars.languages import get_display_name
@@ -79,8 +82,6 @@ from planars.schema_values import CLAUDE_DRAFT_SOURCE_PREFIX, class_domain_types
 
 ROOT = file_door.ROOT
 LANG_SETUP = "lang_setup"
-DERIVED = "derived"
-RELEASE_RECORD = "release.json"
 README = "README.md"
 CODEBOOK = "codebook.md"
 CITATION = "CITATION.cff"
@@ -227,6 +228,15 @@ Install planars at the tagged version (its schemas are the ones in
     python -c "from planars.reports import language_spans; print(language_spans('{lang_id}', '.')[0].to_csv(sep='\\t', index=False))"
 
 The result is `derived/spans.tsv`.
+
+## Checking a report's numbers
+
+A report built from this release prints every number from the language's
+`values.tex`, which the report's own record holds. With planars installed
+as above, this works each one out again from this folder (the analysis
+from `derived/analysis/`) and lists any that differ:
+
+    python -m chapters rebuild-check --release . --values <the report's {lang_id}/values.tex>
 """
 
 

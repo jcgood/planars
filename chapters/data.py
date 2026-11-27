@@ -76,6 +76,14 @@ planar file. Otherwise its values are left out and ``missing`` says why
 numbers from two versions of the data. The hashes, not the stamps, decide:
 annotation that moves the log without changing a span leaves a bundle good.
 
+**A released dataset** (an unpacked ``export-release`` folder) is read by
+``release_data(folder)`` the same way: its files, the version its
+``release.json`` records, and the bundles in its ``derived/analysis/``.
+``release_problems(folder)`` says first whether the folder and this
+software are what the release names (every file's sha256, the code
+version, the schema files). Together they are the report's rebuild check
+(chapters/rebuild_check.py).
+
 **missing** lists, in plain words, everything a chapter might expect that
 this version lacks: a bundle not drawn, drawn from other data, or without
 its permutation tests; annotated classes that give no spans yet.
@@ -369,9 +377,10 @@ def bundle_folders(lang_id: str, dataset: str) -> list:
     return [weekly, bundle_root(dataset) / dataset / "data"]
 
 
-def _analysis(lang_id: str, root: Path, chapter: ChapterData) -> None:
+def _analysis(lang_id: str, root: Path, chapter: ChapterData, folders=bundle_folders) -> None:
     """Values from each of the language's laminar bundles that was drawn from
-    the same spans and planar file as this version (module docstring)."""
+    the same spans and planar file as this version (module docstring).
+    `folders(lang_id, dataset)` lists where a dataset's bundle may be."""
     chapter.tables["analysis"] = pd.DataFrame(columns=ANALYSIS_COLUMNS)
     try:
         table = _pl.span_table(lang_id, repo_root=root)
@@ -385,7 +394,7 @@ def _analysis(lang_id: str, root: Path, chapter: ChapterData) -> None:
         _lang, grouping, selection = _pl.parse_dataset(dataset)
         domains_text = _pl.domains_frame(_pl.select(table, selection), grouping).to_csv(sep="\t", index=False)
         folder, drawn_elsewhere = None, None
-        for candidate in bundle_folders(lang_id, dataset):
+        for candidate in folders(lang_id, dataset):
             metadata_path = candidate / "metadata.json"
             if not metadata_path.exists():
                 continue
@@ -448,6 +457,16 @@ def chapter_data(lang_id: str, position: Optional[int] = None) -> ChapterData:
     """Everything `lang_id`'s chapter cites, read at its change-log
     `position` (None: the files as they are). See the module docstring."""
     chapter = ChapterData(lang_id=lang_id, version=_version_record(lang_id, position))
+    with data_at(lang_id, position) as root:
+        _gather(chapter, root, bundle_folders)
+    return chapter
+
+
+def _gather(chapter: ChapterData, root: Path, folders) -> None:
+    """Fill `chapter`'s values, tables and missing from the language's files
+    in ``root/coded_data/<L>/`` and the bundles `folders(lang_id, dataset)`
+    finds."""
+    lang_id = chapter.lang_id
     values = {f"language.{k}": v for k, v in _language_values(lang_id).items()}
     stamp = chapter.version["stamp"]
     values.update({"data.position": chapter.version["position"],
@@ -456,35 +475,93 @@ def chapter_data(lang_id: str, position: Optional[int] = None) -> ChapterData:
                    "data.code": stamp["code"]["version"],
                    "data.schemas": stamp["schemas"]["version"],
                    "data.schemas_position": stamp["schemas"]["position"]})
-    with data_at(lang_id, position) as root:
-        lang_dir = root / "coded_data" / lang_id
-        planar, planar_values = _planar(lang_dir, lang_id)
-        values.update({f"planar.{k}": v for k, v in planar_values.items()})
-        diagnostics = _diagnostics(lang_dir, lang_id)
-        values["diagnostics.classes"] = diagnostics["Class"].nunique()
-        values["diagnostics.constructions"] = len(diagnostics)
-        completeness, annotation = _completeness(lang_id, root)
-        values.update({f"annotation.{k}": v for k, v in annotation.items()})
-        drafts = claude_drafts(lang_dir)
-        values["annotation.claude_drafts"] = int(drafts["Rows"].sum()) if len(drafts) else 0
-        spans, meta = language_spans(lang_id, root)
-        pos_to_name = (meta.get(lang_id) or {}).get("pos_to_name", {})
-        values.update(_span_values(spans, pos_to_name))
-        without_spans = sorted(set(completeness["Class"]) - set(spans.get("Analysis", [])))
-        if without_spans:
-            chapter.missing.append("Annotated classes that give no spans yet: "
-                                   + ", ".join(without_spans) + ".")
-        chapter.values.update({f"{lang_id}.{k}": v for k, v in values.items()})
-        examples = _examples(lang_dir)
-        chapter.tables = {"planar": planar, "diagnostics": diagnostics, "completeness": completeness,
-                          "spans": spans, "claude_drafts": drafts, "examples": examples}
-        glossed = is_glossed(lang_id)
-        unpaired = [f"{r['Class']}/{r['Construction']} {r['Row']}" for _i, r in examples.iterrows()
-                    if not split_examples(r, glossed)[1]]
-        if unpaired:
-            chapter.missing.append(
-                f"{len(unpaired)} annotation row(s) whose Gloss or Translation doesn't hold one "
-                f"entry per example (separated by {EXAMPLE_SEPARATOR!r}), so their "
-                f"examples are printed without them: " + "; ".join(unpaired))
-        _analysis(lang_id, root, chapter)
+    lang_dir = root / "coded_data" / lang_id
+    planar, planar_values = _planar(lang_dir, lang_id)
+    values.update({f"planar.{k}": v for k, v in planar_values.items()})
+    diagnostics = _diagnostics(lang_dir, lang_id)
+    values["diagnostics.classes"] = diagnostics["Class"].nunique()
+    values["diagnostics.constructions"] = len(diagnostics)
+    completeness, annotation = _completeness(lang_id, root)
+    values.update({f"annotation.{k}": v for k, v in annotation.items()})
+    drafts = claude_drafts(lang_dir)
+    values["annotation.claude_drafts"] = int(drafts["Rows"].sum()) if len(drafts) else 0
+    spans, meta = language_spans(lang_id, root)
+    pos_to_name = (meta.get(lang_id) or {}).get("pos_to_name", {})
+    values.update(_span_values(spans, pos_to_name))
+    without_spans = sorted(set(completeness["Class"]) - set(spans.get("Analysis", [])))
+    if without_spans:
+        chapter.missing.append("Annotated classes that give no spans yet: "
+                               + ", ".join(without_spans) + ".")
+    chapter.values.update({f"{lang_id}.{k}": v for k, v in values.items()})
+    examples = _examples(lang_dir)
+    chapter.tables = {"planar": planar, "diagnostics": diagnostics, "completeness": completeness,
+                      "spans": spans, "claude_drafts": drafts, "examples": examples}
+    glossed = is_glossed(lang_id)
+    unpaired = [f"{r['Class']}/{r['Construction']} {r['Row']}" for _i, r in examples.iterrows()
+                if not split_examples(r, glossed)[1]]
+    if unpaired:
+        chapter.missing.append(
+            f"{len(unpaired)} annotation row(s) whose Gloss or Translation doesn't hold one "
+            f"entry per example (separated by {EXAMPLE_SEPARATOR!r}), so their "
+            f"examples are printed without them: " + "; ".join(unpaired))
+    _analysis(lang_id, root, chapter, folders)
+
+
+# ── Reading a released dataset ──────────────────────────────────────────────
+
+# The release's record and its folder of derived results
+# (coding/export_release.py writes both, with these names from here).
+RELEASE_RECORD = "release.json"
+DERIVED = "derived"
+
+
+def release_problems(folder: Path) -> list:
+    """Why the values a released dataset gives can't be trusted to be the
+    ones it was released with, in plain words ([] if they can): a file
+    missing, added or changed since release.json listed it; schemas that
+    are not this software's (so it isn't the version the release names);
+    a code version other than the release's."""
+    folder = Path(folder)
+    record = json.loads((folder / RELEASE_RECORD).read_text(encoding="utf-8"))
+    out = []
+    listed = record.get("files") or {}
+    present = {p.relative_to(folder).as_posix() for p in folder.rglob("*") if p.is_file()}
+    present.discard(RELEASE_RECORD)
+    for rel in sorted(set(listed) - present):
+        out.append(f"{rel} is listed in {RELEASE_RECORD} but not in the folder.")
+    for rel in sorted(present - set(listed)):
+        out.append(f"{rel} is in the folder but not listed in {RELEASE_RECORD}.")
+    for rel in sorted(set(listed) & present):
+        if hashlib.sha256((folder / rel).read_bytes()).hexdigest() != listed[rel]:
+            out.append(f"{rel} has changed since the release (its sha256 is not the one listed).")
+    code = record["stamp"]["code"]["version"]
+    if code != versions.code_version():
+        out.append(f"The release was made with planars {code}; this is planars "
+                   f"{versions.code_version()}. Install the release's version (the tag v{code}).")
+    schemas = folder / "schemas"
+    for path in sorted(p for p in schemas.rglob("*") if p.is_file()):
+        rel = path.relative_to(schemas)
+        mine = (source_log.PROJECT_LOG if rel.as_posix() == source_log.PROJECT_LOG.name
+                else source_log.SCHEMAS_DIR / rel)
+        if not mine.is_file() or mine.read_bytes() != path.read_bytes():
+            out.append(f"schemas/{rel.as_posix()} is not this software's copy, so the annotation "
+                       f"would be read with other definitions than the release's.")
+    return out
+
+
+def release_data(folder: Path) -> ChapterData:
+    """Everything a chapter cites, read from a released dataset (an unpacked
+    export-release folder) with this software: the files in its
+    ``coded_data/<L>/``, the version its ``release.json`` records, and the
+    analysis bundles in its ``derived/analysis/<dataset>/`` (used only when
+    drawn from these spans and planar file, as for chapter_data). What the
+    report's rebuild check compares with the released values.tex
+    (chapters/rebuild_check.py); check ``release_problems`` first."""
+    folder = Path(folder)
+    record = json.loads((folder / RELEASE_RECORD).read_text(encoding="utf-8"))
+    lang_id = record["language"]
+    stamp = record["stamp"]
+    chapter = ChapterData(lang_id=lang_id, version={
+        "position": stamp["languages"][lang_id]["position"], "date": record["date"], "stamp": stamp})
+    _gather(chapter, folder, lambda _lang, dataset: [folder / DERIVED / "analysis" / dataset])
     return chapter
